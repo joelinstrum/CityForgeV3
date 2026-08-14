@@ -1974,6 +1974,10 @@ namespace CityForgeV3.World
             _floraShadowSun.intensity = 1f;
             _floraShadowSun.shadows = LightShadows.Soft;
             _floraShadowSun.shadowStrength = 0.72f;
+            // Transparent flora exposes shadow-map texels more readily than the
+            // opaque lot surface. Keep this isolated light crisp as props move
+            // through a building edge without changing the approved world sun.
+            _floraShadowSun.shadowCustomResolution = 4096;
             _floraShadowSun.shadowBias = 0.035f;
             _floraShadowSun.shadowNormalBias = 0.28f;
             _floraShadowSun.cullingMask = 1 << FloraShadowReceiverLayer;

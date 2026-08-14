@@ -2187,6 +2187,16 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FloraShadowLightUsesAnIsolatedHighResolutionMap()
+        {
+            var controllerSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+
+            StringAssert.Contains("_floraShadowSun.shadowCustomResolution = 4096", controllerSource);
+            StringAssert.DoesNotContain("_sun.shadowCustomResolution = 4096", controllerSource);
+        }
+
+        [Test]
         public void LotWorldAddsBuildingsUntilFullAndDeletingOneFreesItsSite()
         {
             var root = new GameObject("Multi Building Capacity Test");
