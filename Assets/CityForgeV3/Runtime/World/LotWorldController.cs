@@ -16,6 +16,10 @@ namespace CityForgeV3.World
     {
         private static readonly Color GroundColor = new(0.27f, 0.34f, 0.27f);
         private const int FloraShadowReceiverLayer = 31;
+        // Experiment branch: show the package's existing semantic massing
+        // beneath the billboard so its real footprint and silhouette can be
+        // inspected directly in the Lot Editor.
+        private const bool ShowBuildingPrimitivesExperiment = true;
         private Camera _camera;
         private HybridBuildingPackage _buildingPackage;
         private Transform _cameraPivot;
@@ -3814,8 +3818,12 @@ namespace CityForgeV3.World
                         renderer.gameObject.name == "CF_PROXY_FOUNDATION";
                     var showsPrimitive =
                         BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
-                    var showsDiagnostic = showsPrimitive &&
+                    var showsExperimentalPrimitive =
+                        ShowBuildingPrimitivesExperiment && !entranceDiagnostic;
+                    var showsDiagnostic = (showsPrimitive ||
+                        showsExperimentalPrimitive) &&
                         (!foundationDiagnostic ||
+                         showsExperimentalPrimitive ||
                          BuildingInspectionPolicy.ShowsFoundationFill(InspectionMode));
                     // Keep semantic geometry active in artwork mode so it can
                     // cast the real, light-driven building shadow while
@@ -3824,7 +3832,7 @@ namespace CityForgeV3.World
                         (showsDiagnostic || !entranceDiagnostic);
                     renderer.shadowCastingMode = entranceDiagnostic
                         ? UnityEngine.Rendering.ShadowCastingMode.Off
-                        : showsPrimitive
+                        : showsPrimitive || showsExperimentalPrimitive
                             ? UnityEngine.Rendering.ShadowCastingMode.On
                             : UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
                 }
