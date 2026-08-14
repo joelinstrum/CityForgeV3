@@ -336,6 +336,10 @@ public static class LiveLotPlacementQaShortcut
     [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Full")]
     private static void MoveBostonTreeFull() => MoveBostonTreeForQa(1.4f, 11.6f);
 
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Wall Overlap")]
+    private static void MoveBostonTreeWallOverlap() =>
+        MoveBostonTreeForQa(5.2f, 1.0f);
+
     private static void MoveBostonTreeForQa(float x, float z)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

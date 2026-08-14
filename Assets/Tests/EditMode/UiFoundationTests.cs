@@ -2159,6 +2159,34 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FloraReceiverSamplesUnityShadowMapAndClipsTransparentPixels()
+        {
+            var path = Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/LitShadowReceivingSprite.shader");
+            var source = File.ReadAllText(path);
+
+            StringAssert.Contains("SHADOW_ATTENUATION", source);
+            StringAssert.Contains("TRANSFER_SHADOW", source);
+            StringAssert.Contains("multi_compile_fwdbase", source);
+            StringAssert.Contains("clip(artwork.a - _Cutoff)", source);
+            StringAssert.DoesNotContain("LightingShadowOnly", source,
+                "The receiver must explicitly sample Unity's shadow map instead of relying on the failed custom surface-lighting callback.");
+        }
+
+        [Test]
+        public void BuildingDepthOccluderWritesOnlyDepthBeforeFlora()
+        {
+            var path = Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/BuildingDepthOccluder.shader");
+            var source = File.ReadAllText(path);
+
+            StringAssert.Contains("ColorMask 0", source);
+            StringAssert.Contains("ZWrite On", source);
+            StringAssert.Contains("ZTest LEqual", source);
+            StringAssert.Contains("Queue\"=\"AlphaTest-10", source);
+        }
+
+        [Test]
         public void LotWorldAddsBuildingsUntilFullAndDeletingOneFreesItsSite()
         {
             var root = new GameObject("Multi Building Capacity Test");
