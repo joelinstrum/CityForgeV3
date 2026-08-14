@@ -16,6 +16,9 @@ namespace CityForgeV3.World
     {
         private static readonly Color GroundColor = new(0.27f, 0.34f, 0.27f);
         private const int FloraShadowReceiverLayer = 31;
+        // Semantic massing remains active for occlusion and native shadows,
+        // but normal artwork mode hides it after the registration experiment.
+        private const bool ShowBuildingPrimitivesExperiment = false;
         private Camera _camera;
         private HybridBuildingPackage _buildingPackage;
         private Transform _cameraPivot;
@@ -64,6 +67,7 @@ namespace CityForgeV3.World
         private Renderer[] _proxyRenderers;
         private Renderer[] _buildingDepthOccluderRenderers;
         private MeshFilter[] _proxyMeshFilters;
+        private readonly List<Vector3> _proxyLocalVertices = new();
         private Transform _projectedShadow;
         private Light _sun;
         private Transform _ground;
@@ -213,6 +217,8 @@ namespace CityForgeV3.World
                 ? 0
                 : _projectedShadow.GetComponent<MeshFilter>().sharedMesh.vertexCount;
         public Vector2 ProjectedShadowLocalDirection { get; private set; }
+        public float BuildingShadowDirectionOffsetDegrees =>
+            _buildingPackage?.ShadowDirectionOffsetDegrees ?? 0f;
         public int ProjectedShadowSourceVertexCount { get; private set; }
         public event Action StateChanged;
         public LotZoomLevel ZoomLevel { get; private set; } = LotZoomLevel.Lot;
@@ -2543,6 +2549,7 @@ namespace CityForgeV3.World
 
             _proxyRenderers = _proxy.GetComponentsInChildren<Renderer>();
             _proxyMeshFilters = _proxy.GetComponentsInChildren<MeshFilter>();
+            CaptureProxyLocalVertices();
             foreach (var renderer in _proxyRenderers)
             {
                 renderer.gameObject.layer = FloraShadowReceiverLayer;
@@ -2582,6 +2589,24 @@ namespace CityForgeV3.World
             }
         }
 
+        private void CaptureProxyLocalVertices()
+        {
+            _proxyLocalVertices.Clear();
+            if (_proxy == null || _proxyMeshFilters == null) return;
+
+            foreach (var filter in _proxyMeshFilters)
+            {
+                if (filter == null || filter.sharedMesh == null ||
+                    filter.gameObject.name == "CF_ANCHOR_ENTRANCE")
+                    continue;
+                foreach (var vertex in filter.sharedMesh.vertices)
+                {
+                    var world = filter.transform.TransformPoint(vertex);
+                    _proxyLocalVertices.Add(_proxy.InverseTransformPoint(world));
+                }
+            }
+        }
+
         private void BuildProjectedShadow()
         {
             _projectedShadow = CreateProjectedShadow("Primitive Projected Shadow");
@@ -2616,7 +2641,8 @@ namespace CityForgeV3.World
                 _proxy.position,
                 _proxy.rotation,
                 HasBuilding,
-                true);
+                true,
+                _proxyLocalVertices);
         }
 
         private void UpdateProjectedShadow(
@@ -2625,7 +2651,8 @@ namespace CityForgeV3.World
             Vector3 buildingPosition,
             Quaternion buildingRotation,
             bool hasBuilding,
-            bool publishDiagnostics)
+            bool publishDiagnostics,
+            IReadOnlyList<Vector3> proxyVertices = null)
         {
             if (shadow == null || package == null)
                 return;
@@ -2662,7 +2689,9 @@ namespace CityForgeV3.World
                 package.ShadowLengthScale(TimeOfDay);
             var maximumProjection =
                 package.MaximumShadowProjectionMeters;
-            var primitivePoints = SemanticPrimitiveVertices(package);
+            var primitivePoints = proxyVertices != null && proxyVertices.Count > 0
+                ? new List<Vector3>(proxyVertices)
+                : SemanticPrimitiveVertices(package);
             var casterHeight = package.HeightMeters;
             if (package.ShadowSemanticVertices.Count >= 12 &&
                 primitivePoints.Count > 0)
@@ -3107,7 +3136,13 @@ namespace CityForgeV3.World
             {
                 _sun.intensity = spec.SunIntensity;
                 _sun.color = spec.SunColor;
+                // Match native lighting to the package's displayed-compass
+                // registration used by projected and flora shadows.
+                var directionOffset = _buildingPackage != null
+                    ? _buildingPackage.ShadowDirectionOffsetDegrees
+                    : 0f;
                 _sun.transform.rotation =
+                    Quaternion.Euler(0f, directionOffset, 0f) *
                     TimeOfDayLighting.SunRotation(TimeOfDay);
             }
 
@@ -3800,6 +3835,9 @@ namespace CityForgeV3.World
                     BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
                 _presentation.SetOpacity(_buildingContextOpacity);
                 ApplyPresentationFacing();
+                _presentation.RegisterToProxy(
+                    _proxyLocalVertices,
+                    BuildingRotation());
             }
 
             if (_proxy != null)
@@ -3814,8 +3852,12 @@ namespace CityForgeV3.World
                         renderer.gameObject.name == "CF_PROXY_FOUNDATION";
                     var showsPrimitive =
                         BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
-                    var showsDiagnostic = showsPrimitive &&
+                    var showsExperimentalPrimitive =
+                        ShowBuildingPrimitivesExperiment && !entranceDiagnostic;
+                    var showsDiagnostic = (showsPrimitive ||
+                        showsExperimentalPrimitive) &&
                         (!foundationDiagnostic ||
+                         showsExperimentalPrimitive ||
                          BuildingInspectionPolicy.ShowsFoundationFill(InspectionMode));
                     // Keep semantic geometry active in artwork mode so it can
                     // cast the real, light-driven building shadow while
@@ -3824,7 +3866,7 @@ namespace CityForgeV3.World
                         (showsDiagnostic || !entranceDiagnostic);
                     renderer.shadowCastingMode = entranceDiagnostic
                         ? UnityEngine.Rendering.ShadowCastingMode.Off
-                        : showsPrimitive
+                        : showsPrimitive || showsExperimentalPrimitive
                             ? UnityEngine.Rendering.ShadowCastingMode.On
                             : UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
                 }

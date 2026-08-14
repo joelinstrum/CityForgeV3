@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace CityForgeV3.World
@@ -18,6 +19,7 @@ namespace CityForgeV3.World
         private Material _alwaysVisibleMaterial;
         private Transform _visualRoot;
         private Sprite[] _sprites;
+        private Sprite[] _registrationSprites;
         private Sprite[] _neutralSprites;
         private Sprite[] _nightOverlays;
         private Sprite[] _fullNightSprites;
@@ -28,6 +30,8 @@ namespace CityForgeV3.World
         private BuildingArtworkSource _artworkSource;
         private TimeOfDayPreset _timeOfDay = TimeOfDayPreset.Noon;
         private int _buildingRotationQuarterTurns;
+        private float _proxyRegistrationScale = 1f;
+        private Vector2 _proxyRegistrationOffset;
 
         public string FacingId => _package.Facing(_facing).Id;
         public int FacingIndex => _facing;
@@ -63,6 +67,7 @@ namespace CityForgeV3.World
             _camera = presentationCamera;
             _package = package;
             _sprites = new Sprite[_package.FacingCount];
+            _registrationSprites = new Sprite[_package.FacingCount];
             _neutralSprites = new Sprite[_package.FacingCount];
             _nightOverlays = new Sprite[_package.FacingCount];
             _fullNightSprites = new Sprite[_package.FacingCount];
@@ -89,6 +94,15 @@ namespace CityForgeV3.World
                     0,
                     SpriteMeshType.FullRect);
                 _sprites[index].name = $"Five Bay {spec.Id}";
+                _registrationSprites[index] = Sprite.Create(
+                    texture,
+                    new Rect(0f, 0f, texture.width, texture.height),
+                    spec.UnityPivot,
+                    _package.PixelsPerMeter,
+                    0,
+                    SpriteMeshType.Tight);
+                _registrationSprites[index].name =
+                    $"{_package.DisplayName} Tight Registration {spec.Id}";
 
                 var neutralTexture =
                     Resources.Load<Texture2D>(spec.NeutralResourcePath);
@@ -244,6 +258,59 @@ namespace CityForgeV3.World
             ApplyAppearance();
         }
 
+        public void RegisterToProxy(
+            IReadOnlyList<Vector3> proxyLocalVertices,
+            Quaternion buildingRotation)
+        {
+            if (_camera == null || _visualRoot == null ||
+                proxyLocalVertices == null || proxyLocalVertices.Count == 0 ||
+                _registrationSprites == null ||
+                _facing < 0 || _facing >= _registrationSprites.Length ||
+                _registrationSprites[_facing] == null)
+            {
+                _proxyRegistrationScale = 1f;
+                _proxyRegistrationOffset = Vector2.zero;
+                AlignToCamera();
+                return;
+            }
+
+            var minX = float.PositiveInfinity;
+            var maxX = float.NegativeInfinity;
+            var minY = float.PositiveInfinity;
+            var maxY = float.NegativeInfinity;
+            foreach (var localVertex in proxyLocalVertices)
+            {
+                var rotated = buildingRotation * localVertex;
+                var projectedX = Vector3.Dot(rotated, _camera.transform.right);
+                var projectedY = Vector3.Dot(rotated, _camera.transform.up);
+                minX = Mathf.Min(minX, projectedX);
+                maxX = Mathf.Max(maxX, projectedX);
+                minY = Mathf.Min(minY, projectedY);
+                maxY = Mathf.Max(maxY, projectedY);
+            }
+
+            var artworkBounds = _registrationSprites[_facing].bounds;
+            if (artworkBounds.size.x <= 0.001f || artworkBounds.size.y <= 0.001f)
+                return;
+
+            var widthScale = (maxX - minX) / artworkBounds.size.x;
+            var heightScale = (maxY - minY) / artworkBounds.size.y;
+            // Preserve the artwork's aspect ratio. A non-uniform fit would
+            // conceal a bad proxy by visibly distorting the approved render.
+            // The larger ratio is the smallest uniform scale that contains
+            // the proxy projection; any remaining visible diagnostic volume
+            // is therefore a real silhouette mismatch, not an anchor error.
+            _proxyRegistrationScale = Mathf.Max(1f, widthScale, heightScale);
+            var proxyCenter = new Vector2(
+                (minX + maxX) * 0.5f,
+                (minY + maxY) * 0.5f);
+            var artworkCenter = new Vector2(
+                artworkBounds.center.x,
+                artworkBounds.center.y) * _proxyRegistrationScale;
+            _proxyRegistrationOffset = proxyCenter - artworkCenter;
+            AlignToCamera();
+        }
+
         public TimeOfDayPreset DirectionalShadePreset =>
             ShadePresetForRotation(_timeOfDay, _buildingRotationQuarterTurns);
 
@@ -394,7 +461,10 @@ namespace CityForgeV3.World
                 transform.rotation = Quaternion.identity;
                 _visualRoot.rotation = renderCamera.transform.rotation;
                 _visualRoot.position =
-                    transform.position - renderCamera.transform.forward * 0.08f;
+                    transform.position - renderCamera.transform.forward * 0.08f +
+                    renderCamera.transform.right * _proxyRegistrationOffset.x +
+                    renderCamera.transform.up * _proxyRegistrationOffset.y;
+                _visualRoot.localScale = Vector3.one * _proxyRegistrationScale;
             }
         }
 
