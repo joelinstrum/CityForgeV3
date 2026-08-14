@@ -36,6 +36,7 @@ namespace CityForgeV3.World
         private readonly List<SpriteRenderer> _floraPresentations = new();
         private readonly List<SpriteRenderer> _floraCastShadows = new();
         private Material _floraLitShadowReceiverMaterial;
+        private Material _floraFrontPriorityMaterial;
         private Light _floraShadowSun;
         private bool _floraEditorActive;
         private bool _floraPlacementActive;
@@ -674,7 +675,57 @@ namespace CityForgeV3.World
             };
             _floraLitShadowReceiverMaterial.SetFloat("_Cutoff", 0.02f);
             _floraLitShadowReceiverMaterial.SetFloat("_ShadowFloor", 0.38f);
+            _floraLitShadowReceiverMaterial.SetFloat("_ZTest",
+                (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             return _floraLitShadowReceiverMaterial;
+        }
+
+        private Material FloraFrontPriorityMaterial()
+        {
+            if (_floraFrontPriorityMaterial != null)
+                return _floraFrontPriorityMaterial;
+            _floraFrontPriorityMaterial = new Material(FloraLitShadowReceiverMaterial())
+            {
+                name = "CF Native Lit Flora Front Priority"
+            };
+            _floraFrontPriorityMaterial.SetFloat("_ZTest",
+                (float)UnityEngine.Rendering.CompareFunction.Always);
+            return _floraFrontPriorityMaterial;
+        }
+
+        private bool FloraIsBeyondNearestBuildingFront(Vector3 localPosition)
+        {
+            var nearestDistance = float.PositiveInfinity;
+            var isBeyondFront = false;
+            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
+            {
+                var catalogEntry = BuildingCatalog.Find(building.BuildingId);
+                var package = HybridBuildingPackageRegistry.Load(
+                    catalogEntry.PackageResourcePath);
+                var rotation = Quaternion.Euler(
+                    0f, building.RotationQuarterTurns * 90f, 0f);
+                var relative = Quaternion.Inverse(rotation) *
+                    (localPosition - new Vector3(building.CellX, 0f, building.CellZ));
+                var halfWidth = package.WidthMeters * 0.5f;
+                var halfDepth = package.DepthMeters * 0.5f;
+                var outsideX = Mathf.Max(Mathf.Abs(relative.x) - halfWidth, 0f);
+                var outsideZ = Mathf.Max(Mathf.Abs(relative.z) - halfDepth, 0f);
+                var distance = outsideX * outsideX + outsideZ * outsideZ;
+                if (distance >= nearestDistance) continue;
+
+                var cameraDirection = _camera == null
+                    ? Vector3.forward
+                    : _camera.transform.position - transform.TransformPoint(
+                        new Vector3(building.CellX, 0f, building.CellZ));
+                cameraDirection.y = 0f;
+                cameraDirection.Normalize();
+                var front = Quaternion.Inverse(rotation) * cameraDirection;
+                var frontEdge = Mathf.Abs(front.x) * halfWidth +
+                    Mathf.Abs(front.z) * halfDepth;
+                nearestDistance = distance;
+                isBeyondFront = Vector3.Dot(relative, front) > frontEdge + 0.01f;
+            }
+            return isBeyondFront;
         }
 
         private Color FloraColorForTime(float alpha)
@@ -3278,6 +3329,11 @@ namespace CityForgeV3.World
                     var order = DepthSortingOrder(
                         new Vector3(flora.PositionX, 0f, flora.PositionZ));
                     _floraPresentations[index].sortingOrder = order;
+                    _floraPresentations[index].sharedMaterial =
+                        FloraIsBeyondNearestBuildingFront(new Vector3(
+                            flora.PositionX, 0f, flora.PositionZ))
+                            ? FloraFrontPriorityMaterial()
+                            : FloraLitShadowReceiverMaterial();
                     if (index < _floraCastShadows.Count &&
                         _floraCastShadows[index] != null)
                         _floraCastShadows[index].sortingOrder = order - 1;

@@ -2209,6 +2209,25 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FrontFloraAndCommittedPropsUseDepthAwarePriority()
+        {
+            var floraShader = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/LitShadowReceivingSprite.shader");
+            var worldSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            var propSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
+
+            StringAssert.Contains("ZTest [_ZTest]", floraShader);
+            StringAssert.Contains("FloraIsBeyondNearestBuildingFront", worldSource);
+            StringAssert.Contains("_camera.transform.position", worldSource);
+            StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
+            StringAssert.Contains("CompareFunction.Always", worldSource);
+            StringAssert.Contains("material.renderQueue = 2450", propSource);
+            StringAssert.Contains("material.renderQueue = 3000", propSource);
+        }
+
+        [Test]
         public void LotWorldAddsBuildingsUntilFullAndDeletingOneFreesItsSite()
         {
             var root = new GameObject("Multi Building Capacity Test");

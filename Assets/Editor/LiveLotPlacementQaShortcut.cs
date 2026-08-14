@@ -344,6 +344,34 @@ public static class LiveLotPlacementQaShortcut
     private static void MoveBostonTreeFrontCollision() =>
         MoveBostonTreeForQa(6.0f, 5.0f);
 
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Side Collision")]
+    private static void MoveBostonTreeSideCollision() =>
+        MoveBostonTreeForQa(7.0f, 1.0f);
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Front Lamppost")]
+    private static void PlaceBostonFrontLamppost()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            if (world.name == "Building Live Placement QA")
+                world.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+        }
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Rear Lamppost")]
+    private static void PlaceBostonRearLamppost()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            if (world.name == "Building Live Placement QA")
+                world.PlacePropForQa("three-lantern-lamppost-v01", -7f, 0f);
+        }
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
     private static void MoveBostonTreeForQa(float x, float z)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

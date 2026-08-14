@@ -6,12 +6,14 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
 
     SubShader
     {
         Tags { "Queue"="AlphaTest" "RenderType"="TransparentCutout" "CanUseSpriteAtlas"="True" }
         Cull Off
+        ZTest [_ZTest]
 
         Pass
         {

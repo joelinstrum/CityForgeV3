@@ -46,6 +46,30 @@ namespace CityForgeV3.World
         public int PropCount => _session.Data.Props?.Count ?? 0;
         public int SelectedPropIndex { get; private set; } = -1;
 
+#if UNITY_EDITOR
+        public bool PlacePropForQa(string propId, float positionX, float positionZ)
+        {
+            _session.Data.Props ??= new List<PlacedProp>();
+            var prop = _session.Data.Props.Find(item =>
+                string.Equals(item.PropId, propId, StringComparison.OrdinalIgnoreCase));
+            if (prop == null)
+            {
+                prop = new PlacedProp
+                {
+                    InstanceId = Guid.NewGuid().ToString("N"),
+                    PropId = propId,
+                    RotationQuarterTurns = 0
+                };
+                _session.Data.Props.Add(prop);
+            }
+            prop.PositionX = positionX;
+            prop.PositionZ = positionZ;
+            RebuildPropPresentations();
+            NotifyStateChanged();
+            return true;
+        }
+#endif
+
         private void BuildPropRoot()
         {
             _propRoot = new GameObject("Placed Props").transform;
@@ -458,6 +482,13 @@ namespace CityForgeV3.World
                     material.DisableKeyword("_ALPHATEST_ON");
                     material.EnableKeyword("_ALPHABLEND_ON");
                     material.renderQueue = 3000;
+                }
+                else
+                {
+                    // Proxy depth and registered building art draw first.
+                    // Committed 3D props then use their real mesh depth, so a
+                    // front lamppost survives while a rear one remains hidden.
+                    material.renderQueue = 2450;
                 }
                 renderer.sharedMaterial = material;
                 // Committed fence meshes use the controlled projected shadow
