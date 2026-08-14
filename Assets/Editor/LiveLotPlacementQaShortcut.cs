@@ -359,6 +359,7 @@ public static class LiveLotPlacementQaShortcut
                 $"shadowVertices={world.ProjectedShadowVertexCount} " +
                 $"shadowBounds={world.ProjectedShadowBounds} " +
                 $"shadowDirection={world.ProjectedShadowLocalDirection} " +
+                $"shadowOffset={world.BuildingShadowDirectionOffsetDegrees:0.#} " +
                 $"sourceVertices={world.ProjectedShadowSourceVertexCount}");
         }
         foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))

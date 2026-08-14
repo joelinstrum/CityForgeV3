@@ -217,6 +217,8 @@ namespace CityForgeV3.World
                 ? 0
                 : _projectedShadow.GetComponent<MeshFilter>().sharedMesh.vertexCount;
         public Vector2 ProjectedShadowLocalDirection { get; private set; }
+        public float BuildingShadowDirectionOffsetDegrees =>
+            _buildingPackage?.ShadowDirectionOffsetDegrees ?? 0f;
         public int ProjectedShadowSourceVertexCount { get; private set; }
         public event Action StateChanged;
         public LotZoomLevel ZoomLevel { get; private set; } = LotZoomLevel.Lot;
@@ -3134,7 +3136,13 @@ namespace CityForgeV3.World
             {
                 _sun.intensity = spec.SunIntensity;
                 _sun.color = spec.SunColor;
+                // Match native lighting to the package's displayed-compass
+                // registration used by projected and flora shadows.
+                var directionOffset = _buildingPackage != null
+                    ? _buildingPackage.ShadowDirectionOffsetDegrees
+                    : 0f;
                 _sun.transform.rotation =
+                    Quaternion.Euler(0f, directionOffset, 0f) *
                     TimeOfDayLighting.SunRotation(TimeOfDay);
             }
 
