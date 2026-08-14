@@ -2187,6 +2187,18 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BuildingArtworkDrawsBetweenProxyDepthAndFlora()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingSprite.shader");
+
+            StringAssert.Contains("Queue\"=\"AlphaTest-5", source);
+            StringAssert.Contains("ZWrite Off", source);
+            StringAssert.Contains("ZTest Always", source);
+            StringAssert.DoesNotContain("Queue\"=\"Transparent", source);
+        }
+
+        [Test]
         public void FloraShadowLightUsesAnIsolatedHighResolutionMap()
         {
             var controllerSource = File.ReadAllText(
