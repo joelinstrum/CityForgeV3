@@ -68,6 +68,7 @@ namespace CityForgeV3.World
         private Renderer[] _proxyRenderers;
         private Renderer[] _buildingDepthOccluderRenderers;
         private MeshFilter[] _proxyMeshFilters;
+        private readonly List<Vector3> _proxyLocalVertices = new();
         private Transform _projectedShadow;
         private Light _sun;
         private Transform _ground;
@@ -2547,6 +2548,7 @@ namespace CityForgeV3.World
 
             _proxyRenderers = _proxy.GetComponentsInChildren<Renderer>();
             _proxyMeshFilters = _proxy.GetComponentsInChildren<MeshFilter>();
+            CaptureProxyLocalVertices();
             foreach (var renderer in _proxyRenderers)
             {
                 renderer.gameObject.layer = FloraShadowReceiverLayer;
@@ -2586,6 +2588,24 @@ namespace CityForgeV3.World
             }
         }
 
+        private void CaptureProxyLocalVertices()
+        {
+            _proxyLocalVertices.Clear();
+            if (_proxy == null || _proxyMeshFilters == null) return;
+
+            foreach (var filter in _proxyMeshFilters)
+            {
+                if (filter == null || filter.sharedMesh == null ||
+                    filter.gameObject.name == "CF_ANCHOR_ENTRANCE")
+                    continue;
+                foreach (var vertex in filter.sharedMesh.vertices)
+                {
+                    var world = filter.transform.TransformPoint(vertex);
+                    _proxyLocalVertices.Add(_proxy.InverseTransformPoint(world));
+                }
+            }
+        }
+
         private void BuildProjectedShadow()
         {
             _projectedShadow = CreateProjectedShadow("Primitive Projected Shadow");
@@ -2620,7 +2640,8 @@ namespace CityForgeV3.World
                 _proxy.position,
                 _proxy.rotation,
                 HasBuilding,
-                true);
+                true,
+                _proxyLocalVertices);
         }
 
         private void UpdateProjectedShadow(
@@ -2629,7 +2650,8 @@ namespace CityForgeV3.World
             Vector3 buildingPosition,
             Quaternion buildingRotation,
             bool hasBuilding,
-            bool publishDiagnostics)
+            bool publishDiagnostics,
+            IReadOnlyList<Vector3> proxyVertices = null)
         {
             if (shadow == null || package == null)
                 return;
@@ -2666,7 +2688,9 @@ namespace CityForgeV3.World
                 package.ShadowLengthScale(TimeOfDay);
             var maximumProjection =
                 package.MaximumShadowProjectionMeters;
-            var primitivePoints = SemanticPrimitiveVertices(package);
+            var primitivePoints = proxyVertices != null && proxyVertices.Count > 0
+                ? new List<Vector3>(proxyVertices)
+                : SemanticPrimitiveVertices(package);
             var casterHeight = package.HeightMeters;
             if (package.ShadowSemanticVertices.Count >= 12 &&
                 primitivePoints.Count > 0)
@@ -3804,6 +3828,9 @@ namespace CityForgeV3.World
                     BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
                 _presentation.SetOpacity(_buildingContextOpacity);
                 ApplyPresentationFacing();
+                _presentation.RegisterToProxy(
+                    _proxyLocalVertices,
+                    BuildingRotation());
             }
 
             if (_proxy != null)
