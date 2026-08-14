@@ -1,0 +1,103 @@
+{
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "id": "cityforge.v3.residential.new_england_house_1720_01",
+  "displayName": "New England House 1720",
+  "shortDisplayName": "1720 House",
+  "category": "Residential",
+  "sizeClass": "medium",
+  "libraryShortcut": "H",
+  "reviewStatus": "PENDING LIGHTING REVIEW",
+  "occupancyWidth": 2,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 17.7,
+    "depthMeters": 8.25,
+    "heightMeters": 13.395,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "with-building",
+    "frontFacingQuarterTurns": 2,
+    "rotationAnchor": [0.0, 0.0, 0.0]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 26.0,
+    "targetHeightMeters": 3.15
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/NewEnglandHouse1720ProxyV21",
+    "sourceVersion": "Blender v21",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_GABLE",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 44.043011,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/plan",
+    "pivot": [0.5, 0.5]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.50000006, 0.711601585],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/front-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/front-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Night/front-right",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-right/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-right/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-right/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-right/evening",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Winter/front-right"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.50000006, 0.711601585],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/rear-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/rear-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Night/rear-right",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-right/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-right/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-right/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-right/evening",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Winter/rear-right"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.499999791, 0.711601615],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/rear-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/rear-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Night/rear-left",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-left/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-left/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-left/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/rear-left/evening",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Winter/rear-left"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.49999997, 0.711601466],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/front-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Neutral/front-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Night/front-left",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-left/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-left/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-left/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Shading/front-left/evening",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandHouse1720V21/Winter/front-left"
+    }
+  ]
+}

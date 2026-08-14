@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_marlowe_art_deco_hotel_02",
+  "sizeClass": "civic",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 20.0,
+    "depth": 15.217265,
+    "height": 26.766184
+  },
+  "occupancy": {
+    "width": 2,
+    "depth": 2,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.0,
+        "row": -0.760863
+      },
+      {
+        "column": 1.0,
+        "row": -0.760863
+      },
+      {
+        "column": 1.0,
+        "row": 0.760863
+      },
+      {
+        "column": -1.0,
+        "row": 0.760863
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.0,
+          "row": -0.760863
+        },
+        {
+          "column": 1.0,
+          "row": -0.760863
+        },
+        {
+          "column": 1.0,
+          "row": 0.760863
+        },
+        {
+          "column": -1.0,
+          "row": 0.760863
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.0,
+          "row": -0.760863
+        },
+        {
+          "column": 1.0,
+          "row": -0.760863
+        },
+        {
+          "column": 1.0,
+          "row": 0.760863
+        },
+        {
+          "column": -1.0,
+          "row": 0.760863
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.0,
+        "row": -0.760863
+      },
+      {
+        "column": 1.0,
+        "row": -0.760863
+      },
+      {
+        "column": 1.0,
+        "row": 0.760863
+      },
+      {
+        "column": -1.0,
+        "row": 0.760863
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.499999732,
+        "y": 0.794070408
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.49999994,
+        "y": 0.794070378
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.500000119,
+        "y": 0.794070572
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.500000119,
+        "y": 0.794070766
+      }
+    }
+  ],
+  "placementScale": 1
+}

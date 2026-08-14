@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_home_insurance_1885_01",
+  "sizeClass": "custom",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 24.0,
+    "depth": 24.8595,
+    "height": 41.8953
+  },
+  "occupancy": {
+    "width": 3,
+    "depth": 3,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.2,
+        "row": -1.242975
+      },
+      {
+        "column": 1.2,
+        "row": -1.242975
+      },
+      {
+        "column": 1.2,
+        "row": 1.242975
+      },
+      {
+        "column": -1.2,
+        "row": 1.242975
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.2,
+          "row": -1.242975
+        },
+        {
+          "column": 1.2,
+          "row": -1.242975
+        },
+        {
+          "column": 1.2,
+          "row": 1.242975
+        },
+        {
+          "column": -1.2,
+          "row": 1.242975
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.2,
+          "row": -1.242975
+        },
+        {
+          "column": 1.2,
+          "row": -1.242975
+        },
+        {
+          "column": 1.2,
+          "row": 1.242975
+        },
+        {
+          "column": -1.2,
+          "row": 1.242975
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.2,
+        "row": -1.242975
+      },
+      {
+        "column": 1.2,
+        "row": -1.242975
+      },
+      {
+        "column": 1.2,
+        "row": 1.242975
+      },
+      {
+        "column": -1.2,
+        "row": 1.242975
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.50000006,
+        "y": 0.805198654
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.499999911,
+        "y": 0.805197939
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.805197954
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.49999994,
+        "y": 0.805198178
+      }
+    }
+  ],
+  "placementScale": 1
+}

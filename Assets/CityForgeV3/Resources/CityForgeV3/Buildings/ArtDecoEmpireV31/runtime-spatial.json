@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "building_art_deco_empire_tower_01",
+  "sizeClass": "custom",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 18.58,
+    "depth": 22.25,
+    "height": 41.79
+  },
+  "occupancy": {
+    "width": 2,
+    "depth": 3,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.929,
+        "row": -1.1125
+      },
+      {
+        "column": 0.929,
+        "row": -1.1125
+      },
+      {
+        "column": 0.929,
+        "row": 1.1125
+      },
+      {
+        "column": -0.929,
+        "row": 1.1125
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.929,
+          "row": -1.1125
+        },
+        {
+          "column": 0.929,
+          "row": -1.1125
+        },
+        {
+          "column": 0.929,
+          "row": 1.1125
+        },
+        {
+          "column": -0.929,
+          "row": 1.1125
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.929,
+          "row": -1.1125
+        },
+        {
+          "column": 0.929,
+          "row": -1.1125
+        },
+        {
+          "column": 0.929,
+          "row": 1.1125
+        },
+        {
+          "column": -0.929,
+          "row": 1.1125
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.929,
+        "row": -1.1125
+      },
+      {
+        "column": 0.929,
+        "row": -1.1125
+      },
+      {
+        "column": 0.929,
+        "row": 1.1125
+      },
+      {
+        "column": -0.929,
+        "row": 1.1125
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.84641026
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.49999994,
+        "y": 0.846410215
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.499999821,
+        "y": 0.846410364
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.500000357,
+        "y": 0.846410602
+      }
+    }
+  ],
+  "placementScale": 1
+}

@@ -1,0 +1,79 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.wide-two-lane-avenue.v4",
+  "displayName": "Four-Lane Avenue — Straight Prototype",
+  "tileSizeMeters": 10,
+  "roadWidthMeters": 16.4,
+  "artworkWidthMeters": 20,
+  "artworkLengthMeters": 10,
+  "occupancyCrossCells": 2,
+  "traffic": {
+    "mode": "vehicle",
+    "direction": "two_way",
+    "laneCount": 4,
+    "driveSide": "right",
+    "laneOffsetMeters": 2.05,
+    "laneOffsetsMeters": [
+      2.05,
+      6.15
+    ],
+    "speedLimitMetersPerSecond": 9,
+    "minorApproachControl": "yield"
+  },
+  "source": "CityForgeV3/DesignTemplates/Roads/FlatColorV2PrototypesV07/wide-two-lane-avenue",
+  "pieces": [
+    {
+      "id": "straight",
+      "topology": "Straight",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV4/wide-two-lane-avenue/straight",
+      "ports": [
+        "North",
+        "South"
+      ],
+      "artworkStatus": "prototype-v07"
+    },
+    {
+      "id": "corner",
+      "topology": "Corner",
+      "resourcePath": "",
+      "ports": [
+        "North",
+        "East"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "t-junction",
+      "topology": "TJunction",
+      "resourcePath": "",
+      "ports": [
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "four-way",
+      "topology": "FourWay",
+      "resourcePath": "",
+      "ports": [
+        "North",
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "endpoint",
+      "topology": "Endpoint",
+      "resourcePath": "",
+      "ports": [
+        "North"
+      ],
+      "artworkStatus": "pending"
+    }
+  ],
+  "independentMarkings": true
+}

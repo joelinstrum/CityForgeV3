@@ -1,0 +1,79 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.divided-boulevard.v3",
+  "displayName": "Four-Lane Divided Boulevard — Straight Prototype",
+  "tileSizeMeters": 10,
+  "roadWidthMeters": 15,
+  "artworkWidthMeters": 20,
+  "artworkLengthMeters": 10,
+  "occupancyCrossCells": 2,
+  "traffic": {
+    "mode": "vehicle",
+    "direction": "two_way",
+    "laneCount": 4,
+    "driveSide": "right",
+    "laneOffsetMeters": 3.175,
+    "laneOffsetsMeters": [
+      3.175,
+      6.925
+    ],
+    "speedLimitMetersPerSecond": 9.5,
+    "minorApproachControl": "yield"
+  },
+  "source": "CityForgeV3/DesignTemplates/Roads/FlatColorV2PrototypesV07/divided-boulevard",
+  "pieces": [
+    {
+      "id": "straight",
+      "topology": "Straight",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV3/divided-boulevard/straight",
+      "ports": [
+        "North",
+        "South"
+      ],
+      "artworkStatus": "prototype-v07"
+    },
+    {
+      "id": "corner",
+      "topology": "Corner",
+      "resourcePath": "",
+      "ports": [
+        "North",
+        "East"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "t-junction",
+      "topology": "TJunction",
+      "resourcePath": "",
+      "ports": [
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "four-way",
+      "topology": "FourWay",
+      "resourcePath": "",
+      "ports": [
+        "North",
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "pending"
+    },
+    {
+      "id": "endpoint",
+      "topology": "Endpoint",
+      "resourcePath": "",
+      "ports": [
+        "North"
+      ],
+      "artworkStatus": "pending"
+    }
+  ],
+  "independentMarkings": true
+}

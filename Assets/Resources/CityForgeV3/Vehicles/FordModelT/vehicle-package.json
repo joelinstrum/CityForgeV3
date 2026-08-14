@@ -1,0 +1,15 @@
+{
+  "schema": "cityforge-v3-vehicle-package-v1",
+  "id": "ford-model-t-1920s",
+  "displayName": "Ford Model T",
+  "modelResourcePath": "CityForgeV3/Vehicles/FordModelT/CF_Vehicle_FordModelT_LOD0_v01",
+  "traffic": {
+    "lengthMeters": 3.4,
+    "minimumStoppedGapMeters": 2.0,
+    "followingTimeSeconds": 0.9,
+    "accelerationMetersPerSecondSquared": 1.25,
+    "comfortableBrakeMetersPerSecondSquared": 3.2,
+    "minimumDesiredSpeedFactor": 0.88,
+    "maximumDesiredSpeedFactor": 0.96
+  }
+}

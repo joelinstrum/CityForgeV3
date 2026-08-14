@@ -1,0 +1,31 @@
+{
+  "schema": "cityforge-v3-camera-projection-v1",
+  "id": "cityforge.v3.hybrid.federal_georgian_five_bay_01.founders_projection_v02",
+  "supersedes": "FIVE_BAY_HYBRID_V01.json#facings.cameraAzimuthDegrees",
+  "source": {
+    "building": "Founder's Colonial",
+    "contract": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/RenderMasters/CF_Building_FoundersCabin_01/v01_standard/assembly_contract_v01.json"
+  },
+  "camera": {
+    "projection": "orthographic",
+    "elevationDegrees": 30.0,
+    "radiusMeters": 26.0,
+    "targetMeters": [0.0, 0.0, 3.15],
+    "runtimeTargetUnityMeters": [0.0, 3.15, 0.0],
+    "runtimeOrthographicSize": 11.5,
+    "framingPolicy": "preserve the V3 lot-editor framing while adopting the exact Founder's direction and elevation"
+  },
+  "facings": [
+    { "id": "front-right", "cameraAzimuthDegrees": -55.5 },
+    { "id": "rear-right", "cameraAzimuthDegrees": 34.5 },
+    { "id": "rear-left", "cameraAzimuthDegrees": 124.5 },
+    { "id": "front-left", "cameraAzimuthDegrees": -145.5 }
+  ],
+  "preserved": [
+    "v28 directional artwork bytes",
+    "measured per-facing pivots",
+    "foundation-center origin",
+    "metric proxy dimensions",
+    "main-menu artwork and controls"
+  ]
+}

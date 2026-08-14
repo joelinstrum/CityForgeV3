@@ -1,0 +1,35 @@
+{
+  "schema": "cityforge-v3-lot-texture-catalog-v1",
+  "sourceProject": "City Forge - Foundations Next",
+  "baseTextures": [
+    { "id": "grass-poor", "name": "Natural Grass — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2" },
+    { "id": "grass-middle", "name": "Natural Grass — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2" },
+    { "id": "grass-lush", "name": "Natural Grass — Lush", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-lush-2" },
+    { "id": "lawn-poor", "name": "Mowed Lawn — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor" },
+    { "id": "lawn-middle", "name": "Mowed Lawn — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle" },
+    { "id": "lawn-wealthy", "name": "Mowed Lawn — Wealthy", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-wealthy" }
+  ],
+  "overlayTextures": [
+    {
+      "id": "brick-walkway",
+      "name": "Brick Walkway",
+      "resource": "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway",
+      "footprintMeters": [10, 10],
+      "transparent": true
+    },
+    {
+      "id": "concrete-sidewalk",
+      "name": "Concrete Sidewalk",
+      "resource": "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk",
+      "footprintMeters": [10, 10],
+      "transparent": false
+    },
+    {
+      "id": "fancy-sidewalk",
+      "name": "Fancy Sidewalk",
+      "resource": "CityForgeV3/LotTextures/UrbanOverlaysV01/fancy-sidewalk-overlay",
+      "footprintMeters": [10, 10],
+      "transparent": false
+    }
+  ]
+}

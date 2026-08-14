@@ -1,0 +1,24 @@
+{
+  "schema": "cityforge-v3-active-building-catalog-v1",
+  "packageResourcePaths": [
+    "CityForgeV3/Buildings/ColonialGovernmentHouseV15/building-package",
+    "CityForgeV3/Buildings/NewEnglandHouse1720V21/building-package",
+    "CityForgeV3/Buildings/NewEnglandThreeBayV21/building-package",
+    "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/building-package",
+    "CityForgeV3/Buildings/ArtDecoEmpireV31/building-package",
+    "CityForgeV3/Buildings/ArtDecoCornerV08/building-package",
+    "CityForgeV3/Buildings/BeauxArtsCommercialV02/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/CornerMercantileV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/CornerstoneBoutiqueV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/OConnellGroceriesV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/OldBrickButcherV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/OldBrickTenementV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV01/OldTownGeneralStoreV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV02/ColonialRowHousesV01/building-package",
+    "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/building-package",
+    "CityForgeV3/Buildings/SecondEmpireTripoV07/building-package",
+    "CityForgeV3/Buildings/BostonHistoricPubV01/building-package",
+    "CityForgeV3/Buildings/PubQa20DegV05/building-package"
+  ]
+}

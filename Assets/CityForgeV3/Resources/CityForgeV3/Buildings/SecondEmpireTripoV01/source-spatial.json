@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_second_empire_tripo_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 14.80523,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -6.5493,
+        "y": -7.0
+      },
+      {
+        "x": 6.5493,
+        "y": -7.0
+      },
+      {
+        "x": 6.5493,
+        "y": 7.0
+      },
+      {
+        "x": -6.5493,
+        "y": 7.0
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999847,
+        "y": 751.832123
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000244,
+        "y": 751.832306
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 751.832214
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999939,
+        "y": 751.83194
+      }
+    }
+  ]
+}

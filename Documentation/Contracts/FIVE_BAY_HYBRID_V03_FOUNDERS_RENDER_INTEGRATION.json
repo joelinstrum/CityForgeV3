@@ -1,0 +1,24 @@
+{
+  "schema": "cityforge-v3-hybrid-render-integration-v1",
+  "id": "cityforge.v3.hybrid.colonial_government_house.founders_render_v03",
+  "supersedesPresentation": "FIVE_BAY_HYBRID_V01.json",
+  "sourceRenderContract": "../../Authoring/Buildings/ColonialGovernmentHouse/v03_founders_projection/render_contract_v03.json",
+  "resourceRoot": "CityForgeV3/Buildings/FiveBayFoundersV03",
+  "projection": {
+    "elevationDegrees": 30.0,
+    "azimuths": [-55.5, 34.5, 124.5, -145.5],
+    "targetMeters": [0.0, 0.0, 3.15],
+    "radiusMeters": 26.0,
+    "orthographicScale": 16.8,
+    "canvasPixels": [2048, 2048],
+    "pixelsPerMeter": 121.904762
+  },
+  "pivotPolicy": "normalized projection of Blender world origin, top-origin source converted exactly once for Unity",
+  "preserved": [
+    "approved v28-derived geometry",
+    "approved brick materials and UVs",
+    "approved neutral lighting",
+    "foundation-center world anchor",
+    "metric proxy dimensions"
+  ]
+}

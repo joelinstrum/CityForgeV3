@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_marlowe_art_deco_hotel_02",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 26.766183530387867,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -10.0,
+        "y": -7.608632569780013
+      },
+      {
+        "x": 10.0,
+        "y": -7.608632569780013
+      },
+      {
+        "x": 10.0,
+        "y": 7.608632569780013
+      },
+      {
+        "x": -10.0,
+        "y": 7.608632569780013
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999588,
+        "y": 1219.692146
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000183,
+        "y": 1219.692696
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000183,
+        "y": 1219.692398
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999908,
+        "y": 1219.692101
+      }
+    }
+  ]
+}

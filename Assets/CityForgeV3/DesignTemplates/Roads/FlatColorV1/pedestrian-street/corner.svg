@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Pedestrian Street — Corner</title>
+  <desc>City Forge 10 meter flat-color material template. Transparent exterior.</desc>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#D4A66F" stroke-width="760" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#E8DFCF" stroke-width="650" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#C98972" stroke-width="610" stroke-linecap="butt" stroke-linejoin="round"/>
+  
+</svg>

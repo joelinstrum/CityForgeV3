@@ -1,0 +1,80 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building.commercial.beaux_arts_commercial_01",
+  "sizeClass": "civic",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 24.3067,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -10.0,
+        "y": -7.3738
+      },
+      {
+        "x": 10.0,
+        "y": -7.3738
+      },
+      {
+        "x": 10.0,
+        "y": 7.3738
+      },
+      {
+        "x": -10.0,
+        "y": 7.3738
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999771,
+        "y": 1165.292336
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999817,
+        "y": 1165.292244
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000092,
+        "y": 1165.292084
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.99968,
+        "y": 1165.292587
+      }
+    }
+  ]
+}

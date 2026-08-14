@@ -1,0 +1,131 @@
+{
+  "id": "cityforge.base.building_home_insurance_1885_01",
+  "displayName": "Home Insurance Building (1885)",
+  "shortDisplayName": "Home Insurance 1885",
+  "category": "Commercial",
+  "sizeClass": "custom",
+  "libraryShortcut": "H",
+  "reviewStatus": "V01 BATCH IMPORT \u2014 JOE REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 3,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 24.0,
+    "depthMeters": 24.8595,
+    "heightMeters": 41.8953,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 92.0021,
+    "targetHeightMeters": 18.015
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/semantic-primitive-v01",
+    "sourceVersion": "Data-driven rectangular semantic primitive V01",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 30.0515,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "authored source material",
+    "policy": "positive lit-minus-unlit registered overlays"
+  },
+  "shadow": {
+    "footprintScale": 1.05,
+    "maximumProjectionMeters": 37.7058,
+    "morningLengthScale": 0.55,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.45
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.0,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.805198654
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 35.0,
+      "pivotTopOrigin": [
+        0.49999994,
+        0.805198178
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 125.0,
+      "pivotTopOrigin": [
+        0.5,
+        0.805197954
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.0,
+      "pivotTopOrigin": [
+        0.499999911,
+        0.805197939
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV01/HomeInsurance1885V01/front-left-evening"
+    }
+  ]
+}

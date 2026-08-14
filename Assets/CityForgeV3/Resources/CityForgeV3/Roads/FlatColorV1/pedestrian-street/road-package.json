@@ -1,0 +1,71 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.pedestrian-street.v1",
+  "displayName": "Pedestrian Street",
+  "tileSizeMeters": 10,
+  "roadWidthMeters": 5.957,
+  "traffic": {
+    "mode": "pedestrian",
+    "direction": "none",
+    "laneCount": 0,
+    "driveSide": "right",
+    "laneOffsetMeters": 0,
+    "speedLimitMetersPerSecond": 1.5,
+    "minorApproachControl": "yield"
+  },
+  "source": "CityForgeV3/DesignTemplates/Roads/FlatColorV1/pedestrian-street",
+  "pieces": [
+    {
+      "id": "straight",
+      "topology": "Straight",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/pedestrian-street/straight",
+      "ports": [
+        "North",
+        "South"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "corner",
+      "topology": "Corner",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/pedestrian-street/corner",
+      "ports": [
+        "North",
+        "East"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "t-junction",
+      "topology": "TJunction",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/pedestrian-street/t-junction",
+      "ports": [
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "four-way",
+      "topology": "FourWay",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/pedestrian-street/four-way",
+      "ports": [
+        "North",
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "endpoint",
+      "topology": "Endpoint",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/pedestrian-street/endpoint",
+      "ports": [
+        "North"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    }
+  ]
+}

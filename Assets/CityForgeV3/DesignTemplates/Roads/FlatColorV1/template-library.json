@@ -1,0 +1,303 @@
+{
+  "schema": "cityforge-road-template-library-v1",
+  "tilePixels": 1024,
+  "tileSizeMeters": 10,
+  "background": "transparent",
+  "palette": {
+    "transparent": "#00000000",
+    "road_surface": "#59636B",
+    "sidewalk_surface": "#D4A66F",
+    "curb": "#E8DFCF",
+    "shoulder": "#9A8467",
+    "pedestrian_surface": "#C98972",
+    "center_marking": "#E7C95B",
+    "direction_guide": "#68C7D4"
+  },
+  "notes": [
+    "Flat colors are semantic material zones, not final artwork.",
+    "Traffic behavior belongs to the family contract, not the texture pixels.",
+    "Direction guides and center markings are guides and may be replaced or hidden during the material pass."
+  ],
+  "families": [
+    {
+      "id": "two-lane-with-sidewalk",
+      "displayName": "Two-Lane Street with Sidewalks",
+      "behavior": {
+        "mode": "vehicle",
+        "direction": "two_way",
+        "laneCount": 2,
+        "suggestedSpeedMetersPerSecond": 8.5
+      },
+      "geometry": {
+        "roadWidthPixels": 512,
+        "curbOuterWidthPixels": 552,
+        "treatmentOuterWidthPixels": 780,
+        "treatmentRole": "sidewalk_surface"
+      },
+      "pieces": [
+        {
+          "id": "straight",
+          "topology": "Straight",
+          "ports": [
+            "North",
+            "South"
+          ],
+          "svg": "straight.svg",
+          "png": "straight.png"
+        },
+        {
+          "id": "corner",
+          "topology": "Corner",
+          "ports": [
+            "North",
+            "East"
+          ],
+          "svg": "corner.svg",
+          "png": "corner.png"
+        },
+        {
+          "id": "t-junction",
+          "topology": "TJunction",
+          "ports": [
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "t-junction.svg",
+          "png": "t-junction.png"
+        },
+        {
+          "id": "four-way",
+          "topology": "FourWay",
+          "ports": [
+            "North",
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "four-way.svg",
+          "png": "four-way.png"
+        },
+        {
+          "id": "endpoint",
+          "topology": "Endpoint",
+          "ports": [
+            "North"
+          ],
+          "svg": "endpoint.svg",
+          "png": "endpoint.png"
+        }
+      ]
+    },
+    {
+      "id": "one-way-with-sidewalk",
+      "displayName": "One-Way Street with Sidewalks",
+      "behavior": {
+        "mode": "vehicle",
+        "direction": "one_way",
+        "laneCount": 1,
+        "suggestedSpeedMetersPerSecond": 7
+      },
+      "geometry": {
+        "roadWidthPixels": 390,
+        "curbOuterWidthPixels": 430,
+        "treatmentOuterWidthPixels": 690,
+        "treatmentRole": "sidewalk_surface"
+      },
+      "pieces": [
+        {
+          "id": "straight",
+          "topology": "Straight",
+          "ports": [
+            "North",
+            "South"
+          ],
+          "svg": "straight.svg",
+          "png": "straight.png"
+        },
+        {
+          "id": "corner",
+          "topology": "Corner",
+          "ports": [
+            "North",
+            "East"
+          ],
+          "svg": "corner.svg",
+          "png": "corner.png"
+        },
+        {
+          "id": "t-junction",
+          "topology": "TJunction",
+          "ports": [
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "t-junction.svg",
+          "png": "t-junction.png"
+        },
+        {
+          "id": "four-way",
+          "topology": "FourWay",
+          "ports": [
+            "North",
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "four-way.svg",
+          "png": "four-way.png"
+        },
+        {
+          "id": "endpoint",
+          "topology": "Endpoint",
+          "ports": [
+            "North"
+          ],
+          "svg": "endpoint.svg",
+          "png": "endpoint.png"
+        }
+      ]
+    },
+    {
+      "id": "alley",
+      "displayName": "Alley",
+      "behavior": {
+        "mode": "vehicle",
+        "direction": "two_way",
+        "laneCount": 1,
+        "suggestedSpeedMetersPerSecond": 3.5
+      },
+      "geometry": {
+        "roadWidthPixels": 350,
+        "curbOuterWidthPixels": 390,
+        "treatmentOuterWidthPixels": 470,
+        "treatmentRole": "shoulder"
+      },
+      "pieces": [
+        {
+          "id": "straight",
+          "topology": "Straight",
+          "ports": [
+            "North",
+            "South"
+          ],
+          "svg": "straight.svg",
+          "png": "straight.png"
+        },
+        {
+          "id": "corner",
+          "topology": "Corner",
+          "ports": [
+            "North",
+            "East"
+          ],
+          "svg": "corner.svg",
+          "png": "corner.png"
+        },
+        {
+          "id": "t-junction",
+          "topology": "TJunction",
+          "ports": [
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "t-junction.svg",
+          "png": "t-junction.png"
+        },
+        {
+          "id": "four-way",
+          "topology": "FourWay",
+          "ports": [
+            "North",
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "four-way.svg",
+          "png": "four-way.png"
+        },
+        {
+          "id": "endpoint",
+          "topology": "Endpoint",
+          "ports": [
+            "North"
+          ],
+          "svg": "endpoint.svg",
+          "png": "endpoint.png"
+        }
+      ]
+    },
+    {
+      "id": "pedestrian-street",
+      "displayName": "Pedestrian Street",
+      "behavior": {
+        "mode": "pedestrian",
+        "direction": "none",
+        "laneCount": 0,
+        "suggestedSpeedMetersPerSecond": 1.5
+      },
+      "geometry": {
+        "roadWidthPixels": 610,
+        "curbOuterWidthPixels": 650,
+        "treatmentOuterWidthPixels": 760,
+        "treatmentRole": "sidewalk_surface"
+      },
+      "pieces": [
+        {
+          "id": "straight",
+          "topology": "Straight",
+          "ports": [
+            "North",
+            "South"
+          ],
+          "svg": "straight.svg",
+          "png": "straight.png"
+        },
+        {
+          "id": "corner",
+          "topology": "Corner",
+          "ports": [
+            "North",
+            "East"
+          ],
+          "svg": "corner.svg",
+          "png": "corner.png"
+        },
+        {
+          "id": "t-junction",
+          "topology": "TJunction",
+          "ports": [
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "t-junction.svg",
+          "png": "t-junction.png"
+        },
+        {
+          "id": "four-way",
+          "topology": "FourWay",
+          "ports": [
+            "North",
+            "East",
+            "South",
+            "West"
+          ],
+          "svg": "four-way.svg",
+          "png": "four-way.png"
+        },
+        {
+          "id": "endpoint",
+          "topology": "Endpoint",
+          "ports": [
+            "North"
+          ],
+          "svg": "endpoint.svg",
+          "png": "endpoint.png"
+        }
+      ]
+    }
+  ]
+}

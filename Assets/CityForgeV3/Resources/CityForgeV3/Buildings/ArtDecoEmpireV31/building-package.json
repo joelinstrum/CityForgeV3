@@ -1,0 +1,123 @@
+{
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "id": "cityforge.base.building.commercial.art_deco_empire_tower_01",
+  "displayName": "Empire Supply Company Tower",
+  "shortDisplayName": "Empire Tower",
+  "category": "Commercial",
+  "sizeClass": "custom",
+  "libraryShortcut": "E",
+  "reviewStatus": "JOE APPROVED BUILDING \u2014 V31 NIGHT HYBRID",
+  "occupancyWidth": 2,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 18.58,
+    "depthMeters": 22.25,
+    "heightMeters": 41.79,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 2,
+    "rotationAnchor": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 72.0,
+    "targetHeightMeters": 20.0
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/semantic-primitive-v31",
+    "sourceVersion": "Blender V31 metric derivative",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 30.72,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "upperWindowLitFraction": 0.35,
+    "storefrontAlwaysLit": true,
+    "occupancyMask": "deterministic-v31"
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.84641026
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000357,
+        0.846410602
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999821,
+        0.846410364
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.49999994,
+        0.846410215
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoEmpireV31/front-left-evening"
+    }
+  ]
+}

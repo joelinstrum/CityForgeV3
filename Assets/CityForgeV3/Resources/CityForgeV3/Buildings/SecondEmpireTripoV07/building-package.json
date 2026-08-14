@@ -1,0 +1,193 @@
+{
+  "id": "cityforge.base.building_second_empire_tripo_01",
+  "displayName": "Second Empire Mansion",
+  "shortDisplayName": "Second Empire",
+  "category": "Residential",
+  "sizeClass": "large",
+  "libraryShortcut": "S",
+  "reviewStatus": "V07 APERTURE REGISTRATION + COMPACT SEMANTIC SHADOW \u2014 JOE REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 2,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 13.0986,
+    "depthMeters": 14.0,
+    "heightMeters": 14.80523,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 35.0,
+    "targetHeightMeters": 6.36625
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/semantic-primitive-v06",
+    "sourceVersion": "Data-driven rectangular semantic primitive V06",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 42.666667,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "same canonical geometry with configured emissive pane cells",
+    "policy": "positive lit-minus-unlit registered overlays"
+  },
+  "shadow": {
+    "footprintScale": 0.87,
+    "maximumProjectionMeters": 9.0,
+    "morningLengthScale": 0.42,
+    "noonLengthScale": 0.34,
+    "afternoonLengthScale": 0.48,
+    "eveningLengthScale": 0.38,
+    "opacityMultiplier": 0.92,
+    "semanticVertices": [
+      -6.0,
+      0.0,
+      -6.4,
+      6.0,
+      0.0,
+      -6.4,
+      6.0,
+      0.0,
+      6.4,
+      -6.0,
+      0.0,
+      6.4,
+      -5.8,
+      9.0,
+      -6.2,
+      5.8,
+      9.0,
+      -6.2,
+      5.8,
+      9.0,
+      6.2,
+      -5.8,
+      9.0,
+      6.2,
+      -4.6,
+      12.7,
+      -5.0,
+      4.6,
+      12.7,
+      -5.0,
+      4.6,
+      12.7,
+      5.0,
+      -4.6,
+      12.7,
+      5.0,
+      -2.8,
+      14.1,
+      -2.9,
+      2.8,
+      14.1,
+      -2.9,
+      2.8,
+      14.1,
+      2.9,
+      -2.8,
+      14.1,
+      2.9,
+      -4.8,
+      14.8,
+      -4.4,
+      -3.9,
+      14.8,
+      -4.4,
+      4.0,
+      14.8,
+      3.8,
+      4.9,
+      14.8,
+      3.8
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.499999851,
+        0.734211058
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000238,
+        0.734211236
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.734211146
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.49999994,
+        0.734210879
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/SecondEmpireTripoV07/front-left-evening"
+    }
+  ]
+}

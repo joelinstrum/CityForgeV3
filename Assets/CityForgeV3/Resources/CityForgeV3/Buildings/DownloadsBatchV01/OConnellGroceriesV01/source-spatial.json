@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_oconnell_groceries_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 16.2896,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.25,
+        "y": -5.3913
+      },
+      {
+        "x": 5.25,
+        "y": -5.3913
+      },
+      {
+        "x": 5.25,
+        "y": 5.3913
+      },
+      {
+        "x": -5.25,
+        "y": 5.3913
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000366,
+        "y": 1236.926811
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.0,
+        "y": 1236.926216
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000092,
+        "y": 1236.92585
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999222,
+        "y": 1236.92688
+      }
+    }
+  ]
+}

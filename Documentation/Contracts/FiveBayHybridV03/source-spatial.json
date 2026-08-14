@@ -1,0 +1,71 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "CF_V3_Hybrid_ColonialGovernmentHouse_01_v03",
+  "sizeClass": "medium",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": { "x": 0, "y": 0, "z": 0 },
+  "heightMeters": 9.165,
+  "foundationMeters": {
+    "id": "physical-foundation",
+    "points": [
+      { "x": -6.25, "y": -2.975 },
+      { "x": 6.25, "y": -2.975 },
+      { "x": 6.25, "y": 2.975 },
+      { "x": -6.25, "y": 2.975 }
+    ]
+  },
+  "collisionMeters": [
+    {
+      "id": "solid-shell",
+      "points": [
+        { "x": -6.25, "y": -2.975 },
+        { "x": 6.25, "y": -2.975 },
+        { "x": 6.25, "y": 2.975 },
+        { "x": -6.25, "y": 2.975 }
+      ]
+    }
+  ],
+  "occlusionMeters": [
+    {
+      "id": "building-occluder",
+      "points": [
+        { "x": -6.25, "y": -2.975 },
+        { "x": 6.25, "y": -2.975 },
+        { "x": 6.25, "y": 2.975 },
+        { "x": -6.25, "y": 2.975 }
+      ]
+    }
+  ],
+  "shadowReceiverMeters": {
+    "id": "shadow-receiver",
+    "points": [
+      { "x": -6.25, "y": -2.975 },
+      { "x": 6.25, "y": -2.975 },
+      { "x": 6.25, "y": 2.975 },
+      { "x": -6.25, "y": 2.975 }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1024.0, "y": 1356.5538940429688 }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1023.9994506835938, "y": 1356.5546264648438 }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1023.9996337890625, "y": 1356.5540771484375 }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1024.000732421875, "y": 1356.5545043945312 }
+    }
+  ]
+}

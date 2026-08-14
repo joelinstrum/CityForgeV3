@@ -1,0 +1,80 @@
+{
+  "schema": "cityforge-v3-hybrid-import-report-v1",
+  "importedAt": "2026-07-31T11:32:42.405Z",
+  "specPath": "/Users/joelinstrum/dev/CityForgeMCP/specs/v3-hybrid/new-england-three-bay-v19.json",
+  "sourceBlend": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/NE_House_ThreeBay_01_true_reveals_v04.blend",
+  "sourceSpatial": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/runtime-spatial.json",
+  "parentAssetUnmodified": true,
+  "activeCatalogRegistration": "CityForgeV3/Buildings/NewEnglandThreeBayV19/building-package",
+  "copied": [
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_front-right_temperate_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-right.png",
+      "sha256": "fda03e54449247dd82c8d21fff1976f21ce07378acd6c702f11a5f837810f720"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_rear-right_temperate_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-right.png",
+      "sha256": "ec987bbcdf6b74f5d1a36530ba5007f9051ddbba220cc5765fb37f032f5efcc1"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_rear-left_temperate_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-left.png",
+      "sha256": "c8a5a12a50e842bcbe8a2d011b4f3e2ac51cf91029373e2885212aa9ba433387"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_front-left_temperate_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-left.png",
+      "sha256": "bd5becf488161663e2350dce7c7b5eeab1f85a6014d093e42feb8d4676662e6e"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_front-right_winter_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/front-right.png",
+      "sha256": "5cbfcc0dc64750e68c6288bcd6cf785a5a2594443746ade1ed55df10c21a85b2"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_rear-right_winter_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/rear-right.png",
+      "sha256": "6ef0ffebeea1f53ef06dac9e8e6c19860d67d2e0d9cf1fb0b9f9fa8c520724f6"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_rear-left_winter_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/rear-left.png",
+      "sha256": "47fcd2685f653b0509d6ac325b137ab6d54e2d366e2157d5c74f0272a6ef2b7e"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_front-left_winter_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/front-left.png",
+      "sha256": "30887ce6ff9be73a2b2bde60277c9f946d9c62e7f9d43fa3feab3da9bc6b73a3"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/City Forge - Foundations Next/Authoring/Architecture/Buildings/NewEnglandHouse1720/NE_House_ThreeBay_01/v04_true_reveals/renders/NE_House_ThreeBay_v04_top_down_neutral.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/plan.png",
+      "sha256": "d6f428d5d9de07969c157854003f82efb2c186b3a4df5bc4ebba6724657343b5"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/NewEnglandThreeBay/v21_neutral_night/Night/front-right.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/front-right.png",
+      "sha256": "e0387d5db4fdca4dd54a79ef0e8bf8e4e0ad58fb7789d23474a28f9cd97b8d61"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/NewEnglandThreeBay/v21_neutral_night/Night/rear-right.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/rear-right.png",
+      "sha256": "01e51508e3e28290654dccf75916dcd6f2e1db665cfce1e88af16eb3b7c08d43"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/NewEnglandThreeBay/v21_neutral_night/Night/rear-left.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/rear-left.png",
+      "sha256": "f12ddfea20dcca2fa350d75d5ed2ae76a4fffbcdfd2b8f2357558b90072dab9f"
+    },
+    {
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/NewEnglandThreeBay/v21_neutral_night/Night/front-left.png",
+      "destination": "/Users/joelinstrum/dev/CityForge - V3/Assets/CityForgeV3/Resources/CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/front-left.png",
+      "sha256": "7f4029cd8199eb496b81093565de5e4671b1513dc4e5dac6f9f43225bb2f5a45"
+    }
+  ],
+  "blenderOutput": [
+    "",
+    "Blender quit"
+  ]
+}

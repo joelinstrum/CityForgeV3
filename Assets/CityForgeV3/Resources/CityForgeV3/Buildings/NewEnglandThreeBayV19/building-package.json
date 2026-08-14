@@ -1,0 +1,104 @@
+{
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "id": "cityforge.v3.residential.new_england_three_bay_01",
+  "displayName": "New England Three-Bay House",
+  "category": "Residential",
+  "sizeClass": "small",
+  "libraryShortcut": "T",
+  "reviewStatus": "PENDING JOE REVIEW",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 7.2,
+    "depthMeters": 5.5,
+    "heightMeters": 8.93,
+    "placementScale": 1,
+    "frontFacingQuarterTurns": 2,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30,
+    "radiusMeters": 22,
+    "targetHeightMeters": 3.15
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/NewEnglandThreeBayProxyV19",
+    "sourceVersion": "Blender v19",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_GABLE",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 81.92,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/plan",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.800869256
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/front-right",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/front-right"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.800869256
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/rear-right",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/rear-right"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999731,
+        0.800869256
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/rear-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/rear-left",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/rear-left"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.49999994,
+        0.800869107
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Neutral/front-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Night/front-left",
+      "winterResourcePath": "CityForgeV3/Buildings/NewEnglandThreeBayV19/Winter/front-left"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building.commercial.boston_historic_pub_01",
+  "sizeClass": "large",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 11.2986,
+    "depth": 10.8198,
+    "height": 12.0
+  },
+  "occupancy": {
+    "width": 2,
+    "depth": 2,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.56493,
+        "row": -0.54099
+      },
+      {
+        "column": 0.56493,
+        "row": -0.54099
+      },
+      {
+        "column": 0.56493,
+        "row": 0.54099
+      },
+      {
+        "column": -0.56493,
+        "row": 0.54099
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.56493,
+          "row": -0.54099
+        },
+        {
+          "column": 0.56493,
+          "row": -0.54099
+        },
+        {
+          "column": 0.56493,
+          "row": 0.54099
+        },
+        {
+          "column": -0.56493,
+          "row": 0.54099
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.56493,
+          "row": -0.54099
+        },
+        {
+          "column": 0.56493,
+          "row": -0.54099
+        },
+        {
+          "column": 0.56493,
+          "row": 0.54099
+        },
+        {
+          "column": -0.56493,
+          "row": 0.54099
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.56493,
+        "row": -0.54099
+      },
+      {
+        "column": 0.56493,
+        "row": -0.54099
+      },
+      {
+        "column": 0.56493,
+        "row": 0.54099
+      },
+      {
+        "column": -0.56493,
+        "row": 0.54099
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.499999762,
+        "y": 0.762864276
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.762864113
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.50000006,
+        "y": 0.762864232
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.49999994,
+        "y": 0.762864232
+      }
+    }
+  ],
+  "placementScale": 1
+}

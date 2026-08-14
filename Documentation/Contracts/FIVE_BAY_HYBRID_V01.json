@@ -1,0 +1,85 @@
+{
+  "schema": "cityforge-v3-hybrid-building-v1",
+  "id": "cityforge.v3.hybrid.federal_georgian_five_bay_01",
+  "lineage": {
+    "parentBuildingId": "building_federal_georgian_five_bay_01",
+    "canonicalVisualVersion": "v79",
+    "runtimeRenderVersion": "v28",
+    "materialContract": "Five-Bay v24 preserved v79 material contract"
+  },
+  "coordinateSystem": "unity-meters-y-up",
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchorMeters": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+  },
+  "dimensionsMeters": {
+    "width": 12.5,
+    "depth": 5.95,
+    "height": 9.165
+  },
+  "presentationAnchorMeters": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0,
+    "derivation": "the imported measured per-facing pivot is placed directly at foundation-center ground; no second corner translation is applied"
+  },
+  "pixelsPerMeter": 148.4058,
+  "pivotConvention": {
+    "source": "normalized-top-origin",
+    "unityRuntime": "normalized-bottom-origin",
+    "conversion": "unityY = 1 - sourceY"
+  },
+  "spatial": {
+    "foundation": {
+      "center": [0.0, 0.175, 0.0],
+      "size": [12.5, 0.35, 5.95]
+    },
+    "collision": {
+      "center": [0.0, 4.5825, 0.0],
+      "size": [12.5, 9.165, 5.95]
+    },
+    "occlusion": {
+      "policy": "proxy volume plus flat directional presentation plane",
+      "center": [0.0, 4.5825, 0.0],
+      "size": [12.5, 9.165, 5.95]
+    }
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "resource": "CityForgeV3/Buildings/FiveBay/front-right",
+      "cameraAzimuthDegrees": -45.0,
+      "pivot": [0.65599, 0.95699],
+      "sha256": "6a26e2542098a7dc120299c7b32867f7bba71ce6865827a53fef80609d6771a1"
+    },
+    {
+      "id": "rear-right",
+      "resource": "CityForgeV3/Buildings/FiveBay/rear-right",
+      "cameraAzimuthDegrees": 45.0,
+      "pivot": [0.32599, 0.984089],
+      "sha256": "c17e637c42a42883c615ee17fdc0b758b84144e10d814fae2cd009c1f64aaeb0"
+    },
+    {
+      "id": "rear-left",
+      "resource": "CityForgeV3/Buildings/FiveBay/rear-left",
+      "cameraAzimuthDegrees": 135.0,
+      "pivot": [0.65599, 0.95699],
+      "sha256": "129cb7596d9feebd9acd8385bf00130a03788c685bb627ce3acb43462d32fe22"
+    },
+    {
+      "id": "front-left",
+      "resource": "CityForgeV3/Buildings/FiveBay/front-left",
+      "cameraAzimuthDegrees": 225.0,
+      "pivot": [0.32599, 0.984089],
+      "sha256": "21da370a9cd3060431e6b255b5183472c79ae6dad311ce38503b1fb422b648f1"
+    }
+  ],
+  "inspection": {
+    "proxyVisibleByDefault": false,
+    "proxyToggleRequired": true,
+    "occlusionActor": "camera-axis traversal through presentation plane",
+    "fourTurnCenterToleranceMeters": 0.000001
+  }
+}

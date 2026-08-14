@@ -1,0 +1,80 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "building_art_deco_corner_complete_mesh_01",
+  "sizeClass": "custom",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 32.8155,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -10.0,
+        "y": -10.0004
+      },
+      {
+        "x": 10.0,
+        "y": -10.0004
+      },
+      {
+        "x": 10.0,
+        "y": 10.0004
+      },
+      {
+        "x": -10.0,
+        "y": 10.0004
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999771,
+        "y": 1204.516479
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999863,
+        "y": 1204.5168
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000183,
+        "y": 1204.517349
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000183,
+        "y": 1204.516411
+      }
+    }
+  ]
+}

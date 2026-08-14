@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_colonial_row_houses_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 10.9374,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -12.0,
+        "y": -3.5772
+      },
+      {
+        "x": 12.0,
+        "y": -3.5772
+      },
+      {
+        "x": 12.0,
+        "y": 3.5772
+      },
+      {
+        "x": -12.0,
+        "y": 3.5772
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999908,
+        "y": 936.174911
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999451,
+        "y": 936.174179
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000092,
+        "y": 936.174316
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000092,
+        "y": 936.174408
+      }
+    }
+  ]
+}

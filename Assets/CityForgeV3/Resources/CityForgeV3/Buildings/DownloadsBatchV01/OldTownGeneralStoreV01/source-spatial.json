@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_old_town_general_store_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 17.4098,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.0,
+        "y": -10.09555
+      },
+      {
+        "x": 5.0,
+        "y": -10.09555
+      },
+      {
+        "x": 5.0,
+        "y": 10.09555
+      },
+      {
+        "x": -5.0,
+        "y": 10.09555
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.0,
+        "y": 1086.218491
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.0,
+        "y": 1086.218491
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999863,
+        "y": 1086.218445
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999634,
+        "y": 1086.218719
+      }
+    }
+  ]
+}

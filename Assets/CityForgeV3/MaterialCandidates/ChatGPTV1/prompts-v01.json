@@ -1,0 +1,44 @@
+{
+  "schema": "cityforge-chatgpt-material-candidates-v1",
+  "generatedAt": "2026-08-03",
+  "physicalScaleMeters": [3, 3],
+  "commonConstraints": [
+    "perfectly orthographic straight-down 90-degree view",
+    "neutral diffuse illumination uniform edge to edge",
+    "mathematically seamless on all four edges",
+    "no oversized masonry, macro scale, scene, curb, markings, objects, text, frame, or watermark",
+    "no cartoon, painterly, stylized, chunky geometry, dramatic damage, or baked lighting"
+  ],
+  "candidates": [
+    {
+      "id": "brick-red-running-bond",
+      "status": "generated-review",
+      "scale": "standard 20 × 10 cm pavers densely laid across 3 × 3 meters",
+      "promptMaterial": "Traditional red clay paving brick, clean but lightly weathered, dense running bond, fine clay grain, restrained brick variation, narrow aged mortar or sand joints."
+    },
+    {
+      "id": "brick-antique-running-bond",
+      "status": "generated-review",
+      "scale": "handmade 20 × 10 cm bricks densely laid across 3 × 3 meters",
+      "promptMaterial": "Antique handmade red-brown clay paving brick from 1750–1850, slightly irregular edges, muted oxblood, russet and brown firing variation, worn lime-and-sand joints, historically plausible and not ruined."
+    },
+    {
+      "id": "blacktop-aged",
+      "status": "generated-review",
+      "scale": "3–8 mm aggregate across 3 × 3 meters",
+      "promptMaterial": "Aged but maintained municipal blacktop, dense fine aggregate, charcoal binder, subtle rolling variation, no potholes, markings, patch rectangles, or large cracks."
+    },
+    {
+      "id": "cobblestone-gray-small",
+      "status": "generated-review",
+      "scale": "8–14 cm stones, hundreds visible across 3 × 3 meters",
+      "promptMaterial": "Small cool-neutral gray granite cobblestones, tightly hand-set in subtle irregular courses, pale mortar and compacted grit in narrow joints, worn nearly level by traffic."
+    },
+    {
+      "id": "cobblestone-dark-brown-small",
+      "status": "generation-failed-retry",
+      "scale": "8–14 cm stones, hundreds visible across 3 × 3 meters",
+      "promptMaterial": "Small dark-brown cobblestones in umber, brown-gray, muted ironstone and charcoal, compacted dark grit, worn nearly level, no boulders or large flagstones."
+    }
+  ]
+}

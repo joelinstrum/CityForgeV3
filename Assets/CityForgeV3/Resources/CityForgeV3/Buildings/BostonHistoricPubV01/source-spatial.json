@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building.commercial.boston_historic_pub_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 12.0,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.6493,
+        "y": -5.4099
+      },
+      {
+        "x": 5.6493,
+        "y": -5.4099
+      },
+      {
+        "x": 5.6493,
+        "y": 5.4099
+      },
+      {
+        "x": -5.6493,
+        "y": 5.4099
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999756,
+        "y": 781.173019
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999939,
+        "y": 781.172974
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 781.172974
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.0,
+        "y": 781.172852
+      }
+    }
+  ]
+}

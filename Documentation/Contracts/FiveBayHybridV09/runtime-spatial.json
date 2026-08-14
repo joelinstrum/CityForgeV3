@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "CF_V3_Hybrid_ColonialGovernmentHouse_01_v09",
+  "sizeClass": "medium",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 10.0,
+    "depth": 7.0,
+    "height": 8.75
+  },
+  "occupancy": {
+    "width": 1,
+    "depth": 1,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "physical-foundation",
+    "points": [
+      {
+        "column": -0.5,
+        "row": -0.35
+      },
+      {
+        "column": 0.5,
+        "row": -0.35
+      },
+      {
+        "column": 0.5,
+        "row": 0.35
+      },
+      {
+        "column": -0.5,
+        "row": 0.35
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "blender-proxy-shell",
+      "points": [
+        {
+          "column": -0.5,
+          "row": -0.35
+        },
+        {
+          "column": 0.5,
+          "row": -0.35
+        },
+        {
+          "column": 0.5,
+          "row": 0.35
+        },
+        {
+          "column": -0.5,
+          "row": 0.35
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "blender-proxy-occluder",
+      "points": [
+        {
+          "column": -0.5,
+          "row": -0.35
+        },
+        {
+          "column": 0.5,
+          "row": -0.35
+        },
+        {
+          "column": 0.5,
+          "row": 0.35
+        },
+        {
+          "column": -0.5,
+          "row": 0.35
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "shadow-receiver",
+    "points": [
+      {
+        "column": -0.5,
+        "row": -0.35
+      },
+      {
+        "column": 0.5,
+        "row": -0.35
+      },
+      {
+        "column": 0.5,
+        "row": 0.35
+      },
+      {
+        "column": -0.5,
+        "row": 0.35
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.662379831
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.499999732,
+        "y": 0.662380189
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.499999821,
+        "y": 0.66237992
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.500000358,
+        "y": 0.662380129
+      }
+    }
+  ],
+  "placementScale": 1
+}

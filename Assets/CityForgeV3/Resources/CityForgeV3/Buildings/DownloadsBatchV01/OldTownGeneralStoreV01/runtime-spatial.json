@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_old_town_general_store_01",
+  "sizeClass": "custom",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 10.0,
+    "depth": 20.1911,
+    "height": 17.4098
+  },
+  "occupancy": {
+    "width": 1,
+    "depth": 3,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.5,
+        "row": -1.009555
+      },
+      {
+        "column": 0.5,
+        "row": -1.009555
+      },
+      {
+        "column": 0.5,
+        "row": 1.009555
+      },
+      {
+        "column": -0.5,
+        "row": 1.009555
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.5,
+          "row": -1.009555
+        },
+        {
+          "column": 0.5,
+          "row": -1.009555
+        },
+        {
+          "column": 0.5,
+          "row": 1.009555
+        },
+        {
+          "column": -0.5,
+          "row": 1.009555
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.5,
+          "row": -1.009555
+        },
+        {
+          "column": 0.5,
+          "row": -1.009555
+        },
+        {
+          "column": 0.5,
+          "row": 1.009555
+        },
+        {
+          "column": -0.5,
+          "row": 1.009555
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.5,
+        "row": -1.009555
+      },
+      {
+        "column": 0.5,
+        "row": -1.009555
+      },
+      {
+        "column": 0.5,
+        "row": 1.009555
+      },
+      {
+        "column": -0.5,
+        "row": 1.009555
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.707173497
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.499999762,
+        "y": 0.707173645
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.499999911,
+        "y": 0.707173467
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.707173497
+      }
+    }
+  ],
+  "placementScale": 1
+}

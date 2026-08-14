@@ -1,0 +1,111 @@
+{
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "id": "cityforge.v3.civic.colonial_government_house_01",
+  "displayName": "Colonial Government House",
+  "shortDisplayName": "Government House",
+  "category": "Civic",
+  "sizeClass": "medium",
+  "libraryShortcut": "C",
+  "reviewStatus": "approved",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 15.0,
+    "depthMeters": 10.5,
+    "heightMeters": 13.125,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 2,
+    "rotationAnchor": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 26.0,
+    "targetHeightMeters": 3.15
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/GovernmentHouseProxyV09/GovernmentHouseProxyV09",
+    "sourceVersion": "Blender v09",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 0.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_GABLE",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 81.269841,
+    "canvasWidth": 2048,
+    "canvasHeight": 2048
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.662379831
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/FiveBayFoundersV03/front-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/FiveBayNeutralV12/front-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseNightV38/front-right",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-right/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-right/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-right/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-right/evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000358,
+        0.662380129
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/FiveBayFoundersV03/rear-right",
+      "neutralResourcePath": "CityForgeV3/Buildings/FiveBayNeutralV12/rear-right",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseNightV38/rear-right",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-right/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-right/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-right/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-right/evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999821,
+        0.66237992
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/FiveBayFoundersV03/rear-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/FiveBayNeutralV12/rear-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseNightV38/rear-left",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-left/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-left/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-left/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/rear-left/evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.499999732,
+        0.662380189
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/FiveBayFoundersV03/front-left",
+      "neutralResourcePath": "CityForgeV3/Buildings/FiveBayNeutralV12/front-left",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseNightV38/front-left",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-left/morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-left/noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-left/afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialGovernmentHouseV15/Shading/front-left/evening"
+    }
+  ]
+}

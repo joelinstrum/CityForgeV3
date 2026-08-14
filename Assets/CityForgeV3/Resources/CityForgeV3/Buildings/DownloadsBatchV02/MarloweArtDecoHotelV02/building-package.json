@@ -1,0 +1,131 @@
+{
+  "id": "cityforge.base.building_marlowe_art_deco_hotel_02",
+  "displayName": "Marlowe Art Deco Hotel",
+  "shortDisplayName": "Marlowe Hotel",
+  "category": "Commercial",
+  "sizeClass": "civic",
+  "libraryShortcut": "L",
+  "reviewStatus": "V02 MATCHED DAY/NIGHT \u2014 JOE REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 2,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 20.0,
+    "depthMeters": 15.217265,
+    "heightMeters": 26.766184,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 61.0108,
+    "targetHeightMeters": 11.509458918066782
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/semantic-primitive-v02",
+    "sourceVersion": "Data-driven rectangular semantic primitive V02 matched to day/night envelope",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 45.3166,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "matched authored day/night sources",
+    "policy": "full registered night artwork with shared metric envelope and pivot"
+  },
+  "shadow": {
+    "footprintScale": 1.05,
+    "maximumProjectionMeters": 24.08956517734908,
+    "morningLengthScale": 0.55,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.45
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55,
+      "pivotTopOrigin": [
+        0.499999732,
+        0.794070408
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-neutral",
+      "nightFullResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-night-full",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 35,
+      "pivotTopOrigin": [
+        0.500000119,
+        0.794070766
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-neutral",
+      "nightFullResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-night-full",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 125,
+      "pivotTopOrigin": [
+        0.500000119,
+        0.794070572
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-neutral",
+      "nightFullResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-night-full",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145,
+      "pivotTopOrigin": [
+        0.49999994,
+        0.794070378
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-neutral",
+      "nightFullResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-night-full",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/front-left-evening"
+    }
+  ]
+}

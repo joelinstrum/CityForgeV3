@@ -1,0 +1,21 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.brick.v1",
+  "displayName": "Colonial Brick Road",
+  "tileSizeMeters": 10.0,
+  "roadWidthMeters": 3.8,
+  "traffic": {
+    "driveSide": "right",
+    "laneOffsetMeters": 1.05,
+    "speedLimitMetersPerSecond": 5.5,
+    "minorApproachControl": "yield"
+  },
+  "source": "/Users/joelinstrum/Downloads/images/textures/brick-road (authored 2026-07-28)",
+  "pieces": [
+    { "id": "straight", "topology": "Straight", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/straight", "ports": ["North", "South"], "artworkStatus": "authored-2026-07-28" },
+    { "id": "t-junction", "topology": "TJunction", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/t-junction", "ports": ["East", "South", "West"], "artworkStatus": "authored-2026-07-28" },
+    { "id": "four-way", "topology": "FourWay", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/four-way", "ports": ["North", "East", "South", "West"], "artworkStatus": "authored-2026-07-28" },
+    { "id": "corner", "topology": "Corner", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/corner", "ports": ["South", "West"], "artworkStatus": "authored-2026-07-28" },
+    { "id": "endpoint", "topology": "Endpoint", "resourcePath": "", "ports": ["North"], "artworkStatus": "pending" }
+  ]
+}

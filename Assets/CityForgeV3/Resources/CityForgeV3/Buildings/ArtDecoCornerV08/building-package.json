@@ -1,0 +1,131 @@
+{
+  "id": "cityforge.base.building.commercial.art_deco_corner_building_01",
+  "displayName": "Art Deco Corner Building",
+  "shortDisplayName": "Art Deco Corner",
+  "category": "Commercial",
+  "sizeClass": "custom",
+  "libraryShortcut": "D",
+  "reviewStatus": "V08 DATA-DRIVEN STOREFRONT NIGHT \u2014 JOE REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 2,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 20.0,
+    "depthMeters": 20.0008,
+    "heightMeters": 32.8155,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 58.0,
+    "targetHeightMeters": 14.111
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/semantic-primitive-v08",
+    "sourceVersion": "Blender V03 metric derivative reused by V08 data contract",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 35.72,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "PBR emission plus recipe-defined storefront glazing",
+    "policy": "positive lit-minus-unlit registered overlays"
+  },
+  "shadow": {
+    "footprintScale": 1.1,
+    "maximumProjectionMeters": 28.0,
+    "morningLengthScale": 0.55,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.45
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.499999851,
+        0.784190416
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.499999911,
+        0.784190625
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.500000119,
+        0.784190982
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.500000119,
+        0.784190372
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ArtDecoCornerV08/front-left-evening"
+    }
+  ]
+}

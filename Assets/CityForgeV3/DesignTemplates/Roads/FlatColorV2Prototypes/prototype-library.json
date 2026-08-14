@@ -1,0 +1,146 @@
+{
+  "schema": "cityforge-road-width-prototypes-v2",
+  "status": "prototype-not-runtime",
+  "pixelsPerMeter": 80,
+  "lengthMeters": 10,
+  "palette": {
+    "road_surface": "#59636B",
+    "sidewalk_surface": "#D4A66F",
+    "curb": "#E8DFCF",
+    "median_surface": "#81935D",
+    "planting_zone": "#617A49",
+    "center_marking": "#E7C95B",
+    "lane_marking": "#E9E8DE",
+    "tree_anchor": "#38C77B"
+  },
+  "profiles": [
+    {
+      "id": "wide-two-lane-avenue",
+      "displayName": "Four-Lane Avenue",
+      "width": 18,
+      "zones": [
+        [
+          "sidewalk_surface",
+          1.6
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "road_surface",
+          14.4
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "sidewalk_surface",
+          1.6
+        ]
+      ],
+      "markings": [
+        {
+          "x": 5.4,
+          "role": "lane_marking"
+        },
+        {
+          "x": 9,
+          "role": "center_marking"
+        },
+        {
+          "x": 12.6,
+          "role": "lane_marking"
+        }
+      ],
+      "traffic": {
+        "laneCount": 4,
+        "laneWidthMeters": 3.6,
+        "direction": "two_way",
+        "laneOffsetsMeters": [
+          1.8,
+          5.4
+        ]
+      },
+      "assets": {
+        "straightSvg": "wide-two-lane-avenue/straight.svg",
+        "straightPng": "wide-two-lane-avenue/straight.png"
+      }
+    },
+    {
+      "id": "divided-boulevard",
+      "displayName": "Four-Lane Divided Boulevard",
+      "width": 18,
+      "zones": [
+        [
+          "sidewalk_surface",
+          1
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "road_surface",
+          6.5
+        ],
+        [
+          "curb",
+          0.15
+        ],
+        [
+          "planting_zone",
+          2.3
+        ],
+        [
+          "curb",
+          0.15
+        ],
+        [
+          "road_surface",
+          6.5
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "sidewalk_surface",
+          1
+        ]
+      ],
+      "markings": [
+        {
+          "x": 4.45,
+          "role": "lane_marking"
+        },
+        {
+          "x": 13.55,
+          "role": "lane_marking"
+        }
+      ],
+      "traffic": {
+        "laneCount": 4,
+        "laneWidthMeters": 3.25,
+        "direction": "two_way",
+        "laneOffsetsMeters": [
+          2.925,
+          6.175
+        ]
+      },
+      "median": {
+        "widthMeters": 2.3,
+        "treeAnchorSpacingMeters": 4
+      },
+      "assets": {
+        "straightSvg": "divided-boulevard/straight.svg",
+        "straightPng": "divided-boulevard/straight.png"
+      }
+    }
+  ],
+  "recommendation": {
+    "wideAvenue": "12m cross-section; requires a wider-than-V1 contract",
+    "boulevard": "18m cross-section; use a two-cell/20m corridor and reserve the remaining 2m for verge tolerance rather than compressing into a 10m tile"
+  }
+}

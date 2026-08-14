@@ -1,0 +1,47 @@
+{
+  "schema": "cityforge-v3-road-material-catalog-v1",
+  "materials": [
+    {
+      "id": "cobblestone",
+      "name": "Cobblestone",
+      "era": "Founders",
+      "road": true,
+      "sidewalk": false
+    },
+    {
+      "id": "brick",
+      "name": "Brick",
+      "era": "Founders",
+      "road": true,
+      "sidewalk": true
+    },
+    {
+      "id": "dirt",
+      "name": "Dirt",
+      "era": "Founders",
+      "road": true,
+      "sidewalk": false
+    },
+    {
+      "id": "early-concrete",
+      "name": "Early Concrete",
+      "era": "Industrial",
+      "road": true,
+      "sidewalk": true
+    },
+    {
+      "id": "cut-stone",
+      "name": "Cut Stone",
+      "era": "Industrial",
+      "road": true,
+      "sidewalk": true
+    },
+    {
+      "id": "blacktop",
+      "name": "Blacktop",
+      "era": "Modern",
+      "road": true,
+      "sidewalk": false
+    }
+  ]
+}

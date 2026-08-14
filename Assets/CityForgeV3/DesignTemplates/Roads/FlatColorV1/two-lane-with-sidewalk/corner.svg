@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Two-Lane Street with Sidewalks — Corner</title>
+  <desc>City Forge 10 meter flat-color material template. Transparent exterior.</desc>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#D4A66F" stroke-width="780" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#E8DFCF" stroke-width="552" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M 512 0 L 512 256 C 512 397.4 626.6 512 768 512 L 1024 512" fill="none" stroke="#59636B" stroke-width="512" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="M 512 80 L 512 256 C 512 397.4 626.6 512 768 512 L 944 512" fill="none" stroke="#E7C95B" stroke-width="14" stroke-dasharray="54 38" stroke-linecap="butt"/>
+</svg>

@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_home_insurance_1885_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 41.8953,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -12.0,
+        "y": -12.42975
+      },
+      {
+        "x": 12.0,
+        "y": -12.42975
+      },
+      {
+        "x": 12.0,
+        "y": 12.42975
+      },
+      {
+        "x": -12.0,
+        "y": 12.42975
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.000092,
+        "y": 1236.785133
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999908,
+        "y": 1236.784401
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 768.0,
+        "y": 1236.784058
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1536,
+        "height": 1536
+      },
+      "originPixel": {
+        "x": 767.999863,
+        "y": 1236.784035
+      }
+    }
+  ]
+}

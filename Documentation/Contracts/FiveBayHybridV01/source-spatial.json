@@ -1,0 +1,75 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "CF_V3_Hybrid_FederalGeorgian_FiveBay_01",
+  "sizeClass": "medium",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 9.165,
+  "foundationMeters": {
+    "id": "physical-foundation",
+    "points": [
+      { "x": -6.25, "y": -2.975 },
+      { "x": 6.25, "y": -2.975 },
+      { "x": 6.25, "y": 2.975 },
+      { "x": -6.25, "y": 2.975 }
+    ]
+  },
+  "collisionMeters": [
+    {
+      "id": "solid-shell",
+      "points": [
+        { "x": -6.25, "y": -2.975 },
+        { "x": 6.25, "y": -2.975 },
+        { "x": 6.25, "y": 2.975 },
+        { "x": -6.25, "y": 2.975 }
+      ]
+    }
+  ],
+  "occlusionMeters": [
+    {
+      "id": "building-occluder",
+      "points": [
+        { "x": -6.25, "y": -2.975 },
+        { "x": 6.25, "y": -2.975 },
+        { "x": 6.25, "y": 2.975 },
+        { "x": -6.25, "y": 2.975 }
+      ]
+    }
+  ],
+  "shadowReceiverMeters": {
+    "id": "shadow-receiver",
+    "points": [
+      { "x": -6.25, "y": -2.975 },
+      { "x": 6.25, "y": -2.975 },
+      { "x": 6.25, "y": 2.975 },
+      { "x": -6.25, "y": 2.975 }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1343.46752, "y": 1959.91552 }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 667.62752, "y": 2015.414272 }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 1343.46752, "y": 1959.91552 }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": { "width": 2048, "height": 2048 },
+      "originPixel": { "x": 667.62752, "y": 2015.414272 }
+    }
+  ]
+}

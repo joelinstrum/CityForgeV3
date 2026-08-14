@@ -1,0 +1,15 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.cobblestone.v1",
+  "displayName": "Colonial Cobblestone Road",
+  "tileSizeMeters": 10.0,
+  "roadWidthMeters": 5.0,
+  "source": "City Forge - Foundations Next/BaseGame/lots/textures/BaseTextures/roads/cobblestone-road",
+  "pieces": [
+    { "id": "straight", "topology": "Straight", "resourcePath": "CityForgeV3/Roads/CobblestoneV1/straight", "ports": ["North", "South"] },
+    { "id": "t-junction", "topology": "TJunction", "resourcePath": "CityForgeV3/Roads/CobblestoneV1/t-junction", "ports": ["East", "South", "West"] },
+    { "id": "four-way", "topology": "FourWay", "resourcePath": "CityForgeV3/Roads/CobblestoneV1/four-way", "ports": ["North", "East", "South", "West"] },
+    { "id": "corner-v36", "topology": "Corner", "resourcePath": "CityForgeV3/Roads/CobblestoneV1/corner-v36", "ports": ["North", "East"], "artworkStatus": "generated-derivative-v36" },
+    { "id": "endpoint-v36", "topology": "Endpoint", "resourcePath": "CityForgeV3/Roads/CobblestoneV1/endpoint-v36", "ports": ["North"], "artworkStatus": "generated-derivative-v36" }
+  ]
+}

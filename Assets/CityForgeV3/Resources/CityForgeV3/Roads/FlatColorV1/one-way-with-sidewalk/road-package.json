@@ -1,0 +1,71 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.one-way-with-sidewalk.v1",
+  "displayName": "One-Way Street with Sidewalks",
+  "tileSizeMeters": 10,
+  "roadWidthMeters": 3.809,
+  "traffic": {
+    "mode": "vehicle",
+    "direction": "one_way",
+    "laneCount": 1,
+    "driveSide": "right",
+    "laneOffsetMeters": 0.65,
+    "speedLimitMetersPerSecond": 7,
+    "minorApproachControl": "yield"
+  },
+  "source": "CityForgeV3/DesignTemplates/Roads/FlatColorV1/one-way-with-sidewalk",
+  "pieces": [
+    {
+      "id": "straight",
+      "topology": "Straight",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/straight",
+      "ports": [
+        "North",
+        "South"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "corner",
+      "topology": "Corner",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/corner",
+      "ports": [
+        "North",
+        "East"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "t-junction",
+      "topology": "TJunction",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/t-junction",
+      "ports": [
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "four-way",
+      "topology": "FourWay",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/four-way",
+      "ports": [
+        "North",
+        "East",
+        "South",
+        "West"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    },
+    {
+      "id": "endpoint",
+      "topology": "Endpoint",
+      "resourcePath": "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/endpoint",
+      "ports": [
+        "North"
+      ],
+      "artworkStatus": "flat-color-template-v1"
+    }
+  ]
+}

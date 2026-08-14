@@ -1,0 +1,131 @@
+{
+  "id": "cityforge.base.building.commercial.beaux_arts_commercial_01",
+  "displayName": "Beaux Arts Commercial Building",
+  "shortDisplayName": "Beaux Arts Shops",
+  "category": "Commercial",
+  "sizeClass": "civic",
+  "libraryShortcut": "B",
+  "reviewStatus": "V02 STOREFRONT NIGHT \u2014 JOE REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 2,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 20.0,
+    "depthMeters": 14.7476,
+    "heightMeters": 24.3067,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 55.0,
+    "targetHeightMeters": 10.452
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/semantic-primitive-v02",
+    "sourceVersion": "Data-driven rectangular semantic primitive V02",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 43.89,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "Recipe-defined storefront glazing",
+    "policy": "positive lit-minus-unlit registered overlays"
+  },
+  "shadow": {
+    "footprintScale": 1.05,
+    "maximumProjectionMeters": 24.0,
+    "morningLengthScale": 0.55,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.45
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.0,
+      "pivotTopOrigin": [
+        0.499999851,
+        0.758653865
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-right-evening"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 35.0,
+      "pivotTopOrigin": [
+        0.499999881,
+        0.758653805
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-right-evening"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 125.0,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.758653701
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/rear-left-evening"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.0,
+      "pivotTopOrigin": [
+        0.499999792,
+        0.758654028
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/BeauxArtsCommercialV02/front-left-evening"
+    }
+  ]
+}

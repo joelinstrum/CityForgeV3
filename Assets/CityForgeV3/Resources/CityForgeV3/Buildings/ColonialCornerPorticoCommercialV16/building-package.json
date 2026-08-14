@@ -1,0 +1,95 @@
+{
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "id": "cityforge.base.building.commercial.colonial_corner_portico_commercial_01",
+  "displayName": "Colonial Corner Portico Commercial Building",
+  "shortDisplayName": "Portico Shops",
+  "category": "Commercial",
+  "sizeClass": "large",
+  "libraryShortcut": "P",
+  "reviewStatus": "JOE REVIEW — V20 PROP-MATCHED SHADOW + CONFIGURABLE EXPORT",
+  "occupancyWidth": 2,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 16.0,
+    "depthMeters": 10.5,
+    "heightMeters": 10.096,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "frontFacingQuarterTurns": 2,
+    "rotationAnchor": [0.0, 0.0, 0.0]
+  },
+  "camera": {
+    "elevationDegrees": 30.0,
+    "radiusMeters": 30.0,
+    "targetHeightMeters": 3.5
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/semantic-primitive-v16",
+    "sourceVersion": "Blender v15 night hybrid",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_GABLE",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 76.8,
+    "canvasWidth": 1536,
+    "canvasHeight": 1536
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "facings": [
+    {
+      "id": "front-right", "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.500000119, 0.701350957],
+      "approvedResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-right-evening"
+    },
+    {
+      "id": "rear-right", "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.500000357, 0.701351285],
+      "approvedResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-right-evening"
+    },
+    {
+      "id": "rear-left", "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.500000179, 0.701350987],
+      "approvedResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/rear-left-evening"
+    },
+    {
+      "id": "front-left", "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.50000006, 0.701350749],
+      "approvedResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-night",
+      "morningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-morning",
+      "noonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-noon",
+      "afternoonShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-afternoon",
+      "eveningShadeResourcePath": "CityForgeV3/Buildings/ColonialCornerPorticoCommercialV16/front-left-evening"
+    }
+  ]
+}

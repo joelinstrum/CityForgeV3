@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.base.building_cornerstone_boutique_01",
+  "sizeClass": "civic",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 20.0,
+    "depth": 16.5617,
+    "height": 23.9673
+  },
+  "occupancy": {
+    "width": 2,
+    "depth": 2,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.0,
+        "row": -0.828085
+      },
+      {
+        "column": 1.0,
+        "row": -0.828085
+      },
+      {
+        "column": 1.0,
+        "row": 0.828085
+      },
+      {
+        "column": -1.0,
+        "row": 0.828085
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.0,
+          "row": -0.828085
+        },
+        {
+          "column": 1.0,
+          "row": -0.828085
+        },
+        {
+          "column": 1.0,
+          "row": 0.828085
+        },
+        {
+          "column": -1.0,
+          "row": 0.828085
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -1.0,
+          "row": -0.828085
+        },
+        {
+          "column": 1.0,
+          "row": -0.828085
+        },
+        {
+          "column": 1.0,
+          "row": 0.828085
+        },
+        {
+          "column": -1.0,
+          "row": 0.828085
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -1.0,
+        "row": -0.828085
+      },
+      {
+        "column": 1.0,
+        "row": -0.828085
+      },
+      {
+        "column": 1.0,
+        "row": 0.828085
+      },
+      {
+        "column": -1.0,
+        "row": 0.828085
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.49999994,
+        "y": 0.787820697
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.499999762,
+        "y": 0.787820637
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.50000006,
+        "y": 0.787820727
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.499999911,
+        "y": 0.787820667
+      }
+    }
+  ],
+  "placementScale": 1
+}

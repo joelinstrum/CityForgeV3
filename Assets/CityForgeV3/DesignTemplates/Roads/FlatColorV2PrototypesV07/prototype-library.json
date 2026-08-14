@@ -1,0 +1,138 @@
+{
+  "schema": "cityforge-road-width-prototypes-v2",
+  "status": "runtime-candidate-v06",
+  "pixelsPerMeter": 80,
+  "lengthMeters": 10,
+  "palette": {
+    "road_surface": "#59636B",
+    "sidewalk_surface": "#D4A66F",
+    "curb": "#C7C5BE",
+    "median_surface": "#81935D",
+    "planting_zone": "#617A49",
+    "center_marking": "#E7C95B",
+    "lane_marking": "#E9E8DE",
+    "tree_anchor": "#38C77B"
+  },
+  "profiles": [
+    {
+      "id": "wide-two-lane-avenue",
+      "displayName": "Four-Lane Avenue",
+      "width": 20,
+      "zones": [
+        [
+          "sidewalk_surface",
+          1.6
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "road_surface",
+          16.4
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "sidewalk_surface",
+          1.6
+        ]
+      ],
+      "laneMarkings": [
+        5.9,
+        14.1
+      ],
+      "centerMarkings": [
+        9.91,
+        10.09
+      ],
+      "traffic": {
+        "laneCount": 4,
+        "laneWidthMeters": 4.1,
+        "direction": "two_way",
+        "laneOffsetsMeters": [
+          2.05,
+          6.15
+        ]
+      },
+      "assets": {
+        "straightSvg": "wide-two-lane-avenue/straight.svg",
+        "straightPng": "wide-two-lane-avenue/straight.png"
+      }
+    },
+    {
+      "id": "divided-boulevard",
+      "displayName": "Four-Lane Divided Boulevard",
+      "width": 20,
+      "zones": [
+        [
+          "sidewalk_surface",
+          1
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "road_surface",
+          7.5
+        ],
+        [
+          "curb",
+          0.15
+        ],
+        [
+          "planting_zone",
+          2.3
+        ],
+        [
+          "curb",
+          0.15
+        ],
+        [
+          "road_surface",
+          7.5
+        ],
+        [
+          "curb",
+          0.2
+        ],
+        [
+          "sidewalk_surface",
+          1
+        ]
+      ],
+      "laneMarkings": [
+        4.95,
+        15.05
+      ],
+      "centerMarkings": [
+        8.67,
+        11.33
+      ],
+      "traffic": {
+        "laneCount": 4,
+        "laneWidthMeters": 3.75,
+        "direction": "two_way",
+        "laneOffsetsMeters": [
+          3.175,
+          6.925
+        ]
+      },
+      "median": {
+        "widthMeters": 2.3,
+        "treeAnchorSpacingMeters": 4
+      },
+      "assets": {
+        "straightSvg": "divided-boulevard/straight.svg",
+        "straightPng": "divided-boulevard/straight.png"
+      }
+    }
+  ],
+  "recommendation": {
+    "wideAvenue": "20m cross-section exactly fills a two-cell corridor",
+    "boulevard": "20m cross-section exactly fills a two-cell corridor while retaining its plantable median"
+  }
+}

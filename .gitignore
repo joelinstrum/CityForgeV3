@@ -1,0 +1,30 @@
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/Authoring/
+/QA/
+/finafee.app/
+
+# Blender production sources are maintained outside the game repository.
+*.blend
+*.blend.meta
+
+# Local diagnostics and generated Unity test output.
+mono_crash.*.json
+TestResults*.xml
+*.csproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+TestResults*.xml
+.DS_Store
