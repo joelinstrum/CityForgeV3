@@ -16,10 +16,9 @@ namespace CityForgeV3.World
     {
         private static readonly Color GroundColor = new(0.27f, 0.34f, 0.27f);
         private const int FloraShadowReceiverLayer = 31;
-        // Experiment branch: show the package's existing semantic massing
-        // beneath the billboard so its real footprint and silhouette can be
-        // inspected directly in the Lot Editor.
-        private const bool ShowBuildingPrimitivesExperiment = true;
+        // Semantic massing remains active for occlusion and native shadows,
+        // but normal artwork mode hides it after the registration experiment.
+        private const bool ShowBuildingPrimitivesExperiment = false;
         private Camera _camera;
         private HybridBuildingPackage _buildingPackage;
         private Transform _cameraPivot;
