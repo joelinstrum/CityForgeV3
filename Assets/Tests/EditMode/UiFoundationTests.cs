@@ -108,6 +108,20 @@ namespace CityForgeV3.Tests
             }
         }
 
+        [Test]
+        public void BuildingPropCursor_UsesVisibleArtworkAndAllProjectedCorners()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+
+            StringAssert.Contains("FindBuildingArtworkHitIndex", source);
+            StringAssert.Contains("candidate.name == \"Directional Render\"", source);
+            StringAssert.Contains("for (var x = -1; x <= 1; x += 2)", source);
+            StringAssert.Contains("for (var y = -1; y <= 1; y += 2)", source);
+            StringAssert.Contains("for (var z = -1; z <= 1; z += 2)", source);
+            StringAssert.DoesNotContain("FindBuildingVisualHitIndex", source);
+        }
+
         private static void InvokeBuildingPropMaterialMethod(string name,
             params object[] arguments)
         {

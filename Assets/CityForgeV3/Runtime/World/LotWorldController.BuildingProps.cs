@@ -117,23 +117,25 @@ namespace CityForgeV3.World
                 buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
                 return false;
             SetBuildingPropPlacementPreview(componentId);
-            if (_buildingPropPreview == null || _buildingPropPreview.childCount == 0)
+            if (_buildingPropPreview == null || _buildingPropPreview.childCount == 0 ||
+                !TryBuildingArtworkScreenBounds(buildingIndex, out _,
+                    out var minimum, out var maximum))
                 return false;
             _buildingPropPlacementActive = true;
-            _buildingPropPreviewHostIndex = buildingIndex;
-            _buildingPropPreviewX = Mathf.Clamp01(normalizedX);
-            _buildingPropPreviewY = Mathf.Clamp01(normalizedY);
+            var cameraPixel = new Vector2(
+                Mathf.Lerp(minimum.x, maximum.x, Mathf.Clamp01(normalizedX)),
+                Mathf.Lerp(minimum.y, maximum.y, Mathf.Clamp01(normalizedY)));
+            var shown = UpdateBuildingPropPreviewFromPanel(
+                new Vector2(cameraPixel.x, _camera.pixelHeight - cameraPixel.y),
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            if (!shown) return false;
             var model = _buildingPropPreview.GetChild(0);
-            PositionBuildingPropModel(model, buildingIndex,
-                _buildingPropPreviewX, _buildingPropPreviewY, componentId, 1f);
-            ConfigureBuildingPropPreviewRenderers(model.gameObject);
-            _buildingPropPreview.gameObject.SetActive(true);
             foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
                 Debug.Log($"building-prop-preview renderer={renderer.name} " +
                     $"enabled={renderer.enabled} bounds={renderer.bounds} " +
                     $"shader={renderer.sharedMaterial?.shader?.name} " +
                     $"queue={renderer.sharedMaterial?.renderQueue}");
-            return true;
+            return shown;
         }
 
         public void SetBuildingPropQaCameraZoom(float orthographicSize)
@@ -188,18 +190,14 @@ namespace CityForgeV3.World
                 return false;
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
-            buildingIndex = FindBuildingVisualHitIndex(pixel);
-            if (buildingIndex < 0) return false;
-            var renderer = PresentationForBuildingIndex(buildingIndex)?
-                .GetComponentInChildren<SpriteRenderer>();
-            if (renderer == null || renderer.sprite == null) return false;
-            var bounds = renderer.bounds;
-            var min = _camera.WorldToScreenPoint(bounds.min);
-            var max = _camera.WorldToScreenPoint(bounds.max);
-            var left = Mathf.Min(min.x, max.x);
-            var right = Mathf.Max(min.x, max.x);
-            var bottom = Mathf.Min(min.y, max.y);
-            var top = Mathf.Max(min.y, max.y);
+            buildingIndex = FindBuildingArtworkHitIndex(pixel);
+            if (buildingIndex < 0 || !TryBuildingArtworkScreenBounds(
+                    buildingIndex, out _, out var minimum, out var maximum))
+                return false;
+            var left = minimum.x;
+            var right = maximum.x;
+            var bottom = minimum.y;
+            var top = maximum.y;
             normalizedX = Mathf.Clamp01(Mathf.InverseLerp(left, right, pixel.x));
             normalizedY = Mathf.Clamp01(Mathf.InverseLerp(bottom, top, pixel.y));
             return pixel.x >= left && pixel.x <= right &&
@@ -250,20 +248,17 @@ namespace CityForgeV3.World
             int buildingIndex, float normalizedX, float normalizedY,
             string componentId, float scale)
         {
-            var hostRenderer = PresentationForBuildingIndex(buildingIndex)?
-                .GetComponentInChildren<SpriteRenderer>();
             var definition = BuildingPropCatalog.Find(componentId);
-            if (model == null || hostRenderer == null || definition == null) return;
-            var bounds = hostRenderer.bounds;
-            var min = _camera.WorldToScreenPoint(bounds.min);
-            var max = _camera.WorldToScreenPoint(bounds.max);
+            if (model == null || definition == null ||
+                !TryBuildingArtworkScreenBounds(buildingIndex,
+                    out var hostRenderer, out var minimum, out var maximum)) return;
             // Attachments are deliberately camera-nearer than building art.
             // This exceptional foreground layer prevents depth testing from
             // burying a component that occupies the host facade's screen area.
-            var hostDepth = _camera.WorldToScreenPoint(bounds.center).z;
+            var hostDepth = _camera.WorldToScreenPoint(hostRenderer.bounds.center).z;
             var pixel = new Vector3(
-                Mathf.Lerp(Mathf.Min(min.x, max.x), Mathf.Max(min.x, max.x), normalizedX),
-                Mathf.Lerp(Mathf.Min(min.y, max.y), Mathf.Max(min.y, max.y), normalizedY),
+                Mathf.Lerp(minimum.x, maximum.x, normalizedX),
+                Mathf.Lerp(minimum.y, maximum.y, normalizedY),
                 hostDepth - Mathf.Max(0.1f, definition.ForegroundDepthMeters));
             model.position = _camera.ScreenToWorldPoint(pixel);
             // First inherit the host artwork/camera alignment, then turn the
@@ -290,20 +285,58 @@ namespace CityForgeV3.World
             }
         }
 
-        private int FindBuildingVisualHitIndex(Vector2 pixel)
+        private int FindBuildingArtworkHitIndex(Vector2 pixel)
         {
             var bestIndex = -1;
             var bestScore = float.PositiveInfinity;
             for (var index = 0; index < (_session.Data.Buildings?.Count ?? 0); index++)
             {
-                var presentation = PresentationForBuildingIndex(index);
-                if (!BuildingVisualContainsCameraPixel(presentation, pixel)) continue;
-                var score = BuildingVisualHitScore(presentation, pixel);
+                if (!TryBuildingArtworkScreenBounds(index, out _,
+                        out var minimum, out var maximum) ||
+                    pixel.x < minimum.x || pixel.x > maximum.x ||
+                    pixel.y < minimum.y || pixel.y > maximum.y) continue;
+                var score = ((minimum + maximum) * 0.5f - pixel).sqrMagnitude;
                 if (score >= bestScore) continue;
                 bestScore = score;
                 bestIndex = index;
             }
             return bestIndex;
+        }
+
+        private bool TryBuildingArtworkScreenBounds(int buildingIndex,
+            out SpriteRenderer renderer, out Vector2 minimum, out Vector2 maximum)
+        {
+            renderer = null;
+            minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            if (_camera == null) return false;
+            var presentation = PresentationForBuildingIndex(buildingIndex);
+            if (presentation == null) return false;
+            foreach (var candidate in
+                     presentation.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (!candidate.enabled || !candidate.gameObject.activeInHierarchy ||
+                    candidate.sprite == null) continue;
+                if (renderer == null || candidate.name == "Directional Render")
+                    renderer = candidate;
+                if (candidate.name == "Directional Render") break;
+            }
+            if (renderer == null) return false;
+            var bounds = renderer.bounds;
+            var found = false;
+            for (var x = -1; x <= 1; x += 2)
+            for (var y = -1; y <= 1; y += 2)
+            for (var z = -1; z <= 1; z += 2)
+            {
+                var screen = _camera.WorldToScreenPoint(
+                    bounds.center + Vector3.Scale(bounds.extents,
+                        new Vector3(x, y, z)));
+                if (screen.z <= 0f) continue;
+                minimum = Vector2.Min(minimum, screen);
+                maximum = Vector2.Max(maximum, screen);
+                found = true;
+            }
+            return found;
         }
 
         private static void ApplyBuildingPropMaterials(GameObject root,

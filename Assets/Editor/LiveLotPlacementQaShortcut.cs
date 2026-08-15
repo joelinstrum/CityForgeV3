@@ -100,7 +100,7 @@ public static class LiveLotPlacementQaShortcut
         {
             File.Delete(AleHouseCommitTriggerPath);
             if (_qaWorld == null || !_qaWorld.CommitBuildingPropForQa(
-                    BuildingPropCatalog.AleHouseSignId, 0, 0.55f, 0.44f))
+                    BuildingPropCatalog.AleHouseSignId, 0, 0.50f, 0.30f))
                 Debug.LogError("The Ale House QA prop could not be committed.");
             else
                 _qaWorld.SetBuildingPropQaCameraZoom(10f);
@@ -234,7 +234,7 @@ public static class LiveLotPlacementQaShortcut
         }
         _qaWorld.SetBuildingPropQaCameraZoom(10f);
         if (!_qaWorld.ShowBuildingPropPreviewForQa(
-                BuildingPropCatalog.AleHouseSignId, 0, 0.55f, 0.44f))
+                BuildingPropCatalog.AleHouseSignId, 0, 0.50f, 0.30f))
             Debug.LogError("The Ale House preview could not be shown on the QA building.");
     }
 
