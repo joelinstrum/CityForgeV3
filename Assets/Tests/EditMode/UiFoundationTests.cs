@@ -2229,7 +2229,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("CompareFunction.Always", worldSource);
             StringAssert.Contains("material.renderQueue = 2455", propSource);
             StringAssert.Contains("IsOnNearestBuildingCameraFacingSide", propSource);
-            StringAssert.Contains("CityForgeV3/FrontPriorityProp", propSource);
+            StringAssert.Contains("ApplyFrontPropPresentationPriority", propSource);
+            StringAssert.Contains("_buildingPackage.ShadowDirectionOffsetDegrees", propSource);
             StringAssert.Contains("material.renderQueue = 3000", propSource);
         }
 

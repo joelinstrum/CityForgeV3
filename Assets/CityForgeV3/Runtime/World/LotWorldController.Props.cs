@@ -306,7 +306,7 @@ namespace CityForgeV3.World
                     0f, prop.RotationQuarterTurns * 90f, 0f);
                 presentation.localPosition = new Vector3(
                     prop.PositionX, 0.055f, prop.PositionZ);
-                ApplyFrontPropDepthPriority(presentation, new Vector3(
+                ApplyFrontPropPresentationPriority(presentation, new Vector3(
                     prop.PositionX, 0f, prop.PositionZ));
                 _propPresentations.Add(presentation);
             }
@@ -314,23 +314,30 @@ namespace CityForgeV3.World
             ApplyPropSelection();
         }
 
-        private void ApplyFrontPropDepthPriority(Transform presentation,
+        private void ApplyFrontPropPresentationPriority(Transform presentation,
             Vector3 logicalPosition)
         {
             if (presentation == null || _camera == null ||
                 !IsOnNearestBuildingCameraFacingSide(logicalPosition)) return;
 
-            var shader = Shader.Find("CityForgeV3/FrontPriorityProp");
-            if (shader == null) throw new MissingReferenceException(
-                "City Forge V3 front-priority prop shader is required.");
+            // Match the already-approved placement-preview path after drop.
+            // Its transparent pass draws after the always-visible building
+            // artwork and does not let the proxy consume the prop crown.
             foreach (Transform child in presentation)
             {
                 if (!child.name.EndsWith(" Model", StringComparison.Ordinal)) continue;
                 foreach (var renderer in child.GetComponentsInChildren<Renderer>())
                 {
                     var material = renderer.material;
-                    material.shader = shader;
-                    material.renderQueue = 2455;
+                    material.SetFloat("_Mode", 3f);
+                    material.SetInt("_SrcBlend",
+                        (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend",
+                        (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_ZWrite", 0);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.EnableKeyword("_ALPHABLEND_ON");
+                    material.renderQueue = 3000;
                 }
             }
         }
@@ -338,6 +345,9 @@ namespace CityForgeV3.World
         private void UpdatePropProjectedShadows()
         {
             var ray = TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
+            if (_buildingPackage != null)
+                ray = Quaternion.Euler(0f,
+                    _buildingPackage.ShadowDirectionOffsetDegrees, 0f) * ray;
             var visible = TimeOfDay != TimeOfDayPreset.Night && ray.y < -0.01f;
             var rawDisplacement = new Vector2(ray.x, ray.z) *
                 (-1.5f / ray.y) * PropShadowLengthScale(TimeOfDay);
