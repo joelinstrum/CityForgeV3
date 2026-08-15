@@ -8,6 +8,8 @@ namespace CityForgeV3.World
     {
         private Transform _buildingPropRoot;
         private Transform _buildingPropPreview;
+        private Camera _buildingPropOverlayCamera;
+        private int _buildingPropOverlayLayer = -1;
         private readonly List<GameObject> _buildingPropPresentations = new();
         private string _buildingPropPreviewId = "";
         private int _buildingPropPreviewHostIndex = -1;
@@ -17,10 +19,17 @@ namespace CityForgeV3.World
 
         private void BuildBuildingPropRoot()
         {
+            _buildingPropOverlayLayer = LayerMask.NameToLayer("BuildingPropOverlay");
+            if (_buildingPropOverlayLayer < 0)
+                throw new InvalidOperationException(
+                    "The BuildingPropOverlay Unity layer is required.");
+            BuildBuildingPropOverlayCamera();
             _buildingPropRoot = new GameObject("Building Attachments").transform;
             _buildingPropRoot.SetParent(transform, false);
+            _buildingPropRoot.gameObject.layer = _buildingPropOverlayLayer;
             var preview = new GameObject("Building Prop Placement Preview");
             preview.transform.SetParent(transform, false);
+            preview.layer = _buildingPropOverlayLayer;
             _buildingPropPreview = preview.transform;
             preview.SetActive(false);
         }
@@ -49,6 +58,7 @@ namespace CityForgeV3.World
             {
                 var model = Instantiate(prefab, _buildingPropPreview);
                 model.name = $"{componentId} Placement Model";
+                SetBuildingPropOverlayLayer(model);
                 ApplyBuildingPropMaterials(model, definition);
                 ApplyBuildingPropPreviewMaterials(model);
             }
@@ -70,6 +80,7 @@ namespace CityForgeV3.World
                 return false;
             }
             _buildingPropPreviewHostIndex = buildingIndex;
+            SyncBuildingPropOverlayCamera();
             _buildingPropPreviewX = normalizedX;
             _buildingPropPreviewY = normalizedY;
             PositionBuildingPropModel(_buildingPropPreview.GetChild(0), buildingIndex,
@@ -229,6 +240,7 @@ namespace CityForgeV3.World
                     }
                     var root = Instantiate(prefab, _buildingPropRoot);
                     root.name = $"Attachment {attachment.ComponentId}";
+                    SetBuildingPropOverlayLayer(root);
                     ApplyBuildingPropMaterials(root, definition);
                     PositionBuildingPropModel(root.transform, buildingIndex,
                         attachment.NormalizedX, attachment.NormalizedY,
@@ -412,6 +424,43 @@ namespace CityForgeV3.World
                     UnityEngine.Rendering.ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
             }
+        }
+
+        private void BuildBuildingPropOverlayCamera()
+        {
+            if (_camera == null || _buildingPropOverlayCamera != null) return;
+            var overlayObject = new GameObject("Building Prop Overlay Camera");
+            overlayObject.transform.SetParent(_camera.transform, false);
+            _buildingPropOverlayCamera = overlayObject.AddComponent<Camera>();
+            _camera.cullingMask &= ~(1 << _buildingPropOverlayLayer);
+            SyncBuildingPropOverlayCamera();
+        }
+
+        private void SyncBuildingPropOverlayCamera()
+        {
+            if (_camera == null || _buildingPropOverlayCamera == null) return;
+            _buildingPropOverlayCamera.transform.localPosition = Vector3.zero;
+            _buildingPropOverlayCamera.transform.localRotation = Quaternion.identity;
+            _buildingPropOverlayCamera.orthographic = _camera.orthographic;
+            _buildingPropOverlayCamera.orthographicSize = _camera.orthographicSize;
+            _buildingPropOverlayCamera.fieldOfView = _camera.fieldOfView;
+            _buildingPropOverlayCamera.nearClipPlane = _camera.nearClipPlane;
+            _buildingPropOverlayCamera.farClipPlane = _camera.farClipPlane;
+            _buildingPropOverlayCamera.rect = _camera.rect;
+            _buildingPropOverlayCamera.depth = _camera.depth + 1f;
+            _buildingPropOverlayCamera.clearFlags = CameraClearFlags.Depth;
+            _buildingPropOverlayCamera.cullingMask = 1 << _buildingPropOverlayLayer;
+            _buildingPropOverlayCamera.allowHDR = _camera.allowHDR;
+            _buildingPropOverlayCamera.allowMSAA = _camera.allowMSAA;
+            _buildingPropOverlayCamera.useOcclusionCulling = false;
+            _buildingPropOverlayCamera.enabled = true;
+        }
+
+        private void SetBuildingPropOverlayLayer(GameObject root)
+        {
+            if (root == null || _buildingPropOverlayLayer < 0) return;
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+                child.gameObject.layer = _buildingPropOverlayLayer;
         }
 
     }

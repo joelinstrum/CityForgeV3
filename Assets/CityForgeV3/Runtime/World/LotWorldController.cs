@@ -3487,6 +3487,7 @@ namespace CityForgeV3.World
             if (_camera == null)
                 return;
 
+            SyncBuildingPropOverlayCamera();
             RetireCompetingScreenCameras();
         }
 
@@ -3504,6 +3505,7 @@ namespace CityForgeV3.World
                          FindObjectsSortMode.None))
             {
                 if (otherCamera == null || otherCamera == _camera ||
+                    otherCamera == _buildingPropOverlayCamera ||
                     otherCamera.targetTexture != null)
                     continue;
 

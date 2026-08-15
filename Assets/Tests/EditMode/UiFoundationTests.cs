@@ -122,6 +122,26 @@ namespace CityForgeV3.Tests
             StringAssert.DoesNotContain("FindBuildingVisualHitIndex", source);
         }
 
+        [Test]
+        public void BuildingProps_RenderThroughDedicatedFinalPassCamera()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+            var controllerSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            var layers = File.ReadAllText("ProjectSettings/TagManager.asset");
+
+            StringAssert.Contains("BuildingPropOverlay", layers);
+            StringAssert.Contains("BuildBuildingPropOverlayCamera", source);
+            StringAssert.Contains("CameraClearFlags.Depth", source);
+            StringAssert.Contains("_camera.depth + 1f", source);
+            StringAssert.Contains("_camera.cullingMask &=", source);
+            StringAssert.Contains("SetBuildingPropOverlayLayer(model)", source);
+            StringAssert.Contains("SetBuildingPropOverlayLayer(root)", source);
+            StringAssert.Contains("otherCamera == _buildingPropOverlayCamera",
+                controllerSource);
+        }
+
         private static void InvokeBuildingPropMaterialMethod(string name,
             params object[] arguments)
         {
