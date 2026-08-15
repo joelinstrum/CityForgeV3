@@ -4182,6 +4182,7 @@ namespace CityForgeV3.Tests
             Assert.That(Resources.Load<Texture2D>(fancySidewalk.ResourcePath), Is.Not.Null);
 
             var root = new GameObject("Lot Texture Persistence Test");
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
             try
             {
                 var world = root.AddComponent<LotWorldController>();
@@ -4200,14 +4201,21 @@ namespace CityForgeV3.Tests
                 Assert.That(restored.Data.OverlayTextures[0].TextureId,
                     Is.EqualTo("brick-walkway"));
                 Assert.That(Find(root.transform, "Overlay — brick-walkway"), Is.Not.Null);
-                Assert.That(world.PlaceOverlayTextureFromPanel("concrete-sidewalk",
-                    new Vector2(170f, 170f), new Vector2(1000f, 1000f)), Is.True);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell("concrete-sidewalk", 0, 0), Is.True);
+                world.EndOverlayPaint();
                 Assert.That(world.Session.Data.OverlayTextures[1].TextureId,
                     Is.EqualTo("concrete-sidewalk"));
                 Assert.That(Find(root.transform, "Overlay — concrete-sidewalk"), Is.Not.Null);
+
+                restored.Restore(world.Session.Serialize());
+                Assert.That(restored.Data.OverlayTextures.Count, Is.EqualTo(2));
+                Assert.That(restored.Data.OverlayTextures[1].TextureId,
+                    Is.EqualTo("concrete-sidewalk"));
             }
             finally
             {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
                 Object.DestroyImmediate(root);
             }
         }

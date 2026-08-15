@@ -395,6 +395,28 @@ public static class LiveLotPlacementQaShortcut
         EditorApplication.delayCall += DumpLivePlacement;
     }
 
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Concrete Sidewalk Overlay")]
+    private static void PlaceBostonConcreteSidewalkOverlay()
+    {
+        var world = _qaWorld != null
+            ? _qaWorld
+            : Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null || world.name != "Building Live Placement QA")
+        {
+            Debug.LogError("Open the Boston Pub saved-lot QA before placing the sidewalk overlay.");
+            return;
+        }
+
+        world.SetOverlayEditorContext(true);
+        if (!world.BeginOverlayPaintAtCell("concrete-sidewalk", 0, 0))
+        {
+            Debug.LogError("Concrete Sidewalk could not be placed in saved-lot QA cell (0, 0).");
+            return;
+        }
+        world.EndOverlayPaint();
+        Debug.Log("Placed Concrete Sidewalk in memory at saved-lot QA cell (0, 0); the source lot was not saved or changed.");
+    }
+
     private static void MoveBostonTreeForQa(float x, float z)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

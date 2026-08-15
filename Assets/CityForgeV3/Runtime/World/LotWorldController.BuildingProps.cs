@@ -26,8 +26,11 @@ namespace CityForgeV3.World
             var previewShader = Shader.Find("CityForgeV3/BuildingPropPlacementPreview");
             if (previewShader != null)
             {
-                _buildingPropPreview.material = new Material(previewShader);
-                _buildingPropPreview.material.renderQueue = 5000;
+                var previewMaterial = new Material(previewShader)
+                {
+                    renderQueue = 5000
+                };
+                _buildingPropPreview.sharedMaterial = previewMaterial;
             }
             preview.SetActive(false);
         }
