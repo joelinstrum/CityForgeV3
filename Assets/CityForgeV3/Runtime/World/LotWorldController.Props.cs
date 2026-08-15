@@ -214,7 +214,7 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    new Vector3(target.x, 0.055f, target.y);
+                    PropPresentationPosition(new Vector3(target.x, 0.055f, target.y));
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             NotifyStateChanged();
@@ -236,7 +236,7 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    new Vector3(target.x, 0.055f, target.y);
+                    PropPresentationPosition(new Vector3(target.x, 0.055f, target.y));
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             return true;
@@ -302,13 +302,28 @@ namespace CityForgeV3.World
                     $"Prop — {prop.PropId}", 1f);
                 if (presentation == null) continue;
                 presentation.SetParent(_propRoot, false);
-                presentation.localPosition = new Vector3(prop.PositionX, 0.055f, prop.PositionZ);
+                presentation.localPosition = PropPresentationPosition(
+                    new Vector3(prop.PositionX, 0.055f, prop.PositionZ));
                 presentation.localRotation = Quaternion.Euler(
                     0f, prop.RotationQuarterTurns * 90f, 0f);
                 _propPresentations.Add(presentation);
             }
             UpdatePropProjectedShadows();
             ApplyPropSelection();
+        }
+
+        private Vector3 PropPresentationPosition(Vector3 logicalPosition)
+        {
+            if (_camera == null || !IsBeyondNearestBuildingFront(logicalPosition))
+                return logicalPosition;
+
+            // The lot camera is orthographic, so moving a committed front prop
+            // toward it does not change the prop's screen position or saved
+            // coordinates. It only gives the real mesh enough depth clearance
+            // to stay in front of the building proxy at the facade.
+            const float frontDepthClearanceMeters = 0.75f;
+            var worldOffset = -_camera.transform.forward * frontDepthClearanceMeters;
+            return logicalPosition + transform.InverseTransformVector(worldOffset);
         }
 
         private void UpdatePropProjectedShadows()

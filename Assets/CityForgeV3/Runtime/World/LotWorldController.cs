@@ -671,7 +671,10 @@ namespace CityForgeV3.World
                     "CityForge V3 lit flora shadow receiver shader is required.");
             _floraLitShadowReceiverMaterial = new Material(shader)
             {
-                name = "CF Native Lit Flora Shadow Receiver"
+                name = "CF Native Lit Flora Shadow Receiver",
+                // Draw after the separate projected canopy shadow. This keeps
+                // that ground shadow from darkening the billboard itself.
+                renderQueue = 3001
             };
             _floraLitShadowReceiverMaterial.SetFloat("_Cutoff", 0.02f);
             _floraLitShadowReceiverMaterial.SetFloat("_ShadowFloor", 0.38f);
@@ -693,7 +696,7 @@ namespace CityForgeV3.World
             return _floraFrontPriorityMaterial;
         }
 
-        private bool FloraIsBeyondNearestBuildingFront(Vector3 localPosition)
+        private bool IsBeyondNearestBuildingFront(Vector3 localPosition)
         {
             var nearestDistance = float.PositiveInfinity;
             var isBeyondFront = false;
@@ -3330,7 +3333,7 @@ namespace CityForgeV3.World
                         new Vector3(flora.PositionX, 0f, flora.PositionZ));
                     _floraPresentations[index].sortingOrder = order;
                     _floraPresentations[index].sharedMaterial =
-                        FloraIsBeyondNearestBuildingFront(new Vector3(
+                        IsBeyondNearestBuildingFront(new Vector3(
                             flora.PositionX, 0f, flora.PositionZ))
                             ? FloraFrontPriorityMaterial()
                             : FloraLitShadowReceiverMaterial();

@@ -355,7 +355,9 @@ public static class LiveLotPlacementQaShortcut
                      FindObjectsSortMode.None))
         {
             if (world.name == "Building Live Placement QA")
-                world.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+                // Deliberately tight to the camera-facing facade so this
+                // shortcut exercises the building-proxy clearance boundary.
+                world.PlacePropForQa("three-lantern-lamppost-v01", 5.5f, 4.8f);
         }
         EditorApplication.delayCall += DumpLivePlacement;
     }

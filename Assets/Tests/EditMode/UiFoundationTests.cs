@@ -2219,7 +2219,10 @@ namespace CityForgeV3.Tests
                 "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
 
             StringAssert.Contains("ZTest [_ZTest]", floraShader);
-            StringAssert.Contains("FloraIsBeyondNearestBuildingFront", worldSource);
+            StringAssert.Contains("IsBeyondNearestBuildingFront", worldSource);
+            StringAssert.Contains("renderQueue = 3001", worldSource);
+            StringAssert.Contains("PropPresentationPosition", propSource);
+            StringAssert.Contains("frontDepthClearanceMeters = 0.75f", propSource);
             StringAssert.Contains("_camera.transform.position", worldSource);
             StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
             StringAssert.Contains("CompareFunction.Always", worldSource);
