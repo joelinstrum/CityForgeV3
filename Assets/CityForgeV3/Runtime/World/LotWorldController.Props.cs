@@ -214,7 +214,8 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    PropPresentationPosition(new Vector3(target.x, 0.055f, target.y));
+                    PropPresentationPosition(_propPresentations[SelectedPropIndex],
+                        new Vector3(target.x, 0.055f, target.y));
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             NotifyStateChanged();
@@ -236,7 +237,8 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    PropPresentationPosition(new Vector3(target.x, 0.055f, target.y));
+                    PropPresentationPosition(_propPresentations[SelectedPropIndex],
+                        new Vector3(target.x, 0.055f, target.y));
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             return true;
@@ -302,28 +304,68 @@ namespace CityForgeV3.World
                     $"Prop — {prop.PropId}", 1f);
                 if (presentation == null) continue;
                 presentation.SetParent(_propRoot, false);
-                presentation.localPosition = PropPresentationPosition(
-                    new Vector3(prop.PositionX, 0.055f, prop.PositionZ));
                 presentation.localRotation = Quaternion.Euler(
                     0f, prop.RotationQuarterTurns * 90f, 0f);
+                presentation.localPosition = PropPresentationPosition(presentation,
+                    new Vector3(prop.PositionX, 0.055f, prop.PositionZ));
                 _propPresentations.Add(presentation);
             }
             UpdatePropProjectedShadows();
             ApplyPropSelection();
         }
 
-        private Vector3 PropPresentationPosition(Vector3 logicalPosition)
+        private Vector3 PropPresentationPosition(Transform presentation,
+            Vector3 logicalPosition)
         {
-            if (_camera == null || !IsBeyondNearestBuildingFront(logicalPosition))
+            var isFront = PropPivotIsCameraNearerThanNearestBuilding(logicalPosition);
+            if (!isFront)
                 return logicalPosition;
 
             // The lot camera is orthographic, so moving a committed front prop
             // toward it does not change the prop's screen position or saved
-            // coordinates. It only gives the real mesh enough depth clearance
-            // to stay in front of the building proxy at the facade.
-            const float frontDepthClearanceMeters = 0.75f;
-            var worldOffset = -_camera.transform.forward * frontDepthClearanceMeters;
+            // coordinates. Measure the complete mesh behind its ground pivot;
+            // tall lantern crowns need more clearance than their bases.
+            presentation.localPosition = logicalPosition;
+            var cameraForward = _camera.transform.forward;
+            var rootWorldPosition = presentation.position;
+            var meshDepthBehindPivot = 0f;
+            foreach (var renderer in presentation.GetComponentsInChildren<MeshRenderer>())
+            {
+                if (!renderer.enabled) continue;
+                var bounds = renderer.bounds;
+                var centerDepth = Vector3.Dot(cameraForward,
+                    bounds.center - rootWorldPosition);
+                var extentDepth = Mathf.Abs(cameraForward.x) * bounds.extents.x +
+                    Mathf.Abs(cameraForward.y) * bounds.extents.y +
+                    Mathf.Abs(cameraForward.z) * bounds.extents.z;
+                meshDepthBehindPivot = Mathf.Max(meshDepthBehindPivot,
+                    centerDepth + extentDepth);
+            }
+            var worldOffset = -cameraForward * (meshDepthBehindPivot + 0.1f);
             return logicalPosition + transform.InverseTransformVector(worldOffset);
+        }
+
+        private bool PropPivotIsCameraNearerThanNearestBuilding(Vector3 localPosition)
+        {
+            if (_camera == null) return false;
+            var nearestDistance = float.PositiveInfinity;
+            var nearestBuildingPosition = Vector3.zero;
+            var found = false;
+            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
+            {
+                var buildingPosition = new Vector3(building.CellX, 0f, building.CellZ);
+                var distance = (localPosition - buildingPosition).sqrMagnitude;
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearestBuildingPosition = buildingPosition;
+                found = true;
+            }
+            if (!found) return false;
+            var propDepth = _camera.transform.InverseTransformPoint(
+                transform.TransformPoint(localPosition)).z;
+            var buildingDepth = _camera.transform.InverseTransformPoint(
+                transform.TransformPoint(nearestBuildingPosition)).z;
+            return propDepth < buildingDepth;
         }
 
         private void UpdatePropProjectedShadows()

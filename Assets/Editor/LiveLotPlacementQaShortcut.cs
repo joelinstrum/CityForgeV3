@@ -357,7 +357,7 @@ public static class LiveLotPlacementQaShortcut
             if (world.name == "Building Live Placement QA")
                 // Deliberately tight to the camera-facing facade so this
                 // shortcut exercises the building-proxy clearance boundary.
-                world.PlacePropForQa("three-lantern-lamppost-v01", 5.5f, 4.8f);
+                world.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
         }
         EditorApplication.delayCall += DumpLivePlacement;
     }

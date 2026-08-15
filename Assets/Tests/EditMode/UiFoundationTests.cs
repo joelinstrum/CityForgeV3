@@ -2222,7 +2222,10 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("IsBeyondNearestBuildingFront", worldSource);
             StringAssert.Contains("renderQueue = 3001", worldSource);
             StringAssert.Contains("PropPresentationPosition", propSource);
-            StringAssert.Contains("frontDepthClearanceMeters = 0.75f", propSource);
+            StringAssert.Contains("GetComponentsInChildren<MeshRenderer>", propSource);
+            StringAssert.Contains("meshDepthBehindPivot + 0.1f", propSource);
+            StringAssert.Contains("PropPivotIsCameraNearerThanNearestBuilding", propSource);
+            StringAssert.Contains("propDepth < buildingDepth", propSource);
             StringAssert.Contains("_camera.transform.position", worldSource);
             StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
             StringAssert.Contains("CompareFunction.Always", worldSource);
