@@ -317,8 +317,8 @@ namespace CityForgeV3.World
         private Vector3 PropPresentationPosition(Transform presentation,
             Vector3 logicalPosition)
         {
-            var isFront = PropPivotIsCameraNearerThanNearestBuilding(logicalPosition);
-            if (!isFront)
+            if (!TryGetNearestBuildingCameraDepths(logicalPosition,
+                    out var buildingGroundCenterDepth, out var buildingNearDepth))
                 return logicalPosition;
 
             // The lot camera is orthographic, so moving a committed front prop
@@ -328,6 +328,10 @@ namespace CityForgeV3.World
             presentation.localPosition = logicalPosition;
             var cameraForward = _camera.transform.forward;
             var rootWorldPosition = presentation.position;
+            var propPivotDepth = Vector3.Dot(cameraForward,
+                rootWorldPosition - _camera.transform.position);
+            if (propPivotDepth >= buildingGroundCenterDepth)
+                return logicalPosition;
             var meshDepthBehindPivot = 0f;
             foreach (var renderer in presentation.GetComponentsInChildren<MeshRenderer>())
             {
@@ -341,31 +345,55 @@ namespace CityForgeV3.World
                 meshDepthBehindPivot = Mathf.Max(meshDepthBehindPivot,
                     centerDepth + extentDepth);
             }
-            var worldOffset = -cameraForward * (meshDepthBehindPivot + 0.1f);
+            // Clear both the amount of mesh behind the prop pivot and the
+            // amount the pivot itself sits behind the proxy's nearest surface.
+            var requiredClearance = Mathf.Max(0f,
+                propPivotDepth + meshDepthBehindPivot - buildingNearDepth + 0.1f);
+            var worldOffset = -cameraForward * requiredClearance;
             return logicalPosition + transform.InverseTransformVector(worldOffset);
         }
 
-        private bool PropPivotIsCameraNearerThanNearestBuilding(Vector3 localPosition)
+        private bool TryGetNearestBuildingCameraDepths(Vector3 localPosition,
+            out float groundCenterDepth, out float nearSurfaceDepth)
         {
+            groundCenterDepth = 0f;
+            nearSurfaceDepth = 0f;
             if (_camera == null) return false;
             var nearestDistance = float.PositiveInfinity;
-            var nearestBuildingPosition = Vector3.zero;
-            var found = false;
+            PlacedBuilding nearestBuilding = null;
             foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
             {
                 var buildingPosition = new Vector3(building.CellX, 0f, building.CellZ);
                 var distance = (localPosition - buildingPosition).sqrMagnitude;
                 if (distance >= nearestDistance) continue;
                 nearestDistance = distance;
-                nearestBuildingPosition = buildingPosition;
-                found = true;
+                nearestBuilding = building;
             }
-            if (!found) return false;
-            var propDepth = _camera.transform.InverseTransformPoint(
-                transform.TransformPoint(localPosition)).z;
-            var buildingDepth = _camera.transform.InverseTransformPoint(
-                transform.TransformPoint(nearestBuildingPosition)).z;
-            return propDepth < buildingDepth;
+            if (nearestBuilding == null) return false;
+
+            var catalogEntry = BuildingCatalog.Find(nearestBuilding.BuildingId);
+            var package = HybridBuildingPackageRegistry.Load(
+                catalogEntry.PackageResourcePath);
+            var localRotation = Quaternion.Euler(0f,
+                nearestBuilding.RotationQuarterTurns * 90f, 0f);
+            var groundCenter = transform.TransformPoint(new Vector3(
+                nearestBuilding.CellX, 0f, nearestBuilding.CellZ));
+            var worldUp = transform.up.normalized;
+            var volumeCenter = groundCenter + worldUp * (package.HeightMeters * 0.5f);
+            var axisX = transform.TransformDirection(localRotation * Vector3.right).normalized;
+            var axisZ = transform.TransformDirection(localRotation * Vector3.forward).normalized;
+            var cameraForward = _camera.transform.forward;
+            var cameraPosition = _camera.transform.position;
+            groundCenterDepth = Vector3.Dot(cameraForward,
+                groundCenter - cameraPosition);
+            var volumeCenterDepth = Vector3.Dot(cameraForward,
+                volumeCenter - cameraPosition);
+            var proxyDepthRadius =
+                Mathf.Abs(Vector3.Dot(cameraForward, axisX)) * package.WidthMeters * 0.5f +
+                Mathf.Abs(Vector3.Dot(cameraForward, worldUp)) * package.HeightMeters * 0.5f +
+                Mathf.Abs(Vector3.Dot(cameraForward, axisZ)) * package.DepthMeters * 0.5f;
+            nearSurfaceDepth = volumeCenterDepth - proxyDepthRadius;
+            return true;
         }
 
         private void UpdatePropProjectedShadows()

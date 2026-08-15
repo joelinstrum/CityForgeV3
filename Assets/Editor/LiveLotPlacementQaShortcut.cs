@@ -20,6 +20,7 @@ public static class LiveLotPlacementQaShortcut
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
     private static GameObject _qaRoot;
+    private static LotWorldController _qaWorld;
     private const string NightTriggerPath = "/tmp/cityforge-open-art-deco-night-qa";
     private const string MorningTriggerPath = "/tmp/cityforge-open-art-deco-morning-qa";
     private const string BeauxAfternoonTriggerPath = "/tmp/cityforge-open-beaux-afternoon-qa";
@@ -235,6 +236,7 @@ public static class LiveLotPlacementQaShortcut
         _qaRoot = new GameObject("Building Live Placement QA");
         _qaRoot.AddComponent<QaUiSuppressor>();
         var world = _qaRoot.AddComponent<LotWorldController>();
+        _qaWorld = world;
         world.Build();
         if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
         {
@@ -351,14 +353,27 @@ public static class LiveLotPlacementQaShortcut
     [MenuItem("City Forge/QA/Boston Flora Shadow/Place Front Lamppost")]
     private static void PlaceBostonFrontLamppost()
     {
+        if (_qaWorld != null)
+        {
+            _qaWorld.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+            EditorApplication.delayCall += DumpLivePlacement;
+            return;
+        }
+        LotWorldController fallback = null;
         foreach (var world in Object.FindObjectsByType<LotWorldController>(
                      FindObjectsSortMode.None))
         {
+            fallback ??= world;
             if (world.name == "Building Live Placement QA")
+            {
                 // Deliberately tight to the camera-facing facade so this
                 // shortcut exercises the building-proxy clearance boundary.
                 world.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+                fallback = null;
+                break;
+            }
         }
+        fallback?.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
         EditorApplication.delayCall += DumpLivePlacement;
     }
 
