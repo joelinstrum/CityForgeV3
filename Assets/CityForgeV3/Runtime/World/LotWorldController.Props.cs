@@ -214,8 +214,7 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    PropPresentationPosition(_propPresentations[SelectedPropIndex],
-                        new Vector3(target.x, 0.055f, target.y));
+                    new Vector3(target.x, 0.055f, target.y);
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             NotifyStateChanged();
@@ -237,8 +236,7 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    PropPresentationPosition(_propPresentations[SelectedPropIndex],
-                        new Vector3(target.x, 0.055f, target.y));
+                    new Vector3(target.x, 0.055f, target.y);
             UpdatePropProjectedShadows();
             ApplyPropSelection();
             return true;
@@ -306,94 +304,12 @@ namespace CityForgeV3.World
                 presentation.SetParent(_propRoot, false);
                 presentation.localRotation = Quaternion.Euler(
                     0f, prop.RotationQuarterTurns * 90f, 0f);
-                presentation.localPosition = PropPresentationPosition(presentation,
-                    new Vector3(prop.PositionX, 0.055f, prop.PositionZ));
+                presentation.localPosition = new Vector3(
+                    prop.PositionX, 0.055f, prop.PositionZ);
                 _propPresentations.Add(presentation);
             }
             UpdatePropProjectedShadows();
             ApplyPropSelection();
-        }
-
-        private Vector3 PropPresentationPosition(Transform presentation,
-            Vector3 logicalPosition)
-        {
-            if (!TryGetNearestBuildingCameraDepths(logicalPosition,
-                    out var buildingGroundCenterDepth, out var buildingNearDepth))
-                return logicalPosition;
-
-            // The lot camera is orthographic, so moving a committed front prop
-            // toward it does not change the prop's screen position or saved
-            // coordinates. Measure the complete mesh behind its ground pivot;
-            // tall lantern crowns need more clearance than their bases.
-            presentation.localPosition = logicalPosition;
-            var cameraForward = _camera.transform.forward;
-            var rootWorldPosition = presentation.position;
-            var propPivotDepth = Vector3.Dot(cameraForward,
-                rootWorldPosition - _camera.transform.position);
-            if (propPivotDepth >= buildingGroundCenterDepth)
-                return logicalPosition;
-            var meshDepthBehindPivot = 0f;
-            foreach (var renderer in presentation.GetComponentsInChildren<MeshRenderer>())
-            {
-                if (!renderer.enabled) continue;
-                var bounds = renderer.bounds;
-                var centerDepth = Vector3.Dot(cameraForward,
-                    bounds.center - rootWorldPosition);
-                var extentDepth = Mathf.Abs(cameraForward.x) * bounds.extents.x +
-                    Mathf.Abs(cameraForward.y) * bounds.extents.y +
-                    Mathf.Abs(cameraForward.z) * bounds.extents.z;
-                meshDepthBehindPivot = Mathf.Max(meshDepthBehindPivot,
-                    centerDepth + extentDepth);
-            }
-            // Clear both the amount of mesh behind the prop pivot and the
-            // amount the pivot itself sits behind the proxy's nearest surface.
-            var requiredClearance = Mathf.Max(0f,
-                propPivotDepth + meshDepthBehindPivot - buildingNearDepth + 0.1f);
-            var worldOffset = -cameraForward * requiredClearance;
-            return logicalPosition + transform.InverseTransformVector(worldOffset);
-        }
-
-        private bool TryGetNearestBuildingCameraDepths(Vector3 localPosition,
-            out float groundCenterDepth, out float nearSurfaceDepth)
-        {
-            groundCenterDepth = 0f;
-            nearSurfaceDepth = 0f;
-            if (_camera == null) return false;
-            var nearestDistance = float.PositiveInfinity;
-            PlacedBuilding nearestBuilding = null;
-            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
-            {
-                var buildingPosition = new Vector3(building.CellX, 0f, building.CellZ);
-                var distance = (localPosition - buildingPosition).sqrMagnitude;
-                if (distance >= nearestDistance) continue;
-                nearestDistance = distance;
-                nearestBuilding = building;
-            }
-            if (nearestBuilding == null) return false;
-
-            var catalogEntry = BuildingCatalog.Find(nearestBuilding.BuildingId);
-            var package = HybridBuildingPackageRegistry.Load(
-                catalogEntry.PackageResourcePath);
-            var localRotation = Quaternion.Euler(0f,
-                nearestBuilding.RotationQuarterTurns * 90f, 0f);
-            var groundCenter = transform.TransformPoint(new Vector3(
-                nearestBuilding.CellX, 0f, nearestBuilding.CellZ));
-            var worldUp = transform.up.normalized;
-            var volumeCenter = groundCenter + worldUp * (package.HeightMeters * 0.5f);
-            var axisX = transform.TransformDirection(localRotation * Vector3.right).normalized;
-            var axisZ = transform.TransformDirection(localRotation * Vector3.forward).normalized;
-            var cameraForward = _camera.transform.forward;
-            var cameraPosition = _camera.transform.position;
-            groundCenterDepth = Vector3.Dot(cameraForward,
-                groundCenter - cameraPosition);
-            var volumeCenterDepth = Vector3.Dot(cameraForward,
-                volumeCenter - cameraPosition);
-            var proxyDepthRadius =
-                Mathf.Abs(Vector3.Dot(cameraForward, axisX)) * package.WidthMeters * 0.5f +
-                Mathf.Abs(Vector3.Dot(cameraForward, worldUp)) * package.HeightMeters * 0.5f +
-                Mathf.Abs(Vector3.Dot(cameraForward, axisZ)) * package.DepthMeters * 0.5f;
-            nearSurfaceDepth = volumeCenterDepth - proxyDepthRadius;
-            return true;
         }
 
         private void UpdatePropProjectedShadows()
@@ -459,6 +375,7 @@ namespace CityForgeV3.World
             SetPropOpacity(root, propId, alpha, true);
             if (alpha >= 0.999f)
             {
+                CreatePropDepthPrepass(prefab, root, model.transform.localScale);
                 CreateProjectedPropShadow(prefab, root, model.transform.localScale);
                 if (string.Equals(propId, ThreeLanternLamppostPropId,
                         StringComparison.OrdinalIgnoreCase))
@@ -467,6 +384,29 @@ namespace CityForgeV3.World
             foreach (var collider in root.GetComponentsInChildren<Collider>())
                 collider.enabled = false;
             return root;
+        }
+
+        private static void CreatePropDepthPrepass(GameObject prefab,
+            Transform root, Vector3 modelScale)
+        {
+            var shader = Shader.Find("CityForgeV3/BuildingDepthOccluder");
+            if (shader == null) throw new MissingReferenceException(
+                "CityForge V3 depth-only shader is required for committed props.");
+            var depthModel = Instantiate(prefab, root, false);
+            depthModel.name = "Committed Prop Depth Prepass";
+            depthModel.transform.localScale = modelScale;
+            foreach (var collider in depthModel.GetComponentsInChildren<Collider>())
+                collider.enabled = false;
+            foreach (var renderer in depthModel.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = new Material(shader)
+                {
+                    name = "CF Committed Prop Depth Prepass",
+                    renderQueue = 2435
+                };
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
         }
 
         private void CreateProjectedPropShadow(GameObject prefab, Transform root,

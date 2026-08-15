@@ -2221,12 +2221,9 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("ZTest [_ZTest]", floraShader);
             StringAssert.Contains("IsBeyondNearestBuildingFront", worldSource);
             StringAssert.Contains("renderQueue = 3001", worldSource);
-            StringAssert.Contains("PropPresentationPosition", propSource);
-            StringAssert.Contains("GetComponentsInChildren<MeshRenderer>", propSource);
-            StringAssert.Contains("TryGetNearestBuildingCameraDepths", propSource);
-            StringAssert.Contains("propPivotDepth + meshDepthBehindPivot - buildingNearDepth", propSource);
-            StringAssert.Contains("proxyDepthRadius", propSource);
-            StringAssert.Contains("volumeCenterDepth - proxyDepthRadius", propSource);
+            StringAssert.Contains("CreatePropDepthPrepass", propSource);
+            StringAssert.Contains("Committed Prop Depth Prepass", propSource);
+            StringAssert.Contains("renderQueue = 2435", propSource);
             StringAssert.Contains("_camera.transform.position", worldSource);
             StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
             StringAssert.Contains("CompareFunction.Always", worldSource);
