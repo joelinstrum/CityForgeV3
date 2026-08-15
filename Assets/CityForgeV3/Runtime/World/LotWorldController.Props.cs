@@ -306,10 +306,33 @@ namespace CityForgeV3.World
                     0f, prop.RotationQuarterTurns * 90f, 0f);
                 presentation.localPosition = new Vector3(
                     prop.PositionX, 0.055f, prop.PositionZ);
+                ApplyFrontPropDepthPriority(presentation, new Vector3(
+                    prop.PositionX, 0f, prop.PositionZ));
                 _propPresentations.Add(presentation);
             }
             UpdatePropProjectedShadows();
             ApplyPropSelection();
+        }
+
+        private void ApplyFrontPropDepthPriority(Transform presentation,
+            Vector3 logicalPosition)
+        {
+            if (presentation == null || _camera == null ||
+                !IsOnNearestBuildingCameraFacingSide(logicalPosition)) return;
+
+            var shader = Shader.Find("CityForgeV3/FrontPriorityProp");
+            if (shader == null) throw new MissingReferenceException(
+                "City Forge V3 front-priority prop shader is required.");
+            foreach (Transform child in presentation)
+            {
+                if (!child.name.EndsWith(" Model", StringComparison.Ordinal)) continue;
+                foreach (var renderer in child.GetComponentsInChildren<Renderer>())
+                {
+                    var material = renderer.material;
+                    material.shader = shader;
+                    material.renderQueue = 2455;
+                }
+            }
         }
 
         private void UpdatePropProjectedShadows()
@@ -513,7 +536,7 @@ namespace CityForgeV3.World
                     // Proxy depth and registered building art draw first.
                     // Committed 3D props then use their real mesh depth, so a
                     // front lamppost survives while a rear one remains hidden.
-                    material.renderQueue = 2450;
+                    material.renderQueue = 2455;
                 }
                 renderer.sharedMaterial = material;
                 // Committed fence meshes use the controlled projected shadow

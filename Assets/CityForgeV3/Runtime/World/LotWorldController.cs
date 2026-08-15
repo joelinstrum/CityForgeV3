@@ -731,6 +731,39 @@ namespace CityForgeV3.World
             return isBeyondFront;
         }
 
+        private bool IsOnNearestBuildingCameraFacingSide(Vector3 localPosition)
+        {
+            var nearestDistance = float.PositiveInfinity;
+            var isCameraFacing = false;
+            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
+            {
+                var catalogEntry = BuildingCatalog.Find(building.BuildingId);
+                var package = HybridBuildingPackageRegistry.Load(
+                    catalogEntry.PackageResourcePath);
+                var rotation = Quaternion.Euler(
+                    0f, building.RotationQuarterTurns * 90f, 0f);
+                var relative = Quaternion.Inverse(rotation) *
+                    (localPosition - new Vector3(building.CellX, 0f, building.CellZ));
+                var halfWidth = package.WidthMeters * 0.5f;
+                var halfDepth = package.DepthMeters * 0.5f;
+                var outsideX = Mathf.Max(Mathf.Abs(relative.x) - halfWidth, 0f);
+                var outsideZ = Mathf.Max(Mathf.Abs(relative.z) - halfDepth, 0f);
+                var distance = outsideX * outsideX + outsideZ * outsideZ;
+                if (distance >= nearestDistance) continue;
+
+                var cameraDirection = _camera == null
+                    ? Vector3.forward
+                    : _camera.transform.position - transform.TransformPoint(
+                        new Vector3(building.CellX, 0f, building.CellZ));
+                cameraDirection.y = 0f;
+                cameraDirection.Normalize();
+                var front = Quaternion.Inverse(rotation) * cameraDirection;
+                nearestDistance = distance;
+                isCameraFacing = Vector3.Dot(relative, front) >= 0f;
+            }
+            return isCameraFacing;
+        }
+
         private Color FloraColorForTime(float alpha)
         {
             var tint = TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint;
@@ -907,6 +940,14 @@ namespace CityForgeV3.World
             ApplyCameraFacing();
             NotifyStateChanged();
         }
+
+#if UNITY_EDITOR
+        public void SetQaOrthographicSize(float orthographicSize)
+        {
+            if (_camera != null)
+                _camera.orthographicSize = orthographicSize;
+        }
+#endif
 
         public void PanCameraViewport(int horizontal, int vertical)
         {

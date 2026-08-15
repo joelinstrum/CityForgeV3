@@ -262,10 +262,16 @@ public static class LiveLotPlacementQaShortcut
         world.SetTimeOfDay(_requestedTime);
         world.SetZoomLevel(
             !string.IsNullOrWhiteSpace(_requestedSavedLotId)
-                ? LotZoomLevel.Detail
+                ? LotZoomLevel.Lot
                 : _requestedBuildingId == PubQaBuildingId
                 ? LotZoomLevel.Close
                 : LotZoomLevel.Wide);
+
+        // Keep the exact saved-lot regression fixture large enough to inspect
+        // all five lamppost silhouettes and their shadow anchors in one frame.
+        // This is QA-only framing; production camera behavior is unchanged.
+        if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
+            world.SetQaOrthographicSize(22f);
 
         // The bootstrap splash is a full-screen UIDocument and can visually
         // cover a correctly rendered QA world. Disable only the app UI after
@@ -437,6 +443,20 @@ public static class LiveLotPlacementQaShortcut
         {
             if (!renderer.name.StartsWith("CF_PROXY_")) continue;
             report.AppendLine($"proxy {renderer.name} enabled={renderer.enabled} bounds={renderer.bounds} cast={renderer.shadowCastingMode}");
+        }
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        foreach (Transform child in world.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name != "Three-Lantern Lamppost Model" &&
+                child.name != "Committed Prop Depth Prepass" &&
+                child.name != "Projected Prop Silhouette") continue;
+            report.AppendLine($"prop-part {child.parent?.name}/{child.name} " +
+                $"pos={child.position} local={child.localPosition}");
+            foreach (var renderer in child.GetComponentsInChildren<Renderer>())
+                report.AppendLine($"  prop-renderer {renderer.name} enabled={renderer.enabled} " +
+                    $"shader={renderer.sharedMaterial?.shader?.name} " +
+                    $"queue={renderer.sharedMaterial?.renderQueue} bounds={renderer.bounds}");
         }
         foreach (var light in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
             report.AppendLine($"light {light.name} enabled={light.enabled} type={light.type} shadows={light.shadows} strength={light.shadowStrength} rot={light.transform.eulerAngles}");
