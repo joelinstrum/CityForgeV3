@@ -277,6 +277,22 @@ namespace CityForgeV3.UI
                 StepZoom(-1);
                 evt.StopPropagation();
             }
+            else if (_lotEditorCategory == LotEditorCategory.Props &&
+                     evt.keyCode == KeyCode.Q &&
+                     (_lotWorld.SelectedPropIndex >= 0 ||
+                      !string.IsNullOrWhiteSpace(_placementPropId)))
+            {
+                RotateProp(-1);
+                evt.StopPropagation();
+            }
+            else if (_lotEditorCategory == LotEditorCategory.Props &&
+                     evt.keyCode == KeyCode.E &&
+                     (_lotWorld.SelectedPropIndex >= 0 ||
+                      !string.IsNullOrWhiteSpace(_placementPropId)))
+            {
+                RotateProp(1);
+                evt.StopPropagation();
+            }
             else if (evt.character != '\0' &&
                      BuildingCatalog.TryFindByShortcut(evt.character, out var catalogEntry))
             {
@@ -1385,15 +1401,19 @@ namespace CityForgeV3.UI
                                 ? "WROUGHT-IRON CORNER"
                                 : "WROUGHT-IRON FENCE"));
                     inspector.Add(Property("FAMILY", "FENCES & GATES"));
-                    inspector.Add(Property("POSITIONING", "1 PIXEL • ARROW KEYS"));
+                    inspector.Add(Property("POSITIONING", "1 PIXEL • ARROWS • Q/E ROTATE"));
+                    inspector.Add(Property("HEADING",
+                        $"{_lotWorld.ActivePropRotationQuarterTurns * 90}° • 90° SNAP"));
                     inspector.Add(CfButton.Create("CHOOSE PROP…",
                         OpenPropsModal, true, "primary"));
                     var propActions = new VisualElement();
                     propActions.AddToClassList("inspector-actions");
                     propActions.Add(CfButton.Create("↺ ROTATE",
-                        () => RotateSelectedProp(-1), _lotWorld.SelectedPropIndex >= 0));
+                        () => RotateProp(-1), _lotWorld.SelectedPropIndex >= 0 ||
+                            !string.IsNullOrWhiteSpace(_placementPropId)));
                     propActions.Add(CfButton.Create("ROTATE ↻",
-                        () => RotateSelectedProp(1), _lotWorld.SelectedPropIndex >= 0));
+                        () => RotateProp(1), _lotWorld.SelectedPropIndex >= 0 ||
+                            !string.IsNullOrWhiteSpace(_placementPropId)));
                     inspector.Add(propActions);
                     inspector.Add(CfButton.Create("DELETE SELECTED",
                         DeleteSelectedProp, _lotWorld.SelectedPropIndex >= 0, "danger"));
@@ -2110,11 +2130,14 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
         }
 
-        private void RotateSelectedProp(int direction)
+        private void RotateProp(int direction)
         {
-            _lotStatus = _lotWorld.RotateSelectedProp(direction)
-                ? "Fence rotated 90°"
-                : "Fence cannot rotate here";
+            var rotated = _lotWorld.SelectedPropIndex >= 0
+                ? _lotWorld.RotateSelectedProp(direction)
+                : _lotWorld.RotatePropPlacementPreview(direction);
+            _lotStatus = rotated
+                ? $"Prop snapped to {_lotWorld.ActivePropRotationQuarterTurns * 90}°"
+                : "Prop cannot rotate here";
             Show(AppScreen.LotEditor);
         }
 

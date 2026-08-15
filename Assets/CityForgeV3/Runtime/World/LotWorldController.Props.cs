@@ -42,15 +42,25 @@ namespace CityForgeV3.World
         private Vector2 _propDragOffset;
         private string _propPreviewId = "";
         private bool _propPreviewHasPoint;
+        private int _propPlacementRotationQuarterTurns;
 
         public int PropCount => _session.Data.Props?.Count ?? 0;
         public int SelectedPropIndex { get; private set; } = -1;
+        public int PropPlacementRotationQuarterTurns =>
+            _propPlacementRotationQuarterTurns;
+        public bool HasArmedPropPlacement =>
+            !string.IsNullOrWhiteSpace(_propPreviewId);
+        public int ActivePropRotationQuarterTurns =>
+            SelectedPropIndex >= 0 && SelectedPropIndex < PropCount
+                ? _session.Data.Props[SelectedPropIndex].RotationQuarterTurns
+                : _propPlacementRotationQuarterTurns;
 
 #if UNITY_EDITOR
-        public bool PlacePropForQa(string propId, float positionX, float positionZ)
+        public bool PlacePropForQa(string propId, float positionX, float positionZ,
+            int rotationQuarterTurns = 0, bool alwaysAdd = false)
         {
             _session.Data.Props ??= new List<PlacedProp>();
-            var prop = _session.Data.Props.Find(item =>
+            var prop = alwaysAdd ? null : _session.Data.Props.Find(item =>
                 string.Equals(item.PropId, propId, StringComparison.OrdinalIgnoreCase));
             if (prop == null)
             {
@@ -58,12 +68,15 @@ namespace CityForgeV3.World
                 {
                     InstanceId = Guid.NewGuid().ToString("N"),
                     PropId = propId,
-                    RotationQuarterTurns = 0
+                    RotationQuarterTurns =
+                        ((rotationQuarterTurns % 4) + 4) % 4
                 };
                 _session.Data.Props.Add(prop);
             }
             prop.PositionX = positionX;
             prop.PositionZ = positionZ;
+            prop.RotationQuarterTurns =
+                ((rotationQuarterTurns % 4) + 4) % 4;
             RebuildPropPresentations();
             NotifyStateChanged();
             return true;
@@ -113,6 +126,7 @@ namespace CityForgeV3.World
         {
             _propPreviewId = propId ?? "";
             _propPreviewHasPoint = false;
+            _propPlacementRotationQuarterTurns = 0;
             if (_propPreview != null)
             {
                 if (Application.isPlaying) Destroy(_propPreview.gameObject);
@@ -122,8 +136,33 @@ namespace CityForgeV3.World
             if (_propPreview != null)
             {
                 _propPreview.SetParent(transform, false);
+                _propPreview.localRotation = Quaternion.Euler(0f,
+                    _propPlacementRotationQuarterTurns * 90f, 0f);
                 _propPreview.gameObject.SetActive(false);
             }
+        }
+
+        public bool RotatePropPlacementPreview(int direction)
+        {
+            if (!_propPlacementActive || _propPreview == null ||
+                string.IsNullOrWhiteSpace(_propPreviewId)) return false;
+            _propPlacementRotationQuarterTurns =
+                ((_propPlacementRotationQuarterTurns + direction) % 4 + 4) % 4;
+            _propPreview.localRotation = Quaternion.Euler(0f,
+                _propPlacementRotationQuarterTurns * 90f, 0f);
+            if (_propPreviewHasPoint)
+            {
+                var position = ClampPropPosition(new Vector2(
+                    _propPreview.localPosition.x,
+                    _propPreview.localPosition.z),
+                    _propPlacementRotationQuarterTurns);
+                _propPreview.localPosition = new Vector3(position.x, 0.055f, position.y);
+                var canPlace = CanPlacePropAt(position,
+                    _propPlacementRotationQuarterTurns, -1);
+                SetPropOpacity(_propPreview, _propPreviewId,
+                    canPlace ? 0.5f : 0.28f, canPlace);
+            }
+            return true;
         }
 
         public bool UpdatePropPreviewFromPanel(Vector2 panelPosition, Vector2 panelSize)
@@ -131,11 +170,15 @@ namespace CityForgeV3.World
             if (!_propPlacementActive || string.IsNullOrWhiteSpace(_propPreviewId) ||
                 _propPreview == null ||
                 !TryLotPointFromPanel(panelPosition, panelSize, out var point)) return false;
-            var position = ClampPropPosition(new Vector2(point.x, point.z), 0);
+            var position = ClampPropPosition(new Vector2(point.x, point.z),
+                _propPlacementRotationQuarterTurns);
             _propPreview.localPosition = new Vector3(position.x, 0.055f, position.y);
+            _propPreview.localRotation = Quaternion.Euler(0f,
+                _propPlacementRotationQuarterTurns * 90f, 0f);
+            var canPlace = CanPlacePropAt(position,
+                _propPlacementRotationQuarterTurns, -1);
             SetPropOpacity(_propPreview, _propPreviewId,
-                CanPlacePropAt(position, 0, -1) ? 0.5f : 0.28f,
-                CanPlacePropAt(position, 0, -1));
+                canPlace ? 0.5f : 0.28f, canPlace);
             _propPreviewHasPoint = true;
             _propPreview.gameObject.SetActive(true);
             return true;
@@ -154,15 +197,18 @@ namespace CityForgeV3.World
                 // footprint validation below still rejects true intersections.
                 SelectedPropIndex = -1;
                 _propPreviewId = propId;
-                var position = ClampPropPosition(new Vector2(point.x, point.z), 0);
-                if (!CanPlacePropAt(position, 0, -1)) return false;
+                var position = ClampPropPosition(new Vector2(point.x, point.z),
+                    _propPlacementRotationQuarterTurns);
+                if (!CanPlacePropAt(position,
+                        _propPlacementRotationQuarterTurns, -1)) return false;
                 _session.Data.Props ??= new List<PlacedProp>();
                 _session.Data.Props.Add(new PlacedProp
                 {
                     InstanceId = Guid.NewGuid().ToString("N"),
                     PropId = propId,
                     PositionX = position.x,
-                    PositionZ = position.y
+                    PositionZ = position.y,
+                    RotationQuarterTurns = _propPlacementRotationQuarterTurns
                 });
                 SelectedPropIndex = _session.Data.Props.Count - 1;
                 RebuildPropPresentations();
@@ -281,6 +327,7 @@ namespace CityForgeV3.World
             _propDragActive = false;
             _propPreviewId = "";
             _propPreviewHasPoint = false;
+            _propPlacementRotationQuarterTurns = 0;
             if (_propPreview != null) _propPreview.gameObject.SetActive(false);
             ApplyPropSelection();
         }

@@ -395,6 +395,54 @@ public static class LiveLotPlacementQaShortcut
         EditorApplication.delayCall += DumpLivePlacement;
     }
 
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Four Prop Headings")]
+    private static void PlaceBostonFourPropHeadings()
+    {
+        var world = _qaWorld != null
+            ? _qaWorld
+            : Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null || world.name != "Building Live Placement QA")
+        {
+            Debug.LogError("Open the Boston Pub saved-lot QA before placing the prop heading set.");
+            return;
+        }
+
+        var positions = new[]
+        {
+            new Vector2(-18f, 18f), new Vector2(-8f, 18f),
+            new Vector2(2f, 18f), new Vector2(12f, 18f)
+        };
+        for (var turn = 0; turn < positions.Length; turn++)
+            world.PlacePropForQa("wrought-iron-fence-corner-v01",
+                positions[turn].x, positions[turn].y, turn, true);
+        Debug.Log("Placed four in-memory corner-fence headings at 0°, 90°, 180°, and 270°; the saved lot was not changed.");
+    }
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Show Prop Preview Commit Parity")]
+    private static void ShowBostonPropPreviewCommitParity()
+    {
+        var world = _qaWorld != null
+            ? _qaWorld
+            : Object.FindFirstObjectByType<LotWorldController>();
+        var camera = Camera.main;
+        if (world == null || world.name != "Building Live Placement QA" || camera == null)
+        {
+            Debug.LogError("Open the Boston Pub saved-lot QA before checking prop preview parity.");
+            return;
+        }
+
+        world.PlacePropForQa("wrought-iron-fence-corner-v01",
+            5f, -18f, 3, true);
+        world.SetPropEditorContext(true);
+        world.SetPropPlacementPreview("wrought-iron-fence-corner-v01");
+        world.RotatePropPlacementPreview(-1);
+        var screen = camera.WorldToScreenPoint(new Vector3(-5f, 0f, -18f));
+        world.UpdatePropPreviewFromPanel(
+            new Vector2(screen.x, camera.pixelHeight - screen.y),
+            new Vector2(camera.pixelWidth, camera.pixelHeight));
+        Debug.Log("Showing in-memory prop preview/commit parity at snapped heading 270°; the saved lot was not changed.");
+    }
+
     private static void MoveBostonTreeForQa(float x, float z)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

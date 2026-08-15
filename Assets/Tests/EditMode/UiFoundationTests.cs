@@ -2086,9 +2086,56 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void ArmedPropPreviewSnapsCounterClockwiseAndCommitsItsHeading()
+        {
+            var root = new GameObject("Prop Placement Rotation Snap Test");
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Directional Props", LotType.Commercial, 3, 3);
+                world.SetPropEditorContext(true);
+                world.SetPropPlacementPreview("wrought-iron-fence-straight-v01");
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                var screen = camera.WorldToScreenPoint(new Vector3(0f, 0f, 0f));
+                var panelPoint = new Vector2(screen.x, camera.pixelHeight - screen.y);
+
+                Assert.That(world.UpdatePropPreviewFromPanel(panelPoint, panelSize), Is.True);
+                Assert.That(world.PropPlacementRotationQuarterTurns, Is.Zero);
+                Assert.That(world.RotatePropPlacementPreview(-1), Is.True);
+                Assert.That(world.PropPlacementRotationQuarterTurns, Is.EqualTo(3));
+                Assert.That(world.RotatePropPlacementPreview(-1), Is.True);
+                Assert.That(world.PropPlacementRotationQuarterTurns, Is.EqualTo(2));
+                Assert.That(world.RotatePropPlacementPreview(-1), Is.True);
+                Assert.That(world.PropPlacementRotationQuarterTurns, Is.EqualTo(1));
+                Assert.That(world.RotatePropPlacementPreview(-1), Is.True);
+                Assert.That(world.PropPlacementRotationQuarterTurns, Is.Zero,
+                    "Four counter-clockwise snaps must return to the reference heading.");
+
+                Assert.That(world.RotatePropPlacementPreview(-1), Is.True);
+                Assert.That(world.BeginPropDragFromPanel(
+                    "wrought-iron-fence-straight-v01", panelPoint, panelSize), Is.True);
+                world.EndPropDrag();
+                Assert.That(world.Session.Data.Props[0].RotationQuarterTurns, Is.EqualTo(3));
+
+                var restored = new LotEditorSession();
+                restored.Restore(world.Session.Serialize());
+                Assert.That(restored.Data.Props[0].RotationQuarterTurns, Is.EqualTo(3));
+            }
+            finally
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void RotatingStraightPropRotatesSelectionFootprintExactlyOnce()
         {
             var root = new GameObject("Rotated Prop Footprint Test");
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
             try
             {
                 var world = root.AddComponent<LotWorldController>();
@@ -2129,6 +2176,7 @@ namespace CityForgeV3.Tests
             }
             finally
             {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
                 Object.DestroyImmediate(root);
             }
         }
