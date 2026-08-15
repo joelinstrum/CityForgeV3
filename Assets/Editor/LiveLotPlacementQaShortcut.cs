@@ -20,6 +20,7 @@ public static class LiveLotPlacementQaShortcut
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
     private static GameObject _qaRoot;
+    private static LotWorldController _qaWorld;
     private const string NightTriggerPath = "/tmp/cityforge-open-art-deco-night-qa";
     private const string MorningTriggerPath = "/tmp/cityforge-open-art-deco-morning-qa";
     private const string BeauxAfternoonTriggerPath = "/tmp/cityforge-open-beaux-afternoon-qa";
@@ -235,6 +236,7 @@ public static class LiveLotPlacementQaShortcut
         _qaRoot = new GameObject("Building Live Placement QA");
         _qaRoot.AddComponent<QaUiSuppressor>();
         var world = _qaRoot.AddComponent<LotWorldController>();
+        _qaWorld = world;
         world.Build();
         if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
         {
@@ -260,10 +262,16 @@ public static class LiveLotPlacementQaShortcut
         world.SetTimeOfDay(_requestedTime);
         world.SetZoomLevel(
             !string.IsNullOrWhiteSpace(_requestedSavedLotId)
-                ? LotZoomLevel.Detail
+                ? LotZoomLevel.Lot
                 : _requestedBuildingId == PubQaBuildingId
                 ? LotZoomLevel.Close
                 : LotZoomLevel.Wide);
+
+        // Keep the exact saved-lot regression fixture large enough to inspect
+        // all five lamppost silhouettes and their shadow anchors in one frame.
+        // This is QA-only framing; production camera behavior is unchanged.
+        if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
+            world.SetQaOrthographicSize(22f);
 
         // The bootstrap splash is a full-screen UIDocument and can visually
         // cover a correctly rendered QA world. Disable only the app UI after
@@ -336,6 +344,57 @@ public static class LiveLotPlacementQaShortcut
     [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Full")]
     private static void MoveBostonTreeFull() => MoveBostonTreeForQa(1.4f, 11.6f);
 
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Wall Overlap")]
+    private static void MoveBostonTreeWallOverlap() =>
+        MoveBostonTreeForQa(5.2f, 1.0f);
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Front Collision")]
+    private static void MoveBostonTreeFrontCollision() =>
+        MoveBostonTreeForQa(6.0f, 5.0f);
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Move Tree — Side Collision")]
+    private static void MoveBostonTreeSideCollision() =>
+        MoveBostonTreeForQa(7.0f, 1.0f);
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Front Lamppost")]
+    private static void PlaceBostonFrontLamppost()
+    {
+        if (_qaWorld != null)
+        {
+            _qaWorld.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+            EditorApplication.delayCall += DumpLivePlacement;
+            return;
+        }
+        LotWorldController fallback = null;
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            fallback ??= world;
+            if (world.name == "Building Live Placement QA")
+            {
+                // Deliberately tight to the camera-facing facade so this
+                // shortcut exercises the building-proxy clearance boundary.
+                world.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+                fallback = null;
+                break;
+            }
+        }
+        fallback?.PlacePropForQa("three-lantern-lamppost-v01", 9f, 0f);
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Boston Flora Shadow/Place Rear Lamppost")]
+    private static void PlaceBostonRearLamppost()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            if (world.name == "Building Live Placement QA")
+                world.PlacePropForQa("three-lantern-lamppost-v01", -7f, 0f);
+        }
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
     private static void MoveBostonTreeForQa(float x, float z)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(
@@ -384,6 +443,20 @@ public static class LiveLotPlacementQaShortcut
         {
             if (!renderer.name.StartsWith("CF_PROXY_")) continue;
             report.AppendLine($"proxy {renderer.name} enabled={renderer.enabled} bounds={renderer.bounds} cast={renderer.shadowCastingMode}");
+        }
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        foreach (Transform child in world.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name != "Three-Lantern Lamppost Model" &&
+                child.name != "Committed Prop Depth Prepass" &&
+                child.name != "Projected Prop Silhouette") continue;
+            report.AppendLine($"prop-part {child.parent?.name}/{child.name} " +
+                $"pos={child.position} local={child.localPosition}");
+            foreach (var renderer in child.GetComponentsInChildren<Renderer>())
+                report.AppendLine($"  prop-renderer {renderer.name} enabled={renderer.enabled} " +
+                    $"shader={renderer.sharedMaterial?.shader?.name} " +
+                    $"queue={renderer.sharedMaterial?.renderQueue} bounds={renderer.bounds}");
         }
         foreach (var light in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
             report.AppendLine($"light {light.name} enabled={light.enabled} type={light.type} shadows={light.shadows} strength={light.shadowStrength} rot={light.transform.eulerAngles}");

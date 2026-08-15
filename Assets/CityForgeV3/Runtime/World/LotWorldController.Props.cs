@@ -46,6 +46,30 @@ namespace CityForgeV3.World
         public int PropCount => _session.Data.Props?.Count ?? 0;
         public int SelectedPropIndex { get; private set; } = -1;
 
+#if UNITY_EDITOR
+        public bool PlacePropForQa(string propId, float positionX, float positionZ)
+        {
+            _session.Data.Props ??= new List<PlacedProp>();
+            var prop = _session.Data.Props.Find(item =>
+                string.Equals(item.PropId, propId, StringComparison.OrdinalIgnoreCase));
+            if (prop == null)
+            {
+                prop = new PlacedProp
+                {
+                    InstanceId = Guid.NewGuid().ToString("N"),
+                    PropId = propId,
+                    RotationQuarterTurns = 0
+                };
+                _session.Data.Props.Add(prop);
+            }
+            prop.PositionX = positionX;
+            prop.PositionZ = positionZ;
+            RebuildPropPresentations();
+            NotifyStateChanged();
+            return true;
+        }
+#endif
+
         private void BuildPropRoot()
         {
             _propRoot = new GameObject("Placed Props").transform;
@@ -278,18 +302,52 @@ namespace CityForgeV3.World
                     $"Prop — {prop.PropId}", 1f);
                 if (presentation == null) continue;
                 presentation.SetParent(_propRoot, false);
-                presentation.localPosition = new Vector3(prop.PositionX, 0.055f, prop.PositionZ);
                 presentation.localRotation = Quaternion.Euler(
                     0f, prop.RotationQuarterTurns * 90f, 0f);
+                presentation.localPosition = new Vector3(
+                    prop.PositionX, 0.055f, prop.PositionZ);
+                ApplyFrontPropPresentationPriority(presentation, new Vector3(
+                    prop.PositionX, 0f, prop.PositionZ));
                 _propPresentations.Add(presentation);
             }
             UpdatePropProjectedShadows();
             ApplyPropSelection();
         }
 
+        private void ApplyFrontPropPresentationPriority(Transform presentation,
+            Vector3 logicalPosition)
+        {
+            if (presentation == null || _camera == null ||
+                !IsOnNearestBuildingCameraFacingSide(logicalPosition)) return;
+
+            // Match the already-approved placement-preview path after drop.
+            // Its transparent pass draws after the always-visible building
+            // artwork and does not let the proxy consume the prop crown.
+            foreach (Transform child in presentation)
+            {
+                if (!child.name.EndsWith(" Model", StringComparison.Ordinal)) continue;
+                foreach (var renderer in child.GetComponentsInChildren<Renderer>())
+                {
+                    var material = renderer.material;
+                    material.SetFloat("_Mode", 3f);
+                    material.SetInt("_SrcBlend",
+                        (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend",
+                        (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_ZWrite", 0);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.EnableKeyword("_ALPHABLEND_ON");
+                    material.renderQueue = 3000;
+                }
+            }
+        }
+
         private void UpdatePropProjectedShadows()
         {
             var ray = TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
+            if (_buildingPackage != null)
+                ray = Quaternion.Euler(0f,
+                    _buildingPackage.ShadowDirectionOffsetDegrees, 0f) * ray;
             var visible = TimeOfDay != TimeOfDayPreset.Night && ray.y < -0.01f;
             var rawDisplacement = new Vector2(ray.x, ray.z) *
                 (-1.5f / ray.y) * PropShadowLengthScale(TimeOfDay);
@@ -350,6 +408,7 @@ namespace CityForgeV3.World
             SetPropOpacity(root, propId, alpha, true);
             if (alpha >= 0.999f)
             {
+                CreatePropDepthPrepass(prefab, root, model.transform.localScale);
                 CreateProjectedPropShadow(prefab, root, model.transform.localScale);
                 if (string.Equals(propId, ThreeLanternLamppostPropId,
                         StringComparison.OrdinalIgnoreCase))
@@ -358,6 +417,29 @@ namespace CityForgeV3.World
             foreach (var collider in root.GetComponentsInChildren<Collider>())
                 collider.enabled = false;
             return root;
+        }
+
+        private static void CreatePropDepthPrepass(GameObject prefab,
+            Transform root, Vector3 modelScale)
+        {
+            var shader = Shader.Find("CityForgeV3/BuildingDepthOccluder");
+            if (shader == null) throw new MissingReferenceException(
+                "CityForge V3 depth-only shader is required for committed props.");
+            var depthModel = Instantiate(prefab, root, false);
+            depthModel.name = "Committed Prop Depth Prepass";
+            depthModel.transform.localScale = modelScale;
+            foreach (var collider in depthModel.GetComponentsInChildren<Collider>())
+                collider.enabled = false;
+            foreach (var renderer in depthModel.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = new Material(shader)
+                {
+                    name = "CF Committed Prop Depth Prepass",
+                    renderQueue = 2435
+                };
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
         }
 
         private void CreateProjectedPropShadow(GameObject prefab, Transform root,
@@ -458,6 +540,13 @@ namespace CityForgeV3.World
                     material.DisableKeyword("_ALPHATEST_ON");
                     material.EnableKeyword("_ALPHABLEND_ON");
                     material.renderQueue = 3000;
+                }
+                else
+                {
+                    // Proxy depth and registered building art draw first.
+                    // Committed 3D props then use their real mesh depth, so a
+                    // front lamppost survives while a rear one remains hidden.
+                    material.renderQueue = 2455;
                 }
                 renderer.sharedMaterial = material;
                 // Committed fence meshes use the controlled projected shadow

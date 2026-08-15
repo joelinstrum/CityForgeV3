@@ -7,7 +7,10 @@ Shader "CityForgeV3/AlwaysVisibleBuildingSprite"
     }
     SubShader
     {
-        Tags { "Queue"="Transparent" "RenderType"="Transparent" "CanUseSpriteAtlas"="True" }
+        // The solid proxy writes depth at AlphaTest-10. Draw the registered
+        // building artwork next, then let alpha-tested flora draw over it only
+        // where the proxy depth says the flora is actually camera-nearer.
+        Tags { "Queue"="AlphaTest-5" "RenderType"="Transparent" "CanUseSpriteAtlas"="True" }
         Cull Off
         Lighting Off
         ZWrite Off

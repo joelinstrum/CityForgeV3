@@ -6,40 +6,68 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
 
     SubShader
     {
         Tags { "Queue"="AlphaTest" "RenderType"="TransparentCutout" "CanUseSpriteAtlas"="True" }
         Cull Off
+        ZTest [_ZTest]
 
-        CGPROGRAM
-        #pragma surface surf ShadowOnly alphatest:_Cutoff fullforwardshadows
-        #pragma target 3.0
-
-        sampler2D _MainTex;
-        fixed4 _Color;
-        half _ShadowFloor;
-
-        struct Input
+        Pass
         {
-            float2 uv_MainTex;
-            fixed4 color : COLOR;
-        };
+            Tags { "LightMode"="ForwardBase" }
 
-        void surf(Input input, inout SurfaceOutput output)
-        {
-            fixed4 artwork = tex2D(_MainTex, input.uv_MainTex) * input.color * _Color;
-            output.Albedo = artwork.rgb;
-            output.Alpha = artwork.a;
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma target 3.0
+            #pragma multi_compile_fwdbase
+
+            #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+
+            sampler2D _MainTex;
+            fixed4 _Color;
+            half _Cutoff;
+            half _ShadowFloor;
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                fixed4 color : COLOR;
+            };
+
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                fixed4 color : COLOR;
+                SHADOW_COORDS(1)
+            };
+
+            v2f vert(appdata input)
+            {
+                v2f output;
+                output.pos = UnityObjectToClipPos(input.vertex);
+                output.uv = input.uv;
+                output.color = input.color;
+                TRANSFER_SHADOW(output);
+                return output;
+            }
+
+            fixed4 frag(v2f input) : SV_Target
+            {
+                fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
+                clip(artwork.a - _Cutoff);
+                half shadowAttenuation = SHADOW_ATTENUATION(input);
+                half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);
+                return fixed4(artwork.rgb * illumination, artwork.a);
+            }
+            ENDCG
         }
-
-        half4 LightingShadowOnly(SurfaceOutput surface, half3 lightDirection, half attenuation)
-        {
-            half illumination = lerp(_ShadowFloor, 1.0h, attenuation);
-            return half4(surface.Albedo * illumination, surface.Alpha);
-        }
-        ENDCG
     }
     Fallback "Transparent/Cutout/VertexLit"
 }

@@ -2159,6 +2159,82 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FloraReceiverSamplesUnityShadowMapAndClipsTransparentPixels()
+        {
+            var path = Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/LitShadowReceivingSprite.shader");
+            var source = File.ReadAllText(path);
+
+            StringAssert.Contains("SHADOW_ATTENUATION", source);
+            StringAssert.Contains("TRANSFER_SHADOW", source);
+            StringAssert.Contains("multi_compile_fwdbase", source);
+            StringAssert.Contains("clip(artwork.a - _Cutoff)", source);
+            StringAssert.DoesNotContain("LightingShadowOnly", source,
+                "The receiver must explicitly sample Unity's shadow map instead of relying on the failed custom surface-lighting callback.");
+        }
+
+        [Test]
+        public void BuildingDepthOccluderWritesOnlyDepthBeforeFlora()
+        {
+            var path = Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/BuildingDepthOccluder.shader");
+            var source = File.ReadAllText(path);
+
+            StringAssert.Contains("ColorMask 0", source);
+            StringAssert.Contains("ZWrite On", source);
+            StringAssert.Contains("ZTest LEqual", source);
+            StringAssert.Contains("Queue\"=\"AlphaTest-10", source);
+        }
+
+        [Test]
+        public void BuildingArtworkDrawsBetweenProxyDepthAndFlora()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingSprite.shader");
+
+            StringAssert.Contains("Queue\"=\"AlphaTest-5", source);
+            StringAssert.Contains("ZWrite Off", source);
+            StringAssert.Contains("ZTest Always", source);
+            StringAssert.DoesNotContain("Queue\"=\"Transparent", source);
+        }
+
+        [Test]
+        public void FloraShadowLightUsesAnIsolatedHighResolutionMap()
+        {
+            var controllerSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+
+            StringAssert.Contains("_floraShadowSun.shadowCustomResolution = 4096", controllerSource);
+            StringAssert.DoesNotContain("_sun.shadowCustomResolution = 4096", controllerSource);
+        }
+
+        [Test]
+        public void FrontFloraAndCommittedPropsUseDepthAwarePriority()
+        {
+            var floraShader = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/LitShadowReceivingSprite.shader");
+            var worldSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            var propSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
+
+            StringAssert.Contains("ZTest [_ZTest]", floraShader);
+            StringAssert.Contains("IsBeyondNearestBuildingFront", worldSource);
+            StringAssert.Contains("renderQueue = 3001", worldSource);
+            StringAssert.Contains("CreatePropDepthPrepass", propSource);
+            StringAssert.Contains("Committed Prop Depth Prepass", propSource);
+            StringAssert.Contains("renderQueue = 2435", propSource);
+            StringAssert.Contains("_camera.transform.position", worldSource);
+            StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
+            StringAssert.Contains("CompareFunction.Always", worldSource);
+            StringAssert.Contains("material.renderQueue = 2455", propSource);
+            StringAssert.Contains("IsOnNearestBuildingCameraFacingSide", propSource);
+            StringAssert.Contains("ApplyFrontPropPresentationPriority", propSource);
+            StringAssert.Contains("_buildingPackage.ShadowDirectionOffsetDegrees", propSource);
+            StringAssert.Contains("material.renderQueue = 3000", propSource);
+        }
+
+        [Test]
         public void LotWorldAddsBuildingsUntilFullAndDeletingOneFreesItsSite()
         {
             var root = new GameObject("Multi Building Capacity Test");
