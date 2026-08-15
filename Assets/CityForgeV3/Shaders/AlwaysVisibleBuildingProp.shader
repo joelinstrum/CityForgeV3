@@ -1,24 +1,28 @@
-Shader "CityForgeV3/BuildingPropPlacementPreview"
+Shader "CityForgeV3/AlwaysVisibleBuildingProp"
 {
     Properties
     {
-        _MainTex ("Sprite Texture", 2D) = "white" {}
-        _Color ("Tint", Color) = (1,1,1,1)
+        _Color ("Color", Color) = (1,1,1,1)
+        _MainTex ("Albedo", 2D) = "white" {}
+        _BumpMap ("Normal Map", 2D) = "bump" {}
+        _MetallicGlossMap ("Metallic", 2D) = "black" {}
+        _Metallic ("Metallic", Range(0,1)) = 0.35
+        _Glossiness ("Smoothness", Range(0,1)) = 0.32
     }
     SubShader
     {
-        Tags { "Queue"="Overlay" "RenderType"="Transparent" "IgnoreProjector"="True" }
+        Tags { "Queue"="AlphaTest+5" "RenderType"="Opaque" }
         Cull Off
-        Lighting Off
         ZWrite Off
         ZTest Always
-        Blend SrcAlpha OneMinusSrcAlpha
+
         Pass
         {
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -32,6 +36,7 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             fixed4 _Color;
+
             v2f vert(appdata input)
             {
                 v2f output;
@@ -39,6 +44,7 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 return output;
             }
+
             fixed4 frag(v2f input) : SV_Target
             {
                 return tex2D(_MainTex, input.uv) * _Color;
@@ -46,4 +52,5 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
             ENDCG
         }
     }
+    FallBack "Diffuse"
 }

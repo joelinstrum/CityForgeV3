@@ -21,6 +21,7 @@ public static class LiveLotPlacementQaShortcut
     private static int _startupFramesRemaining;
     private static GameObject _qaRoot;
     private static LotWorldController _qaWorld;
+    private static bool _showAleHousePreviewAfterOpen;
     private const string NightTriggerPath = "/tmp/cityforge-open-art-deco-night-qa";
     private const string MorningTriggerPath = "/tmp/cityforge-open-art-deco-morning-qa";
     private const string BeauxAfternoonTriggerPath = "/tmp/cityforge-open-beaux-afternoon-qa";
@@ -30,6 +31,12 @@ public static class LiveLotPlacementQaShortcut
     private const string PubQaAfternoonTriggerPath = "/tmp/cityforge-open-pub-qa-afternoon";
     private const string PubQaMorningTriggerPath = "/tmp/cityforge-open-pub-qa-morning";
     private const string PubQaNoonTriggerPath = "/tmp/cityforge-open-pub-qa-noon";
+    private const string AleHousePreviewTriggerPath =
+        "/tmp/cityforge-show-ale-house-building-prop-preview";
+    private const string BostonPropQaTriggerPath =
+        "/tmp/cityforge-open-boston-building-prop-qa";
+    private const string AleHouseCommitTriggerPath =
+        "/tmp/cityforge-commit-ale-house-building-prop-qa";
     // Persists the requested preset across Unity's play-mode domain reload.
     private const string PendingTriggerPath = "/tmp/cityforge-art-deco-qa-pending";
     private static TimeOfDayPreset _requestedTime = TimeOfDayPreset.Afternoon;
@@ -45,7 +52,7 @@ public static class LiveLotPlacementQaShortcut
             {
                 var requested = File.ReadAllText(PendingTriggerPath).Trim();
                 var pending = requested.Split('|');
-                if (pending.Length == 2)
+                if (pending.Length >= 2)
                 {
                     if (pending[0].StartsWith("LOT:"))
                         _requestedSavedLotId = pending[0].Substring(4);
@@ -55,7 +62,9 @@ public static class LiveLotPlacementQaShortcut
                         _requestedBuildingId = pending[0];
                     }
                 }
-                var requestedPreset = pending.Length == 2 ? pending[1] : requested;
+                _showAleHousePreviewAfterOpen = pending.Length >= 3 &&
+                    pending[2] == "ALEHOUSE";
+                var requestedPreset = pending.Length >= 2 ? pending[1] : requested;
                 _requestedTime = requestedPreset == nameof(TimeOfDayPreset.Night)
                     ? TimeOfDayPreset.Night
                     : TimeOfDayPreset.Morning;
@@ -87,7 +96,38 @@ public static class LiveLotPlacementQaShortcut
 
     private static void PollFileTriggers()
     {
-        if (File.Exists(BeauxAfternoonTriggerPath))
+        if (File.Exists(AleHouseCommitTriggerPath))
+        {
+            File.Delete(AleHouseCommitTriggerPath);
+            if (_qaWorld == null || !_qaWorld.CommitBuildingPropForQa(
+                    BuildingPropCatalog.AleHouseSignId, 0, 0.55f, 0.44f))
+                Debug.LogError("The Ale House QA prop could not be committed.");
+            else
+                _qaWorld.SetBuildingPropQaCameraZoom(10f);
+        }
+        else if (File.Exists(BostonPropQaTriggerPath))
+        {
+            File.Delete(BostonPropQaTriggerPath);
+            _requestedSavedLotId = "untitled-lot";
+            _requestedTime = TimeOfDayPreset.Afternoon;
+            if (!EditorApplication.isPlaying)
+            {
+                File.WriteAllText(PendingTriggerPath,
+                    $"LOT:{_requestedSavedLotId}|{_requestedTime}|ALEHOUSE");
+                EditorApplication.isPlaying = true;
+            }
+            else
+            {
+                _showAleHousePreviewAfterOpen = true;
+                OpenPersistentQaWorld();
+            }
+        }
+        else if (File.Exists(AleHousePreviewTriggerPath))
+        {
+            File.Delete(AleHousePreviewTriggerPath);
+            ShowAleHouseBuildingPropPreview();
+        }
+        else if (File.Exists(BeauxAfternoonTriggerPath))
         {
             File.Delete(BeauxAfternoonTriggerPath);
             _requestedBuildingId = BeauxArtsBuildingId;
@@ -184,6 +224,20 @@ public static class LiveLotPlacementQaShortcut
         OpenPersistentQaWorld();
     }
 
+    [MenuItem("City Forge/QA/Show Ale House Building-Prop Preview")]
+    private static void ShowAleHouseBuildingPropPreview()
+    {
+        if (_qaWorld == null)
+        {
+            Debug.LogError("Open the Boston Pub QA lot before showing the Ale House preview.");
+            return;
+        }
+        _qaWorld.SetBuildingPropQaCameraZoom(10f);
+        if (!_qaWorld.ShowBuildingPropPreviewForQa(
+                BuildingPropCatalog.AleHouseSignId, 0, 0.55f, 0.44f))
+            Debug.LogError("The Ale House preview could not be shown on the QA building.");
+    }
+
     [MenuItem("City Forge/QA/Open Beaux Arts Commercial Night Live Placement")]
     private static void OpenBeauxArtsCommercialNightLivePlacement()
     {
@@ -272,6 +326,11 @@ public static class LiveLotPlacementQaShortcut
         // This is QA-only framing; production camera behavior is unchanged.
         if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
             world.SetQaOrthographicSize(22f);
+        if (_showAleHousePreviewAfterOpen)
+        {
+            _showAleHousePreviewAfterOpen = false;
+            ShowAleHouseBuildingPropPreview();
+        }
 
         // The bootstrap splash is a full-screen UIDocument and can visually
         // cover a correctly rendered QA world. Disable only the app UI after

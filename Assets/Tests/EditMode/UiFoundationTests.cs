@@ -3,7 +3,10 @@ using CityForgeV3.World;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.TestTools;
 
 namespace CityForgeV3.Tests
 {
@@ -48,6 +51,70 @@ namespace CityForgeV3.Tests
                 item.ModelYawDegrees + hostQuarterTurns * 90f, 360f);
 
             Assert.That(yaw, Is.EqualTo(expectedYaw));
+        }
+
+        [Test]
+        public void BuildingPropPreview_UsesRealMeshAndAlwaysVisibleMaterial()
+        {
+            var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
+            var prefab = Resources.Load<GameObject>(item.ModelResourcePath);
+            var model = Object.Instantiate(prefab);
+            try
+            {
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .Any(renderer => renderer is not SpriteRenderer), Is.True);
+                LogAssert.ignoreFailingMessages = true;
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropMaterials", model, item);
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropPreviewMaterials", model);
+
+                foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+                {
+                    Assert.That(renderer.sharedMaterial.shader.name,
+                        Is.EqualTo("CityForgeV3/BuildingPropPlacementPreview"));
+                    Assert.That(renderer.sharedMaterial.renderQueue, Is.EqualTo(5000));
+                    Assert.That(renderer.shadowCastingMode,
+                        Is.EqualTo(ShadowCastingMode.Off));
+                    Assert.That(renderer.receiveShadows, Is.False);
+                }
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(model);
+            }
+        }
+
+        [Test]
+        public void BuildingPropCommittedMaterial_RendersAfterBuildingArtwork()
+        {
+            var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
+            var model = Object.Instantiate(Resources.Load<GameObject>(item.ModelResourcePath));
+            try
+            {
+                LogAssert.ignoreFailingMessages = true;
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropMaterials", model, item);
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(renderer => renderer.sharedMaterials)
+                    .All(material => material.renderQueue == 5000 &&
+                        material.shader.name == "CityForgeV3/AlwaysVisibleBuildingProp"),
+                    Is.True);
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .All(renderer => renderer.sortingOrder == 2200), Is.True);
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(model);
+            }
+        }
+
+        private static void InvokeBuildingPropMaterialMethod(string name,
+            params object[] arguments)
+        {
+            var method = typeof(LotWorldController).GetMethod(name,
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(null, arguments);
         }
 
         [Test]

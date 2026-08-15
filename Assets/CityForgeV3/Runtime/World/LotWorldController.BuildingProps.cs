@@ -7,7 +7,7 @@ namespace CityForgeV3.World
     public sealed partial class LotWorldController
     {
         private Transform _buildingPropRoot;
-        private SpriteRenderer _buildingPropPreview;
+        private Transform _buildingPropPreview;
         private readonly List<GameObject> _buildingPropPresentations = new();
         private string _buildingPropPreviewId = "";
         private int _buildingPropPreviewHostIndex = -1;
@@ -21,14 +21,7 @@ namespace CityForgeV3.World
             _buildingPropRoot.SetParent(transform, false);
             var preview = new GameObject("Building Prop Placement Preview");
             preview.transform.SetParent(transform, false);
-            _buildingPropPreview = preview.AddComponent<SpriteRenderer>();
-            _buildingPropPreview.sortingOrder = 2200;
-            var previewShader = Shader.Find("CityForgeV3/BuildingPropPlacementPreview");
-            if (previewShader != null)
-            {
-                _buildingPropPreview.material = new Material(previewShader);
-                _buildingPropPreview.material.renderQueue = 5000;
-            }
+            _buildingPropPreview = preview.transform;
             preview.SetActive(false);
         }
 
@@ -44,8 +37,21 @@ namespace CityForgeV3.World
             _buildingPropPreviewId = componentId ?? "";
             _buildingPropPreviewHostIndex = -1;
             if (_buildingPropPreview == null) return;
-            _buildingPropPreview.sprite = LoadBuildingPropSprite(componentId);
-            _buildingPropPreview.color = new Color(0.45f, 1f, 0.62f, 0.58f);
+            for (var index = _buildingPropPreview.childCount - 1; index >= 0; index--)
+            {
+                var child = _buildingPropPreview.GetChild(index).gameObject;
+                if (Application.isPlaying) Destroy(child); else DestroyImmediate(child);
+            }
+            var definition = BuildingPropCatalog.Find(componentId);
+            var prefab = definition == null ? null :
+                Resources.Load<GameObject>(definition.ModelResourcePath);
+            if (prefab != null)
+            {
+                var model = Instantiate(prefab, _buildingPropPreview);
+                model.name = $"{componentId} Placement Model";
+                ApplyBuildingPropMaterials(model, definition);
+                ApplyBuildingPropPreviewMaterials(model);
+            }
             _buildingPropPreview.gameObject.SetActive(false);
         }
 
@@ -54,6 +60,7 @@ namespace CityForgeV3.World
         {
             if (!_buildingPropPlacementActive || _buildingPropPreview == null ||
                 string.IsNullOrWhiteSpace(_buildingPropPreviewId) ||
+                _buildingPropPreview.childCount == 0 ||
                 !TryBuildingAttachmentPoint(panelPosition, panelSize,
                     out var buildingIndex, out var normalizedX, out var normalizedY))
             {
@@ -65,8 +72,10 @@ namespace CityForgeV3.World
             _buildingPropPreviewHostIndex = buildingIndex;
             _buildingPropPreviewX = normalizedX;
             _buildingPropPreviewY = normalizedY;
-            PositionBuildingPropRenderer(_buildingPropPreview, buildingIndex,
+            PositionBuildingPropModel(_buildingPropPreview.GetChild(0), buildingIndex,
                 normalizedX, normalizedY, _buildingPropPreviewId, 1f);
+            ConfigureBuildingPropPreviewRenderers(
+                _buildingPropPreview.GetChild(0).gameObject);
             _buildingPropPreview.gameObject.SetActive(true);
             return true;
         }
@@ -99,6 +108,75 @@ namespace CityForgeV3.World
             NotifyStateChanged();
             return true;
         }
+
+#if UNITY_EDITOR
+        public bool ShowBuildingPropPreviewForQa(string componentId,
+            int buildingIndex, float normalizedX, float normalizedY)
+        {
+            if (_camera == null || buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            SetBuildingPropPlacementPreview(componentId);
+            if (_buildingPropPreview == null || _buildingPropPreview.childCount == 0)
+                return false;
+            _buildingPropPlacementActive = true;
+            _buildingPropPreviewHostIndex = buildingIndex;
+            _buildingPropPreviewX = Mathf.Clamp01(normalizedX);
+            _buildingPropPreviewY = Mathf.Clamp01(normalizedY);
+            var model = _buildingPropPreview.GetChild(0);
+            PositionBuildingPropModel(model, buildingIndex,
+                _buildingPropPreviewX, _buildingPropPreviewY, componentId, 1f);
+            ConfigureBuildingPropPreviewRenderers(model.gameObject);
+            _buildingPropPreview.gameObject.SetActive(true);
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+                Debug.Log($"building-prop-preview renderer={renderer.name} " +
+                    $"enabled={renderer.enabled} bounds={renderer.bounds} " +
+                    $"shader={renderer.sharedMaterial?.shader?.name} " +
+                    $"queue={renderer.sharedMaterial?.renderQueue}");
+            return true;
+        }
+
+        public void SetBuildingPropQaCameraZoom(float orthographicSize)
+        {
+            if (_camera != null && _camera.orthographic)
+            {
+                _camera.orthographicSize = Mathf.Max(1f, orthographicSize);
+                RefreshBuildingPropPresentations();
+                foreach (var presentation in _buildingPropPresentations)
+                    foreach (var renderer in presentation.GetComponentsInChildren<Renderer>(true))
+                        Debug.Log($"building-prop-committed renderer={renderer.name} " +
+                            $"enabled={renderer.enabled} bounds={renderer.bounds} " +
+                            $"shader={renderer.sharedMaterial?.shader?.name} " +
+                            $"queue={renderer.sharedMaterial?.renderQueue}");
+            }
+        }
+
+        public bool CommitBuildingPropForQa(string componentId,
+            int buildingIndex, float normalizedX, float normalizedY)
+        {
+            var definition = BuildingPropCatalog.Find(componentId);
+            if (definition == null || buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[buildingIndex];
+            building.Attachments ??= new List<PlacedBuildingProp>();
+            building.Attachments.Add(new PlacedBuildingProp
+            {
+                InstanceId = "qa-building-prop-commit",
+                ComponentId = definition.Id,
+                Revision = definition.Revision,
+                HostElevation = definition.HostElevation,
+                NormalizedX = Mathf.Clamp01(normalizedX),
+                NormalizedY = Mathf.Clamp01(normalizedY),
+                ProjectionDepthMeters = definition.ProjectionDepthMeters,
+                Scale = 1f
+            });
+            if (_buildingPropPreview != null)
+                _buildingPropPreview.gameObject.SetActive(false);
+            ApplySessionState();
+            return true;
+        }
+#endif
 
         private bool TryBuildingAttachmentPoint(Vector2 panelPosition,
             Vector2 panelSize, out int buildingIndex, out float normalizedX,
@@ -168,31 +246,6 @@ namespace CityForgeV3.World
             }
         }
 
-        private void PositionBuildingPropRenderer(SpriteRenderer renderer,
-            int buildingIndex, float normalizedX, float normalizedY,
-            string componentId, float scale)
-        {
-            var hostRenderer = PresentationForBuildingIndex(buildingIndex)?
-                .GetComponentInChildren<SpriteRenderer>();
-            var definition = BuildingPropCatalog.Find(componentId);
-            if (renderer == null || renderer.sprite == null || hostRenderer == null ||
-                definition == null) return;
-            var bounds = hostRenderer.bounds;
-            var min = _camera.WorldToScreenPoint(bounds.min);
-            var max = _camera.WorldToScreenPoint(bounds.max);
-            var depth = _camera.WorldToScreenPoint(bounds.center).z -
-                definition.ForegroundDepthMeters;
-            var pixel = new Vector3(
-                Mathf.Lerp(Mathf.Min(min.x, max.x), Mathf.Max(min.x, max.x), normalizedX),
-                Mathf.Lerp(Mathf.Min(min.y, max.y), Mathf.Max(min.y, max.y), normalizedY),
-                depth);
-            renderer.transform.position = _camera.ScreenToWorldPoint(pixel);
-            renderer.transform.rotation = _camera.transform.rotation;
-            var spriteWidth = Mathf.Max(0.01f, renderer.sprite.bounds.size.x);
-            var uniform = definition.VisibleWidthMeters / spriteWidth * Mathf.Max(0.1f, scale);
-            renderer.transform.localScale = Vector3.one * uniform;
-        }
-
         private void PositionBuildingPropModel(Transform model,
             int buildingIndex, float normalizedX, float normalizedY,
             string componentId, float scale)
@@ -260,7 +313,7 @@ namespace CityForgeV3.World
             if (baseColor == null) return;
             var normal = Resources.Load<Texture2D>(definition.NormalResourcePath);
             var metallic = Resources.Load<Texture2D>(definition.MetallicResourcePath);
-            var shader = Shader.Find("Standard");
+            var shader = Shader.Find("CityForgeV3/AlwaysVisibleBuildingProp");
             if (shader == null) return;
             foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
             {
@@ -284,20 +337,49 @@ namespace CityForgeV3.World
                         material.SetFloat("_Metallic", 0.35f);
                     }
                     material.SetFloat("_Glossiness", 0.32f);
+                    material.renderQueue = 5000;
                     materials[index] = material;
                 }
                 renderer.materials = materials;
+                renderer.sortingOrder = 2200;
             }
         }
 
-        private static Sprite LoadBuildingPropSprite(string componentId)
+        private static void ApplyBuildingPropPreviewMaterials(GameObject root)
         {
-            var definition = BuildingPropCatalog.Find(componentId);
-            var texture = definition == null ? null :
-                Resources.Load<Texture2D>(definition.PreviewResourcePath);
-            if (texture == null) return null;
-            return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f), 500f, 0, SpriteMeshType.FullRect);
+            var shader = Shader.Find("CityForgeV3/BuildingPropPlacementPreview");
+            if (root == null || shader == null) return;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                var source = renderer.sharedMaterials;
+                var preview = new Material[source.Length];
+                for (var index = 0; index < source.Length; index++)
+                {
+                    var material = new Material(shader)
+                    {
+                        name = "Building Prop Always-Visible Placement Material",
+                        mainTexture = source[index] == null ? null : source[index].mainTexture,
+                        color = new Color(0.45f, 1f, 0.62f, 0.68f),
+                        renderQueue = 5000
+                    };
+                    preview[index] = material;
+                }
+                renderer.sharedMaterials = preview;
+            }
+            ConfigureBuildingPropPreviewRenderers(root);
         }
+
+        private static void ConfigureBuildingPropPreviewRenderers(GameObject root)
+        {
+            if (root == null) return;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.sortingOrder = 2200;
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+        }
+
     }
 }
