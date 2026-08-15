@@ -103,7 +103,7 @@ public static class LiveLotPlacementQaShortcut
                     BuildingPropCatalog.AleHouseSignId, 0, 0.50f, 0.30f))
                 Debug.LogError("The Ale House QA prop could not be committed.");
             else
-                _qaWorld.SetBuildingPropQaCameraZoom(10f);
+                _qaWorld.SetBuildingPropQaCameraZoom(6f);
         }
         else if (File.Exists(BostonPropQaTriggerPath))
         {
@@ -232,7 +232,7 @@ public static class LiveLotPlacementQaShortcut
             Debug.LogError("Open the Boston Pub QA lot before showing the Ale House preview.");
             return;
         }
-        _qaWorld.SetBuildingPropQaCameraZoom(10f);
+        _qaWorld.SetBuildingPropQaCameraZoom(6f);
         if (!_qaWorld.ShowBuildingPropPreviewForQa(
                 BuildingPropCatalog.AleHouseSignId, 0, 0.50f, 0.30f))
             Debug.LogError("The Ale House preview could not be shown on the QA building.");

@@ -26,7 +26,7 @@ namespace CityForgeV3.Tests
                 Does.Contain("Models/ale-house-animated-v01"));
             Assert.That(item.ForegroundDepthMeters,
                 Is.GreaterThan(item.ProjectionDepthMeters));
-            Assert.That(item.ModelYawDegrees, Is.EqualTo(70f));
+            Assert.That(item.ModelYawDegrees, Is.EqualTo(15f));
             Assert.That(Resources.Load<Texture2D>(item.BaseColorResourcePath),
                 Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(item.NormalResourcePath),
@@ -39,10 +39,10 @@ namespace CityForgeV3.Tests
                 transform => transform.name == item.SwingTransformName), Is.True);
         }
 
-        [TestCase(0, 70f)]
-        [TestCase(1, 160f)]
-        [TestCase(2, 250f)]
-        [TestCase(3, 340f)]
+        [TestCase(0, 15f)]
+        [TestCase(1, 105f)]
+        [TestCase(2, 195f)]
+        [TestCase(3, 285f)]
         public void BuildingPropFacing_FollowsHostQuarterTurns(
             int hostQuarterTurns, float expectedYaw)
         {
