@@ -123,7 +123,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void BuildingProps_RenderThroughDedicatedFinalPassCamera()
+        public void BuildingProps_RenderThroughCameraAfterEverythingPass()
         {
             var source = File.ReadAllText(
                 "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
@@ -132,14 +132,13 @@ namespace CityForgeV3.Tests
             var layers = File.ReadAllText("ProjectSettings/TagManager.asset");
 
             StringAssert.Contains("BuildingPropOverlay", layers);
-            StringAssert.Contains("BuildBuildingPropOverlayCamera", source);
-            StringAssert.Contains("CameraClearFlags.Depth", source);
-            StringAssert.Contains("_camera.depth + 1f", source);
+            StringAssert.Contains("BuildBuildingPropOverlayPass", source);
+            StringAssert.Contains("CameraEvent.AfterEverything", source);
+            StringAssert.Contains("DrawRenderer", source);
             StringAssert.Contains("_camera.cullingMask &=", source);
             StringAssert.Contains("SetBuildingPropOverlayLayer(model)", source);
             StringAssert.Contains("SetBuildingPropOverlayLayer(root)", source);
-            StringAssert.Contains("otherCamera == _buildingPropOverlayCamera",
-                controllerSource);
+            StringAssert.Contains("RebuildBuildingPropOverlayPass", controllerSource);
         }
 
         private static void InvokeBuildingPropMaterialMethod(string name,

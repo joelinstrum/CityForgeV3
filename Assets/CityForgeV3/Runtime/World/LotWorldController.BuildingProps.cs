@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace CityForgeV3.World
 {
@@ -8,7 +9,7 @@ namespace CityForgeV3.World
     {
         private Transform _buildingPropRoot;
         private Transform _buildingPropPreview;
-        private Camera _buildingPropOverlayCamera;
+        private CommandBuffer _buildingPropOverlayCommands;
         private int _buildingPropOverlayLayer = -1;
         private readonly List<GameObject> _buildingPropPresentations = new();
         private string _buildingPropPreviewId = "";
@@ -23,7 +24,7 @@ namespace CityForgeV3.World
             if (_buildingPropOverlayLayer < 0)
                 throw new InvalidOperationException(
                     "The BuildingPropOverlay Unity layer is required.");
-            BuildBuildingPropOverlayCamera();
+            BuildBuildingPropOverlayPass();
             _buildingPropRoot = new GameObject("Building Attachments").transform;
             _buildingPropRoot.SetParent(transform, false);
             _buildingPropRoot.gameObject.layer = _buildingPropOverlayLayer;
@@ -80,7 +81,7 @@ namespace CityForgeV3.World
                 return false;
             }
             _buildingPropPreviewHostIndex = buildingIndex;
-            SyncBuildingPropOverlayCamera();
+            RebuildBuildingPropOverlayPass();
             _buildingPropPreviewX = normalizedX;
             _buildingPropPreviewY = normalizedY;
             PositionBuildingPropModel(_buildingPropPreview.GetChild(0), buildingIndex,
@@ -426,34 +427,43 @@ namespace CityForgeV3.World
             }
         }
 
-        private void BuildBuildingPropOverlayCamera()
+        private void BuildBuildingPropOverlayPass()
         {
-            if (_camera == null || _buildingPropOverlayCamera != null) return;
-            var overlayObject = new GameObject("Building Prop Overlay Camera");
-            overlayObject.transform.SetParent(_camera.transform, false);
-            _buildingPropOverlayCamera = overlayObject.AddComponent<Camera>();
+            if (_camera == null || _buildingPropOverlayCommands != null) return;
+            _buildingPropOverlayCommands = new CommandBuffer
+            {
+                name = "City Forge Building Prop Final Pass"
+            };
+            _camera.AddCommandBuffer(CameraEvent.AfterEverything,
+                _buildingPropOverlayCommands);
             _camera.cullingMask &= ~(1 << _buildingPropOverlayLayer);
-            SyncBuildingPropOverlayCamera();
+            RebuildBuildingPropOverlayPass();
         }
 
-        private void SyncBuildingPropOverlayCamera()
+        private void RebuildBuildingPropOverlayPass()
         {
-            if (_camera == null || _buildingPropOverlayCamera == null) return;
-            _buildingPropOverlayCamera.transform.localPosition = Vector3.zero;
-            _buildingPropOverlayCamera.transform.localRotation = Quaternion.identity;
-            _buildingPropOverlayCamera.orthographic = _camera.orthographic;
-            _buildingPropOverlayCamera.orthographicSize = _camera.orthographicSize;
-            _buildingPropOverlayCamera.fieldOfView = _camera.fieldOfView;
-            _buildingPropOverlayCamera.nearClipPlane = _camera.nearClipPlane;
-            _buildingPropOverlayCamera.farClipPlane = _camera.farClipPlane;
-            _buildingPropOverlayCamera.rect = _camera.rect;
-            _buildingPropOverlayCamera.depth = _camera.depth + 1f;
-            _buildingPropOverlayCamera.clearFlags = CameraClearFlags.Depth;
-            _buildingPropOverlayCamera.cullingMask = 1 << _buildingPropOverlayLayer;
-            _buildingPropOverlayCamera.allowHDR = _camera.allowHDR;
-            _buildingPropOverlayCamera.allowMSAA = _camera.allowMSAA;
-            _buildingPropOverlayCamera.useOcclusionCulling = false;
-            _buildingPropOverlayCamera.enabled = true;
+            if (_buildingPropOverlayCommands == null) return;
+            _buildingPropOverlayCommands.Clear();
+            foreach (var presentation in _buildingPropPresentations)
+                AppendBuildingPropToOverlayPass(presentation);
+            if (_buildingPropPreview != null &&
+                _buildingPropPreview.gameObject.activeInHierarchy)
+                AppendBuildingPropToOverlayPass(_buildingPropPreview.gameObject);
+        }
+
+        private void AppendBuildingPropToOverlayPass(GameObject root)
+        {
+            if (root == null || _buildingPropOverlayCommands == null) return;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    continue;
+                var materials = renderer.sharedMaterials;
+                for (var submesh = 0; submesh < materials.Length; submesh++)
+                    if (materials[submesh] != null)
+                        _buildingPropOverlayCommands.DrawRenderer(
+                            renderer, materials[submesh], submesh);
+            }
         }
 
         private void SetBuildingPropOverlayLayer(GameObject root)
