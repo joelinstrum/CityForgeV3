@@ -272,18 +272,16 @@ namespace CityForgeV3.World
                 Mathf.Lerp(minimum.y, maximum.y, normalizedY),
                 hostDepth - Mathf.Max(0.1f, definition.ForegroundDepthMeters));
             model.position = _camera.ScreenToWorldPoint(pixel);
-            // First inherit the host artwork/camera alignment, then turn the
-            // attachment around its own vertical axis. A world-space yaw here
-            // also tilts the model in an isometric camera, making hanging
-            // signs read as rolled or upside down.
+            // Building attachments are physical world objects. Keep their
+            // vertical axis upright and align yaw to the host building rather
+            // than the camera; the mounting bar then follows the same receding
+            // screen direction as the building's side roof-line.
             var hostQuarterTurns = buildingIndex >= 0 &&
                 buildingIndex < (_session.Data.Buildings?.Count ?? 0)
                     ? _session.Data.Buildings[buildingIndex].RotationQuarterTurns
                     : 0;
-            model.rotation = _camera.transform.rotation * Quaternion.Euler(
-                0f,
-                definition.ModelYawDegrees + hostQuarterTurns * 90f,
-                0f);
+            model.rotation = Quaternion.Euler(
+                0f, definition.ModelYawDegrees + hostQuarterTurns * 90f, 0f);
             var uniform = definition.VisibleWidthMeters /
                 Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
                 Mathf.Max(0.1f, scale);

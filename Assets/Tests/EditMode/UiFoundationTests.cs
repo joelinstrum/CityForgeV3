@@ -26,7 +26,7 @@ namespace CityForgeV3.Tests
                 Does.Contain("Models/ale-house-animated-v01"));
             Assert.That(item.ForegroundDepthMeters,
                 Is.GreaterThan(item.ProjectionDepthMeters));
-            Assert.That(item.ModelYawDegrees, Is.EqualTo(60f));
+            Assert.That(item.ModelYawDegrees, Is.EqualTo(210f));
             Assert.That(Resources.Load<Texture2D>(item.BaseColorResourcePath),
                 Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(item.NormalResourcePath),
@@ -39,10 +39,10 @@ namespace CityForgeV3.Tests
                 transform => transform.name == item.SwingTransformName), Is.True);
         }
 
-        [TestCase(0, 60f)]
-        [TestCase(1, 150f)]
-        [TestCase(2, 240f)]
-        [TestCase(3, 330f)]
+        [TestCase(0, 210f)]
+        [TestCase(1, 300f)]
+        [TestCase(2, 30f)]
+        [TestCase(3, 120f)]
         public void BuildingPropFacing_FollowsHostQuarterTurns(
             int hostQuarterTurns, float expectedYaw)
         {
@@ -120,6 +120,17 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("for (var y = -1; y <= 1; y += 2)", source);
             StringAssert.Contains("for (var z = -1; z <= 1; z += 2)", source);
             StringAssert.DoesNotContain("FindBuildingVisualHitIndex", source);
+        }
+
+        [Test]
+        public void BuildingPropOrientation_IsWorldUprightAndHostRelative()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+
+            StringAssert.Contains("model.rotation = Quaternion.Euler(", source);
+            StringAssert.DoesNotContain(
+                "model.rotation = _camera.transform.rotation", source);
         }
 
         [Test]
