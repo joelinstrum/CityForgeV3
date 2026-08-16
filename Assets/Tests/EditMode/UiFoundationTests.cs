@@ -713,7 +713,8 @@ namespace CityForgeV3.Tests
         [Test]
         public void ActiveCatalogDiscoversThreeBayPackageFromManifestData()
         {
-            Assert.That(BuildingCatalog.TryFindByShortcut('T', out var entry), Is.True);
+            var entry = BuildingCatalog.Find(
+                "cityforge.v3.residential.new_england_three_bay_01");
             Assert.That(entry.Name, Is.EqualTo("New England Three-Bay House"));
             Assert.That(entry.ReviewStatus, Is.EqualTo("PENDING JOE REVIEW"));
             Assert.That(entry.OccupancyWidth, Is.EqualTo(1));
@@ -974,7 +975,8 @@ namespace CityForgeV3.Tests
         [Test]
         public void ThreeBayHouseHasRegisteredDirectionalLightingForEveryDayFacing()
         {
-            Assert.That(BuildingCatalog.TryFindByShortcut('T', out var entry), Is.True);
+            var entry = BuildingCatalog.Find(
+                "cityforge.v3.residential.new_england_three_bay_01");
             var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
             for (var facingIndex = 0; facingIndex < package.FacingCount; facingIndex++)
             {
@@ -2597,10 +2599,12 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void GovernmentHouseLeavesGAvailableForTheGridShortcut()
+        public void AssetShortcutsAreNotConnectedToEditorInput()
         {
-            Assert.That(BuildingCatalog.GovernmentHouse.Shortcut, Is.EqualTo("C"));
-            Assert.That(BuildingCatalog.TryFindByShortcut('G', out _), Is.False);
+            var source = File.ReadAllText(Path.Combine(
+                Application.dataPath, "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+            Assert.That(source, Does.Not.Contain("TryFindByShortcut"));
+            Assert.That(source, Does.Not.Contain("entry.Shortcut"));
         }
 
         [Test]

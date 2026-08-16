@@ -299,12 +299,6 @@ namespace CityForgeV3.UI
                 RotateBuilding(1);
                 evt.StopPropagation();
             }
-            else if (evt.character != '\0' &&
-                     BuildingCatalog.TryFindByShortcut(evt.character, out var catalogEntry))
-            {
-                PlaceBuilding(catalogEntry);
-                evt.StopPropagation();
-            }
         }
 
         private bool TextInputHasFocus()
@@ -952,8 +946,6 @@ namespace CityForgeV3.UI
                         entry.ShortName.ToUpperInvariant(),
                         "building-card-name"));
                     var compactMeta = $"{entry.OccupancyWidth}×{entry.OccupancyDepth}";
-                    if (!string.IsNullOrWhiteSpace(entry.Shortcut))
-                        compactMeta += $"  [{entry.Shortcut}]";
                     if (entry.ReviewStatus != "approved") compactMeta += "  REVIEW";
                     card.Add(StyledLabel(compactMeta, "building-card-meta"));
                     buildingGrid.Add(card);
