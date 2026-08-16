@@ -42,6 +42,8 @@ namespace CityForgeV3.UI
         private bool _floraDragStarted;
         private bool _propPointerDown;
         private bool _propDragStarted;
+        private bool _buildingPropPointerDown;
+        private bool _buildingPropDragStarted;
         private bool _overlayPointerDown;
         private bool _overlayDragPainted;
         private bool _roadFamilyExpanded = true;
@@ -93,6 +95,21 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
             return true;
         }
+
+        public bool OpenSavedLotBuildingRotationQa(string lotId)
+        {
+            EnsureLotWorld();
+            Show(AppScreen.LotEditor);
+            if (!_lotWorld.LoadLot(lotId)) return false;
+            _lotEditorCategory = LotEditorCategory.Buildings;
+            _lotEditorCategoryExpanded = true;
+            _lotStatus = $"Building rotation QA • {lotId}";
+            Show(AppScreen.LotEditor);
+            return true;
+        }
+
+        public void RotateSelectedBuildingForQa(int direction) =>
+            RotateBuilding(direction);
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -224,6 +241,16 @@ namespace CityForgeV3.UI
                 Show(AppScreen.LotEditor);
                 evt.StopPropagation();
             }
+            else if (evt.keyCode == KeyCode.R &&
+                     _lotWorld.ActiveObjectSelection ==
+                     LotObjectSelectionKind.BuildingProp)
+            {
+                _lotStatus = _lotWorld.RotateSelectedBuildingProp45Degrees()
+                    ? "Building prop rotated 45°"
+                    : "Select a building prop before rotating";
+                Show(AppScreen.LotEditor);
+                evt.StopPropagation();
+            }
             else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
                      _lotEditorCategory == LotEditorCategory.Buildings &&
                      _lotWorld.IsSelected)
@@ -277,22 +304,12 @@ namespace CityForgeV3.UI
                 StepZoom(-1);
                 evt.StopPropagation();
             }
-            else if (evt.character != '\0' &&
-                     BuildingCatalog.TryFindByShortcut(evt.character, out var catalogEntry))
-            {
-                PlaceBuilding(catalogEntry);
-                evt.StopPropagation();
-            }
-            else if (!_lotWorld.HasBuilding)
-            {
-                return;
-            }
-            else if (evt.keyCode == KeyCode.Q)
+            else if (_lotWorld.HasBuilding && evt.keyCode == KeyCode.Q)
             {
                 RotateBuilding(-1);
                 evt.StopPropagation();
             }
-            else if (evt.keyCode == KeyCode.E)
+            else if (_lotWorld.HasBuilding && evt.keyCode == KeyCode.E)
             {
                 RotateBuilding(1);
                 evt.StopPropagation();
@@ -475,6 +492,14 @@ namespace CityForgeV3.UI
                         evt.StopPropagation();
                         return;
                     }
+                    if (selection == LotObjectSelectionKind.BuildingProp)
+                    {
+                        _buildingPropPointerDown = true;
+                        _buildingPropDragStarted = false;
+                        viewportInput.CapturePointer(evt.pointerId);
+                        evt.StopPropagation();
+                        return;
+                    }
                 }
                 if (_lotEditorCategory == LotEditorCategory.Buildings && evt.button == 0)
                 {
@@ -488,10 +513,16 @@ namespace CityForgeV3.UI
                 if (_lotEditorCategory == LotEditorCategory.BuildingProps &&
                     evt.button == 0)
                 {
-                    _lotStatus = _lotWorld.PlaceBuildingPropFromPanel(
-                        _placementBuildingPropId, evt.position, panelSize)
-                        ? "Ale House sign attached to building • saved with its host"
+                    var placed = _lotWorld.PlaceBuildingPropFromPanel(
+                        _placementBuildingPropId, evt.position, panelSize);
+                    _lotStatus = placed
+                        ? "Ale House sign attached • drag it to reposition"
                         : "Move the translucent sign over a building facade";
+                    if (placed)
+                    {
+                        _placementBuildingPropId = "";
+                        _lotWorld.SetBuildingPropPlacementPreview("");
+                    }
                     Show(AppScreen.LotEditor);
                     evt.StopPropagation();
                     return;
@@ -553,7 +584,8 @@ namespace CityForgeV3.UI
                     viewportInput.resolvedStyle.width,
                     viewportInput.resolvedStyle.height);
                 var hoverSuppressed = _buildingPointerDown || _floraPointerDown ||
-                    _propPointerDown || _overlayPointerDown || _roadPointerDown ||
+                    _propPointerDown || _buildingPropPointerDown ||
+                    _overlayPointerDown || _roadPointerDown ||
                     ShouldPrioritizeToolPlacement(
                         _lotEditorCategory, _placementFloraId, _placementPropId) ||
                     (_lotEditorCategory == LotEditorCategory.BuildingProps &&
@@ -586,6 +618,13 @@ namespace CityForgeV3.UI
                 {
                     if (_lotWorld.DragPropFromPanel(evt.position, panelSize))
                         _propDragStarted = true;
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_buildingPropPointerDown)
+                {
+                    if (_lotWorld.DragBuildingPropFromPanel(evt.position, panelSize))
+                        _buildingPropDragStarted = true;
                     evt.StopPropagation();
                     return;
                 }
@@ -689,6 +728,24 @@ namespace CityForgeV3.UI
                         ? "Fence moved"
                         : "Fence selected • drag to move";
                     _propDragStarted = false;
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (evt.button == 0 && _buildingPropPointerDown)
+                {
+                    _buildingPropPointerDown = false;
+                    var panelSize = new Vector2(
+                        viewportInput.resolvedStyle.width,
+                        viewportInput.resolvedStyle.height);
+                    if (_lotWorld.DragBuildingPropFromPanel(evt.position, panelSize))
+                        _buildingPropDragStarted = true;
+                    viewportInput.ReleasePointer(evt.pointerId);
+                    _lotWorld.EndBuildingPropDrag();
+                    _lotStatus = _buildingPropDragStarted
+                        ? "Building prop moved on its facade"
+                        : "Building prop selected • drag to move";
+                    _buildingPropDragStarted = false;
                     Show(AppScreen.LotEditor);
                     evt.StopPropagation();
                     return;
@@ -904,8 +961,6 @@ namespace CityForgeV3.UI
                         entry.ShortName.ToUpperInvariant(),
                         "building-card-name"));
                     var compactMeta = $"{entry.OccupancyWidth}×{entry.OccupancyDepth}";
-                    if (!string.IsNullOrWhiteSpace(entry.Shortcut))
-                        compactMeta += $"  [{entry.Shortcut}]";
                     if (entry.ReviewStatus != "approved") compactMeta += "  REVIEW";
                     card.Add(StyledLabel(compactMeta, "building-card-meta"));
                     buildingGrid.Add(card);
@@ -1070,23 +1125,25 @@ namespace CityForgeV3.UI
                 moveRow.Add(CfButton.Create("→", () => MoveCategorySelectionOrPan(1, 0), true, "icon"));
                 inspector.Add(moveRow);
 
-                var actionRow = new VisualElement();
-                actionRow.AddToClassList("inspector-actions");
-                actionRow.Add(CfButton.Create(
-                    "↶",
-                    () => RotateBuilding(-1),
-                    true,
-                    "rotation-icon"));
-                actionRow[0].name = "Rotate Building Counter-clockwise";
-                actionRow[0].tooltip = "Rotate counter-clockwise [Q]";
-                actionRow.Add(CfButton.Create(
-                    "↷",
-                    () => RotateBuilding(1),
-                    true,
-                    "rotation-icon"));
-                actionRow[1].name = "Rotate Building Clockwise";
-                actionRow[1].tooltip = "Rotate clockwise [E]";
-                inspector.Add(actionRow);
+                var counterClockwiseRow = new VisualElement();
+                counterClockwiseRow.AddToClassList("inspector-actions");
+                var counterClockwiseButton = CfButton.Create(
+                    "↶  ROTATE COUNTER-CLOCKWISE",
+                    () => RotateBuilding(-1));
+                counterClockwiseButton.name = "Rotate Building Counter-clockwise";
+                counterClockwiseButton.tooltip = "Rotate counter-clockwise";
+                counterClockwiseRow.Add(counterClockwiseButton);
+                inspector.Add(counterClockwiseRow);
+
+                var clockwiseRow = new VisualElement();
+                clockwiseRow.AddToClassList("inspector-actions");
+                var clockwiseButton = CfButton.Create(
+                    "↷  ROTATE CLOCKWISE",
+                    () => RotateBuilding(1));
+                clockwiseButton.name = "Rotate Building Clockwise";
+                clockwiseButton.tooltip = "Rotate clockwise";
+                clockwiseRow.Add(clockwiseButton);
+                inspector.Add(clockwiseRow);
 
                 var destructiveRow = new VisualElement();
                 destructiveRow.AddToClassList("inspector-actions");
@@ -2104,7 +2161,9 @@ namespace CityForgeV3.UI
         {
             _placementFloraId = "";
             _placementPropId = "";
+            _placementBuildingPropId = "";
             _placementOverlayTextureId = "";
+            _lotWorld.SetBuildingPropPlacementPreview("");
             _lotWorld.DeselectAll();
             _lotStatus = "Selection cleared — arrows pan the lot";
             Show(AppScreen.LotEditor);
@@ -2151,7 +2210,6 @@ namespace CityForgeV3.UI
                 : $"Building rotated counter-clockwise — facing {orientation}";
             Show(AppScreen.LotEditor);
         }
-
         private void DeleteBuilding()
         {
             _lotStatus = _lotWorld.DeleteSelectedBuilding()

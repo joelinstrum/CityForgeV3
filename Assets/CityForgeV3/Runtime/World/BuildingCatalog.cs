@@ -109,22 +109,6 @@ namespace CityForgeV3.World
         public static BuildingCatalogEntry GovernmentHouse => Entries[0];
         public static BuildingCatalogEntry NewEnglandHouse => Entries[1];
 
-        public static bool TryFindByShortcut(char shortcut, out BuildingCatalogEntry entry)
-        {
-            foreach (var candidate in Entries)
-            {
-                if (!string.IsNullOrEmpty(candidate.Shortcut) &&
-                    char.ToUpperInvariant(candidate.Shortcut[0]) ==
-                    char.ToUpperInvariant(shortcut))
-                {
-                    entry = candidate;
-                    return true;
-                }
-            }
-            entry = default;
-            return false;
-        }
-
         public static BuildingCatalogEntry Find(string id)
         {
             foreach (var entry in Entries)

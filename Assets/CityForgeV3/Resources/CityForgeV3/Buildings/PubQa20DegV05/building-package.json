@@ -16,7 +16,7 @@
     "depthMeters": 10.8198,
     "heightMeters": 12.0,
     "placementScale": 1.0,
-    "artworkRotationDirection": "against-building",
+    "artworkRotationDirection": "with-building",
     "frontFacingQuarterTurns": 0,
     "rotationAnchor": [
       0,

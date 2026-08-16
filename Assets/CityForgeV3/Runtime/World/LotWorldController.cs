@@ -9,7 +9,8 @@ namespace CityForgeV3.World
         None,
         Building,
         Flora,
-        Prop
+        Prop,
+        BuildingProp
     }
 
     public sealed partial class LotWorldController : MonoBehaviour
@@ -309,6 +310,7 @@ namespace CityForgeV3.World
             BuildBuildingPropRoot();
             BuildCirculationEditor();
             BuildCamera();
+            BuildBuildingPropOverlayPass();
             BuildProxyBuilding();
             BuildProjectedShadow();
             BuildHybridPresentation();
@@ -1076,6 +1078,11 @@ namespace CityForgeV3.World
             {
                 _session.Rotate(direction);
                 _session.Move(targetX, targetZ);
+                if (_session.SelectedBuildingIndex >= 0 &&
+                    _session.SelectedBuildingIndex < _session.Data.Buildings.Count)
+                    BuildingPropCatalog.RotateWithBuilding(
+                        _session.Data.Buildings[_session.SelectedBuildingIndex],
+                        direction);
             }
             ApplySessionState();
             NotifyStateChanged();
@@ -1452,10 +1459,14 @@ namespace CityForgeV3.World
             Vector2 panelPosition, Vector2 panelSize)
         {
             ClearObjectHover();
-            if (!TryLotPointFromPanel(panelPosition, panelSize, out var lotPoint))
-                return LotObjectSelectionKind.None;
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var buildingPropIndex = BuildingPropPresentationIndexAtCameraPixel(pixel);
+            if (buildingPropIndex >= 0 && BeginBuildingPropDragFromPanel(
+                    buildingPropIndex, panelPosition, panelSize))
+                return LotObjectSelectionKind.BuildingProp;
+            if (!TryLotPointFromPanel(panelPosition, panelSize, out var lotPoint))
+                return LotObjectSelectionKind.None;
             var buildingIndex = FindBuildingHitIndex(pixel,
                 new Vector2(lotPoint.x, lotPoint.z));
             var floraIndex = FloraIndexAtCameraPixel(pixel);
@@ -1507,13 +1518,24 @@ namespace CityForgeV3.World
             Vector2 panelPosition, Vector2 panelSize, bool suppress = false)
         {
             if (suppress || _buildingDragActive || _floraDragActive || _propDragActive ||
-                !TryLotPointFromPanel(panelPosition, panelSize, out var lotPoint))
+                BuildingPropDragActive)
             {
                 ClearObjectHover();
                 return LotObjectSelectionKind.None;
             }
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var buildingPropIndex = BuildingPropPresentationIndexAtCameraPixel(pixel);
+            if (buildingPropIndex >= 0)
+            {
+                ApplyBuildingPropHover(buildingPropIndex);
+                return LotObjectSelectionKind.BuildingProp;
+            }
+            if (!TryLotPointFromPanel(panelPosition, panelSize, out var lotPoint))
+            {
+                ClearObjectHover();
+                return LotObjectSelectionKind.None;
+            }
             var buildingIndex = FindBuildingHitIndex(pixel,
                 new Vector2(lotPoint.x, lotPoint.z));
             var floraIndex = FloraIndexAtCameraPixel(pixel);
@@ -1557,6 +1579,7 @@ namespace CityForgeV3.World
 
         public void ClearObjectHover()
         {
+            ClearBuildingPropHover();
             HoverObjectKind = LotObjectSelectionKind.None;
             _hoverObjectIndex = -1;
             if (_objectHoverHighlight != null)
@@ -3487,6 +3510,7 @@ namespace CityForgeV3.World
             if (_camera == null)
                 return;
 
+            RebuildBuildingPropOverlayPass();
             RetireCompetingScreenCameras();
         }
 

@@ -57,7 +57,7 @@ namespace CityForgeV3.World
                     ProjectionDepthMeters = 0.18f,
                     ForegroundDepthMeters = 0.35f,
                     ModelNativeWidthMeters = 0.9823304f,
-                    ModelYawDegrees = 70f,
+                    ModelYawDegrees = 186f,
                     SwingAmplitudeDegrees = 2.5f,
                     SwingPeriodSeconds = 6f
                 }
@@ -69,6 +69,34 @@ namespace CityForgeV3.World
                 if (string.Equals(item.Id, id, StringComparison.OrdinalIgnoreCase))
                     return item;
             return null;
+        }
+
+        public static int ResolveFacingPreset(int hostQuarterTurns,
+            float propRotationDegrees)
+        {
+            var propPreset = UnityEngine.Mathf.RoundToInt(propRotationDegrees / 45f);
+            return ((propPreset % 8) + 8) % 8;
+        }
+
+        public static void RotateWithBuilding(PlacedBuilding building, int direction)
+        {
+            if (building?.Attachments == null) return;
+            foreach (var attachment in building.Attachments)
+            {
+                if (attachment == null) continue;
+                var preset = UnityEngine.Mathf.RoundToInt(
+                    attachment.RotationDegrees / 45f);
+                attachment.RotationDegrees =
+                    ((preset + direction * 2) % 8 + 8) % 8 * 45f;
+            }
+        }
+
+        public static float ResolveYawDegrees(BuildingPropDefinition definition,
+            int hostQuarterTurns, float propRotationDegrees)
+        {
+            return UnityEngine.Mathf.Repeat(definition.ModelYawDegrees +
+                ResolveFacingPreset(hostQuarterTurns, propRotationDegrees) * 45f,
+                360f);
         }
     }
 }

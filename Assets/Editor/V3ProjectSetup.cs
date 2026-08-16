@@ -17,6 +17,16 @@ namespace CityForgeV3.Editor
             UiResourceDirectory + "/RuntimeTheme.tss";
         private const string PanelAsset =
             UiResourceDirectory + "/RuntimePanelSettings.asset";
+        private const string MacOSBuildOutput = "foe.app";
+
+        [InitializeOnLoadMethod]
+        private static void ConfigureDefaultBuildLocation()
+        {
+            EditorApplication.delayCall += () =>
+                EditorUserBuildSettings.SetBuildLocation(
+                    BuildTarget.StandaloneOSX,
+                    Path.GetFullPath(MacOSBuildOutput));
+        }
 
         public static void Configure()
         {
@@ -24,9 +34,13 @@ namespace CityForgeV3.Editor
             Directory.CreateDirectory(UiResourceDirectory);
             ConfigureRuntimePanel();
 
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            _ = new GameObject("City Forge V3 Bootstrap");
-            EditorSceneManager.SaveScene(scene, BootstrapScene);
+            if (!File.Exists(BootstrapScene))
+            {
+                var scene = EditorSceneManager.NewScene(
+                    NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                _ = new GameObject("City Forge V3 Bootstrap");
+                EditorSceneManager.SaveScene(scene, BootstrapScene);
+            }
 
             EditorBuildSettings.scenes = new[]
             {
@@ -73,6 +87,17 @@ namespace CityForgeV3.Editor
         [MenuItem("City Forge/Build macOS Player")]
         public static void BuildMacOS()
         {
+            BuildMacOS(BuildOptions.None);
+        }
+
+        [MenuItem("City Forge/Build and Run macOS Player")]
+        public static void BuildAndRunMacOS()
+        {
+            BuildMacOS(BuildOptions.AutoRunPlayer);
+        }
+
+        private static void BuildMacOS(BuildOptions options)
+        {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 Debug.LogWarning(
@@ -81,11 +106,14 @@ namespace CityForgeV3.Editor
             }
 
             Configure();
+            var outputPath = Path.GetFullPath(MacOSBuildOutput);
+            EditorUserBuildSettings.SetBuildLocation(
+                BuildTarget.StandaloneOSX, outputPath);
             var report = BuildPipeline.BuildPlayer(
                 EditorBuildSettings.scenes,
-                "Builds/City Forge V3.app",
+                outputPath,
                 BuildTarget.StandaloneOSX,
-                BuildOptions.None);
+                options);
 
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
             {
@@ -100,6 +128,12 @@ namespace CityForgeV3.Editor
         private static bool CanBuildMacOS()
         {
             return !EditorApplication.isPlayingOrWillChangePlaymode;
+        }
+
+        [MenuItem("City Forge/Build and Run macOS Player", true)]
+        private static bool CanBuildAndRunMacOS()
+        {
+            return CanBuildMacOS();
         }
     }
 

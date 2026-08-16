@@ -382,7 +382,6 @@ namespace CityForgeV3.World
                     throw new InvalidOperationException("Invalid active building catalog");
                 var packages = new List<HybridBuildingPackage>();
                 var ids = new HashSet<string>();
-                var shortcuts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var path in catalog.packageResourcePaths)
                 {
                     try
@@ -390,9 +389,6 @@ namespace CityForgeV3.World
                         var package = Load(path);
                         if (!ids.Add(package.Id))
                             throw new InvalidOperationException($"Duplicate active package id: {package.Id}");
-                        if (!string.IsNullOrWhiteSpace(package.LibraryShortcut) &&
-                            !shortcuts.Add(package.LibraryShortcut))
-                            throw new InvalidOperationException($"Duplicate building shortcut: {package.LibraryShortcut}");
                         packages.Add(package);
                     }
                     catch (Exception exception)

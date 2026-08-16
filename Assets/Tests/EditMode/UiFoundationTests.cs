@@ -3,7 +3,10 @@ using CityForgeV3.World;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.TestTools;
 
 namespace CityForgeV3.Tests
 {
@@ -23,7 +26,7 @@ namespace CityForgeV3.Tests
                 Does.Contain("Models/ale-house-animated-v01"));
             Assert.That(item.ForegroundDepthMeters,
                 Is.GreaterThan(item.ProjectionDepthMeters));
-            Assert.That(item.ModelYawDegrees, Is.EqualTo(70f));
+            Assert.That(item.ModelYawDegrees, Is.EqualTo(186f));
             Assert.That(Resources.Load<Texture2D>(item.BaseColorResourcePath),
                 Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(item.NormalResourcePath),
@@ -36,18 +39,197 @@ namespace CityForgeV3.Tests
                 transform => transform.name == item.SwingTransformName), Is.True);
         }
 
-        [TestCase(0, 70f)]
-        [TestCase(1, 160f)]
-        [TestCase(2, 250f)]
-        [TestCase(3, 340f)]
-        public void BuildingPropFacing_FollowsHostQuarterTurns(
+        [TestCase(0, 186f)]
+        [TestCase(1, 186f)]
+        [TestCase(2, 186f)]
+        [TestCase(3, 186f)]
+        public void BuildingPropFacing_UsesSavedPropPreset(
             int hostQuarterTurns, float expectedYaw)
         {
             var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
-            var yaw = Mathf.Repeat(
-                item.ModelYawDegrees + hostQuarterTurns * 90f, 360f);
+            var yaw = BuildingPropCatalog.ResolveYawDegrees(
+                item, hostQuarterTurns, 0f);
 
             Assert.That(yaw, Is.EqualTo(expectedYaw));
+        }
+
+        [Test]
+        public void BuildingPropRotation_AdvancesThroughEightUsableAngles()
+        {
+            var attachment = new PlacedBuildingProp();
+            for (var step = 1; step <= 8; step++)
+            {
+                attachment.RotationDegrees = Mathf.Repeat(
+                    attachment.RotationDegrees + 45f, 360f);
+                Assert.That(attachment.RotationDegrees,
+                    Is.EqualTo(step % 8 * 45f));
+            }
+        }
+
+        [TestCase(0, 0, 0)]
+        [TestCase(1, 0, 0)]
+        [TestCase(2, 0, 0)]
+        [TestCase(3, 0, 0)]
+        [TestCase(4, 0, 0)]
+        [TestCase(0, 45, 1)]
+        [TestCase(1, 45, 1)]
+        [TestCase(2, 45, 1)]
+        [TestCase(3, 45, 1)]
+        public void ResolvedPropPreset_DoesNotReapplyHostRotation(
+            int buildingQuarterTurns, float propRotationDegrees,
+            int expectedPreset)
+        {
+            Assert.That(BuildingPropCatalog.ResolveFacingPreset(
+                buildingQuarterTurns, propRotationDegrees),
+                Is.EqualTo(expectedPreset));
+        }
+
+        [Test]
+        public void BuildingTurn_UsesTheSameTwoPresetsAsTwoRPresses()
+        {
+            var building = new PlacedBuilding();
+            building.Attachments.Add(new PlacedBuildingProp
+                { RotationDegrees = 0f });
+
+            BuildingPropCatalog.RotateWithBuilding(building, 1);
+            Assert.That(building.Attachments[0].RotationDegrees, Is.EqualTo(90f));
+
+            BuildingPropCatalog.RotateWithBuilding(building, -1);
+            Assert.That(building.Attachments[0].RotationDegrees, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void BuildingPropPreview_UsesRealMeshAndAlwaysVisibleMaterial()
+        {
+            var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
+            var prefab = Resources.Load<GameObject>(item.ModelResourcePath);
+            var model = Object.Instantiate(prefab);
+            try
+            {
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .Any(renderer => renderer is not SpriteRenderer), Is.True);
+                LogAssert.ignoreFailingMessages = true;
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropMaterials", model, item);
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropPreviewMaterials", model);
+
+                foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+                {
+                    Assert.That(renderer.sharedMaterial.shader.name,
+                        Is.EqualTo("CityForgeV3/BuildingPropPlacementPreview"));
+                    Assert.That(renderer.sharedMaterial.renderQueue, Is.EqualTo(5000));
+                    Assert.That(renderer.shadowCastingMode,
+                        Is.EqualTo(ShadowCastingMode.Off));
+                    Assert.That(renderer.receiveShadows, Is.False);
+                }
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(model);
+            }
+        }
+
+        [Test]
+        public void BuildingPropCommittedMaterial_RendersAfterBuildingArtwork()
+        {
+            var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
+            var model = Object.Instantiate(Resources.Load<GameObject>(item.ModelResourcePath));
+            try
+            {
+                LogAssert.ignoreFailingMessages = true;
+                InvokeBuildingPropMaterialMethod("ApplyBuildingPropMaterials", model, item);
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(renderer => renderer.sharedMaterials)
+                    .All(material => material.renderQueue == 5000 &&
+                        material.shader.name == "CityForgeV3/AlwaysVisibleBuildingProp"),
+                    Is.True);
+                Assert.That(model.GetComponentsInChildren<Renderer>(true)
+                    .All(renderer => renderer.sortingOrder == 2200), Is.True);
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(model);
+            }
+        }
+
+        [Test]
+        public void BuildingPropCursor_UsesVisibleArtworkAndAllProjectedCorners()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+
+            StringAssert.Contains("FindBuildingArtworkHitIndex", source);
+            StringAssert.Contains("candidate.name == \"Directional Render\"", source);
+            StringAssert.Contains("for (var x = -1; x <= 1; x += 2)", source);
+            StringAssert.Contains("for (var y = -1; y <= 1; y += 2)", source);
+            StringAssert.Contains("for (var z = -1; z <= 1; z += 2)", source);
+            StringAssert.DoesNotContain("FindBuildingVisualHitIndex", source);
+        }
+
+        [Test]
+        public void BuildingPropOrientation_IsWorldUprightAndHostRelative()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+
+            StringAssert.Contains("model.rotation = Quaternion.Euler(", source);
+            StringAssert.DoesNotContain(
+                "model.rotation = _camera.transform.rotation", source);
+        }
+
+        [Test]
+        public void BuildingProps_RenderThroughDedicatedCameraLayer()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+            var controllerSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            var layers = File.ReadAllText("ProjectSettings/TagManager.asset");
+
+            StringAssert.Contains("BuildingPropOverlay", layers);
+            StringAssert.Contains("BuildBuildingPropOverlayPass", source);
+            StringAssert.Contains("_camera.cullingMask |=", source);
+            StringAssert.DoesNotContain("CameraEvent.AfterEverything", source);
+            StringAssert.DoesNotContain("DrawRenderer", source);
+            StringAssert.Contains("SetBuildingPropOverlayLayer(model)", source);
+            StringAssert.Contains("SetBuildingPropOverlayLayer(root)", source);
+            StringAssert.Contains("RebuildBuildingPropOverlayPass", controllerSource);
+            Assert.That(File.Exists(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingProp.shader"),
+                Is.True, "The committed-prop shader must be in Resources so player builds retain it.");
+            Assert.That(File.Exists(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/BuildingPropPlacementPreview.shader"),
+                Is.True, "The live-preview shader must be in Resources so player builds retain it.");
+        }
+
+        [Test]
+        public void EscapeClearsTheActiveBuildingPropCursor()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+
+            StringAssert.Contains("_placementBuildingPropId = \"\";", source);
+            StringAssert.Contains("SetBuildingPropPlacementPreview(\"\")", source);
+        }
+
+        [Test]
+        public void SuccessfulBuildingPropDrop_ReleasesPlacementCursorForSelection()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            StringAssert.Contains("if (placed)", source);
+            StringAssert.Contains("_placementBuildingPropId = \"\";", source);
+            StringAssert.Contains("Ale House sign attached • drag it to reposition", source);
+        }
+
+        private static void InvokeBuildingPropMaterialMethod(string name,
+            params object[] arguments)
+        {
+            var method = typeof(LotWorldController).GetMethod(name,
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(null, arguments);
         }
 
         [Test]
@@ -545,7 +727,8 @@ namespace CityForgeV3.Tests
         [Test]
         public void ActiveCatalogDiscoversThreeBayPackageFromManifestData()
         {
-            Assert.That(BuildingCatalog.TryFindByShortcut('T', out var entry), Is.True);
+            var entry = BuildingCatalog.Find(
+                "cityforge.v3.residential.new_england_three_bay_01");
             Assert.That(entry.Name, Is.EqualTo("New England Three-Bay House"));
             Assert.That(entry.ReviewStatus, Is.EqualTo("PENDING JOE REVIEW"));
             Assert.That(entry.OccupancyWidth, Is.EqualTo(1));
@@ -595,6 +778,8 @@ namespace CityForgeV3.Tests
             var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
             var expectedAngles = new[] { 20f, 110f, 200f, 290f };
             Assert.That(package.FacingCount, Is.EqualTo(4));
+            Assert.That(package.ArtworkRotationStep, Is.EqualTo(1),
+                "Clockwise building rotation must advance front-right to rear-right.");
             for (var index = 0; index < package.FacingCount; index++)
             {
                 var facing = package.Facing(index);
@@ -806,7 +991,8 @@ namespace CityForgeV3.Tests
         [Test]
         public void ThreeBayHouseHasRegisteredDirectionalLightingForEveryDayFacing()
         {
-            Assert.That(BuildingCatalog.TryFindByShortcut('T', out var entry), Is.True);
+            var entry = BuildingCatalog.Find(
+                "cityforge.v3.residential.new_england_three_bay_01");
             var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
             for (var facingIndex = 0; facingIndex < package.FacingCount; facingIndex++)
             {
@@ -1481,6 +1667,33 @@ namespace CityForgeV3.Tests
 
             Assert.That(session.Data.Buildings[0].RotationQuarterTurns, Is.EqualTo(1));
             Assert.That(session.Data.Buildings[1].RotationQuarterTurns, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void LotSessionRotationPreservesAttachmentFacadeCoordinates()
+        {
+            var session = new LotEditorSession();
+            session.AddBuilding(BuildingCatalog.ColonialGovernmentHouseId, -4, 0);
+            session.Data.Buildings[0].Attachments.Add(new PlacedBuildingProp
+            {
+                ComponentId = BuildingPropCatalog.AleHouseSignId,
+                NormalizedX = 0.78f,
+                NormalizedY = 0.42f
+            });
+            session.SelectBuilding(0);
+
+            session.Rotate(-1);
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedX,
+                Is.EqualTo(0.78f).Within(0.0001f));
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedY,
+                Is.EqualTo(0.42f).Within(0.0001f));
+
+            session.Rotate(-1);
+            session.Rotate(-1);
+            session.Rotate(-1);
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedX,
+                Is.EqualTo(0.78f).Within(0.0001f));
+            Assert.That(session.Data.Buildings[0].RotationQuarterTurns, Is.Zero);
         }
 
         [Test]
@@ -2402,10 +2615,24 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void GovernmentHouseLeavesGAvailableForTheGridShortcut()
+        public void AssetShortcutsAreNotConnectedToEditorInput()
         {
-            Assert.That(BuildingCatalog.GovernmentHouse.Shortcut, Is.EqualTo("C"));
-            Assert.That(BuildingCatalog.TryFindByShortcut('G', out _), Is.False);
+            var source = File.ReadAllText(Path.Combine(
+                Application.dataPath, "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+            Assert.That(source, Does.Not.Contain("TryFindByShortcut"));
+            Assert.That(source, Does.Not.Contain("entry.Shortcut"));
+        }
+
+        [Test]
+        public void BuildingPropSelectionSurvivesBuildingsPanelRefresh()
+        {
+            var source = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs"));
+            Assert.That(source, Does.Contain(
+                "ActiveObjectSelection == LotObjectSelectionKind.BuildingProp"));
+            Assert.That(source, Does.Contain(
+                "ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex)"));
         }
 
         [Test]

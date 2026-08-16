@@ -10,7 +10,7 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
         Tags { "Queue"="Overlay" "RenderType"="Transparent" "IgnoreProjector"="True" }
         Cull Off
         Lighting Off
-        ZWrite Off
+        ZWrite On
         ZTest Always
         Blend SrcAlpha OneMinusSrcAlpha
         Pass
@@ -23,13 +23,11 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
-                fixed4 color : COLOR;
             };
             struct v2f
             {
                 float4 vertex : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                fixed4 color : COLOR;
             };
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -39,12 +37,13 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
                 v2f output;
                 output.vertex = UnityObjectToClipPos(input.vertex);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
-                output.color = input.color;
                 return output;
             }
-            fixed4 frag(v2f input) : SV_Target
+            fixed4 frag(v2f input, fixed facing : VFACE) : SV_Target
             {
-                return tex2D(_MainTex, input.uv) * input.color * _Color;
+                if (facing < 0)
+                    return _Color;
+                return tex2D(_MainTex, input.uv) * _Color;
             }
             ENDCG
         }
