@@ -95,6 +95,18 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
             return true;
         }
+
+        public bool OpenSavedLotBuildingRotationQa(string lotId)
+        {
+            EnsureLotWorld();
+            Show(AppScreen.LotEditor);
+            if (!_lotWorld.LoadLot(lotId)) return false;
+            _lotEditorCategory = LotEditorCategory.Buildings;
+            _lotEditorCategoryExpanded = true;
+            _lotStatus = $"Building rotation QA • {lotId}";
+            Show(AppScreen.LotEditor);
+            return true;
+        }
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -1112,20 +1124,21 @@ namespace CityForgeV3.UI
 
                 var actionRow = new VisualElement();
                 actionRow.AddToClassList("inspector-actions");
-                actionRow.Add(CfButton.Create(
-                    "↶",
-                    () => RotateBuilding(-1),
-                    true,
-                    "rotation-icon"));
+                actionRow.Add(CfButton.Create("↶", null, true, "rotation-icon"));
                 actionRow[0].name = "Rotate Building Counter-clockwise";
                 actionRow[0].tooltip = "Rotate counter-clockwise [Q]";
-                actionRow.Add(CfButton.Create(
-                    "↷",
-                    () => RotateBuilding(1),
-                    true,
-                    "rotation-icon"));
+                actionRow.Add(CfButton.Create("↷", null, true, "rotation-icon"));
                 actionRow[1].name = "Rotate Building Clockwise";
                 actionRow[1].tooltip = "Rotate clockwise [E]";
+                actionRow.RegisterCallback<PointerDownEvent>(evt =>
+                {
+                    if (evt.button != 0) return;
+                    var direction = evt.localPosition.x < actionRow.resolvedStyle.width * 0.5f
+                        ? -1
+                        : 1;
+                    evt.StopImmediatePropagation();
+                    RotateBuilding(direction);
+                }, TrickleDown.TrickleDown);
                 inspector.Add(actionRow);
 
                 var destructiveRow = new VisualElement();
@@ -2193,7 +2206,6 @@ namespace CityForgeV3.UI
                 : $"Building rotated counter-clockwise — facing {orientation}";
             Show(AppScreen.LotEditor);
         }
-
         private void DeleteBuilding()
         {
             _lotStatus = _lotWorld.DeleteSelectedBuilding()
