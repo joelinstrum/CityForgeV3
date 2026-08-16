@@ -107,6 +107,9 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
             return true;
         }
+
+        public void RotateSelectedBuildingForQa(int direction) =>
+            RotateBuilding(direction);
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

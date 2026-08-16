@@ -232,6 +232,18 @@ public static class LiveLotPlacementQaShortcut
             Debug.LogError("Could not open the saved Boston Pub Buildings rotation QA.");
     }
 
+    [MenuItem("City Forge/QA/Rotate Boston Pub Buildings QA Clockwise")]
+    private static void RotateBostonPubBuildingsQaClockwise()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.RotateSelectedBuildingForQa(1);
+    }
+
     [MenuItem("City Forge/QA/Show Ale House Building-Prop Preview")]
     private static void ShowAleHouseBuildingPropPreview()
     {

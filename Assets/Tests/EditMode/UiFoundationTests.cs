@@ -778,6 +778,8 @@ namespace CityForgeV3.Tests
             var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
             var expectedAngles = new[] { 20f, 110f, 200f, 290f };
             Assert.That(package.FacingCount, Is.EqualTo(4));
+            Assert.That(package.ArtworkRotationStep, Is.EqualTo(1),
+                "Clockwise building rotation must advance front-right to rear-right.");
             for (var index = 0; index < package.FacingCount; index++)
             {
                 var facing = package.Facing(index);
