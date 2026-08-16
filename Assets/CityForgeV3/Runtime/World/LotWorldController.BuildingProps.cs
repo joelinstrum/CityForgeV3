@@ -110,7 +110,7 @@ namespace CityForgeV3.World
             if (definition == null) return false;
             var building = _session.Data.Buildings[buildingIndex];
             building.Attachments ??= new List<PlacedBuildingProp>();
-            building.Attachments.Add(new PlacedBuildingProp
+            var attachment = new PlacedBuildingProp
             {
                 InstanceId = Guid.NewGuid().ToString("N"),
                 ComponentId = definition.Id,
@@ -120,7 +120,10 @@ namespace CityForgeV3.World
                 NormalizedY = normalizedY,
                 ProjectionDepthMeters = definition.ProjectionDepthMeters,
                 Scale = 1f
-            });
+            };
+            InitializeHostLocalPosition(attachment, buildingIndex,
+                normalizedX, normalizedY);
+            building.Attachments.Add(attachment);
             _session.SelectBuilding(buildingIndex);
             ActiveObjectSelection = LotObjectSelectionKind.Building;
             ApplySessionState();
@@ -292,9 +295,7 @@ namespace CityForgeV3.World
                     SetBuildingPropOverlayLayer(root);
                     ApplyBuildingPropMaterials(root, definition);
                     PositionBuildingPropModel(root.transform, buildingIndex,
-                        attachment.NormalizedX, attachment.NormalizedY,
-                        attachment.ComponentId, attachment.Scale,
-                        attachment.RotationDegrees);
+                        attachment);
                     var motion = root.AddComponent<BuildingPropSwingMotion>();
                     var stablePhase = Mathf.Abs(
                         attachment.InstanceId?.GetHashCode() ?? 0) % 1000 / 1000f;
@@ -444,11 +445,11 @@ namespace CityForgeV3.World
                 Mathf.InverseLerp(minimum.x, maximum.x, pixel.x));
             attachment.NormalizedY = Mathf.Clamp01(
                 Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
+            SetHostLocalPositionFromPixel(attachment,
+                _selectedBuildingPropBuildingIndex, pixel);
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
-                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
-                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment.RotationDegrees);
+                _selectedBuildingPropBuildingIndex, attachment);
             return true;
         }
 
@@ -476,9 +477,7 @@ namespace CityForgeV3.World
             attachment.RotationDegrees = nextPreset * 45f;
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
-                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
-                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment.RotationDegrees);
+                _selectedBuildingPropBuildingIndex, attachment);
             RebuildBuildingPropOverlayPass();
             ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
             NotifyStateChanged();
@@ -524,6 +523,103 @@ namespace CityForgeV3.World
                     UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
+        }
+
+        private void PositionBuildingPropModel(Transform model,
+            int buildingIndex, PlacedBuildingProp attachment)
+        {
+            if (attachment == null) return;
+            if (!attachment.HasHostLocalPosition &&
+                !InitializeHostLocalPosition(attachment, buildingIndex,
+                    attachment.NormalizedX, attachment.NormalizedY))
+            {
+                PositionBuildingPropModel(model, buildingIndex,
+                    attachment.NormalizedX, attachment.NormalizedY,
+                    attachment.ComponentId, attachment.Scale,
+                    attachment.RotationDegrees);
+                return;
+            }
+            var definition = BuildingPropCatalog.Find(attachment.ComponentId);
+            if (model == null || definition == null ||
+                buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0)) return;
+            var building = _session.Data.Buildings[buildingIndex];
+            model.position = ResolveHostLocalWorldPosition(building, new Vector3(
+                attachment.HostLocalX,
+                attachment.HostLocalY,
+                attachment.HostLocalZ));
+            model.rotation = Quaternion.Euler(
+                0f, BuildingPropCatalog.ResolveYawDegrees(definition,
+                    building.RotationQuarterTurns,
+                    attachment.RotationDegrees), 0f);
+            var uniform = definition.VisibleWidthMeters /
+                Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
+                Mathf.Max(0.1f, attachment.Scale);
+            model.localScale = Vector3.one * uniform;
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.On;
+                renderer.receiveShadows = true;
+            }
+        }
+
+        public static Vector3 ResolveHostLocalWorldPosition(
+            PlacedBuilding building, Vector3 hostLocalPosition)
+        {
+            if (building == null) return hostLocalPosition;
+            var center = new Vector3(building.CellX, 0f, building.CellZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            return center + hostRotation * hostLocalPosition;
+        }
+
+        private bool InitializeHostLocalPosition(PlacedBuildingProp attachment,
+            int buildingIndex, float normalizedX, float normalizedY)
+        {
+            if (attachment == null) return false;
+            if (attachment.HasHostLocalPosition) return true;
+            if (!TryBuildingArtworkScreenBounds(buildingIndex, out _,
+                    out var minimum, out var maximum)) return false;
+            var pixel = new Vector2(
+                Mathf.Lerp(minimum.x, maximum.x, normalizedX),
+                Mathf.Lerp(minimum.y, maximum.y, normalizedY));
+            return SetHostLocalPositionFromPixel(attachment, buildingIndex, pixel);
+        }
+
+        private bool SetHostLocalPositionFromPixel(
+            PlacedBuildingProp attachment, int buildingIndex, Vector2 pixel)
+        {
+            if (attachment == null || _camera == null || buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[buildingIndex];
+            var catalogItem = BuildingCatalog.Find(building.BuildingId);
+            if (string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath))
+                return false;
+            var package = HybridBuildingPackageRegistry.Load(
+                catalogItem.PackageResourcePath);
+            if (package == null) return false;
+            var center = new Vector3(building.CellX, 0f, building.CellZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            var outward = hostRotation * Vector3.forward;
+            var facadePoint = center + outward *
+                (package.DepthMeters * 0.5f +
+                 Mathf.Max(0f, attachment.ProjectionDepthMeters));
+            var ray = _camera.ScreenPointToRay(pixel);
+            var plane = new Plane(outward, facadePoint);
+            if (!plane.Raycast(ray, out var distance)) return false;
+            var local = Quaternion.Inverse(hostRotation) *
+                (ray.GetPoint(distance) - center);
+            attachment.HostLocalX = Mathf.Clamp(local.x,
+                -package.WidthMeters * 0.5f, package.WidthMeters * 0.5f);
+            attachment.HostLocalY = Mathf.Clamp(local.y, 0f,
+                package.HeightMeters);
+            attachment.HostLocalZ = package.DepthMeters * 0.5f +
+                Mathf.Max(0f, attachment.ProjectionDepthMeters);
+            attachment.HasHostLocalPosition = true;
+            return true;
         }
 
         private int FindBuildingArtworkHitIndex(Vector2 pixel)

@@ -1697,6 +1697,55 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BuildingPropAttachment_RoundTripsHostLocalPosition()
+        {
+            var session = new LotEditorSession();
+            session.AddBuilding(BuildingCatalog.ColonialGovernmentHouseId, -4, 0);
+            session.Data.Buildings[0].Attachments.Add(new PlacedBuildingProp
+            {
+                ComponentId = BuildingPropCatalog.AleHouseSignId,
+                HasHostLocalPosition = true,
+                HostLocalX = 3.25f,
+                HostLocalY = 4.75f,
+                HostLocalZ = 2.1f
+            });
+
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            var attachment = restored.Data.Buildings[0].Attachments[0];
+            Assert.That(attachment.HasHostLocalPosition, Is.True);
+            Assert.That(attachment.HostLocalX, Is.EqualTo(3.25f));
+            Assert.That(attachment.HostLocalY, Is.EqualTo(4.75f));
+            Assert.That(attachment.HostLocalZ, Is.EqualTo(2.1f));
+        }
+
+        [Test]
+        public void BuildingPropAttachment_FourHostTurnsReturnExactWorldPoint()
+        {
+            var building = new PlacedBuilding
+            {
+                CellX = 3,
+                CellZ = -2
+            };
+            var local = new Vector3(4.2f, 5.1f, 5.58f);
+            var initial = LotWorldController.ResolveHostLocalWorldPosition(
+                building, local);
+
+            building.RotationQuarterTurns = 1;
+            Assert.That(Vector3.Distance(
+                LotWorldController.ResolveHostLocalWorldPosition(building, local),
+                new Vector3(8.58f, 5.1f, -6.2f)), Is.LessThan(0.0001f));
+            building.RotationQuarterTurns = 4;
+            Assert.That(Vector3.Distance(
+                LotWorldController.ResolveHostLocalWorldPosition(building, local),
+                initial), Is.LessThan(0.0001f));
+            building.RotationQuarterTurns = -4;
+            Assert.That(Vector3.Distance(
+                LotWorldController.ResolveHostLocalWorldPosition(building, local),
+                initial), Is.LessThan(0.0001f));
+        }
+
+        [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
             foreach (var id in new[] { "maple", "ashe", "oak" })

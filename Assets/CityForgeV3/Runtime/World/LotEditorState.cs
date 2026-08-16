@@ -91,6 +91,10 @@ namespace CityForgeV3.World
         public float ProjectionDepthMeters = 0.18f;
         public float Scale = 1f;
         public float RotationDegrees;
+        public bool HasHostLocalPosition;
+        public float HostLocalX;
+        public float HostLocalY;
+        public float HostLocalZ;
     }
 
     [Serializable]
