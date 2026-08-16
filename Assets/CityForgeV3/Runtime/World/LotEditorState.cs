@@ -90,10 +90,6 @@ namespace CityForgeV3.World
         public float NormalizedY = 0.5f;
         public float ProjectionDepthMeters = 0.18f;
         public float Scale = 1f;
-        public bool HasPrimitiveAnchor;
-        public float PrimitiveLocalX;
-        public float PrimitiveLocalY;
-        public float PrimitiveLocalZ;
         public float RotationDegrees;
     }
 

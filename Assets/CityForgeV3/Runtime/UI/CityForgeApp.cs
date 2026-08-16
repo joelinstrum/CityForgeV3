@@ -508,10 +508,16 @@ namespace CityForgeV3.UI
                 if (_lotEditorCategory == LotEditorCategory.BuildingProps &&
                     evt.button == 0)
                 {
-                    _lotStatus = _lotWorld.PlaceBuildingPropFromPanel(
-                        _placementBuildingPropId, evt.position, panelSize)
-                        ? "Ale House sign attached to building • saved with its host"
+                    var placed = _lotWorld.PlaceBuildingPropFromPanel(
+                        _placementBuildingPropId, evt.position, panelSize);
+                    _lotStatus = placed
+                        ? "Ale House sign attached • drag it to reposition"
                         : "Move the translucent sign over a building facade";
+                    if (placed)
+                    {
+                        _placementBuildingPropId = "";
+                        _lotWorld.SetBuildingPropPlacementPreview("");
+                    }
                     Show(AppScreen.LotEditor);
                     evt.StopPropagation();
                     return;

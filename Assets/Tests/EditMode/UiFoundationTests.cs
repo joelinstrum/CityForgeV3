@@ -181,6 +181,16 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("SetBuildingPropPlacementPreview(\"\")", source);
         }
 
+        [Test]
+        public void SuccessfulBuildingPropDrop_ReleasesPlacementCursorForSelection()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            StringAssert.Contains("if (placed)", source);
+            StringAssert.Contains("_placementBuildingPropId = \"\";", source);
+            StringAssert.Contains("Ale House sign attached • drag it to reposition", source);
+        }
+
         private static void InvokeBuildingPropMaterialMethod(string name,
             params object[] arguments)
         {
@@ -1624,7 +1634,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void LotSessionRotationPreservesPrimitiveAttachmentAnchor()
+        public void LotSessionRotationPreservesAttachmentFacadeCoordinates()
         {
             var session = new LotEditorSession();
             session.AddBuilding(BuildingCatalog.ColonialGovernmentHouseId, -4, 0);
@@ -1632,11 +1642,7 @@ namespace CityForgeV3.Tests
             {
                 ComponentId = BuildingPropCatalog.AleHouseSignId,
                 NormalizedX = 0.78f,
-                NormalizedY = 0.42f,
-                HasPrimitiveAnchor = true,
-                PrimitiveLocalX = -3.2f,
-                PrimitiveLocalY = 4.4f,
-                PrimitiveLocalZ = -5.4f
+                NormalizedY = 0.42f
             });
             session.SelectBuilding(0);
 
@@ -1645,10 +1651,6 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(0.78f).Within(0.0001f));
             Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedY,
                 Is.EqualTo(0.42f).Within(0.0001f));
-            Assert.That(session.Data.Buildings[0].Attachments[0].PrimitiveLocalX,
-                Is.EqualTo(-3.2f).Within(0.0001f));
-            Assert.That(session.Data.Buildings[0].Attachments[0].PrimitiveLocalZ,
-                Is.EqualTo(-5.4f).Within(0.0001f));
 
             session.Rotate(-1);
             session.Rotate(-1);

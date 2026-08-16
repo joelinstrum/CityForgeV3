@@ -16,6 +16,7 @@ namespace CityForgeV3.World
         private int _selectedBuildingPropBuildingIndex = -1;
         private int _selectedBuildingPropAttachmentIndex = -1;
         private bool _buildingPropDragActive;
+        private Vector2 _buildingPropDragOffsetPixels;
         private string _buildingPropPreviewId = "";
         private int _buildingPropPreviewHostIndex = -1;
         private float _buildingPropPreviewX = 0.5f;
@@ -282,7 +283,7 @@ namespace CityForgeV3.World
                     PositionBuildingPropModel(root.transform, buildingIndex,
                         attachment.NormalizedX, attachment.NormalizedY,
                         attachment.ComponentId, attachment.Scale,
-                        attachment, attachment.RotationDegrees);
+                        attachment.RotationDegrees);
                     var motion = root.AddComponent<BuildingPropSwingMotion>();
                     var stablePhase = Mathf.Abs(
                         attachment.InstanceId?.GetHashCode() ?? 0) % 1000 / 1000f;
@@ -388,6 +389,12 @@ namespace CityForgeV3.World
             _selectedBuildingPropBuildingIndex = key.x;
             _selectedBuildingPropAttachmentIndex = key.y;
             _buildingPropDragActive = true;
+            var pointerPixel = PanelToCameraPixel(panelPosition, panelSize,
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var rootPixel = _camera.WorldToScreenPoint(
+                _buildingPropPresentations[presentationIndex].transform.position);
+            _buildingPropDragOffsetPixels =
+                new Vector2(rootPixel.x, rootPixel.y) - pointerPixel;
             ActiveObjectSelection = LotObjectSelectionKind.BuildingProp;
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
@@ -412,18 +419,18 @@ namespace CityForgeV3.World
                 !TryBuildingArtworkScreenBounds(_selectedBuildingPropBuildingIndex,
                     out _, out var minimum, out var maximum)) return false;
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
-                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight)) +
+                _buildingPropDragOffsetPixels;
             var attachment = building.Attachments[_selectedBuildingPropAttachmentIndex];
             attachment.NormalizedX = Mathf.Clamp01(
                 Mathf.InverseLerp(minimum.x, maximum.x, pixel.x));
             attachment.NormalizedY = Mathf.Clamp01(
                 Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
-            attachment.HasPrimitiveAnchor = false;
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
                 _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
                 attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment, attachment.RotationDegrees);
+                attachment.RotationDegrees);
             return true;
         }
 
@@ -452,7 +459,7 @@ namespace CityForgeV3.World
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
                 _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
                 attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment, attachment.RotationDegrees);
+                attachment.RotationDegrees);
             RebuildBuildingPropOverlayPass();
             ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
             NotifyStateChanged();
@@ -461,8 +468,7 @@ namespace CityForgeV3.World
 
         private void PositionBuildingPropModel(Transform model,
             int buildingIndex, float normalizedX, float normalizedY,
-            string componentId, float scale,
-            PlacedBuildingProp attachment = null, float rotationDegrees = 0f)
+            string componentId, float scale, float rotationDegrees = 0f)
         {
             var definition = BuildingPropCatalog.Find(componentId);
             if (model == null || definition == null ||
@@ -475,10 +481,6 @@ namespace CityForgeV3.World
             var anchorPixel = new Vector2(
                 Mathf.Lerp(minimum.x, maximum.x, normalizedX),
                 Mathf.Lerp(minimum.y, maximum.y, normalizedY));
-            if (attachment != null &&
-                TryBuildingPropPrimitiveAnchorScreenPoint(
-                    buildingIndex, attachment, out var primitivePixel))
-                anchorPixel = primitivePixel;
             var pixel = new Vector3(anchorPixel.x, anchorPixel.y,
                 hostDepth - Mathf.Max(0.1f, definition.ForegroundDepthMeters));
             model.position = _camera.ScreenToWorldPoint(pixel);
@@ -503,48 +505,6 @@ namespace CityForgeV3.World
                     UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
-        }
-
-        private bool TryBuildingPropPrimitiveAnchorScreenPoint(int buildingIndex,
-            PlacedBuildingProp attachment, out Vector2 screenPoint)
-        {
-            screenPoint = default;
-            if (_camera == null || attachment == null || buildingIndex < 0 ||
-                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
-                return false;
-            var building = _session.Data.Buildings[buildingIndex];
-            var catalogEntry = BuildingCatalog.Find(building.BuildingId);
-            var package = HybridBuildingPackageRegistry.Load(
-                catalogEntry.PackageResourcePath);
-            if (package == null) return false;
-            var rotation = Quaternion.Euler(
-                0f, building.RotationQuarterTurns * 90f, 0f);
-            var center = new Vector3(building.CellX, 0f, building.CellZ);
-            if (!attachment.HasPrimitiveAnchor)
-            {
-                // Saved attachment coordinates are façade coordinates, not a
-                // camera ray into the perspective-compressed billboard. Map
-                // them directly across the host primitive's front plane so a
-                // quarter-turn preserves both the physical corner and height.
-                attachment.PrimitiveLocalX = Mathf.Lerp(
-                    -package.WidthMeters * 0.5f,
-                    package.WidthMeters * 0.5f,
-                    Mathf.Clamp01(attachment.NormalizedX));
-                attachment.PrimitiveLocalY = Mathf.Lerp(
-                    0f, package.HeightMeters,
-                    Mathf.Clamp01(attachment.NormalizedY));
-                attachment.PrimitiveLocalZ = -package.DepthMeters * 0.5f;
-                attachment.HasPrimitiveAnchor = true;
-            }
-            var storedAnchor = new Vector3(
-                attachment.PrimitiveLocalX,
-                attachment.PrimitiveLocalY,
-                attachment.PrimitiveLocalZ);
-            var worldAnchor = transform.TransformPoint(center + rotation * storedAnchor);
-            var projected = _camera.WorldToScreenPoint(worldAnchor);
-            if (projected.z <= 0f) return false;
-            screenPoint = projected;
-            return true;
         }
 
         private int FindBuildingArtworkHitIndex(Vector2 pixel)
