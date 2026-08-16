@@ -10,11 +10,19 @@ namespace CityForgeV3.World
         private Transform _buildingPropPreview;
         private int _buildingPropOverlayLayer = -1;
         private readonly List<GameObject> _buildingPropPresentations = new();
+        private readonly List<Vector2Int> _buildingPropPresentationKeys = new();
+        private int _hoverBuildingPropPresentationIndex = -1;
+        private int _selectedBuildingPropPresentationIndex = -1;
+        private int _selectedBuildingPropBuildingIndex = -1;
+        private int _selectedBuildingPropAttachmentIndex = -1;
+        private bool _buildingPropDragActive;
         private string _buildingPropPreviewId = "";
         private int _buildingPropPreviewHostIndex = -1;
         private float _buildingPropPreviewX = 0.5f;
         private float _buildingPropPreviewY = 0.5f;
         private bool _buildingPropPlacementActive;
+
+        public bool BuildingPropDragActive => _buildingPropDragActive;
 
         private void BuildBuildingPropRoot()
         {
@@ -188,6 +196,30 @@ namespace CityForgeV3.World
             ApplySessionState();
             return true;
         }
+
+        public bool RunBuildingPropSelectionMoveQa(float panelDeltaX)
+        {
+            SetBuildingPropEditorContext(false);
+            SetBuildingPropQaCameraZoom(6f);
+            if (_buildingPropPresentations.Count == 0 || _camera == null)
+                return false;
+            var presentation = _buildingPropPresentations[0];
+            var cameraPixel3 = _camera.WorldToScreenPoint(
+                presentation.transform.position);
+            var panelPoint = new Vector2(cameraPixel3.x,
+                _camera.pixelHeight - cameraPixel3.y);
+            var panelSize = new Vector2(_camera.pixelWidth, _camera.pixelHeight);
+            if (UpdateObjectHoverFromPanel(panelPoint, panelSize) !=
+                    LotObjectSelectionKind.BuildingProp ||
+                BeginExistingObjectManipulationFromPanel(panelPoint, panelSize) !=
+                    LotObjectSelectionKind.BuildingProp)
+                return false;
+            var moved = DragBuildingPropFromPanel(
+                panelPoint + new Vector2(panelDeltaX, 0f), panelSize);
+            EndBuildingPropDrag();
+            ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
+            return moved;
+        }
 #endif
 
         private bool TryBuildingAttachmentPoint(Vector2 panelPosition,
@@ -220,14 +252,20 @@ namespace CityForgeV3.World
             foreach (var presentation in _buildingPropPresentations)
                 if (presentation != null) Destroy(presentation);
             _buildingPropPresentations.Clear();
+            _buildingPropPresentationKeys.Clear();
+            _hoverBuildingPropPresentationIndex = -1;
+            _selectedBuildingPropPresentationIndex = -1;
             for (var buildingIndex = 0;
                  buildingIndex < (_session.Data.Buildings?.Count ?? 0);
                  buildingIndex++)
             {
                 var building = _session.Data.Buildings[buildingIndex];
                 building.Attachments ??= new List<PlacedBuildingProp>();
-                foreach (var attachment in building.Attachments)
+                for (var attachmentIndex = 0;
+                     attachmentIndex < building.Attachments.Count;
+                     attachmentIndex++)
                 {
+                    var attachment = building.Attachments[attachmentIndex];
                     var definition = BuildingPropCatalog.Find(attachment.ComponentId);
                     var prefab = definition == null ? null :
                         Resources.Load<GameObject>(definition.ModelResourcePath);
@@ -251,8 +289,146 @@ namespace CityForgeV3.World
                         definition.SwingAmplitudeDegrees,
                         definition.SwingPeriodSeconds, stablePhase);
                     _buildingPropPresentations.Add(root);
+                    _buildingPropPresentationKeys.Add(
+                        new Vector2Int(buildingIndex, attachmentIndex));
                 }
             }
+        }
+
+        private int BuildingPropPresentationIndexAtCameraPixel(Vector2 pixel)
+        {
+            if (_camera == null) return -1;
+            var bestIndex = -1;
+            var bestDepth = float.PositiveInfinity;
+            for (var index = 0; index < _buildingPropPresentations.Count; index++)
+            {
+                var root = _buildingPropPresentations[index];
+                if (root == null || !root.activeInHierarchy) continue;
+                var minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+                var maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+                var depth = float.PositiveInfinity;
+                var found = false;
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                        continue;
+                    var bounds = renderer.bounds;
+                    for (var x = -1; x <= 1; x += 2)
+                    for (var y = -1; y <= 1; y += 2)
+                    for (var z = -1; z <= 1; z += 2)
+                    {
+                        var screen = _camera.WorldToScreenPoint(bounds.center +
+                            Vector3.Scale(bounds.extents, new Vector3(x, y, z)));
+                        if (screen.z <= 0f) continue;
+                        minimum = Vector2.Min(minimum, screen);
+                        maximum = Vector2.Max(maximum, screen);
+                        depth = Mathf.Min(depth, screen.z);
+                        found = true;
+                    }
+                }
+                const float hitPaddingPixels = 7f;
+                if (!found || pixel.x < minimum.x - hitPaddingPixels ||
+                    pixel.x > maximum.x + hitPaddingPixels ||
+                    pixel.y < minimum.y - hitPaddingPixels ||
+                    pixel.y > maximum.y + hitPaddingPixels || depth >= bestDepth)
+                    continue;
+                bestDepth = depth;
+                bestIndex = index;
+            }
+            return bestIndex;
+        }
+
+        private void ApplyBuildingPropHover(int presentationIndex)
+        {
+            if (_hoverBuildingPropPresentationIndex == presentationIndex) return;
+            ClearBuildingPropHover();
+            if (presentationIndex < 0 ||
+                presentationIndex >= _buildingPropPresentations.Count) return;
+            _hoverBuildingPropPresentationIndex = presentationIndex;
+            HoverObjectKind = LotObjectSelectionKind.BuildingProp;
+            _hoverObjectIndex = presentationIndex;
+            if (_objectHoverHighlight != null)
+                _objectHoverHighlight.gameObject.SetActive(false);
+            SetBuildingPropHighlight(presentationIndex, true);
+        }
+
+        private void ClearBuildingPropHover()
+        {
+            if (_hoverBuildingPropPresentationIndex >= 0)
+                SetBuildingPropHighlight(_hoverBuildingPropPresentationIndex, false);
+            _hoverBuildingPropPresentationIndex = -1;
+        }
+
+        private void SetBuildingPropHighlight(int presentationIndex, bool highlighted)
+        {
+            if (presentationIndex < 0 ||
+                presentationIndex >= _buildingPropPresentations.Count) return;
+            var root = _buildingPropPresentations[presentationIndex];
+            if (root == null) return;
+            var tint = highlighted
+                ? new Color(0.65f, 2f, 0.82f, 1f)
+                : Color.white;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            foreach (var material in renderer.materials)
+                if (material != null && material.HasProperty("_Color"))
+                    material.color = tint;
+        }
+
+        private bool BeginBuildingPropDragFromPanel(int presentationIndex,
+            Vector2 panelPosition, Vector2 panelSize)
+        {
+            if (presentationIndex < 0 ||
+                presentationIndex >= _buildingPropPresentationKeys.Count) return false;
+            var key = _buildingPropPresentationKeys[presentationIndex];
+            if (key.x < 0 || key.x >= (_session.Data.Buildings?.Count ?? 0) ||
+                key.y < 0 || key.y >= _session.Data.Buildings[key.x].Attachments.Count)
+                return false;
+            _selectedBuildingPropPresentationIndex = presentationIndex;
+            _selectedBuildingPropBuildingIndex = key.x;
+            _selectedBuildingPropAttachmentIndex = key.y;
+            _buildingPropDragActive = true;
+            ActiveObjectSelection = LotObjectSelectionKind.BuildingProp;
+            SelectedFloraIndex = -1;
+            SelectedPropIndex = -1;
+            _session.Select(false);
+            ApplyFloraSelection();
+            ApplyPropSelection();
+            ApplyBuildingPropHover(presentationIndex);
+            return true;
+        }
+
+        public bool DragBuildingPropFromPanel(Vector2 panelPosition, Vector2 panelSize)
+        {
+            if (!_buildingPropDragActive || _camera == null ||
+                _selectedBuildingPropPresentationIndex < 0 ||
+                _selectedBuildingPropPresentationIndex >= _buildingPropPresentations.Count ||
+                _selectedBuildingPropBuildingIndex < 0 ||
+                _selectedBuildingPropBuildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[_selectedBuildingPropBuildingIndex];
+            if (_selectedBuildingPropAttachmentIndex < 0 ||
+                _selectedBuildingPropAttachmentIndex >= building.Attachments.Count ||
+                !TryBuildingArtworkScreenBounds(_selectedBuildingPropBuildingIndex,
+                    out _, out var minimum, out var maximum)) return false;
+            var pixel = PanelToCameraPixel(panelPosition, panelSize,
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var attachment = building.Attachments[_selectedBuildingPropAttachmentIndex];
+            attachment.NormalizedX = Mathf.Clamp01(
+                Mathf.InverseLerp(minimum.x, maximum.x, pixel.x));
+            attachment.NormalizedY = Mathf.Clamp01(
+                Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
+            PositionBuildingPropModel(
+                _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
+                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
+                attachment.NormalizedY, attachment.ComponentId, attachment.Scale);
+            return true;
+        }
+
+        public void EndBuildingPropDrag()
+        {
+            if (!_buildingPropDragActive) return;
+            _buildingPropDragActive = false;
+            NotifyStateChanged();
         }
 
         private void PositionBuildingPropModel(Transform model,

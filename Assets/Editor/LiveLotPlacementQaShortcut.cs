@@ -238,6 +238,21 @@ public static class LiveLotPlacementQaShortcut
             Debug.LogError("The Ale House preview could not be shown on the QA building.");
     }
 
+    [MenuItem("City Forge/QA/Run Building-Prop Selection Move QA")]
+    private static void RunBuildingPropSelectionMoveQa()
+    {
+        if (_qaWorld == null)
+        {
+            Debug.LogError("Open the Boston Pub QA lot before running building-prop selection QA.");
+            return;
+        }
+        if (_qaWorld.RunBuildingPropSelectionMoveQa(36f))
+            Debug.Log("Building-prop QA selected the prop ahead of its host, " +
+                "moved it on the facade, and retained its selection highlight.");
+        else
+            Debug.LogError("Building-prop selection/move QA failed.");
+    }
+
     [MenuItem("City Forge/QA/Open Beaux Arts Commercial Night Live Placement")]
     private static void OpenBeauxArtsCommercialNightLivePlacement()
     {

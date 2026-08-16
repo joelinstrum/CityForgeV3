@@ -42,6 +42,8 @@ namespace CityForgeV3.UI
         private bool _floraDragStarted;
         private bool _propPointerDown;
         private bool _propDragStarted;
+        private bool _buildingPropPointerDown;
+        private bool _buildingPropDragStarted;
         private bool _overlayPointerDown;
         private bool _overlayDragPainted;
         private bool _roadFamilyExpanded = true;
@@ -475,6 +477,14 @@ namespace CityForgeV3.UI
                         evt.StopPropagation();
                         return;
                     }
+                    if (selection == LotObjectSelectionKind.BuildingProp)
+                    {
+                        _buildingPropPointerDown = true;
+                        _buildingPropDragStarted = false;
+                        viewportInput.CapturePointer(evt.pointerId);
+                        evt.StopPropagation();
+                        return;
+                    }
                 }
                 if (_lotEditorCategory == LotEditorCategory.Buildings && evt.button == 0)
                 {
@@ -553,7 +563,8 @@ namespace CityForgeV3.UI
                     viewportInput.resolvedStyle.width,
                     viewportInput.resolvedStyle.height);
                 var hoverSuppressed = _buildingPointerDown || _floraPointerDown ||
-                    _propPointerDown || _overlayPointerDown || _roadPointerDown ||
+                    _propPointerDown || _buildingPropPointerDown ||
+                    _overlayPointerDown || _roadPointerDown ||
                     ShouldPrioritizeToolPlacement(
                         _lotEditorCategory, _placementFloraId, _placementPropId) ||
                     (_lotEditorCategory == LotEditorCategory.BuildingProps &&
@@ -586,6 +597,13 @@ namespace CityForgeV3.UI
                 {
                     if (_lotWorld.DragPropFromPanel(evt.position, panelSize))
                         _propDragStarted = true;
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_buildingPropPointerDown)
+                {
+                    if (_lotWorld.DragBuildingPropFromPanel(evt.position, panelSize))
+                        _buildingPropDragStarted = true;
                     evt.StopPropagation();
                     return;
                 }
@@ -689,6 +707,24 @@ namespace CityForgeV3.UI
                         ? "Fence moved"
                         : "Fence selected • drag to move";
                     _propDragStarted = false;
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (evt.button == 0 && _buildingPropPointerDown)
+                {
+                    _buildingPropPointerDown = false;
+                    var panelSize = new Vector2(
+                        viewportInput.resolvedStyle.width,
+                        viewportInput.resolvedStyle.height);
+                    if (_lotWorld.DragBuildingPropFromPanel(evt.position, panelSize))
+                        _buildingPropDragStarted = true;
+                    viewportInput.ReleasePointer(evt.pointerId);
+                    _lotWorld.EndBuildingPropDrag();
+                    _lotStatus = _buildingPropDragStarted
+                        ? "Building prop moved on its facade"
+                        : "Building prop selected • drag to move";
+                    _buildingPropDragStarted = false;
                     Show(AppScreen.LotEditor);
                     evt.StopPropagation();
                     return;
