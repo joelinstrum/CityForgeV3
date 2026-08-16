@@ -1122,24 +1122,25 @@ namespace CityForgeV3.UI
                 moveRow.Add(CfButton.Create("→", () => MoveCategorySelectionOrPan(1, 0), true, "icon"));
                 inspector.Add(moveRow);
 
-                var actionRow = new VisualElement();
-                actionRow.AddToClassList("inspector-actions");
-                actionRow.Add(CfButton.Create("↶", null, true, "rotation-icon"));
-                actionRow[0].name = "Rotate Building Counter-clockwise";
-                actionRow[0].tooltip = "Rotate counter-clockwise [Q]";
-                actionRow.Add(CfButton.Create("↷", null, true, "rotation-icon"));
-                actionRow[1].name = "Rotate Building Clockwise";
-                actionRow[1].tooltip = "Rotate clockwise [E]";
-                actionRow.RegisterCallback<PointerDownEvent>(evt =>
-                {
-                    if (evt.button != 0) return;
-                    var direction = evt.localPosition.x < actionRow.resolvedStyle.width * 0.5f
-                        ? -1
-                        : 1;
-                    evt.StopImmediatePropagation();
-                    RotateBuilding(direction);
-                }, TrickleDown.TrickleDown);
-                inspector.Add(actionRow);
+                var counterClockwiseRow = new VisualElement();
+                counterClockwiseRow.AddToClassList("inspector-actions");
+                var counterClockwiseButton = CfButton.Create(
+                    "↶  ROTATE COUNTER-CLOCKWISE",
+                    () => RotateBuilding(-1));
+                counterClockwiseButton.name = "Rotate Building Counter-clockwise";
+                counterClockwiseButton.tooltip = "Rotate counter-clockwise";
+                counterClockwiseRow.Add(counterClockwiseButton);
+                inspector.Add(counterClockwiseRow);
+
+                var clockwiseRow = new VisualElement();
+                clockwiseRow.AddToClassList("inspector-actions");
+                var clockwiseButton = CfButton.Create(
+                    "↷  ROTATE CLOCKWISE",
+                    () => RotateBuilding(1));
+                clockwiseButton.name = "Rotate Building Clockwise";
+                clockwiseButton.tooltip = "Rotate clockwise";
+                clockwiseRow.Add(clockwiseButton);
+                inspector.Add(clockwiseRow);
 
                 var destructiveRow = new VisualElement();
                 destructiveRow.AddToClassList("inspector-actions");
