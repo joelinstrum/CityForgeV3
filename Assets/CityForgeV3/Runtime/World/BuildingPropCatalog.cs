@@ -57,7 +57,7 @@ namespace CityForgeV3.World
                     ProjectionDepthMeters = 0.18f,
                     ForegroundDepthMeters = 0.35f,
                     ModelNativeWidthMeters = 0.9823304f,
-                    ModelYawDegrees = 195f,
+                    ModelYawDegrees = 192f,
                     SwingAmplitudeDegrees = 2.5f,
                     SwingPeriodSeconds = 6f
                 }
