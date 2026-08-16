@@ -139,6 +139,12 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("SetBuildingPropOverlayLayer(model)", source);
             StringAssert.Contains("SetBuildingPropOverlayLayer(root)", source);
             StringAssert.Contains("RebuildBuildingPropOverlayPass", controllerSource);
+            Assert.That(File.Exists(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingProp.shader"),
+                Is.True, "The committed-prop shader must be in Resources so player builds retain it.");
+            Assert.That(File.Exists(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/BuildingPropPlacementPreview.shader"),
+                Is.True, "The live-preview shader must be in Resources so player builds retain it.");
         }
 
         private static void InvokeBuildingPropMaterialMethod(string name,
