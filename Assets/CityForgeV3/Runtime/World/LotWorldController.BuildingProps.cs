@@ -451,7 +451,7 @@ namespace CityForgeV3.World
                 Mathf.Lerp(minimum.y, maximum.y, normalizedY));
             if (attachment != null &&
                 TryBuildingPropPrimitiveAnchorScreenPoint(
-                    buildingIndex, attachment, anchorPixel, out var primitivePixel))
+                    buildingIndex, attachment, out var primitivePixel))
                 anchorPixel = primitivePixel;
             var pixel = new Vector3(anchorPixel.x, anchorPixel.y,
                 hostDepth - Mathf.Max(0.1f, definition.ForegroundDepthMeters));
@@ -479,10 +479,9 @@ namespace CityForgeV3.World
         }
 
         private bool TryBuildingPropPrimitiveAnchorScreenPoint(int buildingIndex,
-            PlacedBuildingProp attachment, Vector2 fallbackPixel,
-            out Vector2 screenPoint)
+            PlacedBuildingProp attachment, out Vector2 screenPoint)
         {
-            screenPoint = fallbackPixel;
+            screenPoint = default;
             if (_camera == null || attachment == null || buildingIndex < 0 ||
                 buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
                 return false;
@@ -496,24 +495,18 @@ namespace CityForgeV3.World
             var center = new Vector3(building.CellX, 0f, building.CellZ);
             if (!attachment.HasPrimitiveAnchor)
             {
-                var ray = _camera.ScreenPointToRay(fallbackPixel);
-                var worldCenter = transform.TransformPoint(center);
-                var worldRotation = transform.rotation * rotation;
-                var localOrigin = Quaternion.Inverse(worldRotation) *
-                    (ray.origin - worldCenter);
-                var localDirection = Quaternion.Inverse(worldRotation) * ray.direction;
-                var frontZ = -package.DepthMeters * 0.5f;
-                if (Mathf.Abs(localDirection.z) < 0.0001f) return false;
-                var distance = (frontZ - localOrigin.z) / localDirection.z;
-                if (distance <= 0f) return false;
-                var localAnchor = localOrigin + localDirection * distance;
-                localAnchor.x = Mathf.Clamp(localAnchor.x,
-                    -package.WidthMeters * 0.5f, package.WidthMeters * 0.5f);
-                localAnchor.y = Mathf.Clamp(localAnchor.y, 0f, package.HeightMeters);
-                localAnchor.z = frontZ;
-                attachment.PrimitiveLocalX = localAnchor.x;
-                attachment.PrimitiveLocalY = localAnchor.y;
-                attachment.PrimitiveLocalZ = localAnchor.z;
+                // Saved attachment coordinates are façade coordinates, not a
+                // camera ray into the perspective-compressed billboard. Map
+                // them directly across the host primitive's front plane so a
+                // quarter-turn preserves both the physical corner and height.
+                attachment.PrimitiveLocalX = Mathf.Lerp(
+                    -package.WidthMeters * 0.5f,
+                    package.WidthMeters * 0.5f,
+                    Mathf.Clamp01(attachment.NormalizedX));
+                attachment.PrimitiveLocalY = Mathf.Lerp(
+                    0f, package.HeightMeters,
+                    Mathf.Clamp01(attachment.NormalizedY));
+                attachment.PrimitiveLocalZ = -package.DepthMeters * 0.5f;
                 attachment.HasPrimitiveAnchor = true;
             }
             var storedAnchor = new Vector3(
