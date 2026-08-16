@@ -74,9 +74,21 @@ namespace CityForgeV3.World
         public static int ResolveFacingPreset(int hostQuarterTurns,
             float propRotationDegrees)
         {
-            var hostPreset = FiveBayHybridContract.WrapFacing(hostQuarterTurns) * 2;
             var propPreset = UnityEngine.Mathf.RoundToInt(propRotationDegrees / 45f);
-            return ((hostPreset + propPreset) % 8 + 8) % 8;
+            return ((propPreset % 8) + 8) % 8;
+        }
+
+        public static void RotateWithBuilding(PlacedBuilding building, int direction)
+        {
+            if (building?.Attachments == null) return;
+            foreach (var attachment in building.Attachments)
+            {
+                if (attachment == null) continue;
+                var preset = UnityEngine.Mathf.RoundToInt(
+                    attachment.RotationDegrees / 45f);
+                attachment.RotationDegrees =
+                    ((preset + direction * 2) % 8 + 8) % 8 * 45f;
+            }
         }
 
         public static float ResolveYawDegrees(BuildingPropDefinition definition,

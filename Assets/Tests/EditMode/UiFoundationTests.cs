@@ -40,15 +40,15 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(0, 186f)]
-        [TestCase(1, 276f)]
-        [TestCase(2, 6f)]
-        [TestCase(3, 96f)]
-        public void BuildingPropFacing_FollowsHostQuarterTurns(
+        [TestCase(1, 186f)]
+        [TestCase(2, 186f)]
+        [TestCase(3, 186f)]
+        public void BuildingPropFacing_UsesSavedPropPreset(
             int hostQuarterTurns, float expectedYaw)
         {
             var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
-            var yaw = Mathf.Repeat(
-                item.ModelYawDegrees + hostQuarterTurns * 90f, 360f);
+            var yaw = BuildingPropCatalog.ResolveYawDegrees(
+                item, hostQuarterTurns, 0f);
 
             Assert.That(yaw, Is.EqualTo(expectedYaw));
         }
@@ -67,21 +67,35 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(0, 0, 0)]
-        [TestCase(1, 0, 2)]
-        [TestCase(2, 0, 4)]
-        [TestCase(3, 0, 6)]
+        [TestCase(1, 0, 0)]
+        [TestCase(2, 0, 0)]
+        [TestCase(3, 0, 0)]
         [TestCase(4, 0, 0)]
         [TestCase(0, 45, 1)]
-        [TestCase(1, 45, 3)]
-        [TestCase(2, 45, 5)]
-        [TestCase(3, 45, 7)]
-        public void BuildingRotation_AdvancesPropByTwoFacingPresets(
+        [TestCase(1, 45, 1)]
+        [TestCase(2, 45, 1)]
+        [TestCase(3, 45, 1)]
+        public void ResolvedPropPreset_DoesNotReapplyHostRotation(
             int buildingQuarterTurns, float propRotationDegrees,
             int expectedPreset)
         {
             Assert.That(BuildingPropCatalog.ResolveFacingPreset(
                 buildingQuarterTurns, propRotationDegrees),
                 Is.EqualTo(expectedPreset));
+        }
+
+        [Test]
+        public void BuildingTurn_UsesTheSameTwoPresetsAsTwoRPresses()
+        {
+            var building = new PlacedBuilding();
+            building.Attachments.Add(new PlacedBuildingProp
+                { RotationDegrees = 0f });
+
+            BuildingPropCatalog.RotateWithBuilding(building, 1);
+            Assert.That(building.Attachments[0].RotationDegrees, Is.EqualTo(90f));
+
+            BuildingPropCatalog.RotateWithBuilding(building, -1);
+            Assert.That(building.Attachments[0].RotationDegrees, Is.EqualTo(0f));
         }
 
         [Test]

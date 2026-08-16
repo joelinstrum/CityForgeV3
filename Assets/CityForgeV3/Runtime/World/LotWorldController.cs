@@ -1078,6 +1078,11 @@ namespace CityForgeV3.World
             {
                 _session.Rotate(direction);
                 _session.Move(targetX, targetZ);
+                if (_session.SelectedBuildingIndex >= 0 &&
+                    _session.SelectedBuildingIndex < _session.Data.Buildings.Count)
+                    BuildingPropCatalog.RotateWithBuilding(
+                        _session.Data.Buildings[_session.SelectedBuildingIndex],
+                        direction);
             }
             ApplySessionState();
             NotifyStateChanged();
