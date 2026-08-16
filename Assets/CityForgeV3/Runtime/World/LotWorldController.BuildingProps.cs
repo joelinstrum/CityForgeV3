@@ -215,6 +215,13 @@ namespace CityForgeV3.World
                 BeginExistingObjectManipulationFromPanel(panelPoint, panelSize) !=
                     LotObjectSelectionKind.BuildingProp)
                 return false;
+            // Recompose the Buildings workspace exactly as the runtime UI
+            // does after pointer-up. The selected prop must survive that
+            // presentation refresh and remain the active highlighted object.
+            SetBuildingEditorContext(true, false);
+            if (ActiveObjectSelection != LotObjectSelectionKind.BuildingProp ||
+                _selectedBuildingPropPresentationIndex < 0)
+                return false;
             var moved = DragBuildingPropFromPanel(
                 panelPoint + new Vector2(panelDeltaX, 0f), panelSize);
             EndBuildingPropDrag();
@@ -250,6 +257,10 @@ namespace CityForgeV3.World
         private void RefreshBuildingPropPresentations()
         {
             if (_buildingPropRoot == null || _camera == null) return;
+            var restoreSelectedProp =
+                ActiveObjectSelection == LotObjectSelectionKind.BuildingProp &&
+                _selectedBuildingPropBuildingIndex >= 0 &&
+                _selectedBuildingPropAttachmentIndex >= 0;
             foreach (var presentation in _buildingPropPresentations)
                 if (presentation != null) Destroy(presentation);
             _buildingPropPresentations.Clear();
@@ -293,8 +304,15 @@ namespace CityForgeV3.World
                     _buildingPropPresentations.Add(root);
                     _buildingPropPresentationKeys.Add(
                         new Vector2Int(buildingIndex, attachmentIndex));
+                    if (restoreSelectedProp &&
+                        buildingIndex == _selectedBuildingPropBuildingIndex &&
+                        attachmentIndex == _selectedBuildingPropAttachmentIndex)
+                        _selectedBuildingPropPresentationIndex =
+                            _buildingPropPresentations.Count - 1;
                 }
             }
+            if (_selectedBuildingPropPresentationIndex >= 0)
+                ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
         }
 
         private int BuildingPropPresentationIndexAtCameraPixel(Vector2 pixel)

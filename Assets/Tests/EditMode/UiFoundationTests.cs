@@ -2622,6 +2622,18 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BuildingPropSelectionSurvivesBuildingsPanelRefresh()
+        {
+            var source = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs"));
+            Assert.That(source, Does.Contain(
+                "ActiveObjectSelection == LotObjectSelectionKind.BuildingProp"));
+            Assert.That(source, Does.Contain(
+                "ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex)"));
+        }
+
+        [Test]
         public void OwnedChoiceFieldUsesNativeDropdownSelection()
         {
             var source = File.ReadAllText(Path.Combine(
