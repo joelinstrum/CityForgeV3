@@ -54,6 +54,19 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BuildingPropRotation_AdvancesThroughEightUsableAngles()
+        {
+            var attachment = new PlacedBuildingProp();
+            for (var step = 1; step <= 8; step++)
+            {
+                attachment.RotationDegrees = Mathf.Repeat(
+                    attachment.RotationDegrees + 45f, 360f);
+                Assert.That(attachment.RotationDegrees,
+                    Is.EqualTo(step % 8 * 45f));
+            }
+        }
+
+        [Test]
         public void BuildingPropPreview_UsesRealMeshAndAlwaysVisibleMaterial()
         {
             var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);

@@ -419,6 +419,15 @@ public static class LiveLotPlacementQaShortcut
                 world.SetBuildingPropQaCameraZoom(6f);
     }
 
+    [MenuItem("City Forge/QA/Rotate Selected Building Prop 45 Degrees")]
+    private static void RotateSelectedBuildingProp45Degrees()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+            if (world.name == "Building Live Placement QA")
+                world.RotateSelectedBuildingProp45Degrees();
+    }
+
     private static void SetLiveQaTime(TimeOfDayPreset preset)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

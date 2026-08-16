@@ -94,6 +94,7 @@ namespace CityForgeV3.World
         public float PrimitiveLocalX;
         public float PrimitiveLocalY;
         public float PrimitiveLocalZ;
+        public float RotationDegrees;
     }
 
     [Serializable]

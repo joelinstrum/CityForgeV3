@@ -281,7 +281,8 @@ namespace CityForgeV3.World
                     ApplyBuildingPropMaterials(root, definition);
                     PositionBuildingPropModel(root.transform, buildingIndex,
                         attachment.NormalizedX, attachment.NormalizedY,
-                        attachment.ComponentId, attachment.Scale, attachment);
+                        attachment.ComponentId, attachment.Scale,
+                        attachment, attachment.RotationDegrees);
                     var motion = root.AddComponent<BuildingPropSwingMotion>();
                     var stablePhase = Mathf.Abs(
                         attachment.InstanceId?.GetHashCode() ?? 0) % 1000 / 1000f;
@@ -422,7 +423,7 @@ namespace CityForgeV3.World
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
                 _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
                 attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment);
+                attachment, attachment.RotationDegrees);
             return true;
         }
 
@@ -433,10 +434,35 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
+        public bool RotateSelectedBuildingProp45Degrees()
+        {
+            if (_selectedBuildingPropPresentationIndex < 0 ||
+                _selectedBuildingPropPresentationIndex >= _buildingPropPresentations.Count ||
+                _selectedBuildingPropBuildingIndex < 0 ||
+                _selectedBuildingPropBuildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[_selectedBuildingPropBuildingIndex];
+            if (_selectedBuildingPropAttachmentIndex < 0 ||
+                _selectedBuildingPropAttachmentIndex >= building.Attachments.Count)
+                return false;
+            var attachment = building.Attachments[_selectedBuildingPropAttachmentIndex];
+            attachment.RotationDegrees = Mathf.Repeat(
+                attachment.RotationDegrees + 45f, 360f);
+            PositionBuildingPropModel(
+                _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
+                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
+                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
+                attachment, attachment.RotationDegrees);
+            RebuildBuildingPropOverlayPass();
+            ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
+            NotifyStateChanged();
+            return true;
+        }
+
         private void PositionBuildingPropModel(Transform model,
             int buildingIndex, float normalizedX, float normalizedY,
             string componentId, float scale,
-            PlacedBuildingProp attachment = null)
+            PlacedBuildingProp attachment = null, float rotationDegrees = 0f)
         {
             var definition = BuildingPropCatalog.Find(componentId);
             if (model == null || definition == null ||
@@ -465,7 +491,8 @@ namespace CityForgeV3.World
                     ? _session.Data.Buildings[buildingIndex].RotationQuarterTurns
                     : 0;
             model.rotation = Quaternion.Euler(
-                0f, definition.ModelYawDegrees + hostQuarterTurns * 90f, 0f);
+                0f, definition.ModelYawDegrees + hostQuarterTurns * 90f +
+                    rotationDegrees, 0f);
             var uniform = definition.VisibleWidthMeters /
                 Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
                 Mathf.Max(0.1f, scale);

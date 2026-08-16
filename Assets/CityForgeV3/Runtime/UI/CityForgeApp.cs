@@ -226,6 +226,16 @@ namespace CityForgeV3.UI
                 Show(AppScreen.LotEditor);
                 evt.StopPropagation();
             }
+            else if (evt.keyCode == KeyCode.R &&
+                     _lotWorld.ActiveObjectSelection ==
+                     LotObjectSelectionKind.BuildingProp)
+            {
+                _lotStatus = _lotWorld.RotateSelectedBuildingProp45Degrees()
+                    ? "Building prop rotated 45°"
+                    : "Select a building prop before rotating";
+                Show(AppScreen.LotEditor);
+                evt.StopPropagation();
+            }
             else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
                      _lotEditorCategory == LotEditorCategory.Buildings &&
                      _lotWorld.IsSelected)
