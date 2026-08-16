@@ -400,6 +400,25 @@ public static class LiveLotPlacementQaShortcut
         EditorApplication.delayCall += DumpLivePlacement;
     }
 
+    [MenuItem("City Forge/QA/Rotate Live QA Building Counter-clockwise")]
+    private static void RotateLiveQaBuildingCounterClockwise()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+            if (world.name == "Building Live Placement QA")
+                world.RotateSelected(-1);
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Frame Live QA Building Props")]
+    private static void FrameLiveQaBuildingProps()
+    {
+        foreach (var world in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+            if (world.name == "Building Live Placement QA")
+                world.SetBuildingPropQaCameraZoom(6f);
+    }
+
     private static void SetLiveQaTime(TimeOfDayPreset preset)
     {
         foreach (var world in Object.FindObjectsByType<LotWorldController>(

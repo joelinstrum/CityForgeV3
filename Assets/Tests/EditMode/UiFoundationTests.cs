@@ -1611,6 +1611,33 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void LotSessionRotationCarriesAttachmentWithTheSameHostCorner()
+        {
+            var session = new LotEditorSession();
+            session.AddBuilding(BuildingCatalog.ColonialGovernmentHouseId, -4, 0);
+            session.Data.Buildings[0].Attachments.Add(new PlacedBuildingProp
+            {
+                ComponentId = BuildingPropCatalog.AleHouseSignId,
+                NormalizedX = 0.78f,
+                NormalizedY = 0.42f
+            });
+            session.SelectBuilding(0);
+
+            session.Rotate(-1);
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedX,
+                Is.EqualTo(0.22f).Within(0.0001f));
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedY,
+                Is.EqualTo(0.42f).Within(0.0001f));
+
+            session.Rotate(-1);
+            session.Rotate(-1);
+            session.Rotate(-1);
+            Assert.That(session.Data.Buildings[0].Attachments[0].NormalizedX,
+                Is.EqualTo(0.78f).Within(0.0001f));
+            Assert.That(session.Data.Buildings[0].RotationQuarterTurns, Is.Zero);
+        }
+
+        [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
             foreach (var id in new[] { "maple", "ashe", "oak" })
