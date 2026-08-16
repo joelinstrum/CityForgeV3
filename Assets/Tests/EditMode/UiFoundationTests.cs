@@ -26,7 +26,7 @@ namespace CityForgeV3.Tests
                 Does.Contain("Models/ale-house-animated-v01"));
             Assert.That(item.ForegroundDepthMeters,
                 Is.GreaterThan(item.ProjectionDepthMeters));
-            Assert.That(item.ModelYawDegrees, Is.EqualTo(15f));
+            Assert.That(item.ModelYawDegrees, Is.EqualTo(60f));
             Assert.That(Resources.Load<Texture2D>(item.BaseColorResourcePath),
                 Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(item.NormalResourcePath),
@@ -39,10 +39,10 @@ namespace CityForgeV3.Tests
                 transform => transform.name == item.SwingTransformName), Is.True);
         }
 
-        [TestCase(0, 15f)]
-        [TestCase(1, 105f)]
-        [TestCase(2, 195f)]
-        [TestCase(3, 285f)]
+        [TestCase(0, 60f)]
+        [TestCase(1, 150f)]
+        [TestCase(2, 240f)]
+        [TestCase(3, 330f)]
         public void BuildingPropFacing_FollowsHostQuarterTurns(
             int hostQuarterTurns, float expectedYaw)
         {
@@ -123,7 +123,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void BuildingProps_RenderThroughCameraAfterEverythingPass()
+        public void BuildingProps_RenderThroughDedicatedCameraLayer()
         {
             var source = File.ReadAllText(
                 "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
@@ -133,9 +133,9 @@ namespace CityForgeV3.Tests
 
             StringAssert.Contains("BuildingPropOverlay", layers);
             StringAssert.Contains("BuildBuildingPropOverlayPass", source);
-            StringAssert.Contains("CameraEvent.AfterEverything", source);
-            StringAssert.Contains("DrawRenderer", source);
-            StringAssert.Contains("_camera.cullingMask &=", source);
+            StringAssert.Contains("_camera.cullingMask |=", source);
+            StringAssert.DoesNotContain("CameraEvent.AfterEverything", source);
+            StringAssert.DoesNotContain("DrawRenderer", source);
             StringAssert.Contains("SetBuildingPropOverlayLayer(model)", source);
             StringAssert.Contains("SetBuildingPropOverlayLayer(root)", source);
             StringAssert.Contains("RebuildBuildingPropOverlayPass", controllerSource);
@@ -145,6 +145,16 @@ namespace CityForgeV3.Tests
             Assert.That(File.Exists(
                 "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/BuildingPropPlacementPreview.shader"),
                 Is.True, "The live-preview shader must be in Resources so player builds retain it.");
+        }
+
+        [Test]
+        public void EscapeClearsTheActiveBuildingPropCursor()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+
+            StringAssert.Contains("_placementBuildingPropId = \"\";", source);
+            StringAssert.Contains("SetBuildingPropPlacementPreview(\"\")", source);
         }
 
         private static void InvokeBuildingPropMaterialMethod(string name,

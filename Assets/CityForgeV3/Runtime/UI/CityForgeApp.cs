@@ -2104,7 +2104,9 @@ namespace CityForgeV3.UI
         {
             _placementFloraId = "";
             _placementPropId = "";
+            _placementBuildingPropId = "";
             _placementOverlayTextureId = "";
+            _lotWorld.SetBuildingPropPlacementPreview("");
             _lotWorld.DeselectAll();
             _lotStatus = "Selection cleared — arrows pan the lot";
             Show(AppScreen.LotEditor);

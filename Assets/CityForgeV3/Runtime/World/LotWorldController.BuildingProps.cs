@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace CityForgeV3.World
 {
@@ -9,7 +8,6 @@ namespace CityForgeV3.World
     {
         private Transform _buildingPropRoot;
         private Transform _buildingPropPreview;
-        private CommandBuffer _buildingPropOverlayCommands;
         private int _buildingPropOverlayLayer = -1;
         private readonly List<GameObject> _buildingPropPresentations = new();
         private string _buildingPropPreviewId = "";
@@ -429,41 +427,15 @@ namespace CityForgeV3.World
 
         private void BuildBuildingPropOverlayPass()
         {
-            if (_camera == null || _buildingPropOverlayCommands != null) return;
-            _buildingPropOverlayCommands = new CommandBuffer
-            {
-                name = "City Forge Building Prop Final Pass"
-            };
-            _camera.AddCommandBuffer(CameraEvent.AfterEverything,
-                _buildingPropOverlayCommands);
-            _camera.cullingMask &= ~(1 << _buildingPropOverlayLayer);
-            RebuildBuildingPropOverlayPass();
+            if (_camera == null) return;
+            _camera.cullingMask |= 1 << _buildingPropOverlayLayer;
         }
 
         private void RebuildBuildingPropOverlayPass()
         {
-            if (_buildingPropOverlayCommands == null) return;
-            _buildingPropOverlayCommands.Clear();
-            foreach (var presentation in _buildingPropPresentations)
-                AppendBuildingPropToOverlayPass(presentation);
-            if (_buildingPropPreview != null &&
-                _buildingPropPreview.gameObject.activeInHierarchy)
-                AppendBuildingPropToOverlayPass(_buildingPropPreview.gameObject);
-        }
-
-        private void AppendBuildingPropToOverlayPass(GameObject root)
-        {
-            if (root == null || _buildingPropOverlayCommands == null) return;
-            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
-            {
-                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy)
-                    continue;
-                var materials = renderer.sharedMaterials;
-                for (var submesh = 0; submesh < materials.Length; submesh++)
-                    if (materials[submesh] != null)
-                        _buildingPropOverlayCommands.DrawRenderer(
-                            renderer, materials[submesh], submesh);
-            }
+            // Building props render normally on their dedicated camera layer.
+            // Their retained Resources shaders own the always-visible depth
+            // policy, so no separate camera or command-buffer pass is needed.
         }
 
         private void SetBuildingPropOverlayLayer(GameObject root)

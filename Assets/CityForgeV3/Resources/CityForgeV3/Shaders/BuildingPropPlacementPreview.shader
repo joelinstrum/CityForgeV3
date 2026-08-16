@@ -10,7 +10,7 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
         Tags { "Queue"="Overlay" "RenderType"="Transparent" "IgnoreProjector"="True" }
         Cull Off
         Lighting Off
-        ZWrite Off
+        ZWrite On
         ZTest Always
         Blend SrcAlpha OneMinusSrcAlpha
         Pass
@@ -39,8 +39,10 @@ Shader "CityForgeV3/BuildingPropPlacementPreview"
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 return output;
             }
-            fixed4 frag(v2f input) : SV_Target
+            fixed4 frag(v2f input, fixed facing : VFACE) : SV_Target
             {
+                if (facing < 0)
+                    return _Color;
                 return tex2D(_MainTex, input.uv) * _Color;
             }
             ENDCG

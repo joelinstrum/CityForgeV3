@@ -309,6 +309,7 @@ namespace CityForgeV3.World
             BuildBuildingPropRoot();
             BuildCirculationEditor();
             BuildCamera();
+            BuildBuildingPropOverlayPass();
             BuildProxyBuilding();
             BuildProjectedShadow();
             BuildHybridPresentation();

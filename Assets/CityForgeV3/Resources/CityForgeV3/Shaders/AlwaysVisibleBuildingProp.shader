@@ -13,7 +13,7 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
     {
         Tags { "Queue"="AlphaTest+5" "RenderType"="Opaque" }
         Cull Off
-        ZWrite Off
+        ZWrite On
         ZTest Always
 
         Pass
@@ -45,8 +45,13 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
                 return output;
             }
 
-            fixed4 frag(v2f input) : SV_Target
+            fixed4 frag(v2f input, fixed facing : VFACE) : SV_Target
             {
+                // Imported sign lettering is authored on the front surface.
+                // If that surface is viewed from behind, show opaque stained
+                // wood rather than the mirrored front texture.
+                if (facing < 0)
+                    return fixed4(0.24, 0.13, 0.07, 1.0) * _Color;
                 return tex2D(_MainTex, input.uv) * _Color;
             }
             ENDCG
