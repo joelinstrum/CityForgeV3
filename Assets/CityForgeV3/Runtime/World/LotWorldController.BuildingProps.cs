@@ -453,8 +453,9 @@ namespace CityForgeV3.World
                 _selectedBuildingPropAttachmentIndex >= building.Attachments.Count)
                 return false;
             var attachment = building.Attachments[_selectedBuildingPropAttachmentIndex];
-            attachment.RotationDegrees = Mathf.Repeat(
-                attachment.RotationDegrees + 45f, 360f);
+            var nextPreset = (Mathf.RoundToInt(
+                attachment.RotationDegrees / 45f) + 1) % 8;
+            attachment.RotationDegrees = nextPreset * 45f;
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
                 _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
@@ -493,8 +494,8 @@ namespace CityForgeV3.World
                     ? _session.Data.Buildings[buildingIndex].RotationQuarterTurns
                     : 0;
             model.rotation = Quaternion.Euler(
-                0f, definition.ModelYawDegrees + hostQuarterTurns * 90f +
-                    rotationDegrees, 0f);
+                0f, BuildingPropCatalog.ResolveYawDegrees(definition,
+                    hostQuarterTurns, rotationDegrees), 0f);
             var uniform = definition.VisibleWidthMeters /
                 Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
                 Mathf.Max(0.1f, scale);

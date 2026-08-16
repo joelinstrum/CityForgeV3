@@ -70,5 +70,21 @@ namespace CityForgeV3.World
                     return item;
             return null;
         }
+
+        public static int ResolveFacingPreset(int hostQuarterTurns,
+            float propRotationDegrees)
+        {
+            var hostPreset = FiveBayHybridContract.WrapFacing(hostQuarterTurns) * 2;
+            var propPreset = UnityEngine.Mathf.RoundToInt(propRotationDegrees / 45f);
+            return ((hostPreset + propPreset) % 8 + 8) % 8;
+        }
+
+        public static float ResolveYawDegrees(BuildingPropDefinition definition,
+            int hostQuarterTurns, float propRotationDegrees)
+        {
+            return UnityEngine.Mathf.Repeat(definition.ModelYawDegrees +
+                ResolveFacingPreset(hostQuarterTurns, propRotationDegrees) * 45f,
+                360f);
+        }
     }
 }

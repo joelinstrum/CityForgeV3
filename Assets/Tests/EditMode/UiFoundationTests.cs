@@ -66,6 +66,24 @@ namespace CityForgeV3.Tests
             }
         }
 
+        [TestCase(0, 0, 0)]
+        [TestCase(1, 0, 2)]
+        [TestCase(2, 0, 4)]
+        [TestCase(3, 0, 6)]
+        [TestCase(4, 0, 0)]
+        [TestCase(0, 45, 1)]
+        [TestCase(1, 45, 3)]
+        [TestCase(2, 45, 5)]
+        [TestCase(3, 45, 7)]
+        public void BuildingRotation_AdvancesPropByTwoFacingPresets(
+            int buildingQuarterTurns, float propRotationDegrees,
+            int expectedPreset)
+        {
+            Assert.That(BuildingPropCatalog.ResolveFacingPreset(
+                buildingQuarterTurns, propRotationDegrees),
+                Is.EqualTo(expectedPreset));
+        }
+
         [Test]
         public void BuildingPropPreview_UsesRealMeshAndAlwaysVisibleMaterial()
         {
