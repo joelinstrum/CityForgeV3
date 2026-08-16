@@ -90,6 +90,10 @@ namespace CityForgeV3.World
         public float NormalizedY = 0.5f;
         public float ProjectionDepthMeters = 0.18f;
         public float Scale = 1f;
+        public bool HasPrimitiveAnchor;
+        public float PrimitiveLocalX;
+        public float PrimitiveLocalY;
+        public float PrimitiveLocalZ;
     }
 
     [Serializable]
@@ -349,18 +353,6 @@ namespace CityForgeV3.World
                 return;
             }
 
-            var selected = Data.Buildings != null && SelectedBuildingIndex >= 0 &&
-                SelectedBuildingIndex < Data.Buildings.Count
-                    ? Data.Buildings[SelectedBuildingIndex]
-                    : null;
-            if (selected?.Attachments != null && Mathf.Abs(direction) % 2 == 1)
-            {
-                // Attachment X is authored across the host's visible facade.
-                // A quarter-turn exposes that same physical corner on the
-                // opposite side of the directional building presentation.
-                foreach (var attachment in selected.Attachments)
-                    attachment.NormalizedX = 1f - attachment.NormalizedX;
-            }
             Data.RotationQuarterTurns =
                 FiveBayHybridContract.WrapFacing(Data.RotationQuarterTurns + direction);
             SyncSelectedBuilding();

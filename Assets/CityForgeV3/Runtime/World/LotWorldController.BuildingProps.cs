@@ -281,7 +281,7 @@ namespace CityForgeV3.World
                     ApplyBuildingPropMaterials(root, definition);
                     PositionBuildingPropModel(root.transform, buildingIndex,
                         attachment.NormalizedX, attachment.NormalizedY,
-                        attachment.ComponentId, attachment.Scale);
+                        attachment.ComponentId, attachment.Scale, attachment);
                     var motion = root.AddComponent<BuildingPropSwingMotion>();
                     var stablePhase = Mathf.Abs(
                         attachment.InstanceId?.GetHashCode() ?? 0) % 1000 / 1000f;
@@ -417,10 +417,12 @@ namespace CityForgeV3.World
                 Mathf.InverseLerp(minimum.x, maximum.x, pixel.x));
             attachment.NormalizedY = Mathf.Clamp01(
                 Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
+            attachment.HasPrimitiveAnchor = false;
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
                 _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
-                attachment.NormalizedY, attachment.ComponentId, attachment.Scale);
+                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
+                attachment);
             return true;
         }
 
@@ -433,7 +435,8 @@ namespace CityForgeV3.World
 
         private void PositionBuildingPropModel(Transform model,
             int buildingIndex, float normalizedX, float normalizedY,
-            string componentId, float scale)
+            string componentId, float scale,
+            PlacedBuildingProp attachment = null)
         {
             var definition = BuildingPropCatalog.Find(componentId);
             if (model == null || definition == null ||
@@ -443,9 +446,14 @@ namespace CityForgeV3.World
             // This exceptional foreground layer prevents depth testing from
             // burying a component that occupies the host facade's screen area.
             var hostDepth = _camera.WorldToScreenPoint(hostRenderer.bounds.center).z;
-            var pixel = new Vector3(
+            var anchorPixel = new Vector2(
                 Mathf.Lerp(minimum.x, maximum.x, normalizedX),
-                Mathf.Lerp(minimum.y, maximum.y, normalizedY),
+                Mathf.Lerp(minimum.y, maximum.y, normalizedY));
+            if (attachment != null &&
+                TryBuildingPropPrimitiveAnchorScreenPoint(
+                    buildingIndex, attachment, anchorPixel, out var primitivePixel))
+                anchorPixel = primitivePixel;
+            var pixel = new Vector3(anchorPixel.x, anchorPixel.y,
                 hostDepth - Mathf.Max(0.1f, definition.ForegroundDepthMeters));
             model.position = _camera.ScreenToWorldPoint(pixel);
             // Building attachments are physical world objects. Keep their
@@ -468,6 +476,55 @@ namespace CityForgeV3.World
                     UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
+        }
+
+        private bool TryBuildingPropPrimitiveAnchorScreenPoint(int buildingIndex,
+            PlacedBuildingProp attachment, Vector2 fallbackPixel,
+            out Vector2 screenPoint)
+        {
+            screenPoint = fallbackPixel;
+            if (_camera == null || attachment == null || buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[buildingIndex];
+            var catalogEntry = BuildingCatalog.Find(building.BuildingId);
+            var package = HybridBuildingPackageRegistry.Load(
+                catalogEntry.PackageResourcePath);
+            if (package == null) return false;
+            var rotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            var center = new Vector3(building.CellX, 0f, building.CellZ);
+            if (!attachment.HasPrimitiveAnchor)
+            {
+                var ray = _camera.ScreenPointToRay(fallbackPixel);
+                var worldCenter = transform.TransformPoint(center);
+                var worldRotation = transform.rotation * rotation;
+                var localOrigin = Quaternion.Inverse(worldRotation) *
+                    (ray.origin - worldCenter);
+                var localDirection = Quaternion.Inverse(worldRotation) * ray.direction;
+                var frontZ = -package.DepthMeters * 0.5f;
+                if (Mathf.Abs(localDirection.z) < 0.0001f) return false;
+                var distance = (frontZ - localOrigin.z) / localDirection.z;
+                if (distance <= 0f) return false;
+                var localAnchor = localOrigin + localDirection * distance;
+                localAnchor.x = Mathf.Clamp(localAnchor.x,
+                    -package.WidthMeters * 0.5f, package.WidthMeters * 0.5f);
+                localAnchor.y = Mathf.Clamp(localAnchor.y, 0f, package.HeightMeters);
+                localAnchor.z = frontZ;
+                attachment.PrimitiveLocalX = localAnchor.x;
+                attachment.PrimitiveLocalY = localAnchor.y;
+                attachment.PrimitiveLocalZ = localAnchor.z;
+                attachment.HasPrimitiveAnchor = true;
+            }
+            var storedAnchor = new Vector3(
+                attachment.PrimitiveLocalX,
+                attachment.PrimitiveLocalY,
+                attachment.PrimitiveLocalZ);
+            var worldAnchor = transform.TransformPoint(center + rotation * storedAnchor);
+            var projected = _camera.WorldToScreenPoint(worldAnchor);
+            if (projected.z <= 0f) return false;
+            screenPoint = projected;
+            return true;
         }
 
         private int FindBuildingArtworkHitIndex(Vector2 pixel)
