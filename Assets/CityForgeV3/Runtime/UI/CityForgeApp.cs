@@ -289,24 +289,20 @@ namespace CityForgeV3.UI
                 StepZoom(-1);
                 evt.StopPropagation();
             }
-            else if (evt.character != '\0' &&
-                     BuildingCatalog.TryFindByShortcut(evt.character, out var catalogEntry))
-            {
-                PlaceBuilding(catalogEntry);
-                evt.StopPropagation();
-            }
-            else if (!_lotWorld.HasBuilding)
-            {
-                return;
-            }
-            else if (evt.keyCode == KeyCode.Q)
+            else if (_lotWorld.HasBuilding && evt.keyCode == KeyCode.Q)
             {
                 RotateBuilding(-1);
                 evt.StopPropagation();
             }
-            else if (evt.keyCode == KeyCode.E)
+            else if (_lotWorld.HasBuilding && evt.keyCode == KeyCode.E)
             {
                 RotateBuilding(1);
+                evt.StopPropagation();
+            }
+            else if (evt.character != '\0' &&
+                     BuildingCatalog.TryFindByShortcut(evt.character, out var catalogEntry))
+            {
+                PlaceBuilding(catalogEntry);
                 evt.StopPropagation();
             }
         }
