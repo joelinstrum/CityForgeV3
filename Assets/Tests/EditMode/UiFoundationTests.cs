@@ -2889,6 +2889,52 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void DeletingMajorColumnRemovesItsContentsAndClosesTheGap()
+        {
+            var root = new GameObject("Delete Major Column Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Three Columns", LotType.Residential, 3, 3);
+                world.Session.Data.Flora.Add(new PlacedFlora
+                    { InstanceId = "west", PositionX = -10f });
+                world.Session.Data.Flora.Add(new PlacedFlora
+                    { InstanceId = "middle", PositionX = 0f });
+                world.Session.Data.Flora.Add(new PlacedFlora
+                    { InstanceId = "east", PositionX = 10f });
+                world.Session.Data.OverlayTextures.Add(new PlacedOverlayTexture
+                    { InstanceId = "middle-overlay", CellX = 1, CellZ = 0 });
+
+                Assert.That(world.DeleteMajorColumn(1), Is.True);
+                Assert.That(world.LotWidthCells, Is.EqualTo(2));
+                Assert.That(world.LotDepthCells, Is.EqualTo(3));
+                Assert.That(world.Session.Data.Flora.Count, Is.EqualTo(2));
+                Assert.That(world.Session.Data.Flora[0].PositionX,
+                    Is.EqualTo(-5f).Within(0.001f));
+                Assert.That(world.Session.Data.Flora[1].PositionX,
+                    Is.EqualTo(5f).Within(0.001f));
+                Assert.That(world.Session.Data.OverlayTextures, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void EmptyLotRightClickOffersRowAndColumnDeletion()
+        {
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+
+            StringAssert.Contains("↔  DELETE ROW", source);
+            StringAssert.Contains("↕  DELETE COLUMN", source);
+            StringAssert.Contains("TryMajorCellFromPanel", source);
+            StringAssert.Contains("LotObjectSelectionKind.None", source);
+        }
+
+        [Test]
         public void UnsavedDocumentModalConsumesPointerEventsAndDiscardContinuesTheAction()
         {
             var source = File.ReadAllText(Path.Combine(

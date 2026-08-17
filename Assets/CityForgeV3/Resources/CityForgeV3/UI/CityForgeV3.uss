@@ -1067,3 +1067,16 @@
     color: rgb(173, 169, 151);
     unity-text-align: middle-center;
 }
+
+.lot-context-menu {
+    width: 210px;
+    padding: 8px;
+    background-color: rgb(16, 29, 36);
+    border-width: 1px;
+    border-color: rgb(207, 166, 64);
+}
+
+.lot-context-menu .cf-button {
+    min-height: 38px;
+    margin-bottom: 5px;
+}

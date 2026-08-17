@@ -989,6 +989,168 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
+        public bool TryMajorCellFromPanel(Vector2 panelPosition,
+            Vector2 panelSize, out Vector2Int cell)
+        {
+            cell = default;
+            if (!TryLotPointFromPanel(panelPosition, panelSize, out var point) ||
+                point.x < -LotWidthMeters * 0.5f ||
+                point.x >= LotWidthMeters * 0.5f ||
+                point.z < -LotDepthMeters * 0.5f ||
+                point.z >= LotDepthMeters * 0.5f) return false;
+            cell = new Vector2Int(
+                Mathf.FloorToInt((point.x + LotWidthMeters * 0.5f) / 10f),
+                Mathf.FloorToInt((point.z + LotDepthMeters * 0.5f) / 10f));
+            return true;
+        }
+
+        public bool DeleteMajorColumn(int columnIndex) =>
+            DeleteMajorStrip(columnIndex, true);
+
+        public bool DeleteMajorRow(int rowIndex) =>
+            DeleteMajorStrip(rowIndex, false);
+
+        private bool DeleteMajorStrip(int stripIndex, bool alongX)
+        {
+            var oldCellCount = alongX ? LotWidthCells : LotDepthCells;
+            if (oldCellCount <= 1 || stripIndex < 0 || stripIndex >= oldCellCount)
+                return false;
+            var oldMeters = oldCellCount * 10f;
+            var stripStart = -oldMeters * 0.5f + stripIndex * 10f;
+            var stripEnd = stripStart + 10f;
+
+            bool InStrip(float value) => value >= stripStart && value < stripEnd;
+            float Shift(float value) => value < stripStart ? value + 5f : value - 5f;
+
+            _session.Data.Buildings.RemoveAll(building =>
+            {
+                if (building == null) return true;
+                var entry = BuildingCatalog.Find(building.BuildingId);
+                var package = string.IsNullOrWhiteSpace(entry.PackageResourcePath)
+                    ? null
+                    : HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
+                var width = package?.WidthMeters ?? 1f;
+                var depth = package?.DepthMeters ?? 1f;
+                if (Mathf.Abs(building.RotationQuarterTurns) % 2 == 1)
+                    (width, depth) = (depth, width);
+                var center = alongX ? building.CellX : building.CellZ;
+                var extent = (alongX ? width : depth) * 0.5f;
+                if (center + extent > stripStart && center - extent < stripEnd)
+                    return true;
+                if (alongX) building.CellX = Mathf.RoundToInt(Shift(building.CellX));
+                else building.CellZ = Mathf.RoundToInt(Shift(building.CellZ));
+                return false;
+            });
+
+            ShiftPointPlacements(_session.Data.Flora, alongX, InStrip, Shift);
+            ShiftPointPlacements(_session.Data.Props, alongX, InStrip, Shift);
+            ShiftCirculationNetwork(_session.Data.PedestrianNetwork, alongX,
+                InStrip, Shift);
+            ShiftCirculationNetwork(_session.Data.VehicleNetwork, alongX,
+                InStrip, Shift);
+
+            _session.Data.RoadPieces ??= new List<PlacedRoadPiece>();
+            _session.Data.OutsideRoadConnectors ??=
+                new List<OutsideRoadConnector>();
+            _session.Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
+            var oldMinimum = RoadPlacementModel.MinimumCellForLot(
+                Mathf.RoundToInt(oldMeters));
+            var newMeters = Mathf.RoundToInt(oldMeters - 10f);
+            var newMinimum = RoadPlacementModel.MinimumCellForLot(newMeters);
+            int RemapCell(int value)
+            {
+                var zeroBased = value - oldMinimum;
+                if (zeroBased > stripIndex) zeroBased--;
+                return newMinimum + zeroBased;
+            }
+            _session.Data.RoadPieces.RemoveAll(piece => piece == null ||
+                (alongX ? piece.GridX : piece.GridZ) - oldMinimum == stripIndex);
+            foreach (var piece in _session.Data.RoadPieces)
+            {
+                if (alongX) piece.GridX = RemapCell(piece.GridX);
+                else piece.GridZ = RemapCell(piece.GridZ);
+            }
+            _session.Data.OutsideRoadConnectors.RemoveAll(connector => connector == null ||
+                (alongX ? connector.GridX : connector.GridZ) - oldMinimum == stripIndex);
+            foreach (var connector in _session.Data.OutsideRoadConnectors)
+            {
+                if (alongX) connector.GridX = RemapCell(connector.GridX);
+                else connector.GridZ = RemapCell(connector.GridZ);
+            }
+            _session.Data.OverlayTextures.RemoveAll(overlay => overlay == null ||
+                (alongX ? overlay.CellX : overlay.CellZ) == stripIndex);
+            foreach (var overlay in _session.Data.OverlayTextures)
+            {
+                if (alongX && overlay.CellX > stripIndex) overlay.CellX--;
+                if (!alongX && overlay.CellZ > stripIndex) overlay.CellZ--;
+            }
+
+            _session.SelectBuilding(-1);
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            SelectedFloraIndex = -1;
+            SelectedPropIndex = -1;
+            _selectedBuildingPropPresentationIndex = -1;
+            _selectedBuildingPropBuildingIndex = -1;
+            _selectedBuildingPropAttachmentIndex = -1;
+            _session.SetLotDimensions(
+                alongX ? oldCellCount - 1 : LotWidthCells,
+                alongX ? LotDepthCells : oldCellCount - 1);
+            ResizeGround();
+            ApplyBaseTexturePresentation();
+            BuildGrid();
+            ClampRoadCursorToLot();
+            ApplySessionState();
+            ApplyCameraFacing();
+            NotifyStateChanged();
+            return true;
+        }
+
+        private static void ShiftPointPlacements(List<PlacedFlora> placements,
+            bool alongX, Func<float, bool> inStrip, Func<float, float> shift)
+        {
+            placements?.RemoveAll(item => item == null ||
+                inStrip(alongX ? item.PositionX : item.PositionZ));
+            foreach (var item in placements ?? new List<PlacedFlora>())
+            {
+                if (alongX) item.PositionX = shift(item.PositionX);
+                else item.PositionZ = shift(item.PositionZ);
+            }
+        }
+
+        private static void ShiftPointPlacements(List<PlacedProp> placements,
+            bool alongX, Func<float, bool> inStrip, Func<float, float> shift)
+        {
+            placements?.RemoveAll(item => item == null ||
+                inStrip(alongX ? item.PositionX : item.PositionZ));
+            foreach (var item in placements ?? new List<PlacedProp>())
+            {
+                if (alongX) item.PositionX = shift(item.PositionX);
+                else item.PositionZ = shift(item.PositionZ);
+            }
+        }
+
+        private static void ShiftCirculationNetwork(CirculationNetwork network,
+            bool alongX, Func<float, bool> inStrip, Func<float, float> shift)
+        {
+            if (network == null) return;
+            var removed = new HashSet<string>();
+            foreach (var node in network.Nodes)
+                if (node == null || inStrip(alongX
+                        ? node.PositionMeters.x : node.PositionMeters.y))
+                    removed.Add(node?.Id ?? "");
+            network.Nodes.RemoveAll(node => node == null || removed.Contains(node.Id));
+            network.Segments.RemoveAll(segment => segment == null ||
+                removed.Contains(segment.StartNodeId) ||
+                removed.Contains(segment.EndNodeId));
+            foreach (var node in network.Nodes)
+            {
+                var position = node.PositionMeters;
+                if (alongX) position.x = shift(position.x);
+                else position.y = shift(position.y);
+                node.PositionMeters = position;
+            }
+        }
+
         public void SetZoomLevel(LotZoomLevel level)
         {
             ZoomLevel = level;

@@ -68,6 +68,7 @@ namespace CityForgeV3.UI
         private bool _lotEditorRefreshScheduled;
         private int _pendingLotWidthCells = -1;
         private int _pendingLotDepthCells = -1;
+        private VisualElement _lotContextMenu;
 
         public LotEditorCategory ActiveLotEditorCategory => _lotEditorCategory;
         public bool IsLotEditorCategoryExpanded => _lotEditorCategoryExpanded;
@@ -442,10 +443,22 @@ namespace CityForgeV3.UI
             viewportInput.style.bottom = 0f;
             viewportInput.RegisterCallback<PointerDownEvent>(evt =>
             {
+                RemoveLotContextMenu();
                 _lotWorld.ClearObjectHover();
                 var panelSize = new Vector2(
                     viewportInput.resolvedStyle.width,
                     viewportInput.resolvedStyle.height);
+                if (evt.button == 1 &&
+                    _lotEditorCategory != LotEditorCategory.Roads &&
+                    _lotWorld.UpdateObjectHoverFromPanel(
+                        evt.position, panelSize) == LotObjectSelectionKind.None &&
+                    _lotWorld.TryMajorCellFromPanel(
+                        evt.position, panelSize, out var contextCell))
+                {
+                    ShowLotContextMenu(screen, evt.position, contextCell);
+                    evt.StopPropagation();
+                    return;
+                }
                 var toolPlacementHasPriority = ShouldPrioritizeToolPlacement(
                     _lotEditorCategory, _placementFloraId, _placementPropId) ||
                     (_lotEditorCategory == LotEditorCategory.BuildingProps &&
@@ -1511,6 +1524,40 @@ namespace CityForgeV3.UI
                 if (_lotWorld != null && _lotWorld.gameObject.activeSelf)
                     _lotWorld.RefreshCameraFraming();
             }).ExecuteLater(1);
+        }
+
+        private void ShowLotContextMenu(VisualElement screen,
+            Vector2 panelPosition, Vector2Int cell)
+        {
+            RemoveLotContextMenu();
+            _lotContextMenu = new VisualElement { name = "lot-context-menu" };
+            _lotContextMenu.AddToClassList("lot-context-menu");
+            _lotContextMenu.style.position = Position.Absolute;
+            _lotContextMenu.style.left = panelPosition.x;
+            _lotContextMenu.style.top = panelPosition.y;
+            _lotContextMenu.Add(CfButton.Create("↔  DELETE ROW", () =>
+            {
+                RemoveLotContextMenu();
+                if (_lotWorld.DeleteMajorRow(cell.y))
+                    _lotStatus = $"Deleted row {cell.y + 1} • lot is now " +
+                        $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
+                Show(AppScreen.LotEditor);
+            }, _lotWorld.LotDepthCells > 1, "danger"));
+            _lotContextMenu.Add(CfButton.Create("↕  DELETE COLUMN", () =>
+            {
+                RemoveLotContextMenu();
+                if (_lotWorld.DeleteMajorColumn(cell.x))
+                    _lotStatus = $"Deleted column {cell.x + 1} • lot is now " +
+                        $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
+                Show(AppScreen.LotEditor);
+            }, _lotWorld.LotWidthCells > 1, "danger"));
+            screen.Add(_lotContextMenu);
+        }
+
+        private void RemoveLotContextMenu()
+        {
+            _lotContextMenu?.RemoveFromHierarchy();
+            _lotContextMenu = null;
         }
 
         private Button CategoryButton(
