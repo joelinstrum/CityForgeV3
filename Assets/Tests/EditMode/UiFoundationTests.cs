@@ -993,6 +993,22 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("ToggleTopDownView", source);
         }
 
+        [TestCase(0f, 0f, 1f)]
+        [TestCase(1f, 0f, 0f)]
+        [TestCase(-0.7071f, 0f, 0.7071f)]
+        public void TopDownRotationPreservesActiveViewScreenUp(
+            float x, float y, float z)
+        {
+            var expectedScreenUp = new Vector3(x, y, z).normalized;
+            var rotation = LotWorldController.ResolveTopDownRotation(
+                expectedScreenUp);
+
+            Assert.That(Vector3.Angle(rotation * Vector3.forward,
+                Vector3.down), Is.LessThan(0.001f));
+            Assert.That(Vector3.Angle(rotation * Vector3.up,
+                expectedScreenUp), Is.LessThan(0.001f));
+        }
+
         [Test]
         public void NewEnglandHousePresentationKeepsItsAuthoredWorldScale()
         {

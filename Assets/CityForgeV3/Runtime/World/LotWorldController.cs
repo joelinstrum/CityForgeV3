@@ -149,6 +149,7 @@ namespace CityForgeV3.World
             ? 0f : _camera.transform.eulerAngles.x;
         private BuildingInspectionMode _inspectionModeBeforeTopDown =
             BuildingInspectionMode.Artwork;
+        private Vector3 _topDownScreenUpWorld = Vector3.forward;
         public bool ProxyVisible =>
             BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
         public bool RegistrationDiagnosticsVisible { get; private set; }
@@ -827,6 +828,13 @@ namespace CityForgeV3.World
 
         public void ToggleTopDownView()
         {
+            if (!TopDownViewEnabled && _camera != null)
+            {
+                var projectedUp = Vector3.ProjectOnPlane(
+                    _camera.transform.up, Vector3.up);
+                if (projectedUp.sqrMagnitude > 0.0001f)
+                    _topDownScreenUpWorld = projectedUp.normalized;
+            }
             TopDownViewEnabled = !TopDownViewEnabled;
             if (TopDownViewEnabled)
             {
@@ -3422,13 +3430,23 @@ namespace CityForgeV3.World
                     LotSizeMeters),
                 _buildingPackage.HeightMeters + 10f);
             _camera.transform.position = target + Vector3.up * cameraHeight;
-            _camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            _camera.transform.rotation = ResolveTopDownRotation(
+                _topDownScreenUpWorld);
             _camera.orthographicSize = OrthographicSizeForLot(
                 ZoomLevel, LotSizeMeters);
             ApplyPresentationFacing();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();
             ApplyProjectedLotFit();
+        }
+
+        public static Quaternion ResolveTopDownRotation(Vector3 screenUpWorld)
+        {
+            var groundUp = Vector3.ProjectOnPlane(
+                screenUpWorld, Vector3.up);
+            if (groundUp.sqrMagnitude <= 0.0001f)
+                groundUp = Vector3.forward;
+            return Quaternion.LookRotation(Vector3.down, groundUp.normalized);
         }
 
         private void AlignFloraToCamera()
