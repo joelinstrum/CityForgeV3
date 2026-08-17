@@ -1535,16 +1535,16 @@ namespace CityForgeV3.UI
             _lotContextMenu.style.position = Position.Absolute;
             _lotContextMenu.style.left = panelPosition.x;
             _lotContextMenu.style.top = panelPosition.y;
-            _lotContextMenu.RegisterCallback<PointerDownEvent>(evt =>
-                evt.StopPropagation());
-            _lotContextMenu.RegisterCallback<PointerUpEvent>(evt =>
-                evt.StopPropagation());
-            _lotContextMenu.RegisterCallback<ClickEvent>(evt =>
-                evt.StopPropagation());
             var deleteRow = CfButton.Create("↔  DELETE ROW",
                 () => DeleteLotStrip(cell, false),
                 _lotWorld.LotWidthCells > 1);
             deleteRow.AddToClassList("lot-context-delete");
+            deleteRow.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0 || !deleteRow.enabledSelf) return;
+                evt.StopImmediatePropagation();
+                DeleteLotStrip(cell, false);
+            }, TrickleDown.TrickleDown);
             deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
             deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
@@ -1554,12 +1554,19 @@ namespace CityForgeV3.UI
                 () => DeleteLotStrip(cell, true),
                 _lotWorld.LotDepthCells > 1);
             deleteColumn.AddToClassList("lot-context-delete");
+            deleteColumn.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0 || !deleteColumn.enabledSelf) return;
+                evt.StopImmediatePropagation();
+                DeleteLotStrip(cell, true);
+            }, TrickleDown.TrickleDown);
             deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
             deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>
                 _lotWorld.ClearMajorStripDeletionPreview());
             _lotContextMenu.Add(deleteColumn);
             screen.Add(_lotContextMenu);
+            deleteRow.schedule.Execute(deleteRow.Focus);
         }
 
         private void DeleteLotStrip(Vector2Int cell, bool column)

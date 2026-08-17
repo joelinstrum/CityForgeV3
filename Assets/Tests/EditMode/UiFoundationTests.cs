@@ -2943,7 +2943,15 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("() => DeleteLotStrip(cell, false)", source);
             StringAssert.Contains("() => DeleteLotStrip(cell, true)", source);
             StringAssert.Contains("lot-context-delete", source);
-            StringAssert.Contains("_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
+            StringAssert.Contains("StopImmediatePropagation", source);
+            StringAssert.Contains("TrickleDown.TrickleDown", source);
+            StringAssert.Contains("deleteRow.schedule.Execute(deleteRow.Focus)", source);
+            StringAssert.DoesNotContain(
+                "_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
+            StringAssert.DoesNotContain(
+                "_lotContextMenu.RegisterCallback<PointerUpEvent>", source);
+            StringAssert.DoesNotContain(
+                "_lotContextMenu.RegisterCallback<ClickEvent>", source);
             StringAssert.Contains("RegisterCallback<PointerEnterEvent>", source);
             StringAssert.Contains("ShowMajorStripDeletionPreview", source);
             StringAssert.Contains(
