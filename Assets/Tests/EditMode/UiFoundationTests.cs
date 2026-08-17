@@ -2625,6 +2625,17 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CommittedBuildingPropsRespectHostPrimitiveDepth()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingProp.shader");
+
+            StringAssert.Contains("ZWrite On", source);
+            StringAssert.Contains("ZTest LEqual", source);
+            StringAssert.DoesNotContain("ZTest Always", source);
+        }
+
+        [Test]
         public void FloraShadowLightUsesAnIsolatedHighResolutionMap()
         {
             var controllerSource = File.ReadAllText(

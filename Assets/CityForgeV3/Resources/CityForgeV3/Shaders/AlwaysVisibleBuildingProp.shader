@@ -14,7 +14,8 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
         Tags { "Queue"="AlphaTest+5" "RenderType"="Opaque" }
         Cull Off
         ZWrite On
-        ZTest Always
+        // Committed attachments respect the host primitive's depth silhouette.
+        ZTest LEqual
 
         Pass
         {
