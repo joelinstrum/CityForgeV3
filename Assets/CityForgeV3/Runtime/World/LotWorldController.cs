@@ -25,6 +25,7 @@ namespace CityForgeV3.World
         private Transform _cameraPivot;
         private Transform _minorGrid;
         private Transform _majorGrid;
+        private Transform _majorStripDeletionPreview;
         private bool _gridVisible = true;
         private Transform _neighborhoodRoad;
         private Transform _roadArtworkRoot;
@@ -1010,8 +1011,45 @@ namespace CityForgeV3.World
         public bool DeleteMajorRow(int rowIndex) =>
             DeleteMajorStrip(rowIndex, false);
 
+        public bool ShowMajorStripDeletionPreview(int stripIndex, bool column)
+        {
+            var cellCount = column ? LotWidthCells : LotDepthCells;
+            if (stripIndex < 0 || stripIndex >= cellCount) return false;
+            if (_majorStripDeletionPreview == null)
+            {
+                var preview = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                preview.name = "Major Row Column Deletion Preview";
+                preview.transform.SetParent(transform, false);
+                var collider = preview.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    if (Application.isPlaying) Destroy(collider);
+                    else DestroyImmediate(collider);
+                }
+                preview.GetComponent<Renderer>().sharedMaterial =
+                    LotSurfaceMaterial(new Color(0.9f, 0.06f, 0.04f, 0.5f), 5001);
+                _majorStripDeletionPreview = preview.transform;
+            }
+            var center = -cellCount * 5f + stripIndex * 10f + 5f;
+            _majorStripDeletionPreview.localPosition = column
+                ? new Vector3(center, 0.08f, 0f)
+                : new Vector3(0f, 0.08f, center);
+            _majorStripDeletionPreview.localScale = column
+                ? new Vector3(10f, 0.04f, LotDepthMeters)
+                : new Vector3(LotWidthMeters, 0.04f, 10f);
+            _majorStripDeletionPreview.gameObject.SetActive(true);
+            return true;
+        }
+
+        public void ClearMajorStripDeletionPreview()
+        {
+            if (_majorStripDeletionPreview != null)
+                _majorStripDeletionPreview.gameObject.SetActive(false);
+        }
+
         private bool DeleteMajorStrip(int stripIndex, bool alongX)
         {
+            ClearMajorStripDeletionPreview();
             var oldCellCount = alongX ? LotWidthCells : LotDepthCells;
             if (oldCellCount <= 1 || stripIndex < 0 || stripIndex >= oldCellCount)
                 return false;

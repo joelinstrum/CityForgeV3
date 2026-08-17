@@ -2906,6 +2906,14 @@ namespace CityForgeV3.Tests
                 world.Session.Data.OverlayTextures.Add(new PlacedOverlayTexture
                     { InstanceId = "middle-overlay", CellX = 1, CellZ = 0 });
 
+                Assert.That(world.ShowMajorStripDeletionPreview(1, true), Is.True);
+                var preview = root.transform.Find(
+                    "Major Row Column Deletion Preview");
+                Assert.That(preview, Is.Not.Null);
+                Assert.That(preview.localPosition.x, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(preview.localScale.x, Is.EqualTo(10f).Within(0.001f));
+                Assert.That(preview.localScale.z, Is.EqualTo(30f).Within(0.001f));
+
                 Assert.That(world.DeleteMajorColumn(1), Is.True);
                 Assert.That(world.LotWidthCells, Is.EqualTo(2));
                 Assert.That(world.LotDepthCells, Is.EqualTo(3));
@@ -2934,6 +2942,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("LotObjectSelectionKind.None", source);
             StringAssert.Contains("screen.schedule.Execute(() => DeleteLotStrip", source);
             StringAssert.Contains("_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
+            StringAssert.Contains("RegisterCallback<PointerEnterEvent>", source);
+            StringAssert.Contains("ShowMajorStripDeletionPreview", source);
         }
 
         [Test]

@@ -1541,16 +1541,26 @@ namespace CityForgeV3.UI
                 evt.StopPropagation());
             _lotContextMenu.RegisterCallback<ClickEvent>(evt =>
                 evt.StopPropagation());
-            _lotContextMenu.Add(CfButton.Create("↔  DELETE ROW", () =>
+            var deleteRow = CfButton.Create("↔  DELETE ROW", () =>
             {
                 RemoveLotContextMenu();
                 screen.schedule.Execute(() => DeleteLotStrip(cell, false));
-            }, _lotWorld.LotDepthCells > 1, "danger"));
-            _lotContextMenu.Add(CfButton.Create("↕  DELETE COLUMN", () =>
+            }, _lotWorld.LotDepthCells > 1, "danger");
+            deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
+                _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
+            deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
+                _lotWorld.ClearMajorStripDeletionPreview());
+            _lotContextMenu.Add(deleteRow);
+            var deleteColumn = CfButton.Create("↕  DELETE COLUMN", () =>
             {
                 RemoveLotContextMenu();
                 screen.schedule.Execute(() => DeleteLotStrip(cell, true));
-            }, _lotWorld.LotWidthCells > 1, "danger"));
+            }, _lotWorld.LotWidthCells > 1, "danger");
+            deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
+                _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
+            deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>
+                _lotWorld.ClearMajorStripDeletionPreview());
+            _lotContextMenu.Add(deleteColumn);
             screen.Add(_lotContextMenu);
         }
 
@@ -1568,6 +1578,7 @@ namespace CityForgeV3.UI
 
         private void RemoveLotContextMenu()
         {
+            _lotWorld?.ClearMajorStripDeletionPreview();
             _lotContextMenu?.RemoveFromHierarchy();
             _lotContextMenu = null;
         }
