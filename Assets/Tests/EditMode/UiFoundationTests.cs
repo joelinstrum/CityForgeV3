@@ -2931,6 +2931,59 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void DeletingStripKeepsSurvivingBuildingAsTheSinglePrimaryPresentation()
+        {
+            var root = new GameObject("Delete Strip Building State Test");
+            LogAssert.ignoreFailingMessages = true;
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.ConfigureLot("Boston Pub Shape", LotType.Residential, 4, 4);
+                world.Session.AddBuilding(
+                    BuildingCatalog.ColonialGovernmentHouseId, 0, 5);
+                var building = world.Session.Data.Buildings[0];
+                building.Attachments.Add(new PlacedBuildingProp
+                {
+                    ComponentId = BuildingPropCatalog.AleHouseSignId,
+                    HasHostLocalPosition = true,
+                    HostLocalX = 3.25f,
+                    HostLocalY = 4.75f,
+                    HostLocalZ = 2.1f
+                });
+                world.Session.Data.OverlayTextures.Add(new PlacedOverlayTexture
+                    { InstanceId = "surviving-overlay", CellX = 2, CellZ = 2 });
+                var instanceId = building.InstanceId;
+
+                Assert.That(world.DeleteMajorRow(0), Is.True);
+
+                Assert.That(world.LotWidthCells, Is.EqualTo(4));
+                Assert.That(world.LotDepthCells, Is.EqualTo(3));
+                Assert.That(world.BuildingCount, Is.EqualTo(1));
+                Assert.That(world.SelectedBuildingIndex, Is.EqualTo(0));
+                Assert.That(world.IsSelected, Is.False);
+                Assert.That(world.Session.Data.BuildingId,
+                    Is.EqualTo(world.Session.Data.Buildings[0].BuildingId));
+                Assert.That(world.Session.Data.CellX,
+                    Is.EqualTo(world.Session.Data.Buildings[0].CellX));
+                Assert.That(world.Session.Data.CellZ,
+                    Is.EqualTo(world.Session.Data.Buildings[0].CellZ));
+                Assert.That(world.Session.Data.Buildings[0].InstanceId,
+                    Is.EqualTo(instanceId));
+                Assert.That(world.Session.Data.Buildings[0].Attachments.Count,
+                    Is.EqualTo(1));
+                Assert.That(world.Session.Data.OverlayTextures.Single().CellZ,
+                    Is.EqualTo(1));
+                Assert.That(world.SelectBuildingAtLotPoint(Vector2.zero), Is.True);
+                Assert.That(world.SelectedBuildingIndex, Is.EqualTo(0));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                LogAssert.ignoreFailingMessages = false;
+            }
+        }
+
+        [Test]
         public void RowAndColumnLabelsReduceTheExpectedLotDimension()
         {
             var root = new GameObject("Delete Strip Dimension Test");

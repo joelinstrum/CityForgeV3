@@ -1050,6 +1050,11 @@ namespace CityForgeV3.World
         private bool DeleteMajorStrip(int stripIndex, bool alongX)
         {
             ClearMajorStripDeletionPreview();
+            var selectedBuildingInstanceId =
+                _session.SelectedBuildingIndex >= 0 &&
+                _session.SelectedBuildingIndex < (_session.Data.Buildings?.Count ?? 0)
+                    ? _session.Data.Buildings[_session.SelectedBuildingIndex]?.InstanceId
+                    : null;
             var oldCellCount = alongX ? LotWidthCells : LotDepthCells;
             if (oldCellCount <= 1 || stripIndex < 0 || stripIndex >= oldCellCount)
                 return false;
@@ -1123,8 +1128,23 @@ namespace CityForgeV3.World
                 if (!alongX && overlay.CellZ > stripIndex) overlay.CellZ--;
             }
 
-            _session.SelectBuilding(-1);
+            var survivingBuildingIndex = -1;
+            if (_session.Data.Buildings != null &&
+                _session.Data.Buildings.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(selectedBuildingInstanceId))
+                {
+                    survivingBuildingIndex = _session.Data.Buildings.FindIndex(
+                        building => building != null &&
+                            building.InstanceId == selectedBuildingInstanceId);
+                }
+                if (survivingBuildingIndex < 0)
+                    survivingBuildingIndex = 0;
+            }
+            _session.SelectBuilding(survivingBuildingIndex);
+            _session.Select(false);
             ActiveObjectSelection = LotObjectSelectionKind.None;
+            ClearObjectHover();
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
             _selectedBuildingPropPresentationIndex = -1;
