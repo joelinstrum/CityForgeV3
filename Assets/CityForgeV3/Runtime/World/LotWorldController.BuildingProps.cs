@@ -579,8 +579,7 @@ namespace CityForgeV3.World
                 Mathf.Max(0.1f, attachment.Scale);
             model.localScale = Vector3.one * uniform;
             var catalogItem = BuildingCatalog.Find(building.BuildingId);
-            var package = catalogItem == null ||
-                string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath)
+            var package = string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath)
                 ? null
                 : HybridBuildingPackageRegistry.Load(catalogItem.PackageResourcePath);
             var visibleFacade = TopDownViewEnabled || package == null ||
