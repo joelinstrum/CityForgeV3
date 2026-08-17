@@ -955,6 +955,9 @@ namespace CityForgeV3.Tests
                     BuildingCatalog.ColonialGovernmentHouseId), Is.True);
                 world.SetInspectionMode(BuildingInspectionMode.Hybrid);
                 var savedData = world.Session.Serialize();
+                var worldZScreenBefore = new Vector2(
+                    Vector3.Dot(Vector3.forward, Camera.main.transform.right),
+                    Vector3.Dot(Vector3.forward, Camera.main.transform.up)).normalized;
 
                 world.ToggleTopDownView();
 
@@ -963,6 +966,11 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(0f).Within(0.001f));
                 Assert.That(world.InspectionMode,
                     Is.EqualTo(BuildingInspectionMode.Primitive));
+                var worldZScreenAfter = new Vector2(
+                    Vector3.Dot(Vector3.forward, Camera.main.transform.right),
+                    Vector3.Dot(Vector3.forward, Camera.main.transform.up)).normalized;
+                Assert.That(Vector2.Angle(worldZScreenAfter,
+                    worldZScreenBefore), Is.LessThan(0.001f));
                 Assert.That(world.Session.Serialize(), Is.EqualTo(savedData));
                 world.SetBuildingEditorContext(true, false);
                 Assert.That(world.InspectionMode,
@@ -994,16 +1002,23 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void TopDownRotationUsesFixedNorthUpGridAlignment()
+        [TestCase(1f, 0f)]
+        [TestCase(0f, 1f)]
+        [TestCase(0.7071f, -0.7071f)]
+        public void TopDownRotationPreservesVisibleLotGridDirection(
+            float screenX, float screenY)
         {
-            var rotation = LotWorldController.ResolveTopDownRotation();
+            var expectedWorldZScreen = new Vector2(screenX, screenY).normalized;
+            var rotation = LotWorldController.ResolveTopDownRotation(
+                expectedWorldZScreen);
 
             Assert.That(Vector3.Angle(rotation * Vector3.forward,
                 Vector3.down), Is.LessThan(0.001f));
-            Assert.That(Vector3.Angle(rotation * Vector3.up,
-                Vector3.forward), Is.LessThan(0.001f));
-            Assert.That(Vector3.Angle(rotation * Vector3.right,
-                Vector3.right), Is.LessThan(0.001f));
+            var actualWorldZScreen = new Vector2(
+                Vector3.Dot(Vector3.forward, rotation * Vector3.right),
+                Vector3.Dot(Vector3.forward, rotation * Vector3.up)).normalized;
+            Assert.That(Vector2.Angle(actualWorldZScreen,
+                expectedWorldZScreen), Is.LessThan(0.001f));
         }
 
         [Test]

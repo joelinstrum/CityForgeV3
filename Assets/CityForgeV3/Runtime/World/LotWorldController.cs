@@ -149,6 +149,7 @@ namespace CityForgeV3.World
             ? 0f : _camera.transform.eulerAngles.x;
         private BuildingInspectionMode _inspectionModeBeforeTopDown =
             BuildingInspectionMode.Artwork;
+        private Vector2 _topDownWorldZScreenDirection = Vector2.up;
         public bool ProxyVisible =>
             BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
         public bool RegistrationDiagnosticsVisible { get; private set; }
@@ -827,6 +828,14 @@ namespace CityForgeV3.World
 
         public void ToggleTopDownView()
         {
+            if (!TopDownViewEnabled && _camera != null)
+            {
+                var projectedWorldZ = new Vector2(
+                    Vector3.Dot(Vector3.forward, _camera.transform.right),
+                    Vector3.Dot(Vector3.forward, _camera.transform.up));
+                if (projectedWorldZ.sqrMagnitude > 0.0001f)
+                    _topDownWorldZScreenDirection = projectedWorldZ.normalized;
+            }
             TopDownViewEnabled = !TopDownViewEnabled;
             if (TopDownViewEnabled)
             {
@@ -3422,7 +3431,8 @@ namespace CityForgeV3.World
                     LotSizeMeters),
                 _buildingPackage.HeightMeters + 10f);
             _camera.transform.position = target + Vector3.up * cameraHeight;
-            _camera.transform.rotation = ResolveTopDownRotation();
+            _camera.transform.rotation = ResolveTopDownRotation(
+                _topDownWorldZScreenDirection);
             _camera.orthographicSize = OrthographicSizeForLot(
                 ZoomLevel, LotSizeMeters);
             ApplyPresentationFacing();
@@ -3431,9 +3441,15 @@ namespace CityForgeV3.World
             ApplyProjectedLotFit();
         }
 
-        public static Quaternion ResolveTopDownRotation()
+        public static Quaternion ResolveTopDownRotation(
+            Vector2 worldZScreenDirection)
         {
-            return Quaternion.LookRotation(Vector3.down, Vector3.forward);
+            if (worldZScreenDirection.sqrMagnitude <= 0.0001f)
+                worldZScreenDirection = Vector2.up;
+            worldZScreenDirection.Normalize();
+            var groundUp = new Vector3(
+                -worldZScreenDirection.x, 0f, worldZScreenDirection.y);
+            return Quaternion.LookRotation(Vector3.down, groundUp);
         }
 
         private void AlignFloraToCamera()
