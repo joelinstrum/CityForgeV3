@@ -2932,6 +2932,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("↕  DELETE COLUMN", source);
             StringAssert.Contains("TryMajorCellFromPanel", source);
             StringAssert.Contains("LotObjectSelectionKind.None", source);
+            StringAssert.Contains("screen.schedule.Execute(() => DeleteLotStrip", source);
+            StringAssert.Contains("_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
         }
 
         [Test]

@@ -1535,23 +1535,35 @@ namespace CityForgeV3.UI
             _lotContextMenu.style.position = Position.Absolute;
             _lotContextMenu.style.left = panelPosition.x;
             _lotContextMenu.style.top = panelPosition.y;
+            _lotContextMenu.RegisterCallback<PointerDownEvent>(evt =>
+                evt.StopPropagation());
+            _lotContextMenu.RegisterCallback<PointerUpEvent>(evt =>
+                evt.StopPropagation());
+            _lotContextMenu.RegisterCallback<ClickEvent>(evt =>
+                evt.StopPropagation());
             _lotContextMenu.Add(CfButton.Create("↔  DELETE ROW", () =>
             {
                 RemoveLotContextMenu();
-                if (_lotWorld.DeleteMajorRow(cell.y))
-                    _lotStatus = $"Deleted row {cell.y + 1} • lot is now " +
-                        $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
-                Show(AppScreen.LotEditor);
+                screen.schedule.Execute(() => DeleteLotStrip(cell, false));
             }, _lotWorld.LotDepthCells > 1, "danger"));
             _lotContextMenu.Add(CfButton.Create("↕  DELETE COLUMN", () =>
             {
                 RemoveLotContextMenu();
-                if (_lotWorld.DeleteMajorColumn(cell.x))
-                    _lotStatus = $"Deleted column {cell.x + 1} • lot is now " +
-                        $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
-                Show(AppScreen.LotEditor);
+                screen.schedule.Execute(() => DeleteLotStrip(cell, true));
             }, _lotWorld.LotWidthCells > 1, "danger"));
             screen.Add(_lotContextMenu);
+        }
+
+        private void DeleteLotStrip(Vector2Int cell, bool column)
+        {
+            var deleted = column
+                ? _lotWorld.DeleteMajorColumn(cell.x)
+                : _lotWorld.DeleteMajorRow(cell.y);
+            if (deleted)
+                _lotStatus = $"Deleted {(column ? "column" : "row")} " +
+                    $"{(column ? cell.x : cell.y) + 1} • lot is now " +
+                    $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
+            Show(AppScreen.LotEditor);
         }
 
         private void RemoveLotContextMenu()
