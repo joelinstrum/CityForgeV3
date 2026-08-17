@@ -41,20 +41,6 @@
       "CF_ANCHOR_ENTRANCE"
     ]
   },
-  "attachmentSockets": [
-    {
-      "id": "front-left-ale-house-sign-approved-v01",
-      "componentId": "ale-house-hanging-sign-v01",
-      "hostElevation": "Front",
-      "legacyNormalizedX": 0.2311304361,
-      "legacyNormalizedY": 0.3586862087,
-      "localPositionMeters": [
-        -3.0382,
-        4.3042,
-        -5.5899
-      ]
-    }
-  ],
   "render": {
     "pixelsPerMeter": 115.0,
     "canvasWidth": 2048,

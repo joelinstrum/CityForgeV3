@@ -601,36 +601,12 @@ namespace CityForgeV3.World
         {
             if (attachment == null) return false;
             if (attachment.HasHostLocalPosition) return true;
-            if (TryInitializeAttachmentSocket(attachment, buildingIndex,
-                    normalizedX, normalizedY)) return true;
             if (!TryBuildingArtworkScreenBounds(buildingIndex, out _,
                     out var minimum, out var maximum)) return false;
             var pixel = new Vector2(
                 Mathf.Lerp(minimum.x, maximum.x, normalizedX),
                 Mathf.Lerp(minimum.y, maximum.y, normalizedY));
             return SetHostLocalPositionFromPixel(attachment, buildingIndex, pixel);
-        }
-
-        private bool TryInitializeAttachmentSocket(PlacedBuildingProp attachment,
-            int buildingIndex, float normalizedX, float normalizedY)
-        {
-            if (buildingIndex < 0 ||
-                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
-                return false;
-            var building = _session.Data.Buildings[buildingIndex];
-            var catalogItem = BuildingCatalog.Find(building.BuildingId);
-            if (string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath))
-                return false;
-            var package = HybridBuildingPackageRegistry.Load(
-                catalogItem.PackageResourcePath);
-            if (package == null || !package.TryAttachmentSocket(
-                    attachment.ComponentId, attachment.HostElevation,
-                    normalizedX, normalizedY, out var local)) return false;
-            attachment.HostLocalX = local.x;
-            attachment.HostLocalY = local.y;
-            attachment.HostLocalZ = local.z;
-            attachment.HasHostLocalPosition = true;
-            return true;
         }
 
         private bool SetHostLocalPositionFromPixel(
