@@ -149,7 +149,6 @@ namespace CityForgeV3.World
             ? 0f : _camera.transform.eulerAngles.x;
         private BuildingInspectionMode _inspectionModeBeforeTopDown =
             BuildingInspectionMode.Artwork;
-        private Vector3 _topDownScreenUpWorld = Vector3.forward;
         public bool ProxyVisible =>
             BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
         public bool RegistrationDiagnosticsVisible { get; private set; }
@@ -828,13 +827,6 @@ namespace CityForgeV3.World
 
         public void ToggleTopDownView()
         {
-            if (!TopDownViewEnabled && _camera != null)
-            {
-                var projectedUp = Vector3.ProjectOnPlane(
-                    _camera.transform.up, Vector3.up);
-                if (projectedUp.sqrMagnitude > 0.0001f)
-                    _topDownScreenUpWorld = projectedUp.normalized;
-            }
             TopDownViewEnabled = !TopDownViewEnabled;
             if (TopDownViewEnabled)
             {
@@ -3430,8 +3422,7 @@ namespace CityForgeV3.World
                     LotSizeMeters),
                 _buildingPackage.HeightMeters + 10f);
             _camera.transform.position = target + Vector3.up * cameraHeight;
-            _camera.transform.rotation = ResolveTopDownRotation(
-                _topDownScreenUpWorld);
+            _camera.transform.rotation = ResolveTopDownRotation();
             _camera.orthographicSize = OrthographicSizeForLot(
                 ZoomLevel, LotSizeMeters);
             ApplyPresentationFacing();
@@ -3440,13 +3431,9 @@ namespace CityForgeV3.World
             ApplyProjectedLotFit();
         }
 
-        public static Quaternion ResolveTopDownRotation(Vector3 screenUpWorld)
+        public static Quaternion ResolveTopDownRotation()
         {
-            var groundUp = Vector3.ProjectOnPlane(
-                screenUpWorld, Vector3.up);
-            if (groundUp.sqrMagnitude <= 0.0001f)
-                groundUp = Vector3.forward;
-            return Quaternion.LookRotation(Vector3.down, groundUp.normalized);
+            return Quaternion.LookRotation(Vector3.down, Vector3.forward);
         }
 
         private void AlignFloraToCamera()

@@ -993,20 +993,17 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("ToggleTopDownView", source);
         }
 
-        [TestCase(0f, 0f, 1f)]
-        [TestCase(1f, 0f, 0f)]
-        [TestCase(-0.7071f, 0f, 0.7071f)]
-        public void TopDownRotationPreservesActiveViewScreenUp(
-            float x, float y, float z)
+        [Test]
+        public void TopDownRotationUsesFixedNorthUpGridAlignment()
         {
-            var expectedScreenUp = new Vector3(x, y, z).normalized;
-            var rotation = LotWorldController.ResolveTopDownRotation(
-                expectedScreenUp);
+            var rotation = LotWorldController.ResolveTopDownRotation();
 
             Assert.That(Vector3.Angle(rotation * Vector3.forward,
                 Vector3.down), Is.LessThan(0.001f));
             Assert.That(Vector3.Angle(rotation * Vector3.up,
-                expectedScreenUp), Is.LessThan(0.001f));
+                Vector3.forward), Is.LessThan(0.001f));
+            Assert.That(Vector3.Angle(rotation * Vector3.right,
+                Vector3.right), Is.LessThan(0.001f));
         }
 
         [Test]
