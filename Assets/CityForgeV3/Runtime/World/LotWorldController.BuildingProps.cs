@@ -460,6 +460,28 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
+        public bool DeleteSelectedBuildingProp()
+        {
+            if (_selectedBuildingPropBuildingIndex < 0 ||
+                _selectedBuildingPropBuildingIndex >=
+                    (_session.Data.Buildings?.Count ?? 0)) return false;
+            var building = _session.Data.Buildings[_selectedBuildingPropBuildingIndex];
+            if (_selectedBuildingPropAttachmentIndex < 0 ||
+                _selectedBuildingPropAttachmentIndex >=
+                    (building.Attachments?.Count ?? 0)) return false;
+            building.Attachments.RemoveAt(_selectedBuildingPropAttachmentIndex);
+            _buildingPropDragActive = false;
+            _selectedBuildingPropPresentationIndex = -1;
+            _selectedBuildingPropBuildingIndex = -1;
+            _selectedBuildingPropAttachmentIndex = -1;
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            ClearBuildingPropHover();
+            RefreshBuildingPropPresentations();
+            RebuildBuildingPropOverlayPass();
+            NotifyStateChanged();
+            return true;
+        }
+
         public bool RotateSelectedBuildingProp45Degrees()
         {
             if (_selectedBuildingPropPresentationIndex < 0 ||

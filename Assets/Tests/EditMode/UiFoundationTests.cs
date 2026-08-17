@@ -318,15 +318,63 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void DeleteAndBackspaceRouteSelectedBuildingsThroughSharedCommand()
+        public void DeleteAndBackspaceRouteThroughActiveObjectSelection()
         {
             var source = File.ReadAllText(Path.Combine(
                 Application.dataPath, "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
-            StringAssert.Contains(
-                "_lotEditorCategory == LotEditorCategory.Buildings", source);
-            StringAssert.Contains("_lotWorld.IsSelected", source);
+            StringAssert.Contains("DeleteActiveSelection()", source);
+            StringAssert.Contains("case LotObjectSelectionKind.BuildingProp:", source);
+            StringAssert.Contains("case LotObjectSelectionKind.Prop:", source);
+            StringAssert.Contains("case LotObjectSelectionKind.Flora:", source);
+            StringAssert.Contains("case LotObjectSelectionKind.Building:", source);
+            StringAssert.Contains("DeleteSelectedBuildingProp()", source);
+            StringAssert.Contains("DeleteSelectedFlora()", source);
             StringAssert.Contains("DeleteBuilding();", source);
             StringAssert.Contains("_lotWorld.DeleteSelectedBuilding()", source);
+        }
+
+        [Test]
+        public void DeleteSelectedBuildingPropRemovesOnlyTheActiveAttachment()
+        {
+            var root = new GameObject("Selected Building Prop Delete Test");
+            try
+            {
+                LogAssert.ignoreFailingMessages = true;
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Delete Building Props", LotType.Residential, 4, 4);
+                Assert.That(world.PlaceBuildingAtCenter(
+                    BuildingCatalog.ColonialGovernmentHouseId), Is.True);
+                var building = world.Session.Data.Buildings[0];
+                building.Attachments.Add(new PlacedBuildingProp
+                {
+                    InstanceId = "keep",
+                    ComponentId = BuildingPropCatalog.AleHouseSignId
+                });
+                building.Attachments.Add(new PlacedBuildingProp
+                {
+                    InstanceId = "delete",
+                    ComponentId = BuildingPropCatalog.AleHouseSignId
+                });
+                typeof(LotWorldController).GetField(
+                    "_selectedBuildingPropBuildingIndex",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(world, 0);
+                typeof(LotWorldController).GetField(
+                    "_selectedBuildingPropAttachmentIndex",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(world, 1);
+
+                Assert.That(world.DeleteSelectedBuildingProp(), Is.True);
+                Assert.That(building.Attachments.Count, Is.EqualTo(1));
+                Assert.That(building.Attachments[0].InstanceId, Is.EqualTo("keep"));
+                Assert.That(world.ActiveObjectSelection,
+                    Is.EqualTo(LotObjectSelectionKind.None));
+                Assert.That(world.DeleteSelectedBuildingProp(), Is.False);
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]

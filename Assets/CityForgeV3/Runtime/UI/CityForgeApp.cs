@@ -251,33 +251,9 @@ namespace CityForgeV3.UI
                 Show(AppScreen.LotEditor);
                 evt.StopPropagation();
             }
-            else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
-                     _lotEditorCategory == LotEditorCategory.Buildings &&
-                     _lotWorld.IsSelected)
+            else if (evt.keyCode is KeyCode.Delete or KeyCode.Backspace)
             {
-                DeleteBuilding();
-                evt.StopPropagation();
-            }
-            else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
-                     _lotEditorCategory == LotEditorCategory.Roads &&
-                     _lotWorld.RoadCursorSelected)
-            {
-                DeleteRoadPiece();
-                evt.StopPropagation();
-            }
-            else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
-                     _lotEditorCategory == LotEditorCategory.Props &&
-                     _lotWorld.SelectedPropIndex >= 0)
-            {
-                DeleteSelectedProp();
-                evt.StopPropagation();
-            }
-            else if ((evt.keyCode is KeyCode.Delete or KeyCode.Backspace) &&
-                     _lotEditorCategory == LotEditorCategory.OverlayTextures &&
-                     _lotWorld.SelectedOverlayTextureIndex >= 0)
-            {
-                DeleteSelectedOverlayTexture();
-                evt.StopPropagation();
+                if (DeleteActiveSelection()) evt.StopPropagation();
             }
             else if (evt.keyCode == KeyCode.O &&
                      _lotEditorCategory == LotEditorCategory.Roads &&
@@ -2167,6 +2143,44 @@ namespace CityForgeV3.UI
             _lotWorld.DeselectAll();
             _lotStatus = "Selection cleared — arrows pan the lot";
             Show(AppScreen.LotEditor);
+        }
+
+        private bool DeleteActiveSelection()
+        {
+            switch (_lotWorld.ActiveObjectSelection)
+            {
+                case LotObjectSelectionKind.BuildingProp:
+                    _lotStatus = _lotWorld.DeleteSelectedBuildingProp()
+                        ? "Building prop deleted"
+                        : "Select a building prop before deleting";
+                    Show(AppScreen.LotEditor);
+                    return true;
+                case LotObjectSelectionKind.Prop:
+                    DeleteSelectedProp();
+                    return true;
+                case LotObjectSelectionKind.Flora:
+                    _lotStatus = _lotWorld.DeleteSelectedFlora()
+                        ? "Tree deleted"
+                        : "Select a tree before deleting";
+                    Show(AppScreen.LotEditor);
+                    return true;
+                case LotObjectSelectionKind.Building:
+                    DeleteBuilding();
+                    return true;
+            }
+            if (_lotEditorCategory == LotEditorCategory.Roads &&
+                _lotWorld.RoadCursorSelected)
+            {
+                DeleteRoadPiece();
+                return true;
+            }
+            if (_lotEditorCategory == LotEditorCategory.OverlayTextures &&
+                _lotWorld.SelectedOverlayTextureIndex >= 0)
+            {
+                DeleteSelectedOverlayTexture();
+                return true;
+            }
+            return false;
         }
 
         private void RotateSelectedProp(int direction)

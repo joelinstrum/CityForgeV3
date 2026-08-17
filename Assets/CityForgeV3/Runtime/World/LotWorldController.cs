@@ -502,6 +502,21 @@ namespace CityForgeV3.World
             return true;
         }
 
+        public bool DeleteSelectedFlora()
+        {
+            if (SelectedFloraIndex < 0 ||
+                SelectedFloraIndex >= (_session.Data.Flora?.Count ?? 0))
+                return false;
+            _session.Data.Flora.RemoveAt(SelectedFloraIndex);
+            SelectedFloraIndex = -1;
+            _floraDragActive = false;
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            RebuildFloraPresentations();
+            ApplyFloraSelection();
+            NotifyStateChanged();
+            return true;
+        }
+
         private int FloraIndexAtCameraPixel(Vector2 pixel)
         {
             var best = -1;

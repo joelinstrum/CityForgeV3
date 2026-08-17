@@ -270,6 +270,8 @@ namespace CityForgeV3.World
             if (SelectedPropIndex < 0 || SelectedPropIndex >= PropCount) return false;
             _session.Data.Props.RemoveAt(SelectedPropIndex);
             SelectedPropIndex = -1;
+            _propDragActive = false;
+            ActiveObjectSelection = LotObjectSelectionKind.None;
             RebuildPropPresentations();
             NotifyStateChanged();
             return true;
