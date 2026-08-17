@@ -295,12 +295,17 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void LotEditorDefaultsToGeneralAndUsesTheCarRoadIcon()
+        public void LotEditorStartsWithoutAnExpandedToolAndUsesTheCarRoadIcon()
         {
             var source = File.ReadAllText(Path.Combine(
                 Application.dataPath, "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
             StringAssert.Contains(
                 "_lotEditorCategory = LotEditorCategory.Main", source);
+            StringAssert.Contains(
+                "private bool _lotEditorCategoryExpanded;", source);
+            StringAssert.Contains("private bool _hasOpenLot;", source);
+            StringAssert.Contains("_lotWorld.SetVisible(false);", source);
+            StringAssert.DoesNotContain("_lotWorld.NewEmptyLot();", source);
             StringAssert.Contains(
                 "LotEditorCategory.Roads, \"roads-car-v74\", \"Roads\"", source);
         }
@@ -2894,6 +2899,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("action?.Invoke();", source);
             StringAssert.Contains("CfButton.Create(\"DISCARD\", () => ContinueDocumentAction(false)", source);
             StringAssert.Contains("CfButton.Create(\"CANCEL\", CancelDocumentAction", source);
+            StringAssert.Contains("WarnAboutUnsavedLotChanges = false", source);
+            StringAssert.Contains("if (!WarnAboutUnsavedLotChanges", source);
         }
 
         [Test]

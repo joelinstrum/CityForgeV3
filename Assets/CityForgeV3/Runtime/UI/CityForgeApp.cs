@@ -24,13 +24,15 @@ namespace CityForgeV3.UI
     public sealed class CityForgeApp : MonoBehaviour
     {
         private const string StylePath = "CityForgeV3/UI/CityForgeV3";
+        private const bool WarnAboutUnsavedLotChanges = false;
         private UIDocument _document;
         private VisualElement _root;
         private LotWorldController _lotWorld;
-        private string _lotStatus = "Empty lot ready";
+        private string _lotStatus = "";
         private AppScreen _currentScreen;
         private LotEditorCategory _lotEditorCategory = LotEditorCategory.Main;
-        private bool _lotEditorCategoryExpanded = true;
+        private bool _lotEditorCategoryExpanded;
+        private bool _hasOpenLot;
         private BuildingUseCategory _buildingUseCategory = BuildingUseCategory.Residential;
         private bool _roadPointerDown;
         private bool _roadDragStarted;
@@ -79,6 +81,7 @@ namespace CityForgeV3.UI
             _buildingUseCategory = BuildingUseCategory.Commercial;
             _lotWorld.ConfigureLot("Art Deco placement QA", LotType.Commercial,
                 4, 4, LotEraCatalog.DefaultId);
+            _hasOpenLot = true;
             _lotWorld.PlaceBuildingAtCenter(
                 "cityforge.base.building.commercial.art_deco_corner_building_01");
             Show(AppScreen.LotEditor);
@@ -89,6 +92,7 @@ namespace CityForgeV3.UI
             EnsureLotWorld();
             Show(AppScreen.LotEditor);
             if (!_lotWorld.LoadLot(lotId)) return false;
+            _hasOpenLot = true;
             _lotEditorCategory = LotEditorCategory.Main;
             _lotEditorCategoryExpanded = true;
             _lotStatus = $"Selection QA • {lotId}";
@@ -101,6 +105,7 @@ namespace CityForgeV3.UI
             EnsureLotWorld();
             Show(AppScreen.LotEditor);
             if (!_lotWorld.LoadLot(lotId)) return false;
+            _hasOpenLot = true;
             _lotEditorCategory = LotEditorCategory.Buildings;
             _lotEditorCategoryExpanded = true;
             _lotStatus = $"Building rotation QA • {lotId}";
@@ -164,7 +169,7 @@ namespace CityForgeV3.UI
         {
             _currentScreen = screen;
             _root.Clear();
-            _lotWorld?.SetVisible(screen == AppScreen.LotEditor);
+            _lotWorld?.SetVisible(screen == AppScreen.LotEditor && _hasOpenLot);
 
             switch (screen)
             {
@@ -398,6 +403,7 @@ namespace CityForgeV3.UI
         private void ComposeLotEditor()
         {
             EnsureLotWorld();
+            _lotWorld.SetVisible(_hasOpenLot);
             _lotWorld.SetBuildingEditorContext(
                 _lotEditorCategory == LotEditorCategory.Buildings,
                 _lotEditorCategory == LotEditorCategory.Roads);
@@ -778,12 +784,14 @@ namespace CityForgeV3.UI
 
             var title = new VisualElement();
             title.AddToClassList("topbar-title");
-            title.Add(StyledLabel(_lotWorld.HasUnsavedChanges
-                ? $"{_lotWorld.CurrentLotName} •"
-                : _lotWorld.CurrentLotName, "topbar-heading"));
-            title.Add(StyledLabel(
-                $"{LotTypeLabel(_lotWorld.LotType).ToUpperInvariant()} • {_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells} CELLS • {_lotWorld.LotWidthMeters} × {_lotWorld.LotDepthMeters} M",
-                "topbar-caption"));
+            title.Add(StyledLabel(_hasOpenLot
+                ? _lotWorld.HasUnsavedChanges
+                    ? $"{_lotWorld.CurrentLotName} •"
+                    : _lotWorld.CurrentLotName
+                : "NO LOT OPEN", "topbar-heading"));
+            title.Add(StyledLabel(_hasOpenLot
+                ? $"{LotTypeLabel(_lotWorld.LotType).ToUpperInvariant()} • {_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells} CELLS • {_lotWorld.LotWidthMeters} × {_lotWorld.LotDepthMeters} M"
+                : "CREATE A NEW LOT OR LOAD A SAVED LOT", "topbar-caption"));
             topbar.Add(title);
 
             if (_lotEditorCategory == LotEditorCategory.Flora &&
@@ -803,12 +811,12 @@ namespace CityForgeV3.UI
             viewActions.AddToClassList("topbar-actions");
             viewActions.Add(CfButton.Create("NEW",
                 () => RequestDocumentAction(ComposeNewLotDialog), true, "quiet"));
-            viewActions.Add(CfButton.Create("SAVE", SaveLot, true, "quiet"));
-            viewActions.Add(CfButton.Create("SAVE AS", ComposeSaveAsDialog, true, "quiet"));
+            viewActions.Add(CfButton.Create("SAVE", SaveLot, _hasOpenLot, "quiet"));
+            viewActions.Add(CfButton.Create("SAVE AS", ComposeSaveAsDialog, _hasOpenLot, "quiet"));
             viewActions.Add(CfButton.Create("LOAD",
                 () => RequestDocumentAction(ComposeLoadLotBrowser), true, "quiet"));
             viewActions.Add(CfButton.Create("TRAFFIC TEST",
-                () => RequestDocumentAction(ApplyTrafficTemplate), true, "quiet"));
+                () => RequestDocumentAction(ApplyTrafficTemplate), _hasOpenLot, "quiet"));
             topbar.Add(viewActions);
             screen.Add(topbar);
 
@@ -829,7 +837,8 @@ namespace CityForgeV3.UI
             toolRail.Add(CategoryButton(LotEditorCategory.View, "view", "View"));
             screen.Add(toolRail);
 
-            if (_lotEditorCategoryExpanded && _lotEditorCategory == LotEditorCategory.Main)
+            if (_hasOpenLot && _lotEditorCategoryExpanded &&
+                _lotEditorCategory == LotEditorCategory.Main)
             {
                 var main = new VisualElement { name = "main-category-panel" };
                 main.AddToClassList("context-panel");
@@ -1466,7 +1475,7 @@ namespace CityForgeV3.UI
                     DeleteSelectedOverlayTexture,
                     _lotWorld.SelectedOverlayTextureIndex >= 0, "danger"));
             }
-            if (_lotEditorCategory == LotEditorCategory.Main)
+            if (_hasOpenLot && _lotEditorCategory == LotEditorCategory.Main)
             {
                 inspector.Add(StyledLabel("LOT CONTRACT", "inspector-title"));
                 inspector.Add(Property("TYPE", LotTypeLabel(_lotWorld.LotType).ToUpperInvariant()));
@@ -1477,7 +1486,8 @@ namespace CityForgeV3.UI
                 inspector.Add(Property("AREA",
                     $"{_lotWorld.LotWidthMeters * _lotWorld.LotDepthMeters:N0} M²"));
             }
-            inspector.Add(StyledLabel(_lotStatus, "status-note"));
+            if (!string.IsNullOrWhiteSpace(_lotStatus))
+                inspector.Add(StyledLabel(_lotStatus, "status-note"));
             screen.Add(inspector);
 
             var hintText = _lotWorld.ToolMode switch
@@ -2265,7 +2275,8 @@ namespace CityForgeV3.UI
 
         private void RequestDocumentAction(Action action)
         {
-            if (_lotWorld == null || !_lotWorld.HasUnsavedChanges)
+            if (!WarnAboutUnsavedLotChanges || _lotWorld == null ||
+                !_lotWorld.HasUnsavedChanges)
             {
                 action?.Invoke();
                 return;
@@ -2351,6 +2362,8 @@ namespace CityForgeV3.UI
                     : nameField.value.Trim();
                 _lotWorld.NewEmptyLot(lotName, lotType,
                     widthField.index + 1, depthField.index + 1);
+                _hasOpenLot = true;
+                _lotEditorCategoryExpanded = false;
                 _lotStatus = $"New empty {lotType.ToString().ToLowerInvariant()} lot";
                 Show(AppScreen.LotEditor);
             }, true, "primary"));
@@ -2425,6 +2438,8 @@ namespace CityForgeV3.UI
                     entryActions.Add(CfButton.Create("LOAD", () =>
                     {
                         if (!_lotWorld.LoadLot(captured.LotId)) return;
+                        _hasOpenLot = true;
+                        _lotEditorCategoryExpanded = false;
                         RemoveDocumentModal();
                         _lotStatus = $"Loaded {captured.Name}";
                         Show(AppScreen.LotEditor);
@@ -2908,6 +2923,7 @@ namespace CityForgeV3.UI
         private void ApplyTrafficTemplate()
         {
             _lotWorld.ApplyTrafficTestTemplate();
+            _hasOpenLot = true;
             _lotWorld.SetTimeOfDay(TimeOfDayPreset.Afternoon);
             _lotWorld.SetZoomLevel(LotZoomLevel.Close);
             _lotWorld.SpawnTestVehicle(VehiclePaintVariant.Red);
@@ -2921,7 +2937,7 @@ namespace CityForgeV3.UI
         {
             if (_lotWorld != null)
             {
-                _lotWorld.SetVisible(true);
+                _lotWorld.SetVisible(_hasOpenLot);
                 return;
             }
 
@@ -2929,7 +2945,7 @@ namespace CityForgeV3.UI
             _lotWorld = world.AddComponent<LotWorldController>();
             _lotWorld.StateChanged += RefreshLotEditor;
             _lotWorld.Build();
-            _lotWorld.NewEmptyLot();
+            _lotWorld.SetVisible(false);
         }
 
         private void RefreshLotEditor()
