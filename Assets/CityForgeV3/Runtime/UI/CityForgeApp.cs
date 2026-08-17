@@ -241,6 +241,11 @@ namespace CityForgeV3.UI
                 Show(AppScreen.LotEditor);
                 evt.StopPropagation();
             }
+            else if (evt.keyCode == KeyCode.T)
+            {
+                ToggleTopDownView();
+                evt.StopPropagation();
+            }
             else if (evt.keyCode == KeyCode.R &&
                      _lotWorld.ActiveObjectSelection ==
                      LotObjectSelectionKind.BuildingProp)
@@ -765,6 +770,11 @@ namespace CityForgeV3.UI
             topbar.AddToClassList("topbar");
             topbar.Add(CfButton.Create("←  MENU",
                 () => RequestDocumentAction(() => Show(AppScreen.MainMenu)), true, "quiet"));
+            topbar.Add(CfButton.Create(
+                _lotWorld.TopDownViewEnabled ? "EXIT TOP DOWN" : "TOP DOWN [T]",
+                ToggleTopDownView,
+                true,
+                _lotWorld.TopDownViewEnabled ? "mode-selected" : "quiet"));
 
             var title = new VisualElement();
             title.AddToClassList("topbar-title");
@@ -2075,6 +2085,15 @@ namespace CityForgeV3.UI
             _lotStatus = _lotWorld.RegistrationDiagnosticsVisible
                 ? "Registration diagnostics — center/pivot, roof ridge, and entrance direction"
                 : "Registration diagnostics hidden";
+            Show(AppScreen.LotEditor);
+        }
+
+        private void ToggleTopDownView()
+        {
+            _lotWorld.ToggleTopDownView();
+            _lotStatus = _lotWorld.TopDownViewEnabled
+                ? "Top-down placement view — select and move objects normally"
+                : "Top-down placement view closed — previous camera restored";
             Show(AppScreen.LotEditor);
         }
 

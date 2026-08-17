@@ -144,6 +144,11 @@ namespace CityForgeV3.World
         public string FacingLabel => _buildingPackage.Facing(_facing).Id;
         public BuildingInspectionMode InspectionMode { get; private set; } =
             BuildingInspectionMode.Artwork;
+        public bool TopDownViewEnabled { get; private set; }
+        public float CameraPitchDegrees => _camera == null
+            ? 0f : _camera.transform.eulerAngles.x;
+        private BuildingInspectionMode _inspectionModeBeforeTopDown =
+            BuildingInspectionMode.Artwork;
         public bool ProxyVisible =>
             BuildingInspectionPolicy.ShowsPrimitive(InspectionMode);
         public bool RegistrationDiagnosticsVisible { get; private set; }
@@ -807,8 +812,33 @@ namespace CityForgeV3.World
 
         public void SetInspectionMode(BuildingInspectionMode mode)
         {
-            InspectionMode = mode;
+            if (TopDownViewEnabled)
+            {
+                _inspectionModeBeforeTopDown = mode;
+                InspectionMode = BuildingInspectionMode.Primitive;
+            }
+            else
+            {
+                InspectionMode = mode;
+            }
             ApplySessionState();
+            NotifyStateChanged();
+        }
+
+        public void ToggleTopDownView()
+        {
+            TopDownViewEnabled = !TopDownViewEnabled;
+            if (TopDownViewEnabled)
+            {
+                _inspectionModeBeforeTopDown = InspectionMode;
+                InspectionMode = BuildingInspectionMode.Primitive;
+            }
+            else
+            {
+                InspectionMode = _inspectionModeBeforeTopDown;
+            }
+            ApplySessionState();
+            ApplyCameraFacing();
             NotifyStateChanged();
         }
 
@@ -1003,7 +1033,7 @@ namespace CityForgeV3.World
         {
             _buildingsSelectable = true;
             _buildingAuthoringActive = selectable;
-            if (selectable)
+            if (selectable && !TopDownViewEnabled)
             {
                 // A saved lot can restore directly into the Buildings
                 // workspace without invoking its category button. Artwork is
@@ -1053,7 +1083,8 @@ namespace CityForgeV3.World
         {
             // Catalog placement is an art-authoring action. Never inherit a
             // diagnostic proxy view from a previously inspected building.
-            InspectionMode = BuildingInspectionMode.Artwork;
+            if (!TopDownViewEnabled)
+                InspectionMode = BuildingInspectionMode.Artwork;
             _placementBuildingId = buildingId;
             EnsureBuildingPackage(buildingId);
         }
@@ -1447,7 +1478,7 @@ namespace CityForgeV3.World
             var hitIndex = FindBuildingHitIndex(pixel,
                 new Vector2(lotPoint.x, lotPoint.z));
             if (hitIndex < 0) return false;
-            if (_buildingAuthoringActive)
+            if (_buildingAuthoringActive && !TopDownViewEnabled)
                 InspectionMode = BuildingInspectionMode.Artwork;
             ActiveObjectSelection = LotObjectSelectionKind.Building;
             SelectedFloraIndex = -1;
@@ -1718,7 +1749,7 @@ namespace CityForgeV3.World
         {
             if (!_buildingDragActive ||
                 !TryLotPointFromPanel(panelPosition, panelSize, out var lotPoint)) return false;
-            if (_buildingAuthoringActive)
+            if (_buildingAuthoringActive && !TopDownViewEnabled)
                 InspectionMode = BuildingInspectionMode.Artwork;
             var cellX = Mathf.RoundToInt(lotPoint.x + _buildingDragOffset.x);
             var cellZ = Mathf.RoundToInt(lotPoint.z + _buildingDragOffset.y);
@@ -1825,7 +1856,7 @@ namespace CityForgeV3.World
             var cameraRotation = _camera != null ? _camera.transform.rotation : Quaternion.identity;
             var cameraSize = _camera != null ? _camera.orthographicSize : 0f;
             _buildingDragActive = false;
-            if (_buildingAuthoringActive)
+            if (_buildingAuthoringActive && !TopDownViewEnabled)
                 InspectionMode = BuildingInspectionMode.Artwork;
             ApplySessionState();
             RestoreCameraFraming(cameraPosition, cameraRotation, cameraSize);
@@ -3340,6 +3371,12 @@ namespace CityForgeV3.World
 
             _camera.farClipPlane = FarClipPlaneForLot(LotSizeMeters);
 
+            if (TopDownViewEnabled)
+            {
+                ApplyTopDownCamera();
+                return;
+            }
+
             var angle =
                 _buildingPackage.Facing(_facing).CameraAzimuthDegrees;
             var azimuthRadians = angle * Mathf.Deg2Rad;
@@ -3372,6 +3409,22 @@ namespace CityForgeV3.World
             _camera.transform.position += compositionShift;
             target += compositionShift;
             _camera.transform.LookAt(target);
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+            ApplyProjectedLotFit();
+        }
+
+        private void ApplyTopDownCamera()
+        {
+            var target = new Vector3(0f, 0f, 0f) + _cameraPanWorld;
+            var cameraHeight = Mathf.Max(
+                CameraRadiusForLot(_buildingPackage.CameraRadiusMeters,
+                    LotSizeMeters),
+                _buildingPackage.HeightMeters + 10f);
+            _camera.transform.position = target + Vector3.up * cameraHeight;
+            _camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            _camera.orthographicSize = OrthographicSizeForLot(
+                ZoomLevel, LotSizeMeters);
             ApplyPresentationFacing();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();

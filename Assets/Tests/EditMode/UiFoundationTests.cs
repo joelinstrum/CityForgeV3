@@ -942,6 +942,58 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void TopDownViewIsTemporaryAndDoesNotMutateLotData()
+        {
+            var root = new GameObject("Top Down View Test");
+            try
+            {
+                LogAssert.ignoreFailingMessages = true;
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Top Down Test", LotType.Residential, 4, 4);
+                Assert.That(world.PlaceBuildingAtCenter(
+                    BuildingCatalog.ColonialGovernmentHouseId), Is.True);
+                world.SetInspectionMode(BuildingInspectionMode.Hybrid);
+                var savedData = world.Session.Serialize();
+
+                world.ToggleTopDownView();
+
+                Assert.That(world.TopDownViewEnabled, Is.True);
+                Assert.That(Mathf.DeltaAngle(world.CameraPitchDegrees, 90f),
+                    Is.EqualTo(0f).Within(0.001f));
+                Assert.That(world.InspectionMode,
+                    Is.EqualTo(BuildingInspectionMode.Primitive));
+                Assert.That(world.Session.Serialize(), Is.EqualTo(savedData));
+                world.SetBuildingEditorContext(true, false);
+                Assert.That(world.InspectionMode,
+                    Is.EqualTo(BuildingInspectionMode.Primitive));
+
+                world.ToggleTopDownView();
+
+                Assert.That(world.TopDownViewEnabled, Is.False);
+                Assert.That(world.InspectionMode,
+                    Is.EqualTo(BuildingInspectionMode.Hybrid));
+                Assert.That(world.Session.Serialize(), Is.EqualTo(savedData));
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void LotEditorTopBarExposesTopDownToggleInEveryCategory()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+
+            StringAssert.Contains("TOP DOWN [T]", source);
+            StringAssert.Contains("viewActions.Add", source);
+            StringAssert.Contains("ToggleTopDownView", source);
+        }
+
+        [Test]
         public void NewEnglandHousePresentationKeepsItsAuthoredWorldScale()
         {
             var package = HybridBuildingPackageRegistry.NewEnglandHouse;
