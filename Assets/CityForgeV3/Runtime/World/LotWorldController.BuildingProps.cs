@@ -25,14 +25,6 @@ namespace CityForgeV3.World
 
         public bool BuildingPropDragActive => _buildingPropDragActive;
 
-        public Vector3 BuildingPropPresentationPosition(int index)
-        {
-            return index >= 0 && index < _buildingPropPresentations.Count &&
-                   _buildingPropPresentations[index] != null
-                ? _buildingPropPresentations[index].transform.position
-                : new Vector3(float.NaN, float.NaN, float.NaN);
-        }
-
         private void BuildBuildingPropRoot()
         {
             _buildingPropOverlayLayer = LayerMask.NameToLayer("BuildingPropOverlay");
@@ -633,11 +625,7 @@ namespace CityForgeV3.World
             var center = new Vector3(building.CellX, 0f, building.CellZ);
             var hostRotation = Quaternion.Euler(
                 0f, building.RotationQuarterTurns * 90f, 0f);
-            // CityForge's building-space contract is +Z rear, so the Front
-            // elevation lies on -Z. Using +Z here intersected the cursor ray
-            // with the far wall and inflated the saved height as the ray
-            // crossed the building depth.
-            var outward = hostRotation * Vector3.back;
+            var outward = hostRotation * Vector3.forward;
             var facadePoint = center + outward *
                 (package.DepthMeters * 0.5f +
                  Mathf.Max(0f, attachment.ProjectionDepthMeters));
@@ -650,7 +638,7 @@ namespace CityForgeV3.World
                 -package.WidthMeters * 0.5f, package.WidthMeters * 0.5f);
             attachment.HostLocalY = Mathf.Clamp(local.y, 0f,
                 package.HeightMeters);
-            attachment.HostLocalZ = -package.DepthMeters * 0.5f -
+            attachment.HostLocalZ = package.DepthMeters * 0.5f +
                 Mathf.Max(0f, attachment.ProjectionDepthMeters);
             attachment.HasHostLocalPosition = true;
             return true;

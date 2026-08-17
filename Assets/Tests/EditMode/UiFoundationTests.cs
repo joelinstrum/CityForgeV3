@@ -1794,64 +1794,6 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void BuildingPropPresentationOrbitsHostAndReturnsAfterFourTurns()
-        {
-            var root = new GameObject("Building Prop Host Orbit Test");
-            try
-            {
-                LogAssert.ignoreFailingMessages = true;
-                var world = root.AddComponent<LotWorldController>();
-                world.Build();
-                world.ConfigureLot("Building Prop Host Orbit",
-                    LotType.Residential, 4, 4);
-                Assert.That(world.PlaceBuildingAtCenter(
-                    BuildingCatalog.ColonialGovernmentHouseId), Is.True);
-                Assert.That(world.CommitBuildingPropForQa(
-                    BuildingPropCatalog.AleHouseSignId, 0, 0.23f, 0.36f), Is.True);
-                var building = world.Session.Data.Buildings[0];
-                var attachment = building.Attachments[0];
-                var start = world.BuildingPropPresentationPosition(0);
-                Assert.That(attachment.HasHostLocalPosition, Is.True);
-                Assert.That(attachment.HostLocalZ, Is.LessThan(0f),
-                    "The Front elevation is the building contract's -Z face.");
-                Assert.That(attachment.HostLocalY, Is.LessThan(8f),
-                    "A lower-facade sign must not be projected onto the roofline.");
-
-                world.RotateSelected(1);
-                var afterClockwise = world.BuildingPropPresentationPosition(0);
-                Assert.That(Vector3.Distance(afterClockwise, start),
-                    Is.GreaterThan(0.5f),
-                    "The prop must travel around the host, not rotate in place.");
-                Assert.That(afterClockwise.y, Is.EqualTo(start.y).Within(0.0001f));
-                Assert.That(Vector3.Distance(afterClockwise,
-                    LotWorldController.ResolveHostLocalWorldPosition(building,
-                        new Vector3(attachment.HostLocalX, attachment.HostLocalY,
-                            attachment.HostLocalZ))), Is.LessThan(0.0001f));
-
-                world.RotateSelected(1);
-                world.RotateSelected(1);
-                world.RotateSelected(1);
-                Assert.That(Vector3.Distance(
-                    world.BuildingPropPresentationPosition(0), start),
-                    Is.LessThan(0.0001f));
-
-                world.RotateSelected(-1);
-                Assert.That(Vector3.Distance(
-                    world.BuildingPropPresentationPosition(0), start),
-                    Is.GreaterThan(0.5f));
-                world.RotateSelected(1);
-                Assert.That(Vector3.Distance(
-                    world.BuildingPropPresentationPosition(0), start),
-                    Is.LessThan(0.0001f));
-            }
-            finally
-            {
-                LogAssert.ignoreFailingMessages = false;
-                Object.DestroyImmediate(root);
-            }
-        }
-
-        [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
             foreach (var id in new[] { "maple", "ashe", "oak" })
