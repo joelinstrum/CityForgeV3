@@ -1539,12 +1539,6 @@ namespace CityForgeV3.UI
                 () => DeleteLotStrip(cell, false),
                 _lotWorld.LotWidthCells > 1);
             deleteRow.AddToClassList("lot-context-delete");
-            deleteRow.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.button != 0 || !deleteRow.enabledSelf) return;
-                evt.StopImmediatePropagation();
-                DeleteLotStrip(cell, false);
-            }, TrickleDown.TrickleDown);
             deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
             deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
@@ -1554,18 +1548,28 @@ namespace CityForgeV3.UI
                 () => DeleteLotStrip(cell, true),
                 _lotWorld.LotDepthCells > 1);
             deleteColumn.AddToClassList("lot-context-delete");
-            deleteColumn.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.button != 0 || !deleteColumn.enabledSelf) return;
-                evt.StopImmediatePropagation();
-                DeleteLotStrip(cell, true);
-            }, TrickleDown.TrickleDown);
             deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
             deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>
                 _lotWorld.ClearMajorStripDeletionPreview());
             _lotContextMenu.Add(deleteColumn);
             screen.Add(_lotContextMenu);
+            var contextMenu = _lotContextMenu;
+            screen.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0 || _lotContextMenu != contextMenu) return;
+                if (deleteRow.enabledSelf && deleteRow.worldBound.Contains(evt.position))
+                {
+                    evt.StopImmediatePropagation();
+                    DeleteLotStrip(cell, false);
+                }
+                else if (deleteColumn.enabledSelf &&
+                         deleteColumn.worldBound.Contains(evt.position))
+                {
+                    evt.StopImmediatePropagation();
+                    DeleteLotStrip(cell, true);
+                }
+            }, TrickleDown.TrickleDown);
             deleteRow.schedule.Execute(deleteRow.Focus);
         }
 

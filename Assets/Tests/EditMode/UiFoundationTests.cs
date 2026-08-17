@@ -2931,6 +2931,31 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void RowAndColumnLabelsReduceTheExpectedLotDimension()
+        {
+            var root = new GameObject("Delete Strip Dimension Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Four By Four", LotType.Residential, 4, 4);
+
+                Assert.That(world.DeleteMajorRow(2), Is.True);
+                Assert.That(world.LotWidthCells, Is.EqualTo(4));
+                Assert.That(world.LotDepthCells, Is.EqualTo(3));
+
+                world.ConfigureLot("Two By Four", LotType.Residential, 2, 4);
+                Assert.That(world.DeleteMajorColumn(0), Is.True);
+                Assert.That(world.LotWidthCells, Is.EqualTo(1));
+                Assert.That(world.LotDepthCells, Is.EqualTo(4));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void EmptyLotRightClickOffersRowAndColumnDeletion()
         {
             var source = File.ReadAllText(Path.Combine(Application.dataPath,
@@ -2945,6 +2970,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("lot-context-delete", source);
             StringAssert.Contains("StopImmediatePropagation", source);
             StringAssert.Contains("TrickleDown.TrickleDown", source);
+            StringAssert.Contains("deleteRow.worldBound.Contains(evt.position)", source);
+            StringAssert.Contains("deleteColumn.worldBound.Contains(evt.position)", source);
             StringAssert.Contains("deleteRow.schedule.Execute(deleteRow.Focus)", source);
             StringAssert.DoesNotContain(
                 "_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
