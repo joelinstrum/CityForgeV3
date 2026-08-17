@@ -1876,6 +1876,40 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BuildingPropPixelResolvesNearestPrimitiveFacade()
+        {
+            var ray = new Ray(new Vector3(-12f, 4f, 12f),
+                new Vector3(1f, 0f, -1f).normalized);
+
+            Assert.That(LotWorldController.TryResolvePrimitiveFacadeLocalPosition(
+                ray, Vector3.zero, Quaternion.identity, 10f, 8f, 9f, 0.2f,
+                out var local, out var elevation), Is.True);
+            Assert.That(elevation, Is.EqualTo("Left"));
+            Assert.That(local.x, Is.EqualTo(-5.2f).Within(0.001f));
+            Assert.That(local.y, Is.EqualTo(4f).Within(0.001f));
+            Assert.That(local.z, Is.EqualTo(5.2f).Within(0.001f));
+        }
+
+        [Test]
+        public void PrimitiveFacadeAnchorRotatesAroundHostWithoutDrift()
+        {
+            var building = new PlacedBuilding { CellX = 2, CellZ = -3 };
+            var local = new Vector3(-5.2f, 4f, 2.7f);
+            var initial = LotWorldController.ResolveHostLocalWorldPosition(
+                building, local);
+
+            building.RotationQuarterTurns = 1;
+            var clockwise = LotWorldController.ResolveHostLocalWorldPosition(
+                building, local);
+            Assert.That(Vector3.Distance(clockwise,
+                new Vector3(4.7f, 4f, 2.2f)), Is.LessThan(0.0001f));
+            building.RotationQuarterTurns = 4;
+            Assert.That(Vector3.Distance(
+                LotWorldController.ResolveHostLocalWorldPosition(building, local),
+                initial), Is.LessThan(0.0001f));
+        }
+
+        [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
             foreach (var id in new[] { "maple", "ashe", "oak" })

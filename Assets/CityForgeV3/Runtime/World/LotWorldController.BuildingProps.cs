@@ -625,23 +625,67 @@ namespace CityForgeV3.World
             var center = new Vector3(building.CellX, 0f, building.CellZ);
             var hostRotation = Quaternion.Euler(
                 0f, building.RotationQuarterTurns * 90f, 0f);
-            var outward = hostRotation * Vector3.forward;
-            var facadePoint = center + outward *
-                (package.DepthMeters * 0.5f +
-                 Mathf.Max(0f, attachment.ProjectionDepthMeters));
             var ray = _camera.ScreenPointToRay(pixel);
-            var plane = new Plane(outward, facadePoint);
-            if (!plane.Raycast(ray, out var distance)) return false;
-            var local = Quaternion.Inverse(hostRotation) *
-                (ray.GetPoint(distance) - center);
-            attachment.HostLocalX = Mathf.Clamp(local.x,
-                -package.WidthMeters * 0.5f, package.WidthMeters * 0.5f);
-            attachment.HostLocalY = Mathf.Clamp(local.y, 0f,
-                package.HeightMeters);
-            attachment.HostLocalZ = package.DepthMeters * 0.5f +
-                Mathf.Max(0f, attachment.ProjectionDepthMeters);
+            if (!TryResolvePrimitiveFacadeLocalPosition(ray, center,
+                    hostRotation, package.WidthMeters, package.DepthMeters,
+                    package.HeightMeters, attachment.ProjectionDepthMeters,
+                    out var local, out var hostElevation)) return false;
+            attachment.HostLocalX = local.x;
+            attachment.HostLocalY = local.y;
+            attachment.HostLocalZ = local.z;
+            attachment.HostElevation = hostElevation;
             attachment.HasHostLocalPosition = true;
             return true;
+        }
+
+        public static bool TryResolvePrimitiveFacadeLocalPosition(
+            Ray worldRay, Vector3 center, Quaternion hostRotation,
+            float widthMeters, float depthMeters, float heightMeters,
+            float projectionDepthMeters, out Vector3 localPosition,
+            out string hostElevation)
+        {
+            localPosition = default;
+            hostElevation = "";
+            var inverse = Quaternion.Inverse(hostRotation);
+            var origin = inverse * (worldRay.origin - center);
+            var direction = inverse * worldRay.direction;
+            var halfWidth = Mathf.Max(0.01f, widthMeters * 0.5f);
+            var halfDepth = Mathf.Max(0.01f, depthMeters * 0.5f);
+            var projection = Mathf.Max(0f, projectionDepthMeters);
+            var bestDistance = float.PositiveInfinity;
+
+            TryFacadePlane(origin, direction, 0, halfWidth + projection,
+                halfDepth, heightMeters, "Right", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 0, -halfWidth - projection,
+                halfDepth, heightMeters, "Left", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 2, halfDepth + projection,
+                halfWidth, heightMeters, "Front", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 2, -halfDepth - projection,
+                halfWidth, heightMeters, "Back", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            return bestDistance < float.PositiveInfinity;
+        }
+
+        private static void TryFacadePlane(Vector3 origin, Vector3 direction,
+            int normalAxis, float planeCoordinate, float tangentLimit,
+            float heightMeters, string elevation, ref float bestDistance,
+            ref Vector3 bestPosition, ref string bestElevation)
+        {
+            var denominator = normalAxis == 0 ? direction.x : direction.z;
+            if (Mathf.Abs(denominator) <= 0.0001f) return;
+            var originCoordinate = normalAxis == 0 ? origin.x : origin.z;
+            var distance = (planeCoordinate - originCoordinate) / denominator;
+            if (distance < 0f || distance >= bestDistance) return;
+            var point = origin + direction * distance;
+            var tangent = normalAxis == 0 ? point.z : point.x;
+            if (Mathf.Abs(tangent) > tangentLimit || point.y < 0f ||
+                point.y > heightMeters) return;
+            bestDistance = distance;
+            bestPosition = point;
+            bestElevation = elevation;
         }
 
         private int FindBuildingArtworkHitIndex(Vector2 pixel)
