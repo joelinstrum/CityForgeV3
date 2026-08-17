@@ -1027,7 +1027,7 @@ namespace CityForgeV3.World
                     else DestroyImmediate(collider);
                 }
                 preview.GetComponent<Renderer>().sharedMaterial =
-                    LotSurfaceMaterial(new Color(0.9f, 0.06f, 0.04f, 0.5f), 5001);
+                    LotSurfaceMaterial(new Color(0.9f, 0.06f, 0.04f, 0.15f), 5001);
                 _majorStripDeletionPreview = preview.transform;
             }
             var center = -cellCount * 5f + stripIndex * 10f + 5f;

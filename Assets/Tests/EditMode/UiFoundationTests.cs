@@ -2944,6 +2944,10 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
             StringAssert.Contains("RegisterCallback<PointerEnterEvent>", source);
             StringAssert.Contains("ShowMajorStripDeletionPreview", source);
+            StringAssert.Contains(
+                "ShowMajorStripDeletionPreview(cell.x, true)", source);
+            StringAssert.Contains(
+                "ShowMajorStripDeletionPreview(cell.y, false)", source);
         }
 
         [Test]

@@ -1545,9 +1545,9 @@ namespace CityForgeV3.UI
             {
                 RemoveLotContextMenu();
                 screen.schedule.Execute(() => DeleteLotStrip(cell, false));
-            }, _lotWorld.LotDepthCells > 1, "danger");
+            }, _lotWorld.LotWidthCells > 1, "danger");
             deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
-                _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
+                _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
             deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
                 _lotWorld.ClearMajorStripDeletionPreview());
             _lotContextMenu.Add(deleteRow);
@@ -1555,9 +1555,9 @@ namespace CityForgeV3.UI
             {
                 RemoveLotContextMenu();
                 screen.schedule.Execute(() => DeleteLotStrip(cell, true));
-            }, _lotWorld.LotWidthCells > 1, "danger");
+            }, _lotWorld.LotDepthCells > 1, "danger");
             deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
-                _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
+                _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
             deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>
                 _lotWorld.ClearMajorStripDeletionPreview());
             _lotContextMenu.Add(deleteColumn);
@@ -1567,11 +1567,11 @@ namespace CityForgeV3.UI
         private void DeleteLotStrip(Vector2Int cell, bool column)
         {
             var deleted = column
-                ? _lotWorld.DeleteMajorColumn(cell.x)
-                : _lotWorld.DeleteMajorRow(cell.y);
+                ? _lotWorld.DeleteMajorRow(cell.y)
+                : _lotWorld.DeleteMajorColumn(cell.x);
             if (deleted)
                 _lotStatus = $"Deleted {(column ? "column" : "row")} " +
-                    $"{(column ? cell.x : cell.y) + 1} • lot is now " +
+                    $"{(column ? cell.y : cell.x) + 1} • lot is now " +
                     $"{_lotWorld.LotWidthCells} × {_lotWorld.LotDepthCells}";
             Show(AppScreen.LotEditor);
         }
