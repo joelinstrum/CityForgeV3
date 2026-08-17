@@ -1541,21 +1541,19 @@ namespace CityForgeV3.UI
                 evt.StopPropagation());
             _lotContextMenu.RegisterCallback<ClickEvent>(evt =>
                 evt.StopPropagation());
-            var deleteRow = CfButton.Create("↔  DELETE ROW", () =>
-            {
-                RemoveLotContextMenu();
-                screen.schedule.Execute(() => DeleteLotStrip(cell, false));
-            }, _lotWorld.LotWidthCells > 1, "danger");
+            var deleteRow = CfButton.Create("↔  DELETE ROW",
+                () => DeleteLotStrip(cell, false),
+                _lotWorld.LotWidthCells > 1);
+            deleteRow.AddToClassList("lot-context-delete");
             deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
             deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
                 _lotWorld.ClearMajorStripDeletionPreview());
             _lotContextMenu.Add(deleteRow);
-            var deleteColumn = CfButton.Create("↕  DELETE COLUMN", () =>
-            {
-                RemoveLotContextMenu();
-                screen.schedule.Execute(() => DeleteLotStrip(cell, true));
-            }, _lotWorld.LotDepthCells > 1, "danger");
+            var deleteColumn = CfButton.Create("↕  DELETE COLUMN",
+                () => DeleteLotStrip(cell, true),
+                _lotWorld.LotDepthCells > 1);
+            deleteColumn.AddToClassList("lot-context-delete");
             deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
                 _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
             deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>

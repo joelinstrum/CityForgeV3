@@ -1080,3 +1080,14 @@
     min-height: 38px;
     margin-bottom: 5px;
 }
+
+.lot-context-menu .lot-context-delete {
+    background-color: rgb(48, 65, 76);
+    border-color: rgb(85, 105, 117);
+}
+
+.lot-context-menu .lot-context-delete:hover {
+    background-color: var(--cf-danger-500);
+    border-color: rgba(238, 231, 207, 0.42);
+    color: white;
+}
