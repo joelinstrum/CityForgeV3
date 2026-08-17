@@ -69,6 +69,8 @@ namespace CityForgeV3.UI
         private int _pendingLotWidthCells = -1;
         private int _pendingLotDepthCells = -1;
         private VisualElement _lotContextMenu;
+        private Vector2Int _lotContextCell;
+        private int _hoveredLotStripDeleteAction;
 
         public LotEditorCategory ActiveLotEditorCategory => _lotEditorCategory;
         public bool IsLotEditorCategoryExpanded => _lotEditorCategoryExpanded;
@@ -164,6 +166,18 @@ namespace CityForgeV3.UI
             }
 
             Show(AppScreen.Splash);
+        }
+
+        private void Update()
+        {
+            if (_currentScreen != AppScreen.LotEditor ||
+                _lotContextMenu == null ||
+                _hoveredLotStripDeleteAction == 0 ||
+                !Input.GetMouseButtonDown(0)) return;
+
+            var cell = _lotContextCell;
+            var deleteColumn = _hoveredLotStripDeleteAction == 2;
+            DeleteLotStrip(cell, deleteColumn);
         }
 
         private void Show(AppScreen screen)
@@ -1531,6 +1545,8 @@ namespace CityForgeV3.UI
         {
             RemoveLotContextMenu();
             _lotContextMenu = new VisualElement { name = "lot-context-menu" };
+            _lotContextCell = cell;
+            _hoveredLotStripDeleteAction = 0;
             _lotContextMenu.AddToClassList("lot-context-menu");
             _lotContextMenu.style.position = Position.Absolute;
             _lotContextMenu.style.left = panelPosition.x;
@@ -1540,18 +1556,32 @@ namespace CityForgeV3.UI
                 _lotWorld.LotWidthCells > 1);
             deleteRow.AddToClassList("lot-context-delete");
             deleteRow.RegisterCallback<PointerEnterEvent>(_ =>
-                _lotWorld.ShowMajorStripDeletionPreview(cell.x, true));
+            {
+                _hoveredLotStripDeleteAction = 1;
+                _lotWorld.ShowMajorStripDeletionPreview(cell.x, true);
+            });
             deleteRow.RegisterCallback<PointerLeaveEvent>(_ =>
-                _lotWorld.ClearMajorStripDeletionPreview());
+            {
+                if (_hoveredLotStripDeleteAction == 1)
+                    _hoveredLotStripDeleteAction = 0;
+                _lotWorld.ClearMajorStripDeletionPreview();
+            });
             _lotContextMenu.Add(deleteRow);
             var deleteColumn = CfButton.Create("↕  DELETE COLUMN",
                 () => DeleteLotStrip(cell, true),
                 _lotWorld.LotDepthCells > 1);
             deleteColumn.AddToClassList("lot-context-delete");
             deleteColumn.RegisterCallback<PointerEnterEvent>(_ =>
-                _lotWorld.ShowMajorStripDeletionPreview(cell.y, false));
+            {
+                _hoveredLotStripDeleteAction = 2;
+                _lotWorld.ShowMajorStripDeletionPreview(cell.y, false);
+            });
             deleteColumn.RegisterCallback<PointerLeaveEvent>(_ =>
-                _lotWorld.ClearMajorStripDeletionPreview());
+            {
+                if (_hoveredLotStripDeleteAction == 2)
+                    _hoveredLotStripDeleteAction = 0;
+                _lotWorld.ClearMajorStripDeletionPreview();
+            });
             _lotContextMenu.Add(deleteColumn);
             screen.Add(_lotContextMenu);
             var contextMenu = _lotContextMenu;
@@ -1575,6 +1605,8 @@ namespace CityForgeV3.UI
 
         private void DeleteLotStrip(Vector2Int cell, bool column)
         {
+            if (_lotContextMenu == null) return;
+            RemoveLotContextMenu();
             var deleted = column
                 ? _lotWorld.DeleteMajorRow(cell.y)
                 : _lotWorld.DeleteMajorColumn(cell.x);
@@ -1587,6 +1619,7 @@ namespace CityForgeV3.UI
 
         private void RemoveLotContextMenu()
         {
+            _hoveredLotStripDeleteAction = 0;
             _lotWorld?.ClearMajorStripDeletionPreview();
             _lotContextMenu?.RemoveFromHierarchy();
             _lotContextMenu = null;

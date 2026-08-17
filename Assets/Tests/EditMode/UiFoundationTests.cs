@@ -2973,6 +2973,8 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("deleteRow.worldBound.Contains(evt.position)", source);
             StringAssert.Contains("deleteColumn.worldBound.Contains(evt.position)", source);
             StringAssert.Contains("deleteRow.schedule.Execute(deleteRow.Focus)", source);
+            StringAssert.Contains("_hoveredLotStripDeleteAction", source);
+            StringAssert.Contains("Input.GetMouseButtonDown(0)", source);
             StringAssert.DoesNotContain(
                 "_lotContextMenu.RegisterCallback<PointerDownEvent>", source);
             StringAssert.DoesNotContain(
