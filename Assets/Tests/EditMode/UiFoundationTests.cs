@@ -970,7 +970,8 @@ namespace CityForgeV3.Tests
                     Vector3.Dot(Vector3.forward, Camera.main.transform.right),
                     Vector3.Dot(Vector3.forward, Camera.main.transform.up)).normalized;
                 Assert.That(Vector2.Angle(worldZScreenAfter,
-                    worldZScreenBefore), Is.LessThan(0.001f));
+                    LotWorldController.SnapTopDownScreenDirection(
+                        worldZScreenBefore)), Is.LessThan(0.001f));
                 Assert.That(world.Session.Serialize(), Is.EqualTo(savedData));
                 world.SetBuildingEditorContext(true, false);
                 Assert.That(world.InspectionMode,
@@ -1002,15 +1003,16 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        [TestCase(1f, 0f)]
-        [TestCase(0f, 1f)]
-        [TestCase(0.7071f, -0.7071f)]
-        public void TopDownRotationPreservesVisibleLotGridDirection(
-            float screenX, float screenY)
+        [TestCase(1f, 0.2f, 1f, 0f)]
+        [TestCase(-0.9f, 0.1f, -1f, 0f)]
+        [TestCase(0.2f, 1f, 0f, 1f)]
+        [TestCase(0.1f, -0.8f, 0f, -1f)]
+        public void TopDownRotationSnapsNearestVisibleGridAxisLevel(
+            float screenX, float screenY, float expectedX, float expectedY)
         {
-            var expectedWorldZScreen = new Vector2(screenX, screenY).normalized;
+            var expectedWorldZScreen = new Vector2(expectedX, expectedY);
             var rotation = LotWorldController.ResolveTopDownRotation(
-                expectedWorldZScreen);
+                new Vector2(screenX, screenY));
 
             Assert.That(Vector3.Angle(rotation * Vector3.forward,
                 Vector3.down), Is.LessThan(0.001f));

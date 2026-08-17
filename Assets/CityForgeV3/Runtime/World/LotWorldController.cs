@@ -3444,12 +3444,22 @@ namespace CityForgeV3.World
         public static Quaternion ResolveTopDownRotation(
             Vector2 worldZScreenDirection)
         {
-            if (worldZScreenDirection.sqrMagnitude <= 0.0001f)
-                worldZScreenDirection = Vector2.up;
-            worldZScreenDirection.Normalize();
+            worldZScreenDirection = SnapTopDownScreenDirection(
+                worldZScreenDirection);
             var groundUp = new Vector3(
                 -worldZScreenDirection.x, 0f, worldZScreenDirection.y);
             return Quaternion.LookRotation(Vector3.down, groundUp);
+        }
+
+        public static Vector2 SnapTopDownScreenDirection(
+            Vector2 worldScreenDirection)
+        {
+            if (worldScreenDirection.sqrMagnitude <= 0.0001f)
+                return Vector2.up;
+            return Mathf.Abs(worldScreenDirection.x) >
+                   Mathf.Abs(worldScreenDirection.y)
+                ? new Vector2(Mathf.Sign(worldScreenDirection.x), 0f)
+                : new Vector2(0f, Mathf.Sign(worldScreenDirection.y));
         }
 
         private void AlignFloraToCamera()
