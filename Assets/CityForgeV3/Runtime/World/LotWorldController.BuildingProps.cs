@@ -578,12 +578,47 @@ namespace CityForgeV3.World
                 Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
                 Mathf.Max(0.1f, attachment.Scale);
             model.localScale = Vector3.one * uniform;
+            var catalogItem = BuildingCatalog.Find(building.BuildingId);
+            var package = catalogItem == null ||
+                string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath)
+                ? null
+                : HybridBuildingPackageRegistry.Load(catalogItem.PackageResourcePath);
+            var visibleFacade = TopDownViewEnabled || package == null ||
+                IsHostFacadeFacingCamera(attachment, building, package);
             foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
             {
+                foreach (var material in renderer.materials)
+                {
+                    if (material != null && material.HasProperty("_ZTest"))
+                        material.SetFloat("_ZTest", (float)(visibleFacade
+                            ? UnityEngine.Rendering.CompareFunction.Always
+                            : UnityEngine.Rendering.CompareFunction.LessEqual));
+                }
                 renderer.shadowCastingMode =
                     UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
+        }
+
+        private bool IsHostFacadeFacingCamera(PlacedBuildingProp attachment,
+            PlacedBuilding building, HybridBuildingPackage package)
+        {
+            if (_camera == null) return true;
+            var halfWidth = Mathf.Max(0.01f, package.WidthMeters * 0.5f);
+            var halfDepth = Mathf.Max(0.01f, package.DepthMeters * 0.5f);
+            var xRatio = Mathf.Abs(attachment.HostLocalX) / halfWidth;
+            var zRatio = Mathf.Abs(attachment.HostLocalZ) / halfDepth;
+            var localNormal = xRatio >= zRatio
+                ? Vector3.right * Mathf.Sign(attachment.HostLocalX)
+                : Vector3.forward * Mathf.Sign(attachment.HostLocalZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            var worldNormal = hostRotation * localNormal;
+            var toCamera = (_camera.transform.position -
+                ResolveHostLocalWorldPosition(building, new Vector3(
+                    attachment.HostLocalX, attachment.HostLocalY,
+                    attachment.HostLocalZ))).normalized;
+            return Vector3.Dot(worldNormal, toCamera) > 0f;
         }
 
         public static Vector3 ResolveHostLocalWorldPosition(

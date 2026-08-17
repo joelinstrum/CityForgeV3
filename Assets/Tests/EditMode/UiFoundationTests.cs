@@ -2631,8 +2631,9 @@ namespace CityForgeV3.Tests
                 "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/AlwaysVisibleBuildingProp.shader");
 
             StringAssert.Contains("ZWrite On", source);
-            StringAssert.Contains("ZTest LEqual", source);
+            StringAssert.Contains("ZTest [_ZTest]", source);
             StringAssert.DoesNotContain("ZTest Always", source);
+            StringAssert.Contains("CompareFunction", source);
         }
 
         [Test]
