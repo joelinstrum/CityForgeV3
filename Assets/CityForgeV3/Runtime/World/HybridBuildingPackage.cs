@@ -23,6 +23,7 @@ namespace CityForgeV3.World
         public HybridRenderManifest render;
         public HybridPlanManifest plan;
         public HybridShadowManifest shadow;
+        public HybridAttachmentSocketManifest[] attachmentSockets;
         public HybridFacingManifest[] facings;
     }
 
@@ -108,6 +109,17 @@ namespace CityForgeV3.World
         public string winterResourcePath;
     }
 
+    [Serializable]
+    public sealed class HybridAttachmentSocketManifest
+    {
+        public string id;
+        public string componentId;
+        public string hostElevation;
+        public float legacyNormalizedX;
+        public float legacyNormalizedY;
+        public float[] localPositionMeters;
+    }
+
     public sealed class HybridBuildingPackage
     {
         public const string Schema = "cityforge-v3-hybrid-building-package-v1";
@@ -177,6 +189,26 @@ namespace CityForgeV3.World
             _manifest.shadow?.semanticVertices ?? Array.Empty<float>();
         public IReadOnlyList<string> RequiredPrimitiveObjects =>
             _manifest.primitive.requiredObjects;
+        public bool TryAttachmentSocket(string componentId,
+            string hostElevation, float normalizedX, float normalizedY,
+            out Vector3 localPosition)
+        {
+            localPosition = default;
+            foreach (var socket in _manifest.attachmentSockets ??
+                     Array.Empty<HybridAttachmentSocketManifest>())
+            {
+                if (!string.Equals(socket.componentId, componentId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(socket.hostElevation, hostElevation,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    Mathf.Abs(socket.legacyNormalizedX - normalizedX) > 0.001f ||
+                    Mathf.Abs(socket.legacyNormalizedY - normalizedY) > 0.001f)
+                    continue;
+                localPosition = Vector3From(socket.localPositionMeters);
+                return true;
+            }
+            return false;
+        }
         public int FacingCount => _manifest.facings.Length;
         public string CatalogThumbnailResourcePath
         {

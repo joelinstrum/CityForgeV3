@@ -1794,6 +1794,53 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BostonPubApprovedSignHasExplicitHostLocalSocket()
+        {
+            var package = HybridBuildingPackageRegistry.Load(
+                "CityForgeV3/Buildings/PubQa20DegV05/building-package");
+
+            Assert.That(package.TryAttachmentSocket(
+                BuildingPropCatalog.AleHouseSignId, "Front",
+                0.2311304361f, 0.3586862087f, out var local), Is.True);
+            Assert.That(local, Is.EqualTo(
+                new Vector3(-3.0382f, 4.3042f, -5.5899f)));
+        }
+
+        [Test]
+        public void BostonPubSocketPositionOrbitsWithoutChangingApprovedYaw()
+        {
+            var package = HybridBuildingPackageRegistry.Load(
+                "CityForgeV3/Buildings/PubQa20DegV05/building-package");
+            Assert.That(package.TryAttachmentSocket(
+                BuildingPropCatalog.AleHouseSignId, "Front",
+                0.2311304361f, 0.3586862087f, out var local), Is.True);
+            var definition = BuildingPropCatalog.Find(
+                BuildingPropCatalog.AleHouseSignId);
+            var building = new PlacedBuilding();
+            var initialPosition = LotWorldController.ResolveHostLocalWorldPosition(
+                building, local);
+            var initialYaw = BuildingPropCatalog.ResolveYawDegrees(
+                definition, 0, 0f);
+
+            building.RotationQuarterTurns = 1;
+            var turned = LotWorldController.ResolveHostLocalWorldPosition(
+                building, local);
+            Assert.That(turned, Is.Not.EqualTo(initialPosition));
+            Assert.That(turned.y, Is.EqualTo(initialPosition.y));
+            Assert.That(Mathf.DeltaAngle(initialYaw,
+                BuildingPropCatalog.ResolveYawDegrees(
+                    definition, 1, 90f)), Is.EqualTo(90f).Within(0.0001f));
+
+            building.RotationQuarterTurns = 4;
+            Assert.That(Vector3.Distance(
+                LotWorldController.ResolveHostLocalWorldPosition(building, local),
+                initialPosition), Is.LessThan(0.0001f));
+            Assert.That(Mathf.DeltaAngle(
+                BuildingPropCatalog.ResolveYawDegrees(definition, 4, 0f),
+                initialYaw), Is.EqualTo(0f).Within(0.0001f));
+        }
+
+        [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
             foreach (var id in new[] { "maple", "ashe", "oak" })
