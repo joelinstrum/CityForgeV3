@@ -1,0 +1,34 @@
+{
+  "schema": "cityforge-windowed-building-qa-v1",
+  "buildingId": "cityforge.v3.residential.new_england_house_1720_angle_candidate_v33",
+  "packageVersion": "v33-unity-candidate",
+  "unityVersion": "6000.1.12f1",
+  "gameViewMode": "normal-windowed-editor",
+  "fullscreenUsed": false,
+  "packageValidator": {
+    "valid": true,
+    "facings": 4,
+    "pngsChecked": 24,
+    "errors": []
+  },
+  "focusedEditModeTest": {
+    "filter": "NewEnglandHouseAngleCandidate",
+    "passed": 1,
+    "failed": 0
+  },
+  "visualInspection": {
+    "clockwiseFrames": 5,
+    "fourDistinctOrientations": true,
+    "fourthTurnReturnsToInitialFacing": true,
+    "artworkRegisteredToFoundation": true,
+    "primitiveShadowRegistered": true,
+    "semanticProxyExposed": false,
+    "croppingObserved": false
+  },
+  "publication": {
+    "candidatePackage": "NewEnglandHouse1720V33Candidate",
+    "parentPackage": "NewEnglandHouse1720V21",
+    "parentModified": false,
+    "joeApprovalPending": true
+  }
+}

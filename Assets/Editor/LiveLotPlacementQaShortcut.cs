@@ -16,6 +16,8 @@ public static class LiveLotPlacementQaShortcut
         "cityforge.base.building_marlowe_art_deco_hotel_02";
     private const string PubQaBuildingId =
         "cityforge.qa.building.commercial.pub_qa_20deg_05";
+    private const string NewEnglandHouseAngleCandidateId =
+        "cityforge.v3.residential.new_england_house_1720_angle_candidate_v33";
     private static string _requestedBuildingId = BuildingId;
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
@@ -196,6 +198,15 @@ public static class LiveLotPlacementQaShortcut
     private static void OpenBeauxArtsCommercialAfternoonLivePlacement()
     {
         _requestedBuildingId = BeauxArtsBuildingId;
+        _requestedTime = TimeOfDayPreset.Afternoon;
+        OpenArtDecoCornerLivePlacement();
+    }
+
+    [MenuItem("City Forge/QA/Open 1720 House Angle Candidate")]
+    private static void OpenNewEnglandHouseAngleCandidate()
+    {
+        _requestedSavedLotId = "";
+        _requestedBuildingId = NewEnglandHouseAngleCandidateId;
         _requestedTime = TimeOfDayPreset.Afternoon;
         OpenArtDecoCornerLivePlacement();
     }
