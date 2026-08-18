@@ -37,6 +37,8 @@ namespace CityForgeV3.Tests
                 Is.LessThan(2000), "The source-derived occluder must remain lightweight enough for runtime depth use.");
             Assert.That(generated.GetComponent<MeshFilter>().sharedMesh.vertexCount,
                 Is.GreaterThan(100), "The generated proxy must preserve compound silhouette features rather than collapse to a box.");
+            Assert.That(generated.GetComponent<MeshFilter>().sharedMesh.isReadable,
+                Is.True, "Runtime primitive registration and projected shadows require readable source vertices.");
 
             for (var index = 0; index < 4; index++)
             {

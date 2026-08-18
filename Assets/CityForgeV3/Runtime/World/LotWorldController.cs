@@ -1270,9 +1270,10 @@ namespace CityForgeV3.World
 
         public void SetBuildingEditorContext(bool selectable, bool faded)
         {
+            var enteringBuildingEditor = selectable && !_buildingAuthoringActive;
             _buildingsSelectable = true;
             _buildingAuthoringActive = selectable;
-            if (selectable && !TopDownViewEnabled)
+            if (enteringBuildingEditor && !TopDownViewEnabled)
             {
                 // A saved lot can restore directly into the Buildings
                 // workspace without invoking its category button. Artwork is
@@ -1281,9 +1282,11 @@ namespace CityForgeV3.World
                 InspectionMode = BuildingInspectionMode.Artwork;
             }
             _buildingContextOpacity = faded ? 0.32f : 1f;
-            _presentation?.SetOpacity(_buildingContextOpacity);
+            var artworkOpacity = BuildingInspectionPolicy.ArtworkOpacity(
+                InspectionMode, _buildingContextOpacity);
+            _presentation?.SetOpacity(artworkOpacity);
             foreach (var presentation in _otherBuildingPresentations)
-                presentation?.SetOpacity(_buildingContextOpacity);
+                presentation?.SetOpacity(artworkOpacity);
             if (selectable)
                 ApplySessionState();
             if (_selectionFootprint != null)
@@ -4290,7 +4293,8 @@ namespace CityForgeV3.World
                 _presentation.SetVisible(
                     visible &&
                     BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
-                _presentation.SetOpacity(_buildingContextOpacity);
+                _presentation.SetOpacity(BuildingInspectionPolicy.ArtworkOpacity(
+                    InspectionMode, _buildingContextOpacity));
                 ApplyPresentationFacing();
                 _presentation.RegisterToProxy(
                     _proxyLocalVertices,
@@ -4403,7 +4407,8 @@ namespace CityForgeV3.World
                 presentation.SetArtworkSource(ArtworkSource);
                 presentation.SetTimeOfDay(TimeOfDay);
                 presentation.SetVisible(BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
-                presentation.SetOpacity(_buildingContextOpacity);
+                presentation.SetOpacity(BuildingInspectionPolicy.ArtworkOpacity(
+                    InspectionMode, _buildingContextOpacity));
                 _otherBuildingPresentations.Add(presentation);
                 _otherBuildingIndices.Add(index);
                 _otherBuildingProjectedShadows.Add(CreateProjectedShadow(

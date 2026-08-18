@@ -1515,6 +1515,40 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(showsPrimitive));
         }
 
+        [TestCase(BuildingInspectionMode.Artwork, 1f)]
+        [TestCase(BuildingInspectionMode.Hybrid, 0.20f)]
+        [TestCase(BuildingInspectionMode.Primitive, 1f)]
+        public void InspectionModeOwnsArtworkOpacity(
+            BuildingInspectionMode mode,
+            float expected)
+        {
+            Assert.That(
+                BuildingInspectionPolicy.ArtworkOpacity(mode, 1f),
+                Is.EqualTo(expected).Within(0.001f));
+        }
+
+        [Test]
+        public void BuildingEditorRedrawPreservesExplicitOverlayMode()
+        {
+            var root = new GameObject("Building Overlay Redraw Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetBuildingEditorContext(true, false);
+                world.SetInspectionMode(BuildingInspectionMode.Hybrid);
+
+                world.SetBuildingEditorContext(true, false);
+
+                Assert.That(world.InspectionMode,
+                    Is.EqualTo(BuildingInspectionMode.Hybrid));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
         [TestCase(BuildingInspectionMode.Artwork, false)]
         [TestCase(BuildingInspectionMode.Hybrid, false)]
         [TestCase(BuildingInspectionMode.Primitive, true)]

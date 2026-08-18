@@ -222,6 +222,18 @@ public static class LiveLotPlacementQaShortcut
         OpenArtDecoCornerLivePlacement();
     }
 
+    [MenuItem("City Forge/QA/Open Frontier Log Cabin Primitive Overlay")]
+    private static void OpenFrontierLogCabinPrimitiveOverlay()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.OpenBuildingInspectionQa(FrontierLogCabinTripoId);
+    }
+
     [MenuItem("City Forge/QA/Open Pub QA 2 Afternoon Live Placement")]
     private static void OpenPubQaAfternoonLivePlacement()
     {

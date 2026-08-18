@@ -90,6 +90,21 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
         }
 
+        public void OpenBuildingInspectionQa(string buildingId)
+        {
+            EnsureLotWorld();
+            Show(AppScreen.LotEditor);
+            _lotEditorCategory = LotEditorCategory.Buildings;
+            _lotEditorCategoryExpanded = true;
+            _buildingUseCategory = BuildingUseCategory.Residential;
+            _lotWorld.ConfigureLot("Building inspection QA", LotType.Residential,
+                4, 4, LotEraCatalog.DefaultId);
+            _hasOpenLot = true;
+            _lotWorld.PlaceBuildingAtCenter(buildingId);
+            _lotWorld.SetZoomLevel(LotZoomLevel.Close);
+            Show(AppScreen.LotEditor);
+        }
+
         public bool OpenSavedLotSelectionQa(string lotId)
         {
             EnsureLotWorld();
@@ -1137,7 +1152,36 @@ namespace CityForgeV3.UI
                     $"{_lotWorld.BuildingPackage.WidthMeters:0.00} × {_lotWorld.BuildingPackage.DepthMeters:0.00} m • {_lotWorld.BuildingPackage.PrimitiveSourceVersion}"));
                 inspector.Add(Property(
                     "VOLUMES",
-                    "Foundation • Walls • Gable roof • Entrance"));
+                    "Foundation • Walls • Source-derived envelope • Entrance"));
+
+                inspector.Add(CfButton.Create(
+                    "SHOW PRIMITIVE OVERLAY (20% ART)",
+                    () => SetInspectionMode(BuildingInspectionMode.Hybrid),
+                    true,
+                    _lotWorld.InspectionMode == BuildingInspectionMode.Hybrid
+                        ? "mode-selected"
+                        : "quiet"));
+
+                var inspectionRow = new VisualElement();
+                inspectionRow.AddToClassList("inspector-actions");
+                inspectionRow.Add(CfButton.Create(
+                    "ART ONLY",
+                    () => SetInspectionMode(BuildingInspectionMode.Artwork),
+                    true,
+                    _lotWorld.InspectionMode == BuildingInspectionMode.Artwork
+                        ? "mode-selected"
+                        : "quiet"));
+                inspectionRow.Add(CfButton.Create(
+                    "3D ONLY",
+                    () => SetInspectionMode(BuildingInspectionMode.Primitive),
+                    true,
+                    _lotWorld.InspectionMode == BuildingInspectionMode.Primitive
+                        ? "mode-selected"
+                        : "quiet"));
+                inspector.Add(inspectionRow);
+                inspector.Add(StyledLabel(
+                    "Overlay fades artwork to 20% so the registered primitive remains easy to inspect.",
+                    "inspector-note"));
 
                 var moveRow = new VisualElement();
                 moveRow.AddToClassList("inspector-actions");
@@ -1415,7 +1459,7 @@ namespace CityForgeV3.UI
                 var inspectionRow = new VisualElement();
                 inspectionRow.AddToClassList("inspector-actions");
                 inspectionRow.Add(CfButton.Create("ART", () => SetInspectionMode(BuildingInspectionMode.Artwork), true, _lotWorld.InspectionMode == BuildingInspectionMode.Artwork ? "mode-selected" : "quiet"));
-                inspectionRow.Add(CfButton.Create("HYBRID", () => SetInspectionMode(BuildingInspectionMode.Hybrid), true, _lotWorld.InspectionMode == BuildingInspectionMode.Hybrid ? "mode-selected" : "quiet"));
+                inspectionRow.Add(CfButton.Create("OVERLAY", () => SetInspectionMode(BuildingInspectionMode.Hybrid), true, _lotWorld.InspectionMode == BuildingInspectionMode.Hybrid ? "mode-selected" : "quiet"));
                 inspectionRow.Add(CfButton.Create("3D", () => SetInspectionMode(BuildingInspectionMode.Primitive), true, _lotWorld.InspectionMode == BuildingInspectionMode.Primitive ? "mode-selected" : "quiet"));
                 inspector.Add(inspectionRow);
                 var zoomRow = new VisualElement();
@@ -2138,7 +2182,7 @@ namespace CityForgeV3.UI
                 BuildingInspectionMode.Artwork =>
                     "Artwork view — directional render",
                 BuildingInspectionMode.Hybrid =>
-                    "Hybrid view — artwork and spatial primitive",
+                    "Overlay view — 20% artwork and spatial primitive",
                 _ =>
                     "Primitive view — foundation, collision, and entrance anchor"
             };

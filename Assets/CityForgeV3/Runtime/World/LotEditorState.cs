@@ -29,6 +29,13 @@ namespace CityForgeV3.World
 
         public static bool ShowsFoundationFill(BuildingInspectionMode mode) =>
             mode == BuildingInspectionMode.Primitive;
+
+        public static float ArtworkOpacity(
+            BuildingInspectionMode mode,
+            float contextOpacity) =>
+            mode == BuildingInspectionMode.Hybrid
+                ? Mathf.Min(contextOpacity, 0.20f)
+                : contextOpacity;
     }
 
     public static class LotEraCatalog
