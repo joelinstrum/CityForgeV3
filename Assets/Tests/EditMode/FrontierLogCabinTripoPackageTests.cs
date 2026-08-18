@@ -23,7 +23,17 @@ namespace CityForgeV3.Tests
             Assert.That(package.OccupancyWidth, Is.EqualTo(1));
             Assert.That(package.OccupancyDepth, Is.EqualTo(1));
             Assert.That(package.PlacementScale, Is.EqualTo(1f));
-            Assert.That(Resources.Load<GameObject>(package.PrimitiveResourcePath), Is.Not.Null);
+            var primitive = Resources.Load<GameObject>(package.PrimitiveResourcePath);
+            Assert.That(primitive, Is.Not.Null);
+            CollectionAssert.Contains(package.RequiredPrimitiveObjects,
+                "CF_PROXY_ROOF_GABLE");
+            CollectionAssert.DoesNotContain(package.RequiredPrimitiveObjects,
+                "CF_PROXY_ROOF_FLAT");
+            var gable = FindDescendant(primitive.transform,
+                "CF_PROXY_ROOF_GABLE");
+            Assert.That(gable, Is.Not.Null);
+            Assert.That(gable.GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3,
+                Is.EqualTo(8), "The cabin roof occluder must be a triangular gable prism, not a twelve-triangle box.");
 
             for (var index = 0; index < 4; index++)
             {
@@ -50,6 +60,17 @@ namespace CityForgeV3.Tests
             }
 
             Assert.That(package.Facing(4).Id, Is.EqualTo(package.Facing(0).Id));
+        }
+
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            if (root.name == name) return root;
+            foreach (Transform child in root)
+            {
+                var found = FindDescendant(child, name);
+                if (found != null) return found;
+            }
+            return null;
         }
     }
 }

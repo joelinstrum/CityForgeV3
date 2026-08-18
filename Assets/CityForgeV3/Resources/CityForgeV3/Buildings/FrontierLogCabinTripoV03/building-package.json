@@ -30,14 +30,14 @@
     "targetHeightMeters": 2.795
   },
   "primitive": {
-    "resourcePath": "CityForgeV3/Buildings/FrontierLogCabinTripoV03/semantic-primitive-v03",
-    "sourceVersion": "V03 centered metric semantic primitive",
+    "resourcePath": "CityForgeV3/Buildings/FrontierLogCabinTripoV03/semantic-primitive-v04",
+    "sourceVersion": "V04 metric gable occlusion primitive",
     "roofRidgeAxis": "x",
     "entranceFacingDegrees": 180.0,
     "requiredObjects": [
       "CF_PROXY_FOUNDATION",
       "CF_PROXY_WALLS",
-      "CF_PROXY_ROOF_FLAT",
+      "CF_PROXY_ROOF_GABLE",
       "CF_ANCHOR_ENTRANCE"
     ]
   },

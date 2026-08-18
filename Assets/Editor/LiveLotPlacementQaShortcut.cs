@@ -18,6 +18,8 @@ public static class LiveLotPlacementQaShortcut
         "cityforge.qa.building.commercial.pub_qa_20deg_05";
     private const string NewEnglandHouseAngleCandidateId =
         "cityforge.v3.residential.new_england_house_1720_angle_candidate_v33";
+    private const string FrontierLogCabinTripoId =
+        "cityforge.v3.residential.frontier_log_cabin_tripo_01";
     private static string _requestedBuildingId = BuildingId;
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
@@ -211,6 +213,15 @@ public static class LiveLotPlacementQaShortcut
         OpenArtDecoCornerLivePlacement();
     }
 
+    [MenuItem("City Forge/QA/Open Frontier Log Cabin Tree Occlusion")]
+    private static void OpenFrontierLogCabinTreeOcclusion()
+    {
+        _requestedSavedLotId = "";
+        _requestedBuildingId = FrontierLogCabinTripoId;
+        _requestedTime = TimeOfDayPreset.Afternoon;
+        OpenArtDecoCornerLivePlacement();
+    }
+
     [MenuItem("City Forge/QA/Open Pub QA 2 Afternoon Live Placement")]
     private static void OpenPubQaAfternoonLivePlacement()
     {
@@ -355,6 +366,12 @@ public static class LiveLotPlacementQaShortcut
                 Debug.LogError($"Building {_requestedBuildingId} could not be placed in the live QA lot.");
                 return;
             }
+            if (_requestedBuildingId == FrontierLogCabinTripoId)
+            {
+                world.PlaceFloraForQa("maple", -4.6f, 2.8f);
+                world.PlaceFloraForQa("oak", 4.4f, 2.4f);
+                world.PlaceFloraForQa("maple", 0.0f, 5.8f);
+            }
         }
 
         world.SetBuildingEditorContext(true, false);
@@ -363,7 +380,8 @@ public static class LiveLotPlacementQaShortcut
         world.SetZoomLevel(
             !string.IsNullOrWhiteSpace(_requestedSavedLotId)
                 ? LotZoomLevel.Lot
-                : _requestedBuildingId == PubQaBuildingId
+                : _requestedBuildingId == PubQaBuildingId ||
+                  _requestedBuildingId == FrontierLogCabinTripoId
                 ? LotZoomLevel.Close
                 : LotZoomLevel.Wide);
 

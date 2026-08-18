@@ -179,6 +179,16 @@ namespace CityForgeV3.World
         public int SelectedFloraIndex { get; private set; } = -1;
 
 #if UNITY_EDITOR
+        public bool PlaceFloraForQa(string floraId, float positionX,
+            float positionZ)
+        {
+            if (!AddFlora(floraId, new Vector3(positionX, 0f, positionZ)))
+                return false;
+            RebuildFloraPresentations();
+            NotifyStateChanged();
+            return true;
+        }
+
         public bool SetFloraPositionForQa(int index, float positionX, float positionZ)
         {
             if (index < 0 || index >= (_session.Data.Flora?.Count ?? 0))
