@@ -390,6 +390,8 @@ public static class LiveLotPlacementQaShortcut
         // This is QA-only framing; production camera behavior is unchanged.
         if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
             world.SetQaOrthographicSize(22f);
+        else if (_requestedBuildingId == FrontierLogCabinTripoId)
+            world.SetQaOrthographicSize(7f);
         if (_showAleHousePreviewAfterOpen)
         {
             _showAleHousePreviewAfterOpen = false;

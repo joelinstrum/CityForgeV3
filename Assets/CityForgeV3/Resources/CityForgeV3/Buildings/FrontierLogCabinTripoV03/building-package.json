@@ -30,8 +30,8 @@
     "targetHeightMeters": 2.795
   },
   "primitive": {
-    "resourcePath": "CityForgeV3/Buildings/FrontierLogCabinTripoV03/semantic-primitive-v05",
-    "sourceVersion": "V05 perceptual 6.42 x 5.54m gable occlusion primitive",
+    "resourcePath": "CityForgeV3/Buildings/FrontierLogCabinTripoV03/semantic-primitive-v06",
+    "sourceVersion": "V06 projection-fit 5.70 x 4.75m roof inside 6.42 x 5.54m wall proxy",
     "roofRidgeAxis": "x",
     "entranceFacingDegrees": 180.0,
     "requiredObjects": [
