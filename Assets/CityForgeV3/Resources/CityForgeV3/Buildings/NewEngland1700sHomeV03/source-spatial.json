@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.v3.residential.new_england_1700s_home_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 10.499999046325684,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.4111762046813965,
+        "y": -4.731814384460449
+      },
+      {
+        "x": 5.4111762046813965,
+        "y": -4.731814384460449
+      },
+      {
+        "x": 5.4111762046813965,
+        "y": 4.731814384460449
+      },
+      {
+        "x": -5.4111762046813965,
+        "y": 4.731814384460449
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 738.78833
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000122,
+        "y": 738.787659
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 738.787903
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999695,
+        "y": 738.788269
+      }
+    }
+  ]
+}
