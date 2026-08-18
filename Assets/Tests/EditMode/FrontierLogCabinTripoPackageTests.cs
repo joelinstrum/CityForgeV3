@@ -23,18 +23,20 @@ namespace CityForgeV3.Tests
             Assert.That(package.OccupancyWidth, Is.EqualTo(1));
             Assert.That(package.OccupancyDepth, Is.EqualTo(1));
             Assert.That(package.PlacementScale, Is.EqualTo(1f));
-            Assert.That(package.PrimitiveSourceVersion, Does.Contain("V06 projection-fit 5.70 x 4.75m roof"));
+            Assert.That(package.PrimitiveSourceVersion, Does.Contain("V07 source-derived voxel-remesh occluder"));
             var primitive = Resources.Load<GameObject>(package.PrimitiveResourcePath);
             Assert.That(primitive, Is.Not.Null);
             CollectionAssert.Contains(package.RequiredPrimitiveObjects,
-                "CF_PROXY_ROOF_GABLE");
+                "CF_PROXY_ROOF_GENERATED");
             CollectionAssert.DoesNotContain(package.RequiredPrimitiveObjects,
-                "CF_PROXY_ROOF_FLAT");
-            var gable = FindDescendant(primitive.transform,
                 "CF_PROXY_ROOF_GABLE");
-            Assert.That(gable, Is.Not.Null);
-            Assert.That(gable.GetComponent<MeshFilter>().sharedMesh.triangles.Length / 3,
-                Is.EqualTo(8), "The cabin roof occluder must be a triangular gable prism, not a twelve-triangle box.");
+            var generated = FindDescendant(primitive.transform,
+                "CF_PROXY_ROOF_GENERATED");
+            Assert.That(generated, Is.Not.Null);
+            Assert.That(generated.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.LessThan(2000), "The source-derived occluder must remain lightweight enough for runtime depth use.");
+            Assert.That(generated.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.GreaterThan(100), "The generated proxy must preserve compound silhouette features rather than collapse to a box.");
 
             for (var index = 0; index < 4; index++)
             {
