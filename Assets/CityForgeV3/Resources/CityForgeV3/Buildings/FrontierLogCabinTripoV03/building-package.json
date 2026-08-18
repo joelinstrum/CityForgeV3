@@ -17,6 +17,7 @@
     "heightMeters": 6.5,
     "placementScale": 1.0,
     "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
     "frontFacingQuarterTurns": 0,
     "rotationAnchor": [
       0,

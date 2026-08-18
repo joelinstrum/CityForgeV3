@@ -23,6 +23,11 @@ namespace CityForgeV3.Tests
             Assert.That(package.OccupancyWidth, Is.EqualTo(1));
             Assert.That(package.OccupancyDepth, Is.EqualTo(1));
             Assert.That(package.PlacementScale, Is.EqualTo(1f));
+            Assert.That(package.UsesPersistedArtworkPivot, Is.True,
+                "The source-derived cabin must retain its authored foundation-center pivot instead of re-centering against eroded proxy bounds.");
+            Assert.That(HybridBuildingPackageRegistry.NewEnglandHouse
+                .UsesPersistedArtworkPivot, Is.False,
+                "Packages without the opt-in must retain the established automatic proxy-fit behavior.");
             Assert.That(package.PrimitiveSourceVersion, Does.Contain("V07 source-derived voxel-remesh occluder"));
             var primitive = Resources.Load<GameObject>(package.PrimitiveResourcePath);
             Assert.That(primitive, Is.Not.Null);

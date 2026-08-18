@@ -234,6 +234,30 @@ public static class LiveLotPlacementQaShortcut
         app.OpenBuildingInspectionQa(FrontierLogCabinTripoId);
     }
 
+    [MenuItem("City Forge/QA/Show Selected Building Primitive Overlay")]
+    private static void ShowSelectedBuildingPrimitiveOverlay()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+        world.SetInspectionMode(BuildingInspectionMode.Hybrid);
+    }
+
+    [MenuItem("City Forge/QA/Show Selected Building Artwork")]
+    private static void ShowSelectedBuildingArtwork()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+        world.SetInspectionMode(BuildingInspectionMode.Artwork);
+    }
+
     [MenuItem("City Forge/QA/Open Pub QA 2 Afternoon Live Placement")]
     private static void OpenPubQaAfternoonLivePlacement()
     {

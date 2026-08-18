@@ -262,6 +262,19 @@ namespace CityForgeV3.World
             IReadOnlyList<Vector3> proxyLocalVertices,
             Quaternion buildingRotation)
         {
+            if (_package != null && _package.UsesPersistedArtworkPivot)
+            {
+                // Source-derived packages already share a metric origin and
+                // persist the exact foundation-center sprite pivot produced by
+                // their render camera. Re-centering their tight alpha bounds
+                // against an intentionally eroded occluder shifts the artwork
+                // away from that architectural anchor.
+                _proxyRegistrationScale = 1f;
+                _proxyRegistrationOffset = Vector2.zero;
+                AlignToCamera();
+                return;
+            }
+
             if (_camera == null || _visualRoot == null ||
                 proxyLocalVertices == null || proxyLocalVertices.Count == 0 ||
                 _registrationSprites == null ||

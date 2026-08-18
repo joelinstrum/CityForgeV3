@@ -37,6 +37,7 @@ namespace CityForgeV3.World
         public float placementScale;
         public int frontFacingQuarterTurns;
         public string artworkRotationDirection;
+        public string artworkRegistrationMode;
         public float[] rotationAnchor;
     }
 
@@ -141,6 +142,8 @@ namespace CityForgeV3.World
             WrapFacing(_manifest.spatial.frontFacingQuarterTurns);
         public int ArtworkRotationStep =>
             _manifest.spatial.artworkRotationDirection == "with-building" ? 1 : -1;
+        public bool UsesPersistedArtworkPivot =>
+            _manifest.spatial.artworkRegistrationMode == "persisted-pivot";
         public Vector3 RotationAnchor => Vector3From(_manifest.spatial.rotationAnchor);
         public Vector3 PresentationAnchor => RotationAnchor;
         public float CameraElevationDegrees => _manifest.camera.elevationDegrees;
