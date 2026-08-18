@@ -23,6 +23,7 @@ namespace CityForgeV3.Tests
             Assert.That(package.OccupancyWidth, Is.EqualTo(1));
             Assert.That(package.OccupancyDepth, Is.EqualTo(1));
             Assert.That(package.PlacementScale, Is.EqualTo(1f));
+            Assert.That(package.PrimitiveSourceVersion, Does.Contain("V05 perceptual 6.42 x 5.54m"));
             var primitive = Resources.Load<GameObject>(package.PrimitiveResourcePath);
             Assert.That(primitive, Is.Not.Null);
             CollectionAssert.Contains(package.RequiredPrimitiveObjects,
