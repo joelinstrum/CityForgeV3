@@ -1,0 +1,79 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.v3.residential.frontier_log_cabin_tripo_01",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 6.499999523162842,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -3.731205940246582,
+        "y": -3.223822593688965
+      },
+      {
+        "x": 3.731205940246582,
+        "y": -3.223822593688965
+      },
+      {
+        "x": 3.731205940246582,
+        "y": 3.223822593688965
+      },
+      {
+        "x": -3.731205940246582,
+        "y": 3.223822593688965
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999969,
+        "y": 722.588989
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000427,
+        "y": 722.589233
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 722.588715
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999878,
+        "y": 722.588959
+      }
+    }
+  ]
+}

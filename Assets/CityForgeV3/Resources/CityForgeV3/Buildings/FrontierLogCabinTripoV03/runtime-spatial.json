@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.v3.residential.frontier_log_cabin_tripo_01",
+  "sizeClass": "medium",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 7.462412,
+    "depth": 6.447645,
+    "height": 6.5
+  },
+  "occupancy": {
+    "width": 1,
+    "depth": 1,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.373121,
+        "row": -0.322382
+      },
+      {
+        "column": 0.373121,
+        "row": -0.322382
+      },
+      {
+        "column": 0.373121,
+        "row": 0.322382
+      },
+      {
+        "column": -0.373121,
+        "row": 0.322382
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.373121,
+          "row": -0.322382
+        },
+        {
+          "column": 0.373121,
+          "row": -0.322382
+        },
+        {
+          "column": 0.373121,
+          "row": 0.322382
+        },
+        {
+          "column": -0.373121,
+          "row": 0.322382
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.373121,
+          "row": -0.322382
+        },
+        {
+          "column": 0.373121,
+          "row": -0.322382
+        },
+        {
+          "column": 0.373121,
+          "row": 0.322382
+        },
+        {
+          "column": -0.373121,
+          "row": 0.322382
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.373121,
+        "row": -0.322382
+      },
+      {
+        "column": 0.373121,
+        "row": -0.322382
+      },
+      {
+        "column": 0.373121,
+        "row": 0.322382
+      },
+      {
+        "column": -0.373121,
+        "row": 0.322382
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.49999997,
+        "y": 0.70565331
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.499999881,
+        "y": 0.70565328
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.50000006,
+        "y": 0.705653042
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.500000417,
+        "y": 0.705653548
+      }
+    }
+  ],
+  "placementScale": 1
+}
