@@ -8,13 +8,15 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
         _MetallicGlossMap ("Metallic", 2D) = "black" {}
         _Metallic ("Metallic", Range(0,1)) = 0.35
         _Glossiness ("Smoothness", Range(0,1)) = 0.32
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
     SubShader
     {
         Tags { "Queue"="AlphaTest+5" "RenderType"="Opaque" }
         Cull Off
         ZWrite On
-        ZTest Always
+        // Committed attachments respect the host primitive's depth silhouette.
+        ZTest [_ZTest]
 
         Pass
         {

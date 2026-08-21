@@ -102,7 +102,7 @@ namespace CityForgeV3.World
         public void SetPropEditorContext(bool active)
         {
             _propEditorActive = true;
-            _propPlacementActive = active;
+            _propPlacementActive = active && !_cameraPanInteractionActive;
             ApplyPropSelection();
             if (_propPreview != null)
                 _propPreview.gameObject.SetActive(_propPlacementActive && _propPreviewHasPoint &&
@@ -132,6 +132,10 @@ namespace CityForgeV3.World
                 _propPreview == null ||
                 !TryLotPointFromPanel(panelPosition, panelSize, out var point)) return false;
             var position = ClampPropPosition(new Vector2(point.x, point.z), 0);
+            PropDimensions(_propPreviewId, 0, out var width, out var depth);
+            position = ResolveNewPlacementOutsideBuildings(
+                position, new Vector2(width, depth), 0f);
+            position = ClampPropPosition(position, 0);
             _propPreview.localPosition = new Vector3(position.x, 0.055f, position.y);
             SetPropOpacity(_propPreview, _propPreviewId,
                 CanPlacePropAt(position, 0, -1) ? 0.5f : 0.28f,
@@ -155,6 +159,10 @@ namespace CityForgeV3.World
                 SelectedPropIndex = -1;
                 _propPreviewId = propId;
                 var position = ClampPropPosition(new Vector2(point.x, point.z), 0);
+                PropDimensions(propId, 0, out var width, out var depth);
+                position = ResolveNewPlacementOutsideBuildings(
+                    position, new Vector2(width, depth), 0f);
+                position = ClampPropPosition(position, 0);
                 if (!CanPlacePropAt(position, 0, -1)) return false;
                 _session.Data.Props ??= new List<PlacedProp>();
                 _session.Data.Props.Add(new PlacedProp
@@ -270,6 +278,8 @@ namespace CityForgeV3.World
             if (SelectedPropIndex < 0 || SelectedPropIndex >= PropCount) return false;
             _session.Data.Props.RemoveAt(SelectedPropIndex);
             SelectedPropIndex = -1;
+            _propDragActive = false;
+            ActiveObjectSelection = LotObjectSelectionKind.None;
             RebuildPropPresentations();
             NotifyStateChanged();
             return true;

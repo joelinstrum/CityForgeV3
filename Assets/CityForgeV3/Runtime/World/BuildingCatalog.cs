@@ -7,7 +7,8 @@ namespace CityForgeV3.World
         Residential,
         Commercial,
         Industrial,
-        Mixed
+        Mixed,
+        Civics
     }
 
     public readonly struct BuildingCatalogEntry
@@ -16,6 +17,7 @@ namespace CityForgeV3.World
             string id,
             string name,
             string category,
+            string subcategory,
             string sizeClass,
             int occupancyWidth,
             int occupancyDepth,
@@ -28,6 +30,7 @@ namespace CityForgeV3.World
             Id = id;
             Name = name;
             Category = category;
+            Subcategory = subcategory ?? string.Empty;
             SizeClass = sizeClass;
             OccupancyWidth = occupancyWidth;
             OccupancyDepth = occupancyDepth;
@@ -41,6 +44,7 @@ namespace CityForgeV3.World
         public string Id { get; }
         public string Name { get; }
         public string Category { get; }
+        public string Subcategory { get; }
         public string SizeClass { get; }
         public int OccupancyWidth { get; }
         public int OccupancyDepth { get; }
@@ -74,6 +78,7 @@ namespace CityForgeV3.World
                     var package = packages[index];
                     _entries[index] = new BuildingCatalogEntry(
                         package.Id, package.DisplayName, package.Category,
+                        package.Subcategory,
                         package.SizeClass, package.OccupancyWidth,
                         package.OccupancyDepth, package.ResourcePath,
                         package.LibraryShortcut, package.ReviewStatus,
@@ -88,21 +93,40 @@ namespace CityForgeV3.World
 
         public static BuildingUseCategory UseCategoryFor(BuildingCatalogEntry entry)
         {
+            if (string.Equals(entry.Category, "Civic", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(entry.Category, "Civics", System.StringComparison.OrdinalIgnoreCase))
+                return BuildingUseCategory.Civics;
             if (System.Enum.TryParse(entry.Category, true, out BuildingUseCategory category))
                 return category;
 
-            // The compact Lot Editor picker intentionally has four broad land-use
-            // families. Civic and institutional packages live under Mixed until
-            // a dedicated civic library is introduced.
             return BuildingUseCategory.Mixed;
         }
 
         public static IReadOnlyList<BuildingCatalogEntry> ForUseCategory(
-            BuildingUseCategory category)
+            BuildingUseCategory category, string subcategory = null)
         {
             var matches = new List<BuildingCatalogEntry>();
             foreach (var entry in Entries)
-                if (UseCategoryFor(entry) == category) matches.Add(entry);
+                if (UseCategoryFor(entry) == category &&
+                    (string.IsNullOrWhiteSpace(subcategory) ||
+                     string.Equals(entry.Subcategory, subcategory,
+                         System.StringComparison.OrdinalIgnoreCase)))
+                    matches.Add(entry);
+            return matches;
+        }
+
+        public static IReadOnlyList<string> SubcategoriesFor(
+            BuildingUseCategory category)
+        {
+            var matches = new List<string>();
+            foreach (var entry in Entries)
+            {
+                if (UseCategoryFor(entry) != category ||
+                    string.IsNullOrWhiteSpace(entry.Subcategory) ||
+                    matches.Contains(entry.Subcategory)) continue;
+                matches.Add(entry.Subcategory);
+            }
+            matches.Sort(System.StringComparer.OrdinalIgnoreCase);
             return matches;
         }
 

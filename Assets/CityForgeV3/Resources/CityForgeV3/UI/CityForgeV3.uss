@@ -196,6 +196,29 @@
     border-color: var(--cf-brass-400);
 }
 
+.camera-pan-button {
+    opacity: 0.5;
+    background-color: var(--cf-ink-800);
+    border-color: var(--cf-ink-700);
+    color: var(--cf-paper-100);
+    transition-duration: 0s;
+}
+
+.camera-pan-button:hover {
+    opacity: 0.5;
+    background-color: var(--cf-ink-800);
+    border-color: var(--cf-ink-700);
+    color: var(--cf-paper-100);
+}
+
+.camera-pan-button.cf-button--icon-selected,
+.camera-pan-button.cf-button--icon-selected:hover {
+    opacity: 1;
+    background-color: var(--cf-green-500);
+    border-color: var(--cf-brass-400);
+    color: rgb(245, 236, 205);
+}
+
 .lot-editor-screen {
     background-color: transparent;
 }
@@ -1066,4 +1089,28 @@
     background-color: rgba(26, 43, 50, 0.75);
     color: rgb(173, 169, 151);
     unity-text-align: middle-center;
+}
+
+.lot-context-menu {
+    width: 210px;
+    padding: 8px;
+    background-color: rgb(16, 29, 36);
+    border-width: 1px;
+    border-color: rgb(207, 166, 64);
+}
+
+.lot-context-menu .cf-button {
+    min-height: 38px;
+    margin-bottom: 5px;
+}
+
+.lot-context-menu .lot-context-delete {
+    background-color: rgb(48, 65, 76);
+    border-color: rgb(85, 105, 117);
+}
+
+.lot-context-menu .lot-context-delete:hover {
+    background-color: var(--cf-danger-500);
+    border-color: rgba(238, 231, 207, 0.42);
+    color: white;
 }

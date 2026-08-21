@@ -44,8 +44,9 @@ namespace CityForgeV3.World
 
         public void SetBuildingPropEditorContext(bool active)
         {
-            _buildingPropPlacementActive = active;
-            if (!active && _buildingPropPreview != null)
+            _buildingPropPlacementActive =
+                active && !_cameraPanInteractionActive;
+            if (!_buildingPropPlacementActive && _buildingPropPreview != null)
                 _buildingPropPreview.gameObject.SetActive(false);
         }
 
@@ -110,7 +111,7 @@ namespace CityForgeV3.World
             if (definition == null) return false;
             var building = _session.Data.Buildings[buildingIndex];
             building.Attachments ??= new List<PlacedBuildingProp>();
-            building.Attachments.Add(new PlacedBuildingProp
+            var attachment = new PlacedBuildingProp
             {
                 InstanceId = Guid.NewGuid().ToString("N"),
                 ComponentId = definition.Id,
@@ -120,7 +121,10 @@ namespace CityForgeV3.World
                 NormalizedY = normalizedY,
                 ProjectionDepthMeters = definition.ProjectionDepthMeters,
                 Scale = 1f
-            });
+            };
+            InitializeHostLocalPosition(attachment, buildingIndex,
+                normalizedX, normalizedY);
+            building.Attachments.Add(attachment);
             _session.SelectBuilding(buildingIndex);
             ActiveObjectSelection = LotObjectSelectionKind.Building;
             ApplySessionState();
@@ -292,9 +296,7 @@ namespace CityForgeV3.World
                     SetBuildingPropOverlayLayer(root);
                     ApplyBuildingPropMaterials(root, definition);
                     PositionBuildingPropModel(root.transform, buildingIndex,
-                        attachment.NormalizedX, attachment.NormalizedY,
-                        attachment.ComponentId, attachment.Scale,
-                        attachment.RotationDegrees);
+                        attachment);
                     var motion = root.AddComponent<BuildingPropSwingMotion>();
                     var stablePhase = Mathf.Abs(
                         attachment.InstanceId?.GetHashCode() ?? 0) % 1000 / 1000f;
@@ -444,11 +446,11 @@ namespace CityForgeV3.World
                 Mathf.InverseLerp(minimum.x, maximum.x, pixel.x));
             attachment.NormalizedY = Mathf.Clamp01(
                 Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
+            SetHostLocalPositionFromPixel(attachment,
+                _selectedBuildingPropBuildingIndex, pixel);
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
-                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
-                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment.RotationDegrees);
+                _selectedBuildingPropBuildingIndex, attachment);
             return true;
         }
 
@@ -457,6 +459,28 @@ namespace CityForgeV3.World
             if (!_buildingPropDragActive) return;
             _buildingPropDragActive = false;
             NotifyStateChanged();
+        }
+
+        public bool DeleteSelectedBuildingProp()
+        {
+            if (_selectedBuildingPropBuildingIndex < 0 ||
+                _selectedBuildingPropBuildingIndex >=
+                    (_session.Data.Buildings?.Count ?? 0)) return false;
+            var building = _session.Data.Buildings[_selectedBuildingPropBuildingIndex];
+            if (_selectedBuildingPropAttachmentIndex < 0 ||
+                _selectedBuildingPropAttachmentIndex >=
+                    (building.Attachments?.Count ?? 0)) return false;
+            building.Attachments.RemoveAt(_selectedBuildingPropAttachmentIndex);
+            _buildingPropDragActive = false;
+            _selectedBuildingPropPresentationIndex = -1;
+            _selectedBuildingPropBuildingIndex = -1;
+            _selectedBuildingPropAttachmentIndex = -1;
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            ClearBuildingPropHover();
+            RefreshBuildingPropPresentations();
+            RebuildBuildingPropOverlayPass();
+            NotifyStateChanged();
+            return true;
         }
 
         public bool RotateSelectedBuildingProp45Degrees()
@@ -476,9 +500,7 @@ namespace CityForgeV3.World
             attachment.RotationDegrees = nextPreset * 45f;
             PositionBuildingPropModel(
                 _buildingPropPresentations[_selectedBuildingPropPresentationIndex].transform,
-                _selectedBuildingPropBuildingIndex, attachment.NormalizedX,
-                attachment.NormalizedY, attachment.ComponentId, attachment.Scale,
-                attachment.RotationDegrees);
+                _selectedBuildingPropBuildingIndex, attachment);
             RebuildBuildingPropOverlayPass();
             ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
             NotifyStateChanged();
@@ -524,6 +546,181 @@ namespace CityForgeV3.World
                     UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
+        }
+
+        private void PositionBuildingPropModel(Transform model,
+            int buildingIndex, PlacedBuildingProp attachment)
+        {
+            if (attachment == null) return;
+            if (!attachment.HasHostLocalPosition &&
+                !InitializeHostLocalPosition(attachment, buildingIndex,
+                    attachment.NormalizedX, attachment.NormalizedY))
+            {
+                PositionBuildingPropModel(model, buildingIndex,
+                    attachment.NormalizedX, attachment.NormalizedY,
+                    attachment.ComponentId, attachment.Scale,
+                    attachment.RotationDegrees);
+                return;
+            }
+            var definition = BuildingPropCatalog.Find(attachment.ComponentId);
+            if (model == null || definition == null ||
+                buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0)) return;
+            var building = _session.Data.Buildings[buildingIndex];
+            model.position = ResolveHostLocalWorldPosition(building, new Vector3(
+                attachment.HostLocalX,
+                attachment.HostLocalY,
+                attachment.HostLocalZ));
+            model.rotation = Quaternion.Euler(
+                0f, BuildingPropCatalog.ResolveYawDegrees(definition,
+                    building.RotationQuarterTurns,
+                    attachment.RotationDegrees), 0f);
+            var uniform = definition.VisibleWidthMeters /
+                Mathf.Max(0.01f, definition.ModelNativeWidthMeters) *
+                Mathf.Max(0.1f, attachment.Scale);
+            model.localScale = Vector3.one * uniform;
+            var catalogItem = BuildingCatalog.Find(building.BuildingId);
+            var package = string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath)
+                ? null
+                : HybridBuildingPackageRegistry.Load(catalogItem.PackageResourcePath);
+            var visibleFacade = TopDownViewEnabled || package == null ||
+                IsHostFacadeFacingCamera(attachment, building, package);
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var material in renderer.materials)
+                {
+                    if (material != null && material.HasProperty("_ZTest"))
+                        material.SetFloat("_ZTest", (float)(visibleFacade
+                            ? UnityEngine.Rendering.CompareFunction.Always
+                            : UnityEngine.Rendering.CompareFunction.LessEqual));
+                }
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.On;
+                renderer.receiveShadows = true;
+            }
+        }
+
+        private bool IsHostFacadeFacingCamera(PlacedBuildingProp attachment,
+            PlacedBuilding building, HybridBuildingPackage package)
+        {
+            if (_camera == null) return true;
+            var halfWidth = Mathf.Max(0.01f, package.WidthMeters * 0.5f);
+            var halfDepth = Mathf.Max(0.01f, package.DepthMeters * 0.5f);
+            var xRatio = Mathf.Abs(attachment.HostLocalX) / halfWidth;
+            var zRatio = Mathf.Abs(attachment.HostLocalZ) / halfDepth;
+            var localNormal = xRatio >= zRatio
+                ? Vector3.right * Mathf.Sign(attachment.HostLocalX)
+                : Vector3.forward * Mathf.Sign(attachment.HostLocalZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            var worldNormal = hostRotation * localNormal;
+            var toCamera = (_camera.transform.position -
+                ResolveHostLocalWorldPosition(building, new Vector3(
+                    attachment.HostLocalX, attachment.HostLocalY,
+                    attachment.HostLocalZ))).normalized;
+            return Vector3.Dot(worldNormal, toCamera) > 0f;
+        }
+
+        public static Vector3 ResolveHostLocalWorldPosition(
+            PlacedBuilding building, Vector3 hostLocalPosition)
+        {
+            if (building == null) return hostLocalPosition;
+            var center = new Vector3(building.CellX, 0f, building.CellZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            return center + hostRotation * hostLocalPosition;
+        }
+
+        private bool InitializeHostLocalPosition(PlacedBuildingProp attachment,
+            int buildingIndex, float normalizedX, float normalizedY)
+        {
+            if (attachment == null) return false;
+            if (attachment.HasHostLocalPosition) return true;
+            if (!TryBuildingArtworkScreenBounds(buildingIndex, out _,
+                    out var minimum, out var maximum)) return false;
+            var pixel = new Vector2(
+                Mathf.Lerp(minimum.x, maximum.x, normalizedX),
+                Mathf.Lerp(minimum.y, maximum.y, normalizedY));
+            return SetHostLocalPositionFromPixel(attachment, buildingIndex, pixel);
+        }
+
+        private bool SetHostLocalPositionFromPixel(
+            PlacedBuildingProp attachment, int buildingIndex, Vector2 pixel)
+        {
+            if (attachment == null || _camera == null || buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0))
+                return false;
+            var building = _session.Data.Buildings[buildingIndex];
+            var catalogItem = BuildingCatalog.Find(building.BuildingId);
+            if (string.IsNullOrWhiteSpace(catalogItem.PackageResourcePath))
+                return false;
+            var package = HybridBuildingPackageRegistry.Load(
+                catalogItem.PackageResourcePath);
+            if (package == null) return false;
+            var center = new Vector3(building.CellX, 0f, building.CellZ);
+            var hostRotation = Quaternion.Euler(
+                0f, building.RotationQuarterTurns * 90f, 0f);
+            var ray = _camera.ScreenPointToRay(pixel);
+            if (!TryResolvePrimitiveFacadeLocalPosition(ray, center,
+                    hostRotation, package.WidthMeters, package.DepthMeters,
+                    package.HeightMeters, attachment.ProjectionDepthMeters,
+                    out var local, out var hostElevation)) return false;
+            attachment.HostLocalX = local.x;
+            attachment.HostLocalY = local.y;
+            attachment.HostLocalZ = local.z;
+            attachment.HostElevation = hostElevation;
+            attachment.HasHostLocalPosition = true;
+            return true;
+        }
+
+        public static bool TryResolvePrimitiveFacadeLocalPosition(
+            Ray worldRay, Vector3 center, Quaternion hostRotation,
+            float widthMeters, float depthMeters, float heightMeters,
+            float projectionDepthMeters, out Vector3 localPosition,
+            out string hostElevation)
+        {
+            localPosition = default;
+            hostElevation = "";
+            var inverse = Quaternion.Inverse(hostRotation);
+            var origin = inverse * (worldRay.origin - center);
+            var direction = inverse * worldRay.direction;
+            var halfWidth = Mathf.Max(0.01f, widthMeters * 0.5f);
+            var halfDepth = Mathf.Max(0.01f, depthMeters * 0.5f);
+            var projection = Mathf.Max(0f, projectionDepthMeters);
+            var bestDistance = float.PositiveInfinity;
+
+            TryFacadePlane(origin, direction, 0, halfWidth + projection,
+                halfDepth, heightMeters, "Right", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 0, -halfWidth - projection,
+                halfDepth, heightMeters, "Left", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 2, halfDepth + projection,
+                halfWidth, heightMeters, "Front", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            TryFacadePlane(origin, direction, 2, -halfDepth - projection,
+                halfWidth, heightMeters, "Back", ref bestDistance,
+                ref localPosition, ref hostElevation);
+            return bestDistance < float.PositiveInfinity;
+        }
+
+        private static void TryFacadePlane(Vector3 origin, Vector3 direction,
+            int normalAxis, float planeCoordinate, float tangentLimit,
+            float heightMeters, string elevation, ref float bestDistance,
+            ref Vector3 bestPosition, ref string bestElevation)
+        {
+            var denominator = normalAxis == 0 ? direction.x : direction.z;
+            if (Mathf.Abs(denominator) <= 0.0001f) return;
+            var originCoordinate = normalAxis == 0 ? origin.x : origin.z;
+            var distance = (planeCoordinate - originCoordinate) / denominator;
+            if (distance < 0f || distance >= bestDistance) return;
+            var point = origin + direction * distance;
+            var tangent = normalAxis == 0 ? point.z : point.x;
+            if (Mathf.Abs(tangent) > tangentLimit || point.y < 0f ||
+                point.y > heightMeters) return;
+            bestDistance = distance;
+            bestPosition = point;
+            bestElevation = elevation;
         }
 
         private int FindBuildingArtworkHitIndex(Vector2 pixel)

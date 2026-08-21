@@ -11,17 +11,60 @@ namespace CityForgeV3.World
             public readonly string Id;
             public readonly string DisplayName;
             public readonly string ResourcePath;
-            public LotTextureOption(string id, string displayName, string resourcePath)
+            public readonly string SpringResourcePath;
+            public readonly string SummerResourcePath;
+            public readonly string AutumnResourcePath;
+            public readonly string WinterResourcePath;
+
+            public LotTextureOption(string id, string displayName, string resourcePath,
+                string springResourcePath = null, string summerResourcePath = null,
+                string autumnResourcePath = null, string winterResourcePath = null)
             {
                 Id = id; DisplayName = displayName; ResourcePath = resourcePath;
+                SpringResourcePath = springResourcePath;
+                SummerResourcePath = summerResourcePath;
+                AutumnResourcePath = autumnResourcePath;
+                WinterResourcePath = winterResourcePath;
             }
+
+            public bool HasResourceForSeason(SeasonPreset season) =>
+                !string.IsNullOrWhiteSpace(ResourceForSeason(season));
+
+            public string ResolveResourcePath(SeasonPreset season)
+            {
+                var exact = ResourceForSeason(season);
+                if (!string.IsNullOrWhiteSpace(exact)) return exact;
+                // Prefer the neutral/default summer artwork, then use a stable
+                // seasonal order. The legacy resource is the final fallback.
+                foreach (var fallback in new[]
+                         {
+                             SummerResourcePath, SpringResourcePath,
+                             AutumnResourcePath, WinterResourcePath
+                         })
+                    if (!string.IsNullOrWhiteSpace(fallback)) return fallback;
+                return ResourcePath;
+            }
+
+            private string ResourceForSeason(SeasonPreset season) => season switch
+            {
+                SeasonPreset.Spring => SpringResourcePath,
+                SeasonPreset.Summer => SummerResourcePath,
+                SeasonPreset.Autumn => AutumnResourcePath,
+                SeasonPreset.Winter => WinterResourcePath,
+                _ => null
+            };
         }
 
         public static readonly IReadOnlyList<LotTextureOption> GrassBaseTextures = new[]
         {
             new LotTextureOption("grass-poor", "Natural Grass — Poor", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2"),
             new LotTextureOption("grass-middle", "Natural Grass — Middle", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2"),
-            new LotTextureOption("grass-lush", "Natural Grass — Lush", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-lush-2"),
+            new LotTextureOption("grass-lush", "Natural Grass — Lush",
+                "CityForgeV3/LotTextures/LegacyGrassV01/lawn-lush-2",
+                "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-spring",
+                "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-summer",
+                "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-autumn",
+                "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-winter"),
             new LotTextureOption("lawn-poor", "Mowed Lawn — Poor", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor"),
             new LotTextureOption("lawn-middle", "Mowed Lawn — Middle", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle"),
             new LotTextureOption("lawn-wealthy", "Mowed Lawn — Wealthy", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-wealthy"),
@@ -42,6 +85,14 @@ namespace CityForgeV3.World
             foreach (var option in OverlayTextures)
                 if (string.Equals(option.Id, id, StringComparison.OrdinalIgnoreCase)) return option;
             return OverlayTextures[0];
+        }
+
+        public static LotTextureOption ResolveBaseTexture(string id)
+        {
+            foreach (var option in GrassBaseTextures)
+                if (string.Equals(option.Id, id, StringComparison.OrdinalIgnoreCase))
+                    return option;
+            return null;
         }
 
         private Transform _overlayTextureRoot;
@@ -74,7 +125,7 @@ namespace CityForgeV3.World
 
         public void SetOverlayEditorContext(bool active)
         {
-            _overlayEditorActive = active;
+            _overlayEditorActive = active && !_cameraPanInteractionActive;
             ApplyOverlayTextureSelection();
         }
 
@@ -220,13 +271,19 @@ namespace CityForgeV3.World
         private void ApplyBaseTexturePresentation()
         {
             if (_groundRenderer == null) return;
-            Texture2D texture = null;
-            foreach (var option in GrassBaseTextures)
-                if (option.Id == BaseTextureId) texture = Resources.Load<Texture2D>(option.ResourcePath);
+            var option = ResolveBaseTexture(BaseTextureId);
+            var texture = option == null ? null : Resources.Load<Texture2D>(
+                option.ResolveResourcePath(Season));
             _groundRenderer.sharedMaterial.mainTexture = texture;
             _groundRenderer.sharedMaterial.mainTextureScale = new Vector2(
                 Mathf.Max(1f, LotWidthMeters / 5f), Mathf.Max(1f, LotDepthMeters / 5f));
             ApplyTimeOfDay();
+        }
+
+        private bool BaseTextureHasExactSeasonResource()
+        {
+            var option = ResolveBaseTexture(BaseTextureId);
+            return option != null && option.HasResourceForSeason(Season);
         }
 
         private void RebuildOverlayTexturePresentations()
@@ -275,7 +332,8 @@ namespace CityForgeV3.World
 
         private void UpdateLotTextureLighting()
         {
-            var tint = LotTextureTint(TimeOfDay);
+            var tint = SeasonLighting.GroundColor(
+                Season, LotTextureTint(TimeOfDay));
             foreach (var renderer in _overlayTextureRenderers)
                 if (renderer != null) renderer.sharedMaterial.color = tint;
         }

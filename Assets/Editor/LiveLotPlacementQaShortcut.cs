@@ -14,8 +14,10 @@ public static class LiveLotPlacementQaShortcut
         "cityforge.base.building.commercial.beaux_arts_commercial_01";
     private const string MarloweHotelBuildingId =
         "cityforge.base.building_marlowe_art_deco_hotel_02";
-    private const string PubQaBuildingId =
-        "cityforge.qa.building.commercial.pub_qa_20deg_05";
+    private const string FrontierLogCabinTripoId =
+        "cityforge.v3.residential.frontier_log_cabin_tripo_01";
+    private const string NewEnglandChurchTripoId =
+        "cityforge.v3.civics.culture.new_england_church_tripo_01";
     private static string _requestedBuildingId = BuildingId;
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
@@ -28,15 +30,14 @@ public static class LiveLotPlacementQaShortcut
     private const string BeauxNightTriggerPath = "/tmp/cityforge-open-beaux-night-qa";
     private const string MarloweAfternoonTriggerPath = "/tmp/cityforge-open-marlowe-afternoon-qa";
     private const string MarloweNightTriggerPath = "/tmp/cityforge-open-marlowe-night-qa";
-    private const string PubQaAfternoonTriggerPath = "/tmp/cityforge-open-pub-qa-afternoon";
-    private const string PubQaMorningTriggerPath = "/tmp/cityforge-open-pub-qa-morning";
-    private const string PubQaNoonTriggerPath = "/tmp/cityforge-open-pub-qa-noon";
     private const string AleHousePreviewTriggerPath =
         "/tmp/cityforge-show-ale-house-building-prop-preview";
     private const string BostonPropQaTriggerPath =
         "/tmp/cityforge-open-boston-building-prop-qa";
     private const string AleHouseCommitTriggerPath =
         "/tmp/cityforge-commit-ale-house-building-prop-qa";
+    private const string WinterFloraTimeTriggerPath =
+        "/tmp/cityforge-set-winter-flora-time-qa";
     // Persists the requested preset across Unity's play-mode domain reload.
     private const string PendingTriggerPath = "/tmp/cityforge-art-deco-qa-pending";
     private static TimeOfDayPreset _requestedTime = TimeOfDayPreset.Afternoon;
@@ -96,7 +97,24 @@ public static class LiveLotPlacementQaShortcut
 
     private static void PollFileTriggers()
     {
-        if (File.Exists(AleHouseCommitTriggerPath))
+        if (File.Exists(WinterFloraTimeTriggerPath))
+        {
+            var requestedPreset = File.ReadAllText(
+                WinterFloraTimeTriggerPath).Trim();
+            File.Delete(WinterFloraTimeTriggerPath);
+            var world = Object.FindFirstObjectByType<LotWorldController>();
+            if (world == null)
+                Debug.LogError("Could not find the active Lot Editor world.");
+            else
+            {
+                world.SetSeason(SeasonPreset.Winter);
+                world.SetTimeOfDay(requestedPreset ==
+                    nameof(TimeOfDayPreset.Morning)
+                        ? TimeOfDayPreset.Morning
+                        : TimeOfDayPreset.Afternoon);
+            }
+        }
+        else if (File.Exists(AleHouseCommitTriggerPath))
         {
             File.Delete(AleHouseCommitTriggerPath);
             if (_qaWorld == null || !_qaWorld.CommitBuildingPropForQa(
@@ -131,27 +149,6 @@ public static class LiveLotPlacementQaShortcut
         {
             File.Delete(BeauxAfternoonTriggerPath);
             _requestedBuildingId = BeauxArtsBuildingId;
-            _requestedTime = TimeOfDayPreset.Afternoon;
-            OpenArtDecoCornerLivePlacement();
-        }
-        else if (File.Exists(PubQaMorningTriggerPath))
-        {
-            File.Delete(PubQaMorningTriggerPath);
-            _requestedBuildingId = PubQaBuildingId;
-            _requestedTime = TimeOfDayPreset.Morning;
-            OpenArtDecoCornerLivePlacement();
-        }
-        else if (File.Exists(PubQaNoonTriggerPath))
-        {
-            File.Delete(PubQaNoonTriggerPath);
-            _requestedBuildingId = PubQaBuildingId;
-            _requestedTime = TimeOfDayPreset.Noon;
-            OpenArtDecoCornerLivePlacement();
-        }
-        else if (File.Exists(PubQaAfternoonTriggerPath))
-        {
-            File.Delete(PubQaAfternoonTriggerPath);
-            _requestedBuildingId = PubQaBuildingId;
             _requestedTime = TimeOfDayPreset.Afternoon;
             OpenArtDecoCornerLivePlacement();
         }
@@ -200,13 +197,112 @@ public static class LiveLotPlacementQaShortcut
         OpenArtDecoCornerLivePlacement();
     }
 
-    [MenuItem("City Forge/QA/Open Pub QA 2 Afternoon Live Placement")]
-    private static void OpenPubQaAfternoonLivePlacement()
+    [MenuItem("City Forge/QA/Open Frontier Log Cabin Tree Occlusion")]
+    private static void OpenFrontierLogCabinTreeOcclusion()
     {
         _requestedSavedLotId = "";
-        _requestedBuildingId = PubQaBuildingId;
+        _requestedBuildingId = FrontierLogCabinTripoId;
         _requestedTime = TimeOfDayPreset.Afternoon;
         OpenArtDecoCornerLivePlacement();
+    }
+
+    [MenuItem("City Forge/QA/Open Frontier Log Cabin Primitive Overlay")]
+    private static void OpenFrontierLogCabinPrimitiveOverlay()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.OpenBuildingInspectionQa(FrontierLogCabinTripoId);
+    }
+
+    [MenuItem("City Forge/QA/Open New England Church Inspection")]
+    private static void OpenNewEnglandChurchInspection()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.OpenBuildingInspectionQa(NewEnglandChurchTripoId);
+    }
+
+    [MenuItem("City Forge/QA/Set Live QA Winter Flora")]
+    private static void SetLiveQaWinterFlora()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+
+        world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+        world.SetFloraPlacementPreview("ashe");
+        world.SetSeason(SeasonPreset.Winter);
+        world.PlaceFloraForQa("ashe", -15f, -12f);
+        world.PlaceFloraForQa("maple", 15f, 12f);
+        world.StartWinterSnowfall();
+    }
+
+    [MenuItem("City Forge/QA/Start Live QA Winter Snowfall")]
+    private static void StartLiveQaWinterSnowfall()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+        world.SetSeason(SeasonPreset.Winter);
+        if (!world.StartWinterSnowfall())
+            Debug.LogWarning("Winter snowfall is already active.");
+    }
+
+    [MenuItem("City Forge/QA/Open Winter Snowfall QA _F9")]
+    private static void OpenWinterSnowfallQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.OpenBuildingInspectionQa(NewEnglandChurchTripoId);
+        EditorApplication.delayCall += () =>
+        {
+            var world = Object.FindFirstObjectByType<LotWorldController>();
+            if (world == null) return;
+            world.SetSeason(SeasonPreset.Winter);
+            world.StartWinterSnowfall();
+        };
+    }
+
+    [MenuItem("City Forge/QA/Show Selected Building Primitive Overlay")]
+    private static void ShowSelectedBuildingPrimitiveOverlay()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+        world.SetInspectionMode(BuildingInspectionMode.Hybrid);
+    }
+
+    [MenuItem("City Forge/QA/Show Selected Building Artwork")]
+    private static void ShowSelectedBuildingArtwork()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active Lot Editor world.");
+            return;
+        }
+        world.SetInspectionMode(BuildingInspectionMode.Artwork);
     }
 
     [MenuItem("City Forge/QA/Open Boston Pub Lot Flora Shadow QA")]
@@ -344,6 +440,12 @@ public static class LiveLotPlacementQaShortcut
                 Debug.LogError($"Building {_requestedBuildingId} could not be placed in the live QA lot.");
                 return;
             }
+            if (_requestedBuildingId == FrontierLogCabinTripoId)
+            {
+                world.PlaceFloraForQa("maple", -4.6f, 2.8f);
+                world.PlaceFloraForQa("oak", 4.4f, 2.4f);
+                world.PlaceFloraForQa("maple", 0.0f, 5.8f);
+            }
         }
 
         world.SetBuildingEditorContext(true, false);
@@ -352,7 +454,7 @@ public static class LiveLotPlacementQaShortcut
         world.SetZoomLevel(
             !string.IsNullOrWhiteSpace(_requestedSavedLotId)
                 ? LotZoomLevel.Lot
-                : _requestedBuildingId == PubQaBuildingId
+                : _requestedBuildingId == FrontierLogCabinTripoId
                 ? LotZoomLevel.Close
                 : LotZoomLevel.Wide);
 
@@ -361,6 +463,8 @@ public static class LiveLotPlacementQaShortcut
         // This is QA-only framing; production camera behavior is unchanged.
         if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
             world.SetQaOrthographicSize(22f);
+        else if (_requestedBuildingId == FrontierLogCabinTripoId)
+            world.SetQaOrthographicSize(7f);
         if (_showAleHousePreviewAfterOpen)
         {
             _showAleHousePreviewAfterOpen = false;

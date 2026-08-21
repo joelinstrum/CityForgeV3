@@ -29,6 +29,13 @@ namespace CityForgeV3.World
 
         public static bool ShowsFoundationFill(BuildingInspectionMode mode) =>
             mode == BuildingInspectionMode.Primitive;
+
+        public static float ArtworkOpacity(
+            BuildingInspectionMode mode,
+            float contextOpacity) =>
+            mode == BuildingInspectionMode.Hybrid
+                ? Mathf.Min(contextOpacity, 0.20f)
+                : contextOpacity;
     }
 
     public static class LotEraCatalog
@@ -91,6 +98,10 @@ namespace CityForgeV3.World
         public float ProjectionDepthMeters = 0.18f;
         public float Scale = 1f;
         public float RotationDegrees;
+        public bool HasHostLocalPosition;
+        public float HostLocalX;
+        public float HostLocalY;
+        public float HostLocalZ;
     }
 
     [Serializable]

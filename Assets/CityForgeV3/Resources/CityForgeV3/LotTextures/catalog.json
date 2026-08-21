@@ -1,10 +1,20 @@
 {
-  "schema": "cityforge-v3-lot-texture-catalog-v1",
+  "schema": "cityforge-v3-lot-texture-catalog-v2",
   "sourceProject": "City Forge - Foundations Next",
   "baseTextures": [
     { "id": "grass-poor", "name": "Natural Grass — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2" },
     { "id": "grass-middle", "name": "Natural Grass — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2" },
-    { "id": "grass-lush", "name": "Natural Grass — Lush", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-lush-2" },
+    {
+      "id": "grass-lush",
+      "name": "Natural Grass — Lush",
+      "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-lush-2",
+      "seasons": {
+        "spring": "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-spring",
+        "summer": "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-summer",
+        "autumn": "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-autumn",
+        "winter": "CityForgeV3/LotTextures/SeasonalLushV01/lawn-lush-winter"
+      }
+    },
     { "id": "lawn-poor", "name": "Mowed Lawn — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor" },
     { "id": "lawn-middle", "name": "Mowed Lawn — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle" },
     { "id": "lawn-wealthy", "name": "Mowed Lawn — Wealthy", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-wealthy" }

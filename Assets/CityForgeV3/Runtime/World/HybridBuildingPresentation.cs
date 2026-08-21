@@ -29,6 +29,7 @@ namespace CityForgeV3.World
         private float _opacity = 1f;
         private BuildingArtworkSource _artworkSource;
         private TimeOfDayPreset _timeOfDay = TimeOfDayPreset.Noon;
+        private SeasonPreset _season = SeasonPreset.Summer;
         private int _buildingRotationQuarterTurns;
         private float _proxyRegistrationScale = 1f;
         private Vector2 _proxyRegistrationOffset;
@@ -251,6 +252,12 @@ namespace CityForgeV3.World
             ApplyAppearance();
         }
 
+        public void SetSeason(SeasonPreset preset)
+        {
+            _season = preset;
+            ApplyAppearance();
+        }
+
         public void SetBuildingRotation(int quarterTurns)
         {
             _buildingRotationQuarterTurns =
@@ -262,6 +269,19 @@ namespace CityForgeV3.World
             IReadOnlyList<Vector3> proxyLocalVertices,
             Quaternion buildingRotation)
         {
+            if (_package != null && _package.UsesPersistedArtworkPivot)
+            {
+                // Source-derived packages already share a metric origin and
+                // persist the exact foundation-center sprite pivot produced by
+                // their render camera. Re-centering their tight alpha bounds
+                // against an intentionally eroded occluder shifts the artwork
+                // away from that architectural anchor.
+                _proxyRegistrationScale = 1f;
+                _proxyRegistrationOffset = Vector2.zero;
+                AlignToCamera();
+                return;
+            }
+
             if (_camera == null || _visualRoot == null ||
                 proxyLocalVertices == null || proxyLocalVertices.Count == 0 ||
                 _registrationSprites == null ||
@@ -410,6 +430,9 @@ namespace CityForgeV3.World
             ApplyOpacity(_renderer);
             ApplyOpacity(_shadeRenderer);
             ApplyOpacity(_nightRenderer);
+
+            _renderer.color = SeasonLighting.Multiply(
+                _renderer.color, SeasonLighting.BuildingTint(_season));
         }
 
         public static float DirectionalShadeOpacityFor(
