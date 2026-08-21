@@ -14,6 +14,11 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         Tags { "Queue"="AlphaTest" "RenderType"="TransparentCutout" "CanUseSpriteAtlas"="True" }
         Cull Off
         ZTest [_ZTest]
+        // Keep the established depth-writing cutout contract, but blend the
+        // antialiased edge pixels that survive clipping. Without blending,
+        // low-alpha RGB is written as fully opaque and reads as a dark stroke.
+        ZWrite On
+        Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
         {

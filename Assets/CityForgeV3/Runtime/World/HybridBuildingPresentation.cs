@@ -29,6 +29,7 @@ namespace CityForgeV3.World
         private float _opacity = 1f;
         private BuildingArtworkSource _artworkSource;
         private TimeOfDayPreset _timeOfDay = TimeOfDayPreset.Noon;
+        private SeasonPreset _season = SeasonPreset.Summer;
         private int _buildingRotationQuarterTurns;
         private float _proxyRegistrationScale = 1f;
         private Vector2 _proxyRegistrationOffset;
@@ -251,6 +252,12 @@ namespace CityForgeV3.World
             ApplyAppearance();
         }
 
+        public void SetSeason(SeasonPreset preset)
+        {
+            _season = preset;
+            ApplyAppearance();
+        }
+
         public void SetBuildingRotation(int quarterTurns)
         {
             _buildingRotationQuarterTurns =
@@ -423,6 +430,9 @@ namespace CityForgeV3.World
             ApplyOpacity(_renderer);
             ApplyOpacity(_shadeRenderer);
             ApplyOpacity(_nightRenderer);
+
+            _renderer.color = SeasonLighting.Multiply(
+                _renderer.color, SeasonLighting.BuildingTint(_season));
         }
 
         public static float DirectionalShadeOpacityFor(

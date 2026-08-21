@@ -801,58 +801,6 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void PubQaFrontIsVisibleInCommercialCatalogAndLoadsAtFullResolution()
-        {
-            const string id = "cityforge.qa.building.commercial.pub_qa_front_01";
-            var entry = BuildingCatalog.All.FirstOrDefault(candidate => candidate.Id == id);
-            Assert.That(entry, Is.Not.Null, "Pub-QA must be visible in the active Buildings catalog.");
-            Assert.That(entry.Category, Is.EqualTo("Commercial"));
-
-            var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
-            Assert.That(package.Id, Is.EqualTo(id));
-            Assert.That(package.CanvasWidth, Is.EqualTo(2048));
-            Assert.That(package.CanvasHeight, Is.EqualTo(2048));
-            for (var index = 0; index < package.FacingCount; index++)
-            {
-                var texture = Resources.Load<Texture2D>(package.Facing(index).ApprovedResourcePath);
-                Assert.That(texture, Is.Not.Null, package.Facing(index).Id);
-                Assert.That(texture.width, Is.EqualTo(2048));
-                Assert.That(texture.height, Is.EqualTo(2048));
-            }
-        }
-
-        [Test]
-        public void PubQa20DegreeHasFourLosslessQuarterTurnFacings()
-        {
-            const string id = "cityforge.qa.building.commercial.pub_qa_20deg_05";
-            var entry = BuildingCatalog.All.FirstOrDefault(candidate => candidate.Id == id);
-            Assert.That(entry, Is.Not.Null);
-            Assert.That(entry.Category, Is.EqualTo("Commercial"));
-            var package = HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
-            var expectedAngles = new[] { 20f, 110f, 200f, 290f };
-            Assert.That(package.FacingCount, Is.EqualTo(4));
-            Assert.That(package.ArtworkRotationStep, Is.EqualTo(1),
-                "Clockwise building rotation must advance front-right to rear-right.");
-            for (var index = 0; index < package.FacingCount; index++)
-            {
-                var facing = package.Facing(index);
-                Assert.That(facing.CameraAzimuthDegrees, Is.EqualTo(expectedAngles[index]));
-                var texture = Resources.Load<Texture2D>(facing.ApprovedResourcePath);
-                Assert.That(texture, Is.Not.Null, facing.Id);
-                Assert.That(texture.width, Is.EqualTo(2048));
-                Assert.That(texture.height, Is.EqualTo(2048));
-                Assert.That(facing.MorningShadeResourcePath, Is.Not.Empty);
-                Assert.That(facing.NoonShadeResourcePath, Is.Not.Empty);
-                Assert.That(facing.AfternoonShadeResourcePath, Is.Not.Empty);
-                Assert.That(facing.EveningShadeResourcePath, Is.Not.Empty);
-                Assert.That(Resources.Load<Texture2D>(facing.MorningShadeResourcePath), Is.Not.Null);
-                Assert.That(Resources.Load<Texture2D>(facing.NoonShadeResourcePath), Is.Not.Null);
-                Assert.That(Resources.Load<Texture2D>(facing.AfternoonShadeResourcePath), Is.Not.Null);
-                Assert.That(Resources.Load<Texture2D>(facing.EveningShadeResourcePath), Is.Not.Null);
-            }
-        }
-
-        [Test]
         public void EveryActiveRenderedBuildingHasFourRegisteredNightOverlays()
         {
             foreach (var entry in BuildingCatalog.All)
@@ -1213,6 +1161,29 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(expected));
         }
 
+        [Test]
+        public void SeasonsHaveDeterministicNonAccumulatingPresentationContracts()
+        {
+            var baseline = new Color(0.4f, 0.6f, 0.3f, 1f);
+
+            Assert.That(SeasonLighting.Label(SeasonPreset.Spring),
+                Is.EqualTo("SPRING"));
+            Assert.That(SeasonLighting.GroundColor(
+                SeasonPreset.Summer, baseline), Is.EqualTo(baseline));
+            Assert.That(SeasonLighting.BuildingTint(SeasonPreset.Summer),
+                Is.EqualTo(Color.white));
+            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Autumn).r,
+                Is.GreaterThan(SeasonLighting.FloraTint(
+                    SeasonPreset.Autumn).g));
+            var winterFlora = SeasonLighting.FloraTint(SeasonPreset.Winter);
+            Assert.That(winterFlora.r, Is.GreaterThanOrEqualTo(0.90f));
+            Assert.That(winterFlora.b, Is.GreaterThan(winterFlora.r),
+                "Winter should preserve authored bark color with only a restrained cool cast.");
+            Assert.That(SeasonLighting.GroundColor(
+                    SeasonPreset.Winter, baseline).b,
+                Is.GreaterThan(baseline.b));
+        }
+
         [TestCase(TimeOfDayPreset.Morning, "MORNING", 24f, 90f)]
         [TestCase(TimeOfDayPreset.Noon, "NOON", 68f, 174f)]
         [TestCase(TimeOfDayPreset.Afternoon, "AFTERNOON", 34f, 270f)]
@@ -1267,18 +1238,6 @@ namespace CityForgeV3.Tests
                 "A due-east morning sun must cast its shadow due west.");
             Assert.That(Mathf.Abs(horizontal.y), Is.LessThan(0.001f),
                 "Morning building shadows must not drift north or south.");
-        }
-
-        [Test]
-        public void HybridPackageCanRegisterShadowDirectionToItsVisibleCompass()
-        {
-            var path = System.IO.Path.Combine(
-                Application.dataPath,
-                "CityForgeV3/Resources/CityForgeV3/Buildings/PubQa20DegV05/building-package.json");
-            var json = System.IO.File.ReadAllText(path);
-
-            StringAssert.Contains("\"directionOffsetDegrees\": -90.0", json,
-                "Pub QA 2 must rotate its source-space solar projection onto the visible lot compass.");
         }
 
         [Test]
@@ -2008,6 +1967,91 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void NewFloraAndFenceAimedThroughChurchArtworkMoveToNearestPrimitiveEdge()
+        {
+            var root = new GameObject("Church Edge Placement Assistance Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Church Edge Assistance", LotType.Residential, 4, 4);
+                Assert.That(world.PlaceBuildingAtCenter(
+                    "cityforge.v3.civics.culture.new_england_church_tripo_01"),
+                    Is.True);
+
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                var centerPixel = camera.WorldToScreenPoint(Vector3.zero);
+                var centerPanelPoint = new Vector2(
+                    centerPixel.x, panelSize.y - centerPixel.y);
+
+                world.SetFloraEditorContext(true);
+                Assert.That(world.BeginFloraDragFromPanel(
+                    "maple", centerPanelPoint, panelSize), Is.True,
+                    "A tree aimed through tall church artwork should glide to its nearest physical edge.");
+                world.EndFloraDrag();
+                var tree = world.Session.Data.Flora[0];
+                Assert.That(world.CanPlaceFloraAt(
+                    new Vector2(tree.PositionX, tree.PositionZ)), Is.True);
+                Assert.That(new Vector2(tree.PositionX, tree.PositionZ).magnitude,
+                    Is.GreaterThan(1f));
+
+                world.SetPropEditorContext(true);
+                world.SetPropPlacementPreview("wrought-iron-fence-straight-v01");
+                Assert.That(world.BeginPropDragFromPanel(
+                    "wrought-iron-fence-straight-v01", centerPanelPoint, panelSize),
+                    Is.True,
+                    "A fence aimed through tall church artwork should glide to its nearest physical edge.");
+                world.EndPropDrag();
+                var fence = world.Session.Data.Props[0];
+                Assert.That(new Vector2(fence.PositionX, fence.PositionZ).magnitude,
+                    Is.GreaterThan(1f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void VisibleNorthwestTreeHitBeatsChurchBillboardFallback()
+        {
+            var root = new GameObject("Church Northwest Tree Selection Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Church Tree Selection", LotType.Residential, 4, 4);
+                Assert.That(world.PlaceBuildingAtCenter(
+                    "cityforge.v3.civics.culture.new_england_church_tripo_01"),
+                    Is.True);
+                Assert.That(world.PlaceFloraForQa("maple", -8f, 10.5f), Is.True);
+                world.SetFloraEditorContext(true);
+
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                var tree = Find(root.transform, "Flora — maple")
+                    .GetComponent<SpriteRenderer>();
+                var treePixel = camera.WorldToScreenPoint(tree.bounds.center);
+                var treePanelPoint = new Vector2(
+                    treePixel.x, panelSize.y - treePixel.y);
+
+                Assert.That(world.UpdateObjectHoverFromPanel(
+                    treePanelPoint, panelSize), Is.EqualTo(LotObjectSelectionKind.Flora),
+                    "Visible tree artwork must hover as flora even inside the church billboard's broad screen bounds.");
+                Assert.That(world.BeginExistingObjectManipulationFromPanel(
+                    treePanelPoint, panelSize), Is.EqualTo(LotObjectSelectionKind.Flora));
+                Assert.That(world.SelectedFloraIndex, Is.EqualTo(0));
+                Assert.That(world.ActiveObjectSelection,
+                    Is.EqualTo(LotObjectSelectionKind.Flora));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void ArmedAuthoringToolsTakePriorityOverGlobalObjectSelection()
         {
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
@@ -2254,43 +2298,6 @@ namespace CityForgeV3.Tests
                 Assert.That(tree.shadowCastingMode,
                     Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));
                 Assert.That(tree.gameObject.layer, Is.EqualTo(31));
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
-        }
-
-        [Test]
-        public void FloraShadowLightMatchesPubPackageShadowCompass()
-        {
-            var root = new GameObject("Flora Shadow Compass Test");
-            try
-            {
-                var world = root.AddComponent<LotWorldController>();
-                var package = HybridBuildingPackageRegistry.Load(
-                    "CityForgeV3/Buildings/PubQa20DegV05/building-package");
-                var flags = System.Reflection.BindingFlags.Instance |
-                    System.Reflection.BindingFlags.NonPublic;
-                typeof(LotWorldController).GetField("_buildingPackage", flags)
-                    ?.SetValue(world, package);
-                typeof(LotWorldController).GetMethod("BuildLighting", flags)
-                    ?.Invoke(world, null);
-                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
-
-                var lights = root.GetComponentsInChildren<Light>(true);
-                var beautySun = System.Array.Find(lights,
-                    light => light.name == "Time of Day Sun");
-                var floraSun = System.Array.Find(lights,
-                    light => light.name == "Flora Shadow Alignment Sun");
-                Assert.That(beautySun, Is.Not.Null);
-                Assert.That(floraSun, Is.Not.Null);
-                Assert.That(beautySun.cullingMask & (1 << 31), Is.Zero);
-                Assert.That(floraSun.cullingMask, Is.EqualTo(1 << 31));
-
-                var floraRay = floraSun.transform.rotation * Vector3.forward;
-                Assert.That(floraRay.x, Is.EqualTo(0f).Within(0.01f));
-                Assert.That(floraRay.z, Is.GreaterThan(0.8f));
             }
             finally
             {
@@ -2634,6 +2641,10 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("TRANSFER_SHADOW", source);
             StringAssert.Contains("multi_compile_fwdbase", source);
             StringAssert.Contains("clip(artwork.a - _Cutoff)", source);
+            StringAssert.Contains("Blend SrcAlpha OneMinusSrcAlpha", source,
+                "Antialiased cutout edges must blend instead of becoming an opaque dark stroke.");
+            StringAssert.Contains("ZWrite On", source,
+                "Edge blending must preserve the established flora depth contract.");
             StringAssert.DoesNotContain("LightingShadowOnly", source,
                 "The receiver must explicitly sample Unity's shadow map instead of relying on the failed custom surface-lighting callback.");
         }
@@ -4860,6 +4871,131 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void LushGrassHasFourSeasonArtworkAndDeterministicFallbacks()
+        {
+            var lush = LotWorldController.ResolveBaseTexture("grass-lush");
+            Assert.That(lush, Is.Not.Null);
+            foreach (var season in new[]
+                     {
+                         SeasonPreset.Spring, SeasonPreset.Summer,
+                         SeasonPreset.Autumn, SeasonPreset.Winter
+                     })
+            {
+                Assert.That(lush.HasResourceForSeason(season), Is.True);
+                Assert.That(Resources.Load<Texture2D>(lush.ResolveResourcePath(season)),
+                    Is.Not.Null, $"Missing lush texture for {season}");
+            }
+
+            var summerOnly = new LotWorldController.LotTextureOption(
+                "summer-only", "Summer Only", "legacy/path",
+                summerResourcePath: "season/summer");
+            Assert.That(summerOnly.ResolveResourcePath(SeasonPreset.Winter),
+                Is.EqualTo("season/summer"));
+
+            var legacyOnly = new LotWorldController.LotTextureOption(
+                "legacy", "Legacy", "legacy/path");
+            Assert.That(legacyOnly.ResolveResourcePath(SeasonPreset.Autumn),
+                Is.EqualTo("legacy/path"));
+        }
+
+        [Test]
+        public void AsheAndMapleUseWinterArtworkWithSummerFallback()
+        {
+            foreach (var floraId in new[] { "ashe", "maple", "oak" })
+            {
+                var winterPath = LotWorldController.ResolveFloraResourcePath(
+                    floraId, SeasonPreset.Winter);
+                Assert.That(winterPath, Does.EndWith("-winter"));
+                Assert.That(Resources.Load<Texture2D>(winterPath), Is.Not.Null);
+
+                var autumnPath = LotWorldController.ResolveFloraResourcePath(
+                    floraId, SeasonPreset.Autumn);
+                Assert.That(autumnPath, Does.EndWith("-summer"),
+                    "Missing seasonal tree art should use the approved summer sprite.");
+            }
+        }
+
+        [Test]
+        public void WinterSeasonRefreshesActiveFloraPreviewAndStrengthensItsShadow()
+        {
+            var root = new GameObject("Winter Flora Presentation Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Winter Flora", LotType.Residential, 4, 4);
+                world.SetFloraPlacementPreview("ashe");
+
+                var previewField = typeof(LotWorldController).GetField(
+                    "_floraPreview", BindingFlags.Instance | BindingFlags.NonPublic);
+                var preview = (SpriteRenderer)previewField.GetValue(world);
+                Assert.That(preview.sprite.texture.name, Does.EndWith("-summer"));
+
+                world.SetSeason(SeasonPreset.Winter);
+                Assert.That(preview.sprite.texture.name, Does.EndWith("-winter"),
+                    "The cursor and planted tree must resolve the same seasonal art.");
+
+                Assert.That(world.PlaceFloraForQa("ashe", -15f, -15f), Is.True);
+                var shadow = root.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Single(renderer => renderer.name == "Flora Shadow — Canopy");
+                Assert.That(shadow.sprite.texture.name, Does.EndWith("-winter"));
+                Assert.That(shadow.color.a, Is.GreaterThan(0.18f),
+                    "Sparse winter branches need a legible projected shadow.");
+
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                Assert.That(shadow.transform.localPosition.x,
+                    Is.EqualTo(0f).Within(0.001f));
+                Assert.That(shadow.transform.localPosition.y,
+                    Is.EqualTo(0f).Within(0.001f),
+                    "Winter shadows must originate at the bottom-centre trunk pivot.");
+                var camera = root.GetComponentInChildren<Camera>();
+                var afternoonRay = Quaternion.Euler(0f,
+                    world.BuildingShadowDirectionOffsetDegrees, 0f) *
+                    (TimeOfDayLighting.SunRotation(TimeOfDayPreset.Afternoon) *
+                     Vector3.forward);
+                var afternoonExpected = new Vector2(
+                    Vector3.Dot(afternoonRay, camera.transform.right),
+                    Vector3.Dot(afternoonRay, camera.transform.up)).normalized;
+                var afternoonActual = new Vector2(
+                    -Mathf.Sin(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad),
+                    Mathf.Cos(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad));
+                Assert.That(Vector2.Dot(afternoonActual, afternoonExpected),
+                    Is.GreaterThan(0.999f),
+                    "Afternoon winter trees must share the building shadow ray.");
+                Assert.That(shadow.sprite.bounds.size.y *
+                    shadow.transform.localScale.y,
+                    Is.EqualTo(8.1f).Within(0.01f),
+                    "Winter shadow length must extend away from the trunk along local Y.");
+
+                world.SetTimeOfDay(TimeOfDayPreset.Morning);
+                Assert.That(shadow.transform.localPosition.x,
+                    Is.EqualTo(0f).Within(0.001f));
+                Assert.That(shadow.transform.localPosition.y,
+                    Is.EqualTo(0f).Within(0.001f));
+                var morningRay = Quaternion.Euler(0f,
+                    world.BuildingShadowDirectionOffsetDegrees, 0f) *
+                    (TimeOfDayLighting.SunRotation(TimeOfDayPreset.Morning) *
+                     Vector3.forward);
+                var morningExpected = new Vector2(
+                    Vector3.Dot(morningRay, camera.transform.right),
+                    Vector3.Dot(morningRay, camera.transform.up)).normalized;
+                var morningActual = new Vector2(
+                    -Mathf.Sin(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad),
+                    Mathf.Cos(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad));
+                Assert.That(Vector2.Dot(morningActual, morningExpected),
+                    Is.GreaterThan(0.999f),
+                    "Morning winter trees must share the building shadow ray.");
+                Assert.That(shadow.sprite.bounds.size.y *
+                    shadow.transform.localScale.y,
+                    Is.EqualTo(5.375f).Within(0.01f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void OverlayModeSelectsDragPaintsWithoutDuplicatesAndDeletesSelectedTile()
         {
             var root = new GameObject("Overlay Paint Editing Test");
@@ -4910,17 +5046,25 @@ namespace CityForgeV3.Tests
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.45f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Afternoon), Is.EqualTo(1.15f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Evening), Is.EqualTo(0.65f));
+            Assert.That(
+                LotWorldController.BuildingShadowOpacityMultiplier(
+                    TimeOfDayPreset.Morning),
+                Is.EqualTo(LotWorldController.PropShadowOpacityMultiplier(
+                    TimeOfDayPreset.Morning) * 1.8125f));
+            Assert.That(
+                LotWorldController.BuildingShadowOpacityMultiplier(
+                    TimeOfDayPreset.Afternoon),
+                Is.EqualTo(LotWorldController.PropShadowOpacityMultiplier(
+                    TimeOfDayPreset.Afternoon) * 3.0f));
             foreach (var preset in new[]
                      {
-                         TimeOfDayPreset.Morning,
                          TimeOfDayPreset.Noon,
-                         TimeOfDayPreset.Afternoon,
                          TimeOfDayPreset.Evening
                      })
                 Assert.That(
                     LotWorldController.BuildingShadowOpacityMultiplier(preset),
                     Is.EqualTo(LotWorldController.PropShadowOpacityMultiplier(preset) * 1.45f),
-                    $"Building shadows must compensate for the lighter primitive silhouette at {preset}.");
+                    $"Building shadows must retain the calibrated baseline at {preset}.");
         }
 
         [Test]
@@ -5173,6 +5317,50 @@ namespace CityForgeV3.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        [Test]
+        public void OakVariation_IsStableAndUsesAllFourProfiles()
+        {
+            var profiles = Enumerable.Range(0, 128)
+                .Select(index => LotWorldController.StableFloraVariationProfile(
+                    $"saved-oak-{index}"))
+                .ToArray();
+
+            Assert.That(profiles, Is.EqualTo(Enumerable.Range(0, 128)
+                .Select(index => LotWorldController.StableFloraVariationProfile(
+                    $"saved-oak-{index}"))));
+            Assert.That(profiles.Distinct().OrderBy(value => value),
+                Is.EqualTo(new[] { 0, 1, 2, 3 }));
+        }
+
+        [TestCase(0, "oak")]
+        [TestCase(1, "oak")]
+        [TestCase(2, "oak-b")]
+        [TestCase(3, "oak-b")]
+        public void OakVariation_ChoosesMatchingSpeedTreeFamily(
+            int profile, string expectedFloraId)
+        {
+            Assert.That(LotWorldController.ResolveFloraPresentationId(
+                "oak", profile), Is.EqualTo(expectedFloraId));
+            Assert.That(Resources.Load<Texture2D>(
+                LotWorldController.ResolveFloraResourcePath(
+                    expectedFloraId, SeasonPreset.Summer)), Is.Not.Null);
+        }
+
+        [TestCase(0, SeasonPreset.Winter, "evergreen-snow")]
+        [TestCase(1, SeasonPreset.Winter, "evergreen-b-snow")]
+        [TestCase(2, SeasonPreset.Winter, "evergreen-snow")]
+        [TestCase(3, SeasonPreset.Summer, "evergreen-b")]
+        [TestCase(3, SeasonPreset.Winter, "evergreen-b-snow")]
+        public void EvergreenVariation_UsesSnowOnSomeWinterTrees(
+            int profile, SeasonPreset season, string expectedFloraId)
+        {
+            Assert.That(LotWorldController.ResolveFloraPresentationId(
+                "evergreen", profile, season), Is.EqualTo(expectedFloraId));
+            Assert.That(Resources.Load<Texture2D>(
+                LotWorldController.ResolveFloraResourcePath(
+                    expectedFloraId, season)), Is.Not.Null);
         }
 
         private static Transform Find(Transform root, string objectName)

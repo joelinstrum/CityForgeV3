@@ -34,6 +34,7 @@ namespace CityForgeV3.UI
         private bool _lotEditorCategoryExpanded;
         private bool _hasOpenLot;
         private BuildingUseCategory _buildingUseCategory = BuildingUseCategory.Residential;
+        private string _buildingSubcategory = string.Empty;
         private bool _roadPointerDown;
         private bool _roadDragStarted;
         private bool _outsideConnectorDragCreated;
@@ -48,6 +49,10 @@ namespace CityForgeV3.UI
         private bool _buildingPropDragStarted;
         private bool _overlayPointerDown;
         private bool _overlayDragPainted;
+        private bool _cameraPanToolActive;
+        private bool _cameraPanPointerDown;
+        private Vector2 _cameraPanLastPosition;
+        private static Texture2D _cameraPanCursorTexture;
         private bool _roadFamilyExpanded = true;
         private bool _roadMaterialsExpanded = true;
         private bool _roadShapeExpanded = true;
@@ -96,7 +101,9 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
             _lotEditorCategory = LotEditorCategory.Buildings;
             _lotEditorCategoryExpanded = true;
-            _buildingUseCategory = BuildingUseCategory.Residential;
+            var catalogEntry = BuildingCatalog.Find(buildingId);
+            _buildingUseCategory = BuildingCatalog.UseCategoryFor(catalogEntry);
+            _buildingSubcategory = catalogEntry.Subcategory;
             _lotWorld.ConfigureLot("Building inspection QA", LotType.Residential,
                 4, 4, LotEraCatalog.DefaultId);
             _hasOpenLot = true;
@@ -230,6 +237,12 @@ namespace CityForgeV3.UI
 
             if (evt.keyCode == KeyCode.Escape)
             {
+                if (_cameraPanToolActive)
+                {
+                    SetCameraPanTool(false);
+                    evt.StopPropagation();
+                    return;
+                }
                 DeselectAll();
                 evt.StopPropagation();
             }
@@ -450,6 +463,39 @@ namespace CityForgeV3.UI
 
             var screen = Screen("lot-editor-screen");
             screen.focusable = true;
+            screen.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (!_cameraPanToolActive || evt.button != 0 ||
+                    evt.position.y <= 70f || evt.position.x <= 100f ||
+                    evt.position.x >= screen.resolvedStyle.width - 330f) return;
+                _cameraPanPointerDown = true;
+                _cameraPanLastPosition = new Vector2(
+                    evt.position.x, evt.position.y);
+                screen.CapturePointer(evt.pointerId);
+                evt.StopImmediatePropagation();
+            }, TrickleDown.TrickleDown);
+            screen.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                if (!_cameraPanPointerDown) return;
+                var pointerPosition = new Vector2(
+                    evt.position.x, evt.position.y);
+                var pointerDelta = pointerPosition - _cameraPanLastPosition;
+                _lotWorld.PanCameraViewport(
+                    pointerDelta,
+                    new Vector2(screen.resolvedStyle.width,
+                        screen.resolvedStyle.height));
+                _cameraPanLastPosition = pointerPosition;
+                evt.StopImmediatePropagation();
+            }, TrickleDown.TrickleDown);
+            screen.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (!_cameraPanPointerDown || evt.button != 0) return;
+                _cameraPanPointerDown = false;
+                if (screen.HasPointerCapture(evt.pointerId))
+                    screen.ReleasePointer(evt.pointerId);
+                _lotStatus = "Camera repositioned • hand remains active";
+                evt.StopImmediatePropagation();
+            }, TrickleDown.TrickleDown);
             var timeSpec = TimeOfDayLighting.For(_lotWorld.TimeOfDay);
             var timeGrade = new VisualElement
             {
@@ -477,6 +523,16 @@ namespace CityForgeV3.UI
                 var panelSize = new Vector2(
                     viewportInput.resolvedStyle.width,
                     viewportInput.resolvedStyle.height);
+                if (_cameraPanToolActive && evt.button == 0)
+                {
+                    _cameraPanPointerDown = true;
+                    _cameraPanLastPosition = new Vector2(
+                        evt.position.x, evt.position.y);
+                    viewportInput.CapturePointer(evt.pointerId);
+                    _lotStatus = "Camera hand active • drag to pan the lot";
+                    evt.StopPropagation();
+                    return;
+                }
                 if (evt.button == 1 &&
                     _lotEditorCategory != LotEditorCategory.Roads &&
                     _lotWorld.UpdateObjectHoverFromPanel(
@@ -612,6 +668,13 @@ namespace CityForgeV3.UI
                 var panelSize = new Vector2(
                     viewportInput.resolvedStyle.width,
                     viewportInput.resolvedStyle.height);
+                if (_cameraPanPointerDown)
+                {
+                    _cameraPanLastPosition = new Vector2(
+                        evt.position.x, evt.position.y);
+                    evt.StopPropagation();
+                    return;
+                }
                 var hoverSuppressed = _buildingPointerDown || _floraPointerDown ||
                     _propPointerDown || _buildingPropPointerDown ||
                     _overlayPointerDown || _roadPointerDown ||
@@ -707,6 +770,15 @@ namespace CityForgeV3.UI
                 _lotWorld.ClearObjectHover());
             viewportInput.RegisterCallback<PointerUpEvent>(evt =>
             {
+                if (evt.button == 0 && _cameraPanPointerDown)
+                {
+                    _cameraPanPointerDown = false;
+                    if (viewportInput.HasPointerCapture(evt.pointerId))
+                        viewportInput.ReleasePointer(evt.pointerId);
+                    _lotStatus = "Camera repositioned • hand remains active";
+                    evt.StopPropagation();
+                    return;
+                }
                 if (evt.button == 0 && _buildingPointerDown)
                 {
                     _buildingPointerDown = false;
@@ -851,6 +923,17 @@ namespace CityForgeV3.UI
 
             var viewActions = new VisualElement();
             viewActions.AddToClassList("topbar-actions");
+            var cameraPanButton = CfButton.CreateIcon(
+                "camera-pan-hand",
+                "✋",
+                _cameraPanToolActive
+                    ? "Camera pan active — drag the lot to move the view"
+                    : "Pan camera — drag the lot when zoomed in",
+                () => SetCameraPanTool(!_cameraPanToolActive),
+                _hasOpenLot,
+                _cameraPanToolActive);
+            cameraPanButton.AddToClassList("camera-pan-button");
+            viewActions.Add(cameraPanButton);
             viewActions.Add(CfButton.Create("NEW",
                 () => RequestDocumentAction(ComposeNewLotDialog), true, "quiet"));
             viewActions.Add(CfButton.Create("SAVE", SaveLot, _hasOpenLot, "quiet"));
@@ -960,6 +1043,7 @@ namespace CityForgeV3.UI
                         () =>
                         {
                             _buildingUseCategory = capturedCategory;
+                            _buildingSubcategory = string.Empty;
                             Show(AppScreen.LotEditor);
                         },
                         true,
@@ -971,7 +1055,46 @@ namespace CityForgeV3.UI
                 }
                 catalog.Add(categoryTabs);
 
-                var visibleBuildings = BuildingCatalog.ForUseCategory(_buildingUseCategory);
+                var subcategories = BuildingCatalog.SubcategoriesFor(_buildingUseCategory);
+                if (subcategories.Count > 0)
+                {
+                    var subcategoryTabs = new VisualElement { name = "building-subcategory-tabs" };
+                    subcategoryTabs.AddToClassList("building-use-tabs");
+                    var allSubcategoriesButton = CfButton.Create(
+                        "ALL",
+                        () =>
+                        {
+                            _buildingSubcategory = string.Empty;
+                            Show(AppScreen.LotEditor);
+                        },
+                        true,
+                        string.IsNullOrWhiteSpace(_buildingSubcategory)
+                            ? "building-use-selected"
+                            : "building-use");
+                    allSubcategoriesButton.name = "building-subcategory-all";
+                    subcategoryTabs.Add(allSubcategoriesButton);
+                    foreach (var subcategory in subcategories)
+                    {
+                        var capturedSubcategory = subcategory;
+                        var subcategoryButton = CfButton.Create(
+                            subcategory.ToUpperInvariant(),
+                            () =>
+                            {
+                                _buildingSubcategory = capturedSubcategory;
+                                Show(AppScreen.LotEditor);
+                            },
+                            true,
+                            _buildingSubcategory == subcategory
+                                ? "building-use-selected"
+                                : "building-use");
+                        subcategoryButton.name = $"building-subcategory-{subcategory.ToLowerInvariant()}";
+                        subcategoryTabs.Add(subcategoryButton);
+                    }
+                    catalog.Add(subcategoryTabs);
+                }
+
+                var visibleBuildings = BuildingCatalog.ForUseCategory(
+                    _buildingUseCategory, _buildingSubcategory);
                 catalog.Add(StyledLabel(
                     $"{visibleBuildings.Count} {_buildingUseCategory.ToString().ToUpperInvariant()} " +
                     $"BUILDING{(visibleBuildings.Count == 1 ? string.Empty : "S")}",
@@ -1061,6 +1184,42 @@ namespace CityForgeV3.UI
                 screen.Add(library);
             }
             lightingLab.Add(timeActions);
+            lightingLab.Add(StyledLabel("SEASON", "source-label"));
+            lightingLab.Add(StyledLabel(
+                SeasonLighting.Label(_lotWorld.Season),
+                "lighting-current"));
+            var seasonActions = new VisualElement();
+            seasonActions.AddToClassList("time-actions");
+            foreach (var season in new[]
+                     {
+                         SeasonPreset.Spring,
+                         SeasonPreset.Summer,
+                         SeasonPreset.Autumn,
+                         SeasonPreset.Winter
+                     })
+            {
+                var capturedSeason = season;
+                seasonActions.Add(CfButton.Create(
+                    SeasonLighting.Label(season),
+                    () => SetSeason(capturedSeason),
+                    true,
+                    _lotWorld.Season == season
+                        ? "time-selected"
+                        : "time"));
+            }
+            if (_lotWorld.Season == SeasonPreset.Winter)
+            {
+                seasonActions.Add(CfButton.CreateIcon(
+                    "winter-snowfall",
+                    "❄",
+                    _lotWorld.IsWinterSnowing
+                        ? "Snowfall in progress"
+                        : "Snowfall for 10 seconds",
+                    StartWinterSnowfall,
+                    _lotWorld.CanStartWinterSnowfall,
+                    _lotWorld.IsWinterSnowing));
+            }
+            lightingLab.Add(seasonActions);
             lightingLab.Add(StyledLabel("ARTWORK SOURCE", "source-label"));
             var sourceActions = new VisualElement();
             sourceActions.AddToClassList("source-actions");
@@ -1849,14 +2008,15 @@ namespace CityForgeV3.UI
                 "FLORA LIBRARY",
                 "Choose a tree, then click anywhere inside the lot to plant it. These are the original City Forge tree artworks.");
             panel.AddToClassList("road-material-modal-panel");
-            panel.Add(StyledLabel("DECIDUOUS TREES", "road-material-role"));
+            panel.Add(StyledLabel("TREES", "road-material-role"));
             var grid = new VisualElement();
             grid.AddToClassList("road-material-grid");
             foreach (var tree in new[]
                      {
                          (Id: "maple", Name: "Maple Tree"),
                          (Id: "ashe", Name: "Ashe Tree"),
-                         (Id: "oak", Name: "Oak Tree")
+                         (Id: "oak", Name: "Oak Tree"),
+                         (Id: "evergreen", Name: "Evergreen Pine")
                      })
             {
                 var captured = tree;
@@ -2213,6 +2373,92 @@ namespace CityForgeV3.UI
             Show(AppScreen.LotEditor);
         }
 
+        private void SetCameraPanTool(bool active)
+        {
+            _cameraPanToolActive = active && _hasOpenLot;
+            _cameraPanPointerDown = false;
+            _lotWorld?.SetCameraPanInteraction(_cameraPanToolActive);
+            UnityEngine.Cursor.SetCursor(
+                _cameraPanToolActive ? CameraPanCursorTexture() : null,
+                _cameraPanToolActive ? new Vector2(8f, 7f) : Vector2.zero,
+                CursorMode.Auto);
+            _lotStatus = _cameraPanToolActive
+                ? "Camera hand active • drag anywhere on the lot to pan"
+                : "Camera hand released";
+            Show(AppScreen.LotEditor);
+        }
+
+        private static Texture2D CameraPanCursorTexture()
+        {
+            if (_cameraPanCursorTexture != null) return _cameraPanCursorTexture;
+
+            const int size = 24;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "City Forge Camera Pan Hand Cursor",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                alphaIsTransparency = true,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            var pixels = new Color32[size * size];
+            var outline = new Color32(35, 31, 24, 255);
+            var fill = new Color32(239, 223, 174, 255);
+            var rows = new[]
+            {
+                "       XX               ",
+                "      XFFX              ",
+                "      XFFX  XX          ",
+                "      XFFX XFFX XX      ",
+                "   XX XFFXXFFXXFFX      ",
+                "  XFFXXFFFFFFFFFFX      ",
+                "  XFFFFFFFFFFFFFFX      ",
+                "   XFFFFFFFFFFFFFX      ",
+                "    XFFFFFFFFFFFFX      ",
+                "     XFFFFFFFFFFX       ",
+                "      XFFFFFFFFX        ",
+                "      XFFFFFFFFX        ",
+                "       XXXXXXXX         ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        ",
+                "                        "
+            };
+            for (var y = 0; y < size; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var mark = rows[y][x];
+                pixels[(size - 1 - y) * size + x] = mark == 'X'
+                    ? outline
+                    : mark == 'F' ? fill : new Color32(0, 0, 0, 0);
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, false);
+            _cameraPanCursorTexture = texture;
+            return texture;
+        }
+
+        private void SetSeason(SeasonPreset preset)
+        {
+            _lotWorld.SetSeason(preset);
+            _lotStatus = $"{SeasonLighting.Label(preset)} seasonal preview";
+            Show(AppScreen.LotEditor);
+        }
+
+        private void StartWinterSnowfall()
+        {
+            if (_lotWorld.StartWinterSnowfall())
+                _lotStatus = "Snowfall started • accumulation will build for 10 seconds";
+            Show(AppScreen.LotEditor);
+        }
+
         private void SetArtworkSource(BuildingArtworkSource source)
         {
             _lotWorld.SetArtworkSource(source);
@@ -2397,6 +2643,7 @@ namespace CityForgeV3.UI
             "maple" => "Maple Tree",
             "ashe" => "Ashe Tree",
             "oak" => "Oak Tree",
+            "evergreen" => "Evergreen Pine",
             _ => id ?? ""
         };
 

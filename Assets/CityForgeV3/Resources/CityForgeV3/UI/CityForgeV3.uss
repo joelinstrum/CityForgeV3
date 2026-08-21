@@ -196,6 +196,29 @@
     border-color: var(--cf-brass-400);
 }
 
+.camera-pan-button {
+    opacity: 0.5;
+    background-color: var(--cf-ink-800);
+    border-color: var(--cf-ink-700);
+    color: var(--cf-paper-100);
+    transition-duration: 0s;
+}
+
+.camera-pan-button:hover {
+    opacity: 0.5;
+    background-color: var(--cf-ink-800);
+    border-color: var(--cf-ink-700);
+    color: var(--cf-paper-100);
+}
+
+.camera-pan-button.cf-button--icon-selected,
+.camera-pan-button.cf-button--icon-selected:hover {
+    opacity: 1;
+    background-color: var(--cf-green-500);
+    border-color: var(--cf-brass-400);
+    color: rgb(245, 236, 205);
+}
+
 .lot-editor-screen {
     background-color: transparent;
 }

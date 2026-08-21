@@ -44,8 +44,9 @@ namespace CityForgeV3.World
 
         public void SetBuildingPropEditorContext(bool active)
         {
-            _buildingPropPlacementActive = active;
-            if (!active && _buildingPropPreview != null)
+            _buildingPropPlacementActive =
+                active && !_cameraPanInteractionActive;
+            if (!_buildingPropPlacementActive && _buildingPropPreview != null)
                 _buildingPropPreview.gameObject.SetActive(false);
         }
 

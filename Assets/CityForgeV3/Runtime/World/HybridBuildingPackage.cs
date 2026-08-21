@@ -12,6 +12,7 @@ namespace CityForgeV3.World
         public string displayName;
         public string shortDisplayName;
         public string category;
+        public string subcategory;
         public string sizeClass;
         public string libraryShortcut;
         public string reviewStatus;
@@ -81,6 +82,7 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class HybridShadowManifest
     {
+        public string projectionMode;
         public float footprintScale;
         public float maximumProjectionMeters;
         public float morningLengthScale;
@@ -129,6 +131,7 @@ namespace CityForgeV3.World
         public string ShortDisplayName => string.IsNullOrWhiteSpace(
             _manifest.shortDisplayName) ? DisplayName : _manifest.shortDisplayName;
         public string Category => _manifest.category;
+        public string Subcategory => _manifest.subcategory ?? string.Empty;
         public string SizeClass => _manifest.sizeClass;
         public string LibraryShortcut => _manifest.libraryShortcut;
         public string ReviewStatus => _manifest.reviewStatus;
@@ -178,6 +181,9 @@ namespace CityForgeV3.World
             _manifest.shadow?.directionOffsetDegrees ?? 0f;
         public IReadOnlyList<float> ShadowSemanticVertices =>
             _manifest.shadow?.semanticVertices ?? Array.Empty<float>();
+        public bool UsesMeshProjectedShadow =>
+            string.Equals(_manifest.shadow?.projectionMode, "projected-mesh",
+                StringComparison.OrdinalIgnoreCase);
         public IReadOnlyList<string> RequiredPrimitiveObjects =>
             _manifest.primitive.requiredObjects;
         public int FacingCount => _manifest.facings.Length;
