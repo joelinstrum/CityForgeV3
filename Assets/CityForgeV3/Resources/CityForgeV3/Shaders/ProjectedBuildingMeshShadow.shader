@@ -18,7 +18,9 @@ Shader "CityForgeV3/ProjectedBuildingMeshShadow"
             Offset -1, -1
             Stencil
             {
-                Ref 7
+                Ref 2
+                ReadMask 2
+                WriteMask 2
                 Comp NotEqual
                 Pass Replace
             }

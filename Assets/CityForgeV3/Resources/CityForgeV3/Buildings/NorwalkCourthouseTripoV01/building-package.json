@@ -1,0 +1,107 @@
+{
+  "id": "cityforge.v3.civic.norwalk_courthouse_tripo_01",
+  "displayName": "Norwalk Courthouse",
+  "shortDisplayName": "Norwalk Courthouse",
+  "category": "Civic",
+  "subcategory": "Government",
+  "sizeClass": "large",
+  "libraryShortcut": "C",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 3,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 26.019118,
+    "depthMeters": 25.938388,
+    "heightMeters": 34.075,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 1,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 48.0,
+    "targetHeightMeters": 14.65225
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/semantic-primitive-v02",
+    "sourceVersion": "V02 church-derived voxel-remesh silhouette; 17.5% visual scale correction",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 24.208037825,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "pending user-traced window masks",
+    "policy": "four intentional transparent placeholders"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 28.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -10.18, 0, -10.15, 10.18, 0, -10.15,
+      10.18, 0, 10.15, -10.18, 0, 10.15,
+      -10.18, 18.85, -10.15, 10.18, 18.85, -10.15,
+      10.18, 18.85, 10.15, -10.18, 18.85, 10.15,
+      -3.10, 29.0, -3.10, 3.10, 29.0, -3.10,
+      3.10, 29.0, 3.10, -3.10, 29.0, 3.10
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.5, 0.805843517],
+      "approvedResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.500000358, 0.805843532],
+      "approvedResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.499999702, 0.805843279],
+      "approvedResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.499999821, 0.805843323],
+      "approvedResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/front-left-night"
+    }
+  ]
+}

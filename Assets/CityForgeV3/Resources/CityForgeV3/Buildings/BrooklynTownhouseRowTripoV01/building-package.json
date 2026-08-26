@@ -1,0 +1,143 @@
+{
+  "id": "cityforge.v3.residential.brooklyn_townhouse_row_tripo_01",
+  "displayName": "Brooklyn Townhouse Row",
+  "shortDisplayName": "Brooklyn Row",
+  "category": "Residential",
+  "subcategory": null,
+  "sizeClass": "large",
+  "libraryShortcut": "B",
+  "reviewStatus": "V01 TREE-CLEANED FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 3,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 21.16144,
+    "depthMeters": 8.635713,
+    "heightMeters": 11.429688,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 34.0,
+    "targetHeightMeters": 4.914766
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 tree-cleaned, 2.4m residential-door review scale, 90% XY footprint",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 32.0,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "pending individually traced window masks",
+    "policy": "transparent review placeholders"
+  },
+  "shadow": {
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 12.572656,
+    "morningLengthScale": 0.9,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.15,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.0,
+    "semanticVertices": [
+      -9.522648,
+      0,
+      -3.886071,
+      9.522648,
+      0,
+      -3.886071,
+      9.522648,
+      0,
+      3.886071,
+      -9.522648,
+      0,
+      3.886071,
+      -9.522648,
+      11.429688,
+      -3.886071,
+      9.522648,
+      11.429688,
+      -3.886071,
+      9.522648,
+      11.429688,
+      3.886071,
+      -9.522648,
+      11.429688,
+      3.886071
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.635608971
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.50000006,
+        0.635608673
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.635608673
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.499999791,
+        0.635608971
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/front-left-night"
+    }
+  ]
+}

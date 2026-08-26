@@ -1,0 +1,22 @@
+# Victorian fancy v01 source lineage
+
+- Source: `/Users/joelinstrum/Downloads/buildings/victorian-fancy/red-victorian+townhouse+3d+model.zip`
+- Source type: Tripo-generated FBX with one continuous high-density mesh and external PBR maps.
+- Source status: read-only; extracted without modifying the download.
+- Intake package: `Authoring/Buildings/IncomingTripo/victorian-fancy/v01_source/`
+- Review blend: `victorian-fancy-v01-review.blend`
+- Scale review: the raw import measured approximately `0.467m x 0.775m x 0.983m`. A provisional `10x` correction was applied and normalized, producing approximately `4.671m x 7.752m x 9.825m` at object scale `1,1,1`.
+- Scale basis: the review scene includes `CF_SCALE_DOOR_7FT` (`2.1336m`) and `CF_SCALE_DOOR_8FT` (`2.4384m`) reference gauges. The modeled entrance falls plausibly within that range.
+- Intended use: Industrial Age (`industrial`) residential, pending classification and visual review.
+- Geometry status: approximately 721,960 polygons; optimization remains required before any direct mesh runtime use.
+- Window-interior status: visible interior objects appear fused into the single source mesh/material. Preserve them for neutral review; a separate window mask or night overlay is the preferred lighting experiment.
+- Lighting study: generated review concepts at 50%, 65%, and 80% perceived window-light strength are stored under `lighting-review/`. The user selected the 65% look on 2026-08-21 because it gives the best balance between warm illumination and readable interior objects.
+- Lighting prototype: `lighting-review/65-prototype/` contains a 900x900 camera-registered front-oblique test: the resized RGB reference, window mask, transparent window-only overlay, and composite review image. The overlay affects approximately 4.6% of the canvas and leaves the daytime source untouched. This is a single-facing review checkpoint; it is not the completed four-facing runtime light set.
+- Runtime lighting requirement: verify the revised 75% look against each locked runtime facing, keeping illumination in separate transparent overlays with identical canvases and per-facing pivots before publication.
+- Runtime package: registered as `Red Victorian` at `CityForgeV3/Buildings/VictorianFancyTripoV01/building-package`, under `Residential / Mid-Wealth`. The package uses four 1024x1024 neutral facings, matching 75%-target night overlays, a centered plan render, and `semantic-primitive-v01.blend` for placement and shadow semantics.
+- Night-facing policy: the two front obliques contain pane-only warm overlays; the two blind-wall rear obliques are intentionally fully transparent because no openings exist on those elevations.
+- Validation: `VictorianFancyTripoPackageTests.ReviewPackageLoadsWithRegisteredEveningOverlays` passed 1/1 in the Unity 6.1 editor on 2026-08-21.
+- Exposure correction: the neutral renders were regenerated at +0.65 exposure. Hybrid building presentation now preserves a readable base at Evening (`0.66, 0.69, 0.76`) and Night (`0.38, 0.43, 0.54`) so warm window overlays remain accents rather than the only visible pixels. This shared hybrid correction also addresses the newer buildings that were appearing too dark.
+- Primitive correction: the semantic foundation, wall, roof, entrance anchor, and shadow envelope were reduced to 90% in the horizontal plane after in-game review. Height and the registered artwork remain unchanged.
+- Door-scale correction: the provisional blanket 10x intake was replaced by a 2.4m full-entrance calibration. The Red Victorian receives a 1.25x package correction; Blue 1.08x; Green 1.13x; and Yellow 1.36x. Each correction updates declared dimensions, artwork pixels per meter, camera metadata, primitive, entrance anchor, and semantic shadow envelope without rerendering the registered canvases.
+- Publication status: registered in the active game catalog as a review asset. Lighting integration and package discovery are validated; optimization and final in-game visual approval remain outstanding.

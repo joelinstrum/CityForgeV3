@@ -14,5 +14,6 @@ scene. Runtime bootstrap code constructs the current prototype without relying
 on legacy scenes or UI prefabs.
 
 See [V3 architecture](Documentation/Architecture/V3_FOUNDATION.md) and the
-[initial migration record](Documentation/Migration/0001_INITIAL_ASSETS.md).
-
+[Lot Editor coordinate contract](Documentation/Architecture/LOT_EDITOR_COORDINATES.md).
+The [initial migration record](Documentation/Migration/0001_INITIAL_ASSETS.md)
+documents the original asset boundary.

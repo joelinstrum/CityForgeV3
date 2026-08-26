@@ -1,0 +1,106 @@
+{
+  "id": "cityforge.v3.residential.ny_fancy_townhouse_tripo_01",
+  "displayName": "NY Fancy Townhouse",
+  "shortDisplayName": "Fancy Townhouse",
+  "category": "Residential",
+  "subcategory": "Urban Multi-Family",
+  "sizeClass": "large",
+  "libraryShortcut": "N",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 1,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 6.992843,
+    "depthMeters": 13.46917,
+    "heightMeters": 15.0,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 38.0,
+    "targetHeightMeters": 6.45
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 church-derived source voxel-remesh silhouette",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 39.384615385,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024,
+    "nightOverlayOpacity": 0.62
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "user-traced front-right window selections, 2026-08-23",
+    "policy": "front-right authored overlay; remaining rotations intentionally transparent; full-night opacity capped at 62%"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 15.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -3.496422, 0, -6.734585, 3.496422, 0, -6.734585,
+      3.496422, 0, 6.734585, -3.496422, 0, 6.734585,
+      -3.496422, 15.0, -6.734585, 3.496422, 15.0, -6.734585,
+      3.496422, 15.0, 6.734585, -3.496422, 15.0, 6.734585
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.49999994, 0.719038874],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.50000006, 0.719038993],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.499999791, 0.719038993],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.500000179, 0.719038904],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/front-left-night"
+    }
+  ]
+}

@@ -19,9 +19,26 @@
     "CityForgeV3/Buildings/DownloadsBatchV02/MarloweArtDecoHotelV02/building-package",
     "CityForgeV3/Buildings/SecondEmpireTripoV07/building-package",
     "CityForgeV3/Buildings/VictorianRowTripoV01/building-package",
+    "CityForgeV3/Buildings/VictorianFancyTripoV01/building-package",
+    "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/building-package",
+    "CityForgeV3/Buildings/VictorianFancyGreenTripoV01/building-package",
+    "CityForgeV3/Buildings/VictorianFancyYellowTripoV01/building-package",
+    "CityForgeV3/Buildings/LawOfficeTripoV01/building-package",
+    "CityForgeV3/Buildings/GildedAgeMansionTripoV01/building-package",
+    "CityForgeV3/Buildings/BrooklynTownhouseRowTripoV01/building-package",
     "CityForgeV3/Buildings/BostonHistoricPubV01/building-package",
     "CityForgeV3/Buildings/NewEngland1700sHomeV03/building-package",
     "CityForgeV3/Buildings/FrontierLogCabinTripoV03/building-package",
-    "CityForgeV3/Buildings/NewEnglandChurchTripoV01/building-package"
+    "CityForgeV3/Buildings/NewEnglandChurchTripoV01/building-package",
+    "CityForgeV3/Buildings/NorwalkCourthouseTripoV01/building-package",
+    "CityForgeV3/Buildings/PlymouthStoreTripoV01/building-package",
+    "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/building-package",
+    "CityForgeV3/Buildings/NYBrownstoneTripoV01/building-package",
+    "CityForgeV3/Buildings/NYBrownstoneLightTripoV01/building-package",
+    "CityForgeV3/Buildings/NYBrownstoneBayWindowsTripoV01/building-package",
+    "CityForgeV3/Buildings/NYFancyTownhouseTripoV01/building-package",
+    "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/building-package",
+    "CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/building-package",
+    "CityForgeV3/Buildings/ArtMuseumTripoV01/building-package"
   ]
 }

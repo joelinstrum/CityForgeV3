@@ -36,8 +36,9 @@ Shader "CityForgeV3/LanternLightPool"
             {
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radius = length(centered);
-                float falloff = saturate(1.0 - radius);
-                falloff = falloff * falloff * (3.0 - 2.0 * falloff);
+                clip(1.0 - radius);
+                float falloff = smoothstep(1.0, 0.0, radius);
+                falloff *= falloff;
                 return fixed4(_Color.rgb, _Color.a * falloff);
             }
             ENDCG

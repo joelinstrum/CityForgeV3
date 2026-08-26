@@ -1,0 +1,143 @@
+{
+  "id": "cityforge.v3.residential.gilded_age_mansion_tripo_01",
+  "displayName": "Gilded Age Mansion",
+  "shortDisplayName": "Gilded Mansion",
+  "category": "Residential",
+  "subcategory": null,
+  "sizeClass": "large",
+  "libraryShortcut": "M",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 3,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 26.557548,
+    "depthMeters": 26.914218,
+    "heightMeters": 17.659989,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 37.5,
+    "targetHeightMeters": 7.593795
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V04 door-calibrated plus two 1.25x visual mass corrections, 90% XY review footprint",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 21.818182,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "pending individually traced window masks",
+    "policy": "transparent review placeholders"
+  },
+  "shadow": {
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 19.25,
+    "morningLengthScale": 0.9,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.15,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.0,
+    "semanticVertices": [
+      -11.950895,
+      0,
+      -12.111399,
+      11.950895,
+      0,
+      -12.111399,
+      11.950895,
+      0,
+      12.111399,
+      -11.950895,
+      0,
+      12.111399,
+      -11.950895,
+      17.659989,
+      -12.111399,
+      11.950895,
+      17.659989,
+      -12.111399,
+      11.950895,
+      17.659989,
+      12.111399,
+      -11.950895,
+      17.659989,
+      12.111399
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.6428608
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000358,
+        0.6428608
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999702,
+        0.642860621
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.499999821,
+        0.642860651
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/GildedAgeMansionTripoV01/front-left-night"
+    }
+  ]
+}

@@ -35,6 +35,8 @@ namespace CityForgeV3.World
         public const string Schema = "cityforge-v3-vehicle-package-v1";
         public const string ModelTManifestResourcePath =
             "CityForgeV3/Vehicles/FordModelT/vehicle-package";
+        public const string RollsRoyce1926ManifestResourcePath =
+            "CityForgeV3/Vehicles/RollsRoyce1926/vehicle-package";
 
         private readonly VehicleTypeManifest _manifest;
         public string Id => _manifest.id;
@@ -53,6 +55,8 @@ namespace CityForgeV3.World
         private VehicleTypePackage(VehicleTypeManifest manifest) => _manifest = manifest;
 
         public static VehicleTypePackage LoadModelT() => Load(ModelTManifestResourcePath);
+        public static VehicleTypePackage LoadRollsRoyce1926() =>
+            Load(RollsRoyce1926ManifestResourcePath);
 
         public static VehicleTypePackage Load(string resourcePath)
         {

@@ -1,0 +1,80 @@
+{
+  "id": "cityforge.v3.civic.nineteenth_century_hospital_tripo_01",
+  "displayName": "19th-Century Hospital",
+  "shortDisplayName": "19th-Century Hospital",
+  "category": "Civic",
+  "subcategory": "Healthcare",
+  "sizeClass": "large",
+  "libraryShortcut": "C",
+  "reviewStatus": "V03 SOURCE-DERIVED SAFE FRAMING - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 3,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 26.043871,
+    "depthMeters": 22.592205,
+    "heightMeters": 24.0,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 42.0,
+    "targetHeightMeters": 10.32
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 church-derived voxel-remesh silhouette; 2.3 m formal-door scale review",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 225.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 34.133333333,
+    "canvasWidth": 1280,
+    "canvasHeight": 1280,
+    "edgeSafetyPixels": 64
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/plan-neutral-v03",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "pending user-traced window masks",
+    "policy": "four intentional transparent placeholders"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 24.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -13.02, 0, -11.30, 13.02, 0, -11.30,
+      13.02, 0, 11.30, -13.02, 0, 11.30,
+      -13.02, 18.0, -11.30, 13.02, 18.0, -11.30,
+      13.02, 18.0, 11.30, -13.02, 18.0, 11.30,
+      -5.2, 24.0, -5.2, 5.2, 24.0, -5.2,
+      5.2, 24.0, 5.2, -5.2, 24.0, 5.2
+    ]
+  },
+  "facings": [
+    {"id":"front-right","cameraAzimuthDegrees":-55.5,"pivotTopOrigin":[0.5,0.742987454],"approvedResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-right-neutral-v03","neutralResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-right-neutral-v03","nightOverlayResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-right-night-v03"},
+    {"id":"rear-right","cameraAzimuthDegrees":34.5,"pivotTopOrigin":[0.500000119,0.742986947],"approvedResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-right-neutral-v03","neutralResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-right-neutral-v03","nightOverlayResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-right-night-v03"},
+    {"id":"rear-left","cameraAzimuthDegrees":124.5,"pivotTopOrigin":[0.499999762,0.742987245],"approvedResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-left-neutral-v03","neutralResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-left-neutral-v03","nightOverlayResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/rear-left-night-v03"},
+    {"id":"front-left","cameraAzimuthDegrees":-145.5,"pivotTopOrigin":[0.499999911,0.742987275],"approvedResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-left-neutral-v03","neutralResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-left-neutral-v03","nightOverlayResourcePath":"CityForgeV3/Buildings/NineteenthCenturyHospitalTripoV01/front-left-night-v03"}
+  ]
+}

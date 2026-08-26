@@ -141,7 +141,7 @@ namespace CityForgeV3.World
 
         public static float OrthographicSize(LotZoomLevel level) => level switch
         {
-            LotZoomLevel.Detail => 8.5f,
+            LotZoomLevel.Detail => 11.4375f,
             LotZoomLevel.Inspection => 9f,
             LotZoomLevel.CloseUp => 9.5f,
             LotZoomLevel.Close => 10f,

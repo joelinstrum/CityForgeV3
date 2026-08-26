@@ -3,7 +3,9 @@
   "id": "cityforge.base.road.brick.v1",
   "displayName": "Colonial Brick Road",
   "tileSizeMeters": 10.0,
-  "roadWidthMeters": 3.8,
+  "roadWidthMeters": 9.5,
+  "artworkWidthMeters": 10.0,
+  "artworkLengthMeters": 10.0,
   "traffic": {
     "driveSide": "right",
     "laneOffsetMeters": 1.05,
@@ -16,6 +18,6 @@
     { "id": "t-junction", "topology": "TJunction", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/t-junction", "ports": ["East", "South", "West"], "artworkStatus": "authored-2026-07-28" },
     { "id": "four-way", "topology": "FourWay", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/four-way", "ports": ["North", "East", "South", "West"], "artworkStatus": "authored-2026-07-28" },
     { "id": "corner", "topology": "Corner", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/corner", "ports": ["South", "West"], "artworkStatus": "authored-2026-07-28" },
-    { "id": "endpoint", "topology": "Endpoint", "resourcePath": "", "ports": ["North"], "artworkStatus": "pending" }
+    { "id": "endpoint", "topology": "Endpoint", "resourcePath": "CityForgeV3/Roads/BrickRoadV1/straight", "ports": ["North"], "artworkStatus": "authored-2026-07-28-straight-cap" }
   ]
 }

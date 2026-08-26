@@ -1,0 +1,15 @@
+{
+  "schema": "cityforge-v3-vehicle-package-v1",
+  "id": "rolls-royce-1926",
+  "displayName": "1926 Rolls-Royce",
+  "modelResourcePath": "CityForgeV3/Vehicles/RollsRoyce1926/tripo_convert_879ff407-7835-44ae-9a69-96ea5483d970",
+  "traffic": {
+    "lengthMeters": 4.7,
+    "minimumStoppedGapMeters": 2.2,
+    "followingTimeSeconds": 1.0,
+    "accelerationMetersPerSecondSquared": 1.1,
+    "comfortableBrakeMetersPerSecondSquared": 3.0,
+    "minimumDesiredSpeedFactor": 0.82,
+    "maximumDesiredSpeedFactor": 0.92
+  }
+}

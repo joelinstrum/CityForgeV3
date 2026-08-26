@@ -62,7 +62,14 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
                 fixed shadow = SHADOW_ATTENUATION(input);
                 fixed3 lightDirection = normalize(_WorldSpaceLightPos0.xyz);
                 fixed diffuse = saturate(dot(normalize(input.worldNormal), lightDirection));
-                fixed illumination = max(_AmbientFloor, diffuse * shadow);
+                // The former max(floor, diffuse * shadow) made low-angle sun
+                // shadows impossible: Morning/Afternoon diffuse was below the
+                // floor for both lit and shadowed pixels. Treat ambient as the
+                // stable minimum and let directional light supply the range
+                // above it. A shadow now removes that directional contribution
+                // without crushing the receiver below its ambient floor.
+                fixed illumination = lerp(
+                    _AmbientFloor, 1.0h, diffuse * shadow);
                 fixed4 surface = tex2D(_MainTex, input.uv);
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);
