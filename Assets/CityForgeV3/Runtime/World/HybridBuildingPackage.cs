@@ -57,6 +57,7 @@ namespace CityForgeV3.World
         public string sourceVersion;
         public string roofRidgeAxis;
         public float entranceFacingDegrees;
+        public float rotationOffsetDegrees;
         public string[] requiredObjects;
     }
 
@@ -70,6 +71,7 @@ namespace CityForgeV3.World
         public float noonShadeOpacity;
         public float afternoonShadeOpacity;
         public float eveningShadeOpacity;
+        public float nightOverlayOpacity;
     }
 
     [Serializable]
@@ -114,6 +116,8 @@ namespace CityForgeV3.World
     public sealed class HybridBuildingPackage
     {
         public const string Schema = "cityforge-v3-hybrid-building-package-v1";
+        public const string SourceDerivedIntakeSchema =
+            "cityforge-v3-hybrid-building-package-v2";
         private readonly HybridBuildingPackageManifest _manifest;
         private readonly string _resourcePath;
 
@@ -126,6 +130,7 @@ namespace CityForgeV3.World
         }
 
         public string Id => _manifest.id;
+        public string SchemaVersion => _manifest.schema;
         public string ResourcePath => _resourcePath;
         public string DisplayName => _manifest.displayName;
         public string ShortDisplayName => string.IsNullOrWhiteSpace(
@@ -165,11 +170,15 @@ namespace CityForgeV3.World
                 TimeOfDayPreset.Evening => _manifest.render.eveningShadeOpacity,
                 _ => 0f
             }, fallback));
+        public float NightOverlayOpacity => Mathf.Clamp01(
+            PositiveOr(_manifest.render.nightOverlayOpacity, 1f));
         public string PrimitiveResourcePath => _manifest.primitive.resourcePath;
         public string PrimitiveSourceVersion => _manifest.primitive.sourceVersion;
         public string RoofRidgeAxis => _manifest.primitive.roofRidgeAxis;
         public float EntranceFacingDegrees =>
             _manifest.primitive.entranceFacingDegrees;
+        public float PrimitiveRotationOffsetDegrees =>
+            _manifest.primitive.rotationOffsetDegrees;
         public string PlanResourcePath => _manifest.plan?.resourcePath;
         public float ShadowFootprintScale => PositiveOr(
             _manifest.shadow?.footprintScale ?? 0f, 1.10f);
@@ -273,7 +282,9 @@ namespace CityForgeV3.World
                 return issues;
             }
 
-            if (manifest.schema != Schema) issues.Add("unsupported schema");
+            var sourceDerivedIntake = manifest.schema == SourceDerivedIntakeSchema;
+            if (manifest.schema != Schema && !sourceDerivedIntake)
+                issues.Add("unsupported schema");
             if (string.IsNullOrWhiteSpace(manifest.id)) issues.Add("id is required");
             if (string.IsNullOrWhiteSpace(manifest.displayName)) issues.Add("displayName is required");
             if (manifest.occupancyWidth < 1 || manifest.occupancyDepth < 1)
@@ -309,6 +320,20 @@ namespace CityForgeV3.World
                 manifest.primitive.roofRidgeAxis != "z" &&
                 manifest.primitive.roofRidgeAxis != "none")
                 issues.Add("roofRidgeAxis must be x, z, or none");
+
+            // V1 remains readable for established packages. V2 is the default
+            // for every new 3D intake and makes the church-derived shadow
+            // workflow mandatory rather than relying on a review checklist.
+            if (sourceDerivedIntake)
+            {
+                if (!string.Equals(manifest.shadow?.projectionMode,
+                        "projected-mesh", StringComparison.OrdinalIgnoreCase))
+                    issues.Add("V2 intake requires shadow projectionMode projected-mesh");
+                var required = manifest.primitive?.requiredObjects;
+                if (required == null || Array.IndexOf(required,
+                        "CF_PROXY_BUILDING_GENERATED") < 0)
+                    issues.Add("V2 intake requires CF_PROXY_BUILDING_GENERATED");
+            }
 
             if (manifest.facings != null)
             {

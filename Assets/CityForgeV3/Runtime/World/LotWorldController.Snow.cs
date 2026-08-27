@@ -9,6 +9,7 @@ namespace CityForgeV3.World
 
         private Coroutine _winterSnowfallRoutine;
         private ParticleSystem _winterSnowfallParticles;
+        private ParticleSystem _foregroundWinterSnowfallParticles;
         private Renderer _snowGroundCover;
         private float _snowAccumulation;
 
@@ -45,13 +46,8 @@ namespace CityForgeV3.World
 
             _snowAccumulation = Season == SeasonPreset.Winter ? 1f : 0f;
             ApplySnowAccumulation();
-            if (_winterSnowfallParticles != null)
-            {
-                _winterSnowfallParticles.Stop(true,
-                    ParticleSystemStopBehavior.StopEmitting);
-                Destroy(_winterSnowfallParticles.gameObject, 6f);
-                _winterSnowfallParticles = null;
-            }
+            StopAndReleaseSnowLayer(ref _winterSnowfallParticles);
+            StopAndReleaseSnowLayer(ref _foregroundWinterSnowfallParticles);
             _winterSnowfallRoutine = null;
             NotifyStateChanged();
         }
@@ -85,6 +81,20 @@ namespace CityForgeV3.World
             _snowGroundCover = cover.GetComponent<Renderer>();
             _snowGroundCover.sharedMaterial = material;
             ApplySnowAccumulation();
+        }
+
+        private void ResizeSnowGroundCover()
+        {
+            if (_snowGroundCover == null) return;
+            _snowGroundCover.transform.localPosition =
+                new Vector3(0f, 0.008f, 0f);
+            _snowGroundCover.transform.localScale = new Vector3(
+                LotWidthMeters, LotDepthMeters, 1f);
+            var material = _snowGroundCover.sharedMaterial;
+            if (material != null)
+                material.mainTextureScale = new Vector2(
+                    Mathf.Max(1f, LotWidthMeters / 8f),
+                    Mathf.Max(1f, LotDepthMeters / 8f));
         }
 
         private static Texture2D BuildSnowAccumulationTexture()
@@ -127,13 +137,30 @@ namespace CityForgeV3.World
             }
             _snowGroundCover.gameObject.SetActive(
                 Season == SeasonPreset.Winter && _snowAccumulation > 0.001f);
+            if (Season == SeasonPreset.Winter)
+            {
+                // Accumulated winter snow keeps streets wet after the flakes
+                // stop, including across time-of-day changes.
+                RoadWetness = Mathf.Max(RoadWetness, _snowAccumulation);
+                UpdateWetStreetReflections();
+            }
         }
 
         private void BuildWinterSnowfallParticles()
         {
             if (_winterSnowfallParticles != null)
                 Destroy(_winterSnowfallParticles.gameObject);
-            var snowfall = new GameObject("Winter Snowfall — 10 Seconds");
+            if (_foregroundWinterSnowfallParticles != null)
+                Destroy(_foregroundWinterSnowfallParticles.gameObject);
+            _winterSnowfallParticles = BuildWinterSnowLayer(
+                "Winter Snowfall — Behind Buildings", false);
+            _foregroundWinterSnowfallParticles = BuildWinterSnowLayer(
+                "Winter Snowfall — In Front of Buildings", true);
+        }
+
+        private ParticleSystem BuildWinterSnowLayer(string name, bool foreground)
+        {
+            var snowfall = new GameObject(name);
             snowfall.transform.SetParent(transform, false);
             snowfall.transform.localPosition = new Vector3(0f, 18f, 0f);
             var particles = snowfall.AddComponent<ParticleSystem>();
@@ -144,7 +171,9 @@ namespace CityForgeV3.World
             main.loop = false;
             main.startLifetime = new ParticleSystem.MinMaxCurve(4.5f, 6.5f);
             main.startSpeed = 0f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.035f, 0.09f);
+            main.startSize = foreground
+                ? new ParticleSystem.MinMaxCurve(0.05f, 0.11f)
+                : new ParticleSystem.MinMaxCurve(0.025f, 0.075f);
             main.startColor = new ParticleSystem.MinMaxGradient(
                 new Color(0.96f, 0.98f, 1f, 0.08f),
                 new Color(0.96f, 0.98f, 1f, 1f));
@@ -152,7 +181,7 @@ namespace CityForgeV3.World
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var emission = particles.emission;
-            emission.rateOverTime = 760f;
+            emission.rateOverTime = foreground ? 230f : 620f;
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(
@@ -173,13 +202,26 @@ namespace CityForgeV3.World
                 Shader.Find("Legacy Shaders/Particles/Alpha Blended");
             renderer.sharedMaterial = new Material(shader)
             {
-                name = "Runtime Snowflake Particle Material",
-                mainTexture = BuildSnowflakeTexture()
+                name = foreground
+                    ? "Runtime Foreground Snowflake Material"
+                    : "Runtime Background Snowflake Material",
+                mainTexture = BuildSnowflakeTexture(),
+                // The near layer deliberately draws after always-visible
+                // billboard buildings, matching the approved rain depth cue.
+                renderQueue = foreground ? 4000 : 2990
             };
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            renderer.sortingOrder = 3000;
-            _winterSnowfallParticles = particles;
+            renderer.sortingOrder = foreground ? 3300 : 5;
             particles.Play();
+            return particles;
+        }
+
+        private void StopAndReleaseSnowLayer(ref ParticleSystem particles)
+        {
+            if (particles == null) return;
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            Destroy(particles.gameObject, 6f);
+            particles = null;
         }
 
         private static Texture2D BuildSnowflakeTexture()
@@ -218,7 +260,17 @@ namespace CityForgeV3.World
                 Destroy(_winterSnowfallParticles.gameObject);
                 _winterSnowfallParticles = null;
             }
+            if (_foregroundWinterSnowfallParticles != null)
+            {
+                Destroy(_foregroundWinterSnowfallParticles.gameObject);
+                _foregroundWinterSnowfallParticles = null;
+            }
             _snowAccumulation = 0f;
+            if (!IsRaining)
+            {
+                RoadWetness = 0f;
+                UpdateWetStreetReflections();
+            }
             if (_snowGroundCover != null)
             {
                 Destroy(_snowGroundCover.gameObject);

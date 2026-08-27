@@ -23,6 +23,18 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         Pass
         {
             Tags { "LightMode"="ForwardBase" }
+            // A billboard pixel that wins ordinary depth becomes the nearest
+            // flora surface at that pixel. Clear only the building-host bits
+            // there so a later front-recovery pass cannot draw a farther tree
+            // through this one. Road and projected-shadow bits are preserved.
+            Stencil
+            {
+                Ref 0
+                WriteMask 252
+                Comp Always
+                Pass Replace
+                ZFail Keep
+            }
 
             CGPROGRAM
             #pragma vertex vert

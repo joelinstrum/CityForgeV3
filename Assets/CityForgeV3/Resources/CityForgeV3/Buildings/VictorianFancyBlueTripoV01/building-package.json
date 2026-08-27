@@ -1,0 +1,150 @@
+{
+  "id": "cityforge.v3.residential.blue_victorian_tripo_01",
+  "displayName": "Blue Victorian Townhouse",
+  "shortDisplayName": "Blue Victorian",
+  "category": "Residential",
+  "subcategory": "Mid-Wealth",
+  "sizeClass": "medium",
+  "libraryShortcut": "B",
+  "reviewStatus": "V01 FOUR-FACING 75% EVENING LIGHTING - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 7.373255,
+    "depthMeters": 7.512671,
+    "heightMeters": 10.589392,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 25.92,
+    "targetHeightMeters": 4.553439
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 centered metric envelope, 90% XY review footprint",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 55.555556,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "75% individually registered warm-window masks",
+    "policy": "window-only overlays"
+  },
+  "shadow": {
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 7.56,
+    "morningLengthScale": 0.9,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.15,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.0,
+    "semanticVertices": [
+      -3.317965,
+      0.0,
+      -3.380702,
+      3.317965,
+      0.0,
+      -3.380702,
+      3.317965,
+      0.0,
+      3.380702,
+      -3.317965,
+      0.0,
+      3.380702,
+      -3.317965,
+      10.589392,
+      -3.380702,
+      3.317965,
+      10.589392,
+      -3.380702,
+      3.317965,
+      10.589392,
+      3.380702,
+      -3.317965,
+      10.589392,
+      3.380702
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.718123525
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000358,
+        0.718123525
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999702,
+        0.718123257
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.499999791,
+        0.718123347
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianFancyBlueTripoV01/front-left-night"
+    }
+  ],
+  "scaleCalibration": {
+    "version": "door-v02",
+    "targetDoorMeters": 2.4,
+    "measuredDoorMetersBefore": 2.22,
+    "factor": 1.08,
+    "method": "straight-on orthographic full entrance opening"
+  }
+}

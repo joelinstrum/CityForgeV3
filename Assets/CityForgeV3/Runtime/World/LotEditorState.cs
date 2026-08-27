@@ -80,8 +80,8 @@ namespace CityForgeV3.World
     {
         public string InstanceId = "";
         public string BuildingId = "";
-        public int CellX;
-        public int CellZ;
+        public float CellX;
+        public float CellZ;
         public int RotationQuarterTurns;
         public List<PlacedBuildingProp> Attachments = new();
     }
@@ -121,6 +121,10 @@ namespace CityForgeV3.World
         public float PositionX;
         public float PositionZ;
         public int RotationQuarterTurns;
+        public float MovementX;
+        public float MovementZ;
+        public string AnimationState = "idle";
+        public string BehaviorScript = "business-as-usual";
     }
 
     [Serializable]
@@ -151,17 +155,24 @@ namespace CityForgeV3.World
         public List<OutsideRoadConnector> OutsideRoadConnectors = new();
         public bool HasBuilding;
         public string BuildingId = "";
-        public int CellX;
-        public int CellZ;
+        public float CellX;
+        public float CellZ;
         public int RotationQuarterTurns;
         public List<PlacedBuilding> Buildings = new();
         public List<PlacedFlora> Flora = new();
         public List<PlacedProp> Props = new();
+        public string DefaultGentlemanBehaviorScript = "business-as-usual";
+        public string DefaultHooliganBehaviorScript = "business-as-usual";
+        public string DefaultPolicemanBehaviorScript = "business-as-usual";
         public string BaseTextureId = "";
         public List<PlacedOverlayTexture> OverlayTextures = new();
         public CirculationNetwork PedestrianNetwork = new() { Mode = CirculationMode.Pedestrian };
         public CirculationNetwork VehicleNetwork = new() { Mode = CirculationMode.Vehicle };
         public List<PlacedRoadPiece> RoadPieces = new();
+        public List<PlacedStreetcarTrack> StreetcarTracks = new();
+        public List<PlacedStreetcarStop> StreetcarStops = new();
+        public int StreetcarRiderDemand;
+        public List<PlacedBuilding3D> Buildings3D = new();
 
         public LotSaveData Copy() =>
             new()
@@ -187,12 +198,28 @@ namespace CityForgeV3.World
                 Buildings = Buildings,
                 Flora = Flora,
                 Props = Props,
+                DefaultGentlemanBehaviorScript = DefaultGentlemanBehaviorScript,
+                DefaultHooliganBehaviorScript = DefaultHooliganBehaviorScript,
+                DefaultPolicemanBehaviorScript = DefaultPolicemanBehaviorScript,
                 BaseTextureId = BaseTextureId,
                 OverlayTextures = OverlayTextures,
                 PedestrianNetwork = PedestrianNetwork,
                 VehicleNetwork = VehicleNetwork,
-                RoadPieces = RoadPieces
+                RoadPieces = RoadPieces,
+                StreetcarTracks = StreetcarTracks,
+                StreetcarStops = StreetcarStops,
+                StreetcarRiderDemand = StreetcarRiderDemand,
+                Buildings3D = Buildings3D
             };
+    }
+
+    [Serializable]
+    public sealed class PlacedBuilding3D
+    {
+        public string AssetId = "brownstone-building-22k";
+        public float X;
+        public float Z;
+        public int RotationQuarterTurns;
     }
 
     public sealed class LotEditorSession
@@ -335,7 +362,7 @@ namespace CityForgeV3.World
             ToolMode = LotToolMode.Select;
         }
 
-        public void Move(int cellX, int cellZ)
+        public void Move(float cellX, float cellZ)
         {
             if (!Data.HasBuilding)
             {
@@ -429,6 +456,9 @@ namespace CityForgeV3.World
             Data.PedestrianNetwork ??= new CirculationNetwork { Mode = CirculationMode.Pedestrian };
             Data.VehicleNetwork ??= new CirculationNetwork { Mode = CirculationMode.Vehicle };
             Data.RoadPieces ??= new List<PlacedRoadPiece>();
+            Data.StreetcarTracks ??= new List<PlacedStreetcarTrack>();
+            Data.StreetcarStops ??= new List<PlacedStreetcarStop>();
+            Data.Buildings3D ??= new List<PlacedBuilding3D>();
             foreach (var road in Data.RoadPieces)
                 if (road != null && string.IsNullOrWhiteSpace(road.PackageId))
                     road.PackageId = RoadPiecePackage.LegacyPackageId;

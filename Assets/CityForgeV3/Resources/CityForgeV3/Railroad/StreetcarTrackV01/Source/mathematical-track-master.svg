@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 2048 2048">
+  <rect width="2048" height="2048" fill="#00ff00"/>
+  <g fill="none" stroke-linejoin="round">
+    <!-- One shared center at (1024,1024), with constant 180 px gauge. -->
+    <path d="M422 0 L422 1024 C422 1356.5 691.5 1626 1024 1626 L2048 1626" stroke="#090b0d" stroke-width="28"/>
+    <path d="M602 0 L602 1024 C602 1257 791 1446 1024 1446 L2048 1446" stroke="#090b0d" stroke-width="28"/>
+    <path d="M422 0 L422 1024 C422 1356.5 691.5 1626 1024 1626 L2048 1626" stroke="#202428" stroke-width="18"/>
+    <path d="M602 0 L602 1024 C602 1257 791 1446 1024 1446 L2048 1446" stroke="#202428" stroke-width="18"/>
+    <path d="M422 0 L422 1024 C422 1356.5 691.5 1626 1024 1626 L2048 1626" stroke="#4a5055" stroke-width="5"/>
+    <path d="M602 0 L602 1024 C602 1257 791 1446 1024 1446 L2048 1446" stroke="#4a5055" stroke-width="5"/>
+  </g>
+</svg>

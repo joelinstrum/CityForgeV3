@@ -15,8 +15,29 @@ namespace CityForgeV3.World
 
     public sealed partial class LotWorldController : MonoBehaviour
     {
+        public readonly struct CameraFramingState
+        {
+            public readonly bool Valid;
+            public readonly Vector3 Position;
+            public readonly Quaternion Rotation;
+            public readonly float OrthographicSize;
+
+            public CameraFramingState(Camera camera)
+            {
+                Valid = camera != null;
+                Position = camera != null ? camera.transform.position : Vector3.zero;
+                Rotation = camera != null ? camera.transform.rotation : Quaternion.identity;
+                OrthographicSize = camera != null ? camera.orthographicSize : 0f;
+            }
+        }
+
         private static readonly Color GroundColor = new(0.27f, 0.34f, 0.27f);
         private const int FloraShadowReceiverLayer = 31;
+        private const float BuildingCameraFrontToleranceMeters = 0.01f;
+        private const float BuildingCameraFrontInteriorRecoveryMeters = 1.5f;
+        private const int BuildingOcclusionStencilShift = 2;
+        private const int BuildingOcclusionStencilRecoverableSlots = 62;
+        private const int BuildingOcclusionStencilOverflowReference = 252;
         // Semantic massing remains active for occlusion and native shadows,
         // but normal artwork mode hides it after the registration experiment.
         private const bool ShowBuildingPrimitivesExperiment = false;
@@ -38,7 +59,11 @@ namespace CityForgeV3.World
         private readonly List<SpriteRenderer> _floraPresentations = new();
         private readonly List<SpriteRenderer> _floraCastShadows = new();
         private Material _floraLitShadowReceiverMaterial;
-        private Material _floraFrontPriorityMaterial;
+        private readonly Dictionary<int, Material>
+            _floraHostFrontRecoveryMaterials = new();
+        private readonly List<(float distance, float lateral, int stencil)>
+            _floraFrontHostCandidates = new();
+        private readonly List<int> _floraFrontHostStencilReferences = new(4);
         private Light _floraShadowSun;
         private bool _floraEditorActive;
         private bool _floraPlacementActive;
@@ -61,9 +86,12 @@ namespace CityForgeV3.World
         private HybridBuildingPresentation _presentation;
         private readonly List<HybridBuildingPresentation> _otherBuildingPresentations = new();
         private readonly List<int> _otherBuildingIndices = new();
+        private readonly List<Transform> _otherBuildingDepthOccluders = new();
         private readonly List<Transform> _otherBuildingProjectedShadows = new();
         private readonly List<HybridBuildingPackage> _otherBuildingShadowPackages = new();
+        private readonly List<MeshRenderer> _buildingGapShadowRenderers = new();
         private Transform _selectionFootprint;
+        private Transform _selectionFrontMarker;
         private Transform _objectHoverHighlight;
         private int _hoverObjectIndex = -1;
         private Transform _registrationDiagnostics;
@@ -83,6 +111,9 @@ namespace CityForgeV3.World
         private readonly Stack<string> _roadRedo = new();
         private string _roadStrokeStart;
         private bool _buildingDragActive;
+        private bool _buildingFocusFreezeActive;
+        private int _sessionStateApplyCountForQa;
+        private int _buildingFocusLiveMoveCountForQa;
         private bool _buildingsSelectable = true;
         private bool _cameraPanInteractionActive;
         private bool _buildingAuthoringActive;
@@ -110,6 +141,10 @@ namespace CityForgeV3.World
         public IReadOnlyList<RoadPiecePackage> RoadPackages =>
             RoadPiecePackageCatalog.Packages;
         public string SelectedRoadPackageId => _roadPackage?.Id ?? "";
+        public bool BuildingFocusFreezeActive => _buildingFocusFreezeActive;
+        public int SessionStateApplyCountForQa => _sessionStateApplyCountForQa;
+        public int BuildingFocusLiveMoveCountForQa =>
+            _buildingFocusLiveMoveCountForQa;
         public string SelectedRoadMaterialId => _selectedRoadMaterialId;
         public string SelectedSidewalkMaterialId => _selectedSidewalkMaterialId;
         public RoadMarkingStyle SelectedRoadMarkingStyle => _selectedRoadMarkingStyle;
@@ -207,6 +242,9 @@ namespace CityForgeV3.World
             (_session.Data.VehicleNetwork?.Segments.Count ?? 0) > 0;
         public LotToolMode ToolMode => _session.ToolMode;
         public Vector2Int BuildingCell =>
+            new(Mathf.RoundToInt(_session.Data.CellX),
+                Mathf.RoundToInt(_session.Data.CellZ));
+        public Vector2 BuildingPosition =>
             new(_session.Data.CellX, _session.Data.CellZ);
         public int BuildingRotationQuarterTurns =>
             _session.Data.RotationQuarterTurns;
@@ -216,11 +254,19 @@ namespace CityForgeV3.World
                 BuildingRotationQuarterTurns);
         public string BuildingCardinalOrientation =>
             LotEditorSession.CardinalOrientation(BuildingCardinalQuarterTurns);
+        public bool SelectedBuildingFrontMarkerVisible =>
+            _selectionFrontMarker != null &&
+            _selectionFrontMarker.gameObject.activeInHierarchy;
+        public Vector3 SelectedBuildingFrontDirection =>
+            _selectionFrontMarker != null
+                ? _selectionFrontMarker.forward
+                : Vector3.zero;
         public string BuildingId => _session.Data.BuildingId;
         public HybridBuildingPackage BuildingPackage => _buildingPackage;
         public TimeOfDayPreset TimeOfDay { get; private set; } =
             TimeOfDayPreset.Noon;
         public SeasonPreset Season { get; private set; } = SeasonPreset.Summer;
+        public bool IsRaining { get; private set; }
         public BuildingArtworkSource ArtworkSource { get; private set; } =
             BuildingArtworkSource.NeutralPilot;
         public bool NeutralPilotShowing =>
@@ -256,6 +302,17 @@ namespace CityForgeV3.World
         public int LotMajorCellCount => Mathf.Max(LotWidthCells, LotDepthCells);
         public int LotMajorCellArea => LotWidthCells * LotDepthCells;
         public Vector3 CameraPanWorld => _cameraPanWorld;
+        public CameraFramingState CaptureCameraFraming() => new(_camera);
+
+        public void RestoreCameraFraming(CameraFramingState framing)
+        {
+            if (!framing.Valid || _camera == null) return;
+            _camera.transform.SetPositionAndRotation(
+                framing.Position, framing.Rotation);
+            _camera.orthographicSize = framing.OrthographicSize;
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+        }
         public LotTypeContract LotContract => LotTypeCatalog.For(LotType);
         public bool MinorGridVisible => _minorGrid != null && _minorGrid.gameObject.activeSelf;
         public bool MajorGridVisible => _majorGrid != null && _majorGrid.gameObject.activeSelf;
@@ -333,6 +390,7 @@ namespace CityForgeV3.World
             BuildBuildingPropRoot();
             BuildCirculationEditor();
             BuildCamera();
+            EnsurePropFrontRecoveryCamera();
             BuildBuildingPropOverlayPass();
             BuildProxyBuilding();
             BuildProjectedShadow();
@@ -390,7 +448,7 @@ namespace CityForgeV3.World
             _floraPreviewHasPoint = false;
             if (_floraPreview == null) return;
             _floraPreview.sprite = LoadFloraSprite(_floraPreviewId);
-            _floraPreview.color = FloraColorForTime(0.5f);
+            _floraPreview.color = FloraColorForTime(1f);
             _floraPreview.gameObject.SetActive(false);
         }
 
@@ -404,16 +462,11 @@ namespace CityForgeV3.World
             var position = new Vector2(
                 Mathf.Clamp(point.x, -LotWidthMeters * 0.5f, LotWidthMeters * 0.5f),
                 Mathf.Clamp(point.z, -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f));
-            position = ResolveNewPlacementOutsideBuildings(
-                position, Vector2.zero, 0.65f);
-            position = new Vector2(
-                Mathf.Clamp(position.x, -LotWidthMeters * 0.5f, LotWidthMeters * 0.5f),
-                Mathf.Clamp(position.y, -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f));
             _floraPreview.transform.localPosition =
                 new Vector3(position.x, 0.025f, position.y);
             _floraPreview.transform.rotation = _camera.transform.rotation;
             _floraPreview.color = CanPlaceFloraAt(position)
-                ? FloraColorForTime(0.5f)
+                ? FloraColorForTime(1f)
                 : InvalidFloraPreviewColorForTime();
             _floraPreviewHasPoint = true;
             _floraPreview.gameObject.SetActive(true);
@@ -443,10 +496,8 @@ namespace CityForgeV3.World
             if (SelectedFloraIndex < 0)
             {
                 if (string.IsNullOrWhiteSpace(floraId)) return false;
-                var assisted = ResolveNewPlacementOutsideBuildings(
-                    new Vector2(point.x, point.z), Vector2.zero, 0.65f);
                 if (!AddFlora(floraId,
-                        new Vector3(assisted.x, point.y, assisted.y))) return false;
+                        new Vector3(point.x, point.y, point.z))) return false;
                 SelectedFloraIndex = _session.Data.Flora.Count - 1;
                 RebuildFloraPresentations();
             }
@@ -510,65 +561,10 @@ namespace CityForgeV3.World
 
         public bool CanPlaceFloraAt(Vector2 position)
         {
-            const float trunkClearance = 0.65f;
-            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
-            {
-                var package = HybridBuildingPackageRegistry.Load(
-                    BuildingCatalog.Find(building.BuildingId).PackageResourcePath);
-                var odd = Mathf.Abs(building.RotationQuarterTurns) % 2 == 1;
-                var width = odd ? package.DepthMeters : package.WidthMeters;
-                var depth = odd ? package.WidthMeters : package.DepthMeters;
-                if (Mathf.Abs(position.x - building.CellX) < width * 0.5f + trunkClearance &&
-                    Mathf.Abs(position.y - building.CellZ) < depth * 0.5f + trunkClearance)
-                    return false;
-            }
+            // Placement and visibility are independent. An in-bounds ground
+            // anchor may overlap a building footprint or be completely hidden;
+            // depth rendering decides what is visible after the drop.
             return true;
-        }
-
-        /// <summary>
-        /// Isometric artwork can visually cover ground beyond its footprint. When a new
-        /// ground object is aimed through that artwork, move the requested point to the
-        /// nearest legal edge of the physical building primitive instead of making the
-        /// placement cursor appear to stop working. Existing-object drags deliberately do
-        /// not use this assistance.
-        /// </summary>
-        private Vector2 ResolveNewPlacementOutsideBuildings(Vector2 requested,
-            Vector2 objectSize, float clearance)
-        {
-            var resolved = requested;
-            var buildings = _session.Data.Buildings ?? new List<PlacedBuilding>();
-            // A nudge out of one footprint can enter a neighboring footprint, so make a
-            // bounded pass for each building rather than assuming buildings are isolated.
-            for (var pass = 0; pass <= buildings.Count; pass++)
-            {
-                var changed = false;
-                foreach (var building in buildings)
-                {
-                    var catalogEntry = BuildingCatalog.Find(building.BuildingId);
-                    var package = HybridBuildingPackageRegistry.Load(
-                        catalogEntry.PackageResourcePath);
-                    if (package == null) continue;
-                    var odd = Mathf.Abs(building.RotationQuarterTurns) % 2 == 1;
-                    var buildingWidth = odd ? package.DepthMeters : package.WidthMeters;
-                    var buildingDepth = odd ? package.WidthMeters : package.DepthMeters;
-                    var halfWidth = (buildingWidth + objectSize.x) * 0.5f + clearance;
-                    var halfDepth = (buildingDepth + objectSize.y) * 0.5f + clearance;
-                    var local = resolved - new Vector2(building.CellX, building.CellZ);
-                    if (Mathf.Abs(local.x) >= halfWidth ||
-                        Mathf.Abs(local.y) >= halfDepth) continue;
-
-                    var xPenetration = halfWidth - Mathf.Abs(local.x);
-                    var zPenetration = halfDepth - Mathf.Abs(local.y);
-                    if (xPenetration <= zPenetration)
-                        local.x = (local.x < 0f ? -1f : 1f) * (halfWidth + 0.01f);
-                    else
-                        local.y = (local.y < 0f ? -1f : 1f) * (halfDepth + 0.01f);
-                    resolved = new Vector2(building.CellX, building.CellZ) + local;
-                    changed = true;
-                }
-                if (!changed) break;
-            }
-            return resolved;
         }
 
         public bool EndFloraDrag()
@@ -597,40 +593,51 @@ namespace CityForgeV3.World
         private int FloraIndexAtCameraPixel(Vector2 pixel)
         {
             var best = -1;
-            var bestDistance = float.PositiveInfinity;
+            var bestDepth = float.PositiveInfinity;
             for (var index = 0; index < _floraPresentations.Count; index++)
             {
                 var renderer = _floraPresentations[index];
                 if (renderer == null || !renderer.enabled) continue;
-                var center = _camera.WorldToScreenPoint(renderer.bounds.center);
-                var extents = renderer.bounds.extents;
-                var minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
-                var maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
-                for (var x = -1; x <= 1; x += 2)
-                for (var y = -1; y <= 1; y += 2)
-                for (var z = -1; z <= 1; z += 2)
-                {
-                    var projected = _camera.WorldToScreenPoint(renderer.bounds.center +
-                        Vector3.Scale(extents, new Vector3(x, y, z)));
-                    minimum = Vector2.Min(minimum, projected);
-                    maximum = Vector2.Max(maximum, projected);
-                }
-                if (pixel.x < minimum.x || pixel.x > maximum.x ||
-                    pixel.y < minimum.y || pixel.y > maximum.y) continue;
-                var normalized = new Vector2(
-                    Mathf.InverseLerp(minimum.x, maximum.x, pixel.x),
-                    Mathf.InverseLerp(minimum.y, maximum.y, pixel.y));
-                var canopy = Mathf.Pow((normalized.x - 0.5f) / 0.48f, 2f) +
-                    Mathf.Pow((normalized.y - 0.64f) / 0.40f, 2f) <= 1f;
-                var trunk = Mathf.Abs(normalized.x - 0.5f) <= 0.10f &&
-                    normalized.y <= 0.58f;
-                if (!canopy && !trunk) continue;
-                var distance = ((Vector2)center - pixel).sqrMagnitude;
-                if (distance >= bestDistance) continue;
-                bestDistance = distance;
+                if (!SpriteRendererContainsCameraPixel(
+                        renderer, _camera, pixel)) continue;
+                var depth = _camera.WorldToScreenPoint(
+                    renderer.transform.position).z;
+                if (depth >= bestDepth) continue;
+                bestDepth = depth;
                 best = index;
             }
             return best;
+        }
+
+        public static bool SpriteRendererContainsCameraPixel(
+            SpriteRenderer renderer, Camera camera, Vector2 pixel,
+            float alphaThreshold = 0.02f)
+        {
+            if (renderer == null || renderer.sprite == null || camera == null)
+                return false;
+            var ray = camera.ScreenPointToRay(pixel);
+            var plane = new Plane(renderer.transform.forward,
+                renderer.transform.position);
+            if (!plane.Raycast(ray, out var distance)) return false;
+            var local = renderer.transform.InverseTransformPoint(
+                ray.GetPoint(distance));
+            var bounds = renderer.sprite.bounds;
+            if (local.x < bounds.min.x || local.x > bounds.max.x ||
+                local.y < bounds.min.y || local.y > bounds.max.y)
+                return false;
+            var normalized = new Vector2(
+                Mathf.InverseLerp(bounds.min.x, bounds.max.x, local.x),
+                Mathf.InverseLerp(bounds.min.y, bounds.max.y, local.y));
+            if (renderer.flipX) normalized.x = 1f - normalized.x;
+            if (renderer.flipY) normalized.y = 1f - normalized.y;
+            var sprite = renderer.sprite;
+            var texture = sprite.texture;
+            var textureRect = sprite.textureRect;
+            var u = (textureRect.x + normalized.x * textureRect.width) /
+                texture.width;
+            var v = (textureRect.y + normalized.y * textureRect.height) /
+                texture.height;
+            return texture.GetPixelBilinear(u, v).a > alphaThreshold;
         }
 
         private void ApplyFloraSelection()
@@ -794,6 +801,7 @@ namespace CityForgeV3.World
                 if (index < _floraCastShadows.Count && _floraCastShadows[index] != null)
                 {
                     var shadow = _floraCastShadows[index];
+                    shadow.enabled = !IsRaining;
                     var castOffset = FloraCastOffset(shadow.sprite, Season,
                         profile);
                     shadow.transform.localPosition = new Vector3(
@@ -846,11 +854,11 @@ namespace CityForgeV3.World
             TimeOfDayPreset preset) => preset switch
         {
             TimeOfDayPreset.Morning => new(new(-0.06f, -0.12f), new(1.15f, 0.36f),
-                0.08f, new(-1.45f, -0.34f), new(5.375f, 1.675f), 22f, 0.20f),
+                0.056f, new(-1.45f, -0.34f), new(5.375f, 1.675f), 22f, 0.14f),
             TimeOfDayPreset.Noon => new(new(0f, -0.10f), new(1f, 0.30f),
                 0.05f, new(0.08f, -0.22f), new(2f, 0.82f), 0f, 0.18f),
             TimeOfDayPreset.Afternoon => new(new(0f, -0.12f), new(1.55f, 0.46f),
-                0.11f, new(0.12f, -0.70f), new(8.1f, 2.43f), -26f, 0.45f),
+                0.077f, new(0.12f, -0.70f), new(8.1f, 2.43f), -26f, 0.315f),
             TimeOfDayPreset.Evening => new(new(0.04f, -0.16f), new(1.8f, 0.56f),
                 0.14f, new(0.82f, -0.92f), new(7.8f, 2.05f), -33f, 0.54f),
             _ => new(new(0f, -0.08f), new(0.8f, 0.22f),
@@ -971,85 +979,242 @@ namespace CityForgeV3.World
             return _floraLitShadowReceiverMaterial;
         }
 
-        private Material FloraFrontPriorityMaterial()
+        private Material FloraHostFrontRecoveryMaterial(
+            IReadOnlyList<int> hostStencilReferences)
         {
-            if (_floraFrontPriorityMaterial != null)
-                return _floraFrontPriorityMaterial;
-            _floraFrontPriorityMaterial = new Material(FloraLitShadowReceiverMaterial())
+            var count = hostStencilReferences?.Count ?? 0;
+            var reference1 = count > 0 ? hostStencilReferences[0] : 0;
+            var reference2 = count > 1 ? hostStencilReferences[1] : 0;
+            var reference3 = count > 2 ? hostStencilReferences[2] : 0;
+            var reference4 = count > 3 ? hostStencilReferences[3] : 0;
+            var materialKey = reference1 |
+                reference2 << 8 |
+                reference3 << 16 |
+                reference4 << 24;
+            if (_floraHostFrontRecoveryMaterials.TryGetValue(
+                    materialKey, out var material))
+                return material;
+            var shader = Shader.Find(
+                "CityForgeV3/FrontFacadeLitShadowReceivingSprite");
+            if (shader == null)
+                throw new MissingReferenceException(
+                    "CityForge V3 host-facade flora shader is required.");
+            material = new Material(shader)
             {
-                name = "CF Native Lit Flora Front Priority"
+                name = $"CF Native Lit Flora Hosts {reference1}-{reference2}-" +
+                    $"{reference3}-{reference4} Recovery",
+                renderQueue = 3001
             };
-            _floraFrontPriorityMaterial.SetFloat("_ZTest",
-                (float)UnityEngine.Rendering.CompareFunction.Always);
-            return _floraFrontPriorityMaterial;
+            material.SetFloat("_Cutoff", 0.02f);
+            material.SetFloat("_ShadowFloor", 0.38f);
+            material.SetFloat("_ZTest",
+                (float)UnityEngine.Rendering.CompareFunction.LessEqual);
+            material.SetFloat("_BuildingHostStencilRef", reference1);
+            material.SetFloat("_BuildingHostStencilRef2", reference2);
+            material.SetFloat("_BuildingHostStencilRef3", reference3);
+            material.SetFloat("_BuildingHostStencilRef4", reference4);
+            _floraHostFrontRecoveryMaterials.Add(materialKey, material);
+            return material;
         }
 
-        private bool IsBeyondNearestBuildingFront(Vector3 localPosition)
+        public static bool TryBuildingOcclusionStencilReference(
+            int buildingIndex, out int stencilReference)
         {
-            var nearestDistance = float.PositiveInfinity;
-            var isBeyondFront = false;
-            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
+            if (buildingIndex < 0 ||
+                buildingIndex >= BuildingOcclusionStencilRecoverableSlots)
             {
+                stencilReference = 0;
+                return false;
+            }
+            stencilReference = (buildingIndex + 1) <<
+                BuildingOcclusionStencilShift;
+            return true;
+        }
+
+        public static int BuildingDepthOcclusionStencilReference(
+            int buildingIndex)
+        {
+            if (buildingIndex < 0) return 0;
+            return TryBuildingOcclusionStencilReference(
+                buildingIndex, out var reference)
+                ? reference
+                : BuildingOcclusionStencilOverflowReference;
+        }
+
+        private static void ConfigureBuildingDepthStencil(
+            Material material, int buildingIndex)
+        {
+            if (material == null) return;
+            material.SetFloat("_BuildingHostStencilRef",
+                BuildingDepthOcclusionStencilReference(buildingIndex));
+            material.SetFloat("_BuildingHostStencilWriteMask", 252f);
+        }
+
+        private static void ConfigureBuildingDepthStencil(
+            IEnumerable<Renderer> renderers, int buildingIndex)
+        {
+            if (renderers == null) return;
+            foreach (var renderer in renderers)
+                ConfigureBuildingDepthStencil(
+                    renderer != null ? renderer.sharedMaterial : null,
+                    buildingIndex);
+        }
+
+        public static Vector3 AuthoredBuildingFrontDirection(
+            HybridBuildingPackage package,
+            int placedRotationQuarterTurns)
+        {
+            if (package == null) return Vector3.forward;
+            var radians = package.EntranceFacingDegrees * Mathf.Deg2Rad;
+            var packageFront = new Vector3(
+                Mathf.Sin(radians), 0f, Mathf.Cos(radians));
+            return Quaternion.Euler(
+                0f, placedRotationQuarterTurns * 90f, 0f) * packageFront;
+        }
+
+        private static bool TryGetVisibleBuildingFrontApronMetrics(
+            Vector3 localPosition,
+            Vector3 buildingPosition,
+            HybridBuildingPackage package,
+            int placedRotationQuarterTurns,
+            Vector3 localTowardCameraDirection,
+            out float absoluteFrontPlaneDistance,
+            out float absoluteLateralDistance)
+        {
+            absoluteFrontPlaneDistance = float.PositiveInfinity;
+            absoluteLateralDistance = float.PositiveInfinity;
+            if (package == null) return false;
+            var rotation = Quaternion.Euler(
+                0f, placedRotationQuarterTurns * 90f, 0f);
+            var relative = Quaternion.Inverse(rotation) *
+                (localPosition - buildingPosition);
+            var cameraDirection = localTowardCameraDirection;
+            cameraDirection.y = 0f;
+            if (cameraDirection.sqrMagnitude <= 0.0001f) return false;
+            cameraDirection.Normalize();
+            var front = Quaternion.Inverse(rotation) * cameraDirection;
+            front.y = 0f;
+            front.Normalize();
+            var lateral = new Vector3(front.z, 0f, -front.x);
+            var halfWidth = package.WidthMeters * 0.5f;
+            var halfDepth = package.DepthMeters * 0.5f;
+            var lateralOffset = Mathf.Abs(Vector3.Dot(relative, lateral));
+
+            // A shallow interior band absorbs small registration differences
+            // between the visible facade/sidewalk seam and its semantic
+            // footprint. Deeper anchors remain physically hidden. For an
+            // exterior anchor, classify the closest point on the footprint.
+            // If the vector from that surface point to the anchor points
+            // toward the camera, this building is behind the anchor. This
+            // handles billboard width beside a facade: the trunk's infinitely
+            // thin ground ray can miss the footprint even while the canopy is
+            // visibly covered by that building. The host stencil still limits
+            // recovery to pixels actually occluded by this one building.
+            if (Mathf.Abs(relative.x) <= halfWidth &&
+                Mathf.Abs(relative.z) <= halfDepth)
+            {
+                var distanceToCameraFacingSurface = float.PositiveInfinity;
+                if (front.x > BuildingCameraFrontToleranceMeters)
+                    distanceToCameraFacingSurface = Mathf.Min(
+                        distanceToCameraFacingSurface,
+                        (halfWidth - relative.x) / front.x);
+                else if (front.x < -BuildingCameraFrontToleranceMeters)
+                    distanceToCameraFacingSurface = Mathf.Min(
+                        distanceToCameraFacingSurface,
+                        (-halfWidth - relative.x) / front.x);
+                if (front.z > BuildingCameraFrontToleranceMeters)
+                    distanceToCameraFacingSurface = Mathf.Min(
+                        distanceToCameraFacingSurface,
+                        (halfDepth - relative.z) / front.z);
+                else if (front.z < -BuildingCameraFrontToleranceMeters)
+                    distanceToCameraFacingSurface = Mathf.Min(
+                        distanceToCameraFacingSurface,
+                        (-halfDepth - relative.z) / front.z);
+
+                if (distanceToCameraFacingSurface >
+                    BuildingCameraFrontInteriorRecoveryMeters)
+                    return false;
+                absoluteFrontPlaneDistance = distanceToCameraFacingSurface;
+                absoluteLateralDistance = lateralOffset;
+                return true;
+            }
+
+            var closestSurfacePoint = new Vector2(
+                Mathf.Clamp(relative.x, -halfWidth, halfWidth),
+                Mathf.Clamp(relative.z, -halfDepth, halfDepth));
+            var surfaceToAnchor =
+                new Vector2(relative.x, relative.z) - closestSurfacePoint;
+            var cameraSideDistance = Vector2.Dot(
+                surfaceToAnchor, new Vector2(front.x, front.z));
+            if (cameraSideDistance <= BuildingCameraFrontToleranceMeters)
+                return false;
+
+            absoluteFrontPlaneDistance = surfaceToAnchor.magnitude;
+            absoluteLateralDistance = lateralOffset;
+            return true;
+        }
+
+        public static bool IsInVisibleBuildingFrontApron(
+            Vector3 localPosition,
+            Vector3 buildingPosition,
+            HybridBuildingPackage package,
+            int placedRotationQuarterTurns,
+            Vector3 localTowardCameraDirection) =>
+            TryGetVisibleBuildingFrontApronMetrics(
+                localPosition, buildingPosition, package,
+                placedRotationQuarterTurns, localTowardCameraDirection,
+                out _, out _);
+
+        private bool TryResolveVisibleBuildingFrontHosts(
+            Vector3 localPosition, List<int> hostStencilReferences)
+        {
+            hostStencilReferences.Clear();
+            _floraFrontHostCandidates.Clear();
+            if (_camera == null) return false;
+            // Orthographic projection uses one parallel view ray everywhere.
+            // Deriving a direction from each building to the camera position
+            // incorrectly changes facade eligibility across a wide lot.
+            var localTowardCameraDirection =
+                transform.InverseTransformDirection(-_camera.transform.forward);
+            if (localTowardCameraDirection.sqrMagnitude <= 0.0001f)
+                return false;
+            localTowardCameraDirection.Normalize();
+            var buildings = _session.Data.Buildings ?? new List<PlacedBuilding>();
+            for (var index = 0; index < buildings.Count; index++)
+            {
+                if (!TryBuildingOcclusionStencilReference(
+                        index, out var stencilReference))
+                    continue;
+                var building = buildings[index];
                 var catalogEntry = BuildingCatalog.Find(building.BuildingId);
                 var package = HybridBuildingPackageRegistry.Load(
                     catalogEntry.PackageResourcePath);
-                var rotation = Quaternion.Euler(
-                    0f, building.RotationQuarterTurns * 90f, 0f);
-                var relative = Quaternion.Inverse(rotation) *
-                    (localPosition - new Vector3(building.CellX, 0f, building.CellZ));
-                var halfWidth = package.WidthMeters * 0.5f;
-                var halfDepth = package.DepthMeters * 0.5f;
-                var outsideX = Mathf.Max(Mathf.Abs(relative.x) - halfWidth, 0f);
-                var outsideZ = Mathf.Max(Mathf.Abs(relative.z) - halfDepth, 0f);
-                var distance = outsideX * outsideX + outsideZ * outsideZ;
-                if (distance >= nearestDistance) continue;
-
-                var cameraDirection = _camera == null
-                    ? Vector3.forward
-                    : _camera.transform.position - transform.TransformPoint(
-                        new Vector3(building.CellX, 0f, building.CellZ));
-                cameraDirection.y = 0f;
-                cameraDirection.Normalize();
-                var front = Quaternion.Inverse(rotation) * cameraDirection;
-                var frontEdge = Mathf.Abs(front.x) * halfWidth +
-                    Mathf.Abs(front.z) * halfDepth;
-                nearestDistance = distance;
-                isBeyondFront = Vector3.Dot(relative, front) > frontEdge + 0.01f;
+                var buildingPosition = new Vector3(
+                    building.CellX, 0f, building.CellZ);
+                if (!TryGetVisibleBuildingFrontApronMetrics(
+                        localPosition, buildingPosition, package,
+                        building.RotationQuarterTurns,
+                        localTowardCameraDirection,
+                        out var frontDistance,
+                        out var lateralDistance))
+                    continue;
+                _floraFrontHostCandidates.Add(
+                    (frontDistance, lateralDistance, stencilReference));
             }
-            return isBeyondFront;
-        }
-
-        private bool IsOnNearestBuildingCameraFacingSide(Vector3 localPosition)
-        {
-            var nearestDistance = float.PositiveInfinity;
-            var isCameraFacing = false;
-            foreach (var building in _session.Data.Buildings ?? new List<PlacedBuilding>())
+            _floraFrontHostCandidates.Sort((first, second) =>
             {
-                var catalogEntry = BuildingCatalog.Find(building.BuildingId);
-                var package = HybridBuildingPackageRegistry.Load(
-                    catalogEntry.PackageResourcePath);
-                var rotation = Quaternion.Euler(
-                    0f, building.RotationQuarterTurns * 90f, 0f);
-                var relative = Quaternion.Inverse(rotation) *
-                    (localPosition - new Vector3(building.CellX, 0f, building.CellZ));
-                var halfWidth = package.WidthMeters * 0.5f;
-                var halfDepth = package.DepthMeters * 0.5f;
-                var outsideX = Mathf.Max(Mathf.Abs(relative.x) - halfWidth, 0f);
-                var outsideZ = Mathf.Max(Mathf.Abs(relative.z) - halfDepth, 0f);
-                var distance = outsideX * outsideX + outsideZ * outsideZ;
-                if (distance >= nearestDistance) continue;
-
-                var cameraDirection = _camera == null
-                    ? Vector3.forward
-                    : _camera.transform.position - transform.TransformPoint(
-                        new Vector3(building.CellX, 0f, building.CellZ));
-                cameraDirection.y = 0f;
-                cameraDirection.Normalize();
-                var front = Quaternion.Inverse(rotation) * cameraDirection;
-                nearestDistance = distance;
-                isCameraFacing = Vector3.Dot(relative, front) >= 0f;
-            }
-            return isCameraFacing;
+                var distance = first.distance.CompareTo(second.distance);
+                if (distance != 0) return distance;
+                var lateral = first.lateral.CompareTo(second.lateral);
+                if (lateral != 0) return lateral;
+                return first.stencil.CompareTo(second.stencil);
+            });
+            for (var index = 0;
+                 index < Mathf.Min(4, _floraFrontHostCandidates.Count);
+                 index++)
+                hostStencilReferences.Add(
+                    _floraFrontHostCandidates[index].stencil);
+            return hostStencilReferences.Count > 0;
         }
 
         private Color FloraColorForTime(float alpha)
@@ -1074,7 +1239,7 @@ namespace CityForgeV3.World
         public void Rotate(int direction)
         {
             _facing = _buildingPackage.WrapFacing(_facing + direction);
-            ApplyCameraFacing();
+            ApplyCameraFacing(true);
             NotifyStateChanged();
         }
 
@@ -1114,7 +1279,7 @@ namespace CityForgeV3.World
                 InspectionMode = _inspectionModeBeforeTopDown;
             }
             ApplySessionState();
-            ApplyCameraFacing();
+            ApplyCameraFacing(false);
             NotifyStateChanged();
         }
 
@@ -1127,7 +1292,10 @@ namespace CityForgeV3.World
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
+            var timeChanged = TimeOfDay != preset;
             TimeOfDay = preset;
+            if (timeChanged)
+                ClearRoadWetness();
             ApplyTimeOfDay();
             NotifyStateChanged();
         }
@@ -1255,7 +1423,9 @@ namespace CityForgeV3.World
         public void SetLotDimensions(int widthCells, int depthCells)
         {
             _session.SetLotDimensions(widthCells, depthCells);
-            if (HasBuilding) MoveBuildingTo(_session.Data.CellX, _session.Data.CellZ);
+            if (HasBuilding) MoveBuildingTo(
+                Mathf.RoundToInt(_session.Data.CellX),
+                Mathf.RoundToInt(_session.Data.CellZ));
             ResizeGround();
             ApplyBaseTexturePresentation();
             BuildGrid();
@@ -1494,34 +1664,41 @@ namespace CityForgeV3.World
         public void SetZoomLevel(LotZoomLevel level)
         {
             ZoomLevel = level;
+            // Zoom is a lens-only operation. Never recompute the camera target,
+            // rotation, translation, or projected bounds here.
             ApplyZoomLevel();
-            ApplyCameraFacing();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+            ApplyCharacterZoomVisibility();
             NotifyStateChanged();
         }
 
 #if UNITY_EDITOR
+        public void EnsureBuiltForQa()
+        {
+            if (_session == null)
+                Build();
+        }
+
         public void SetQaOrthographicSize(float orthographicSize)
         {
             if (_camera != null)
                 _camera.orthographicSize = orthographicSize;
+        }
+
+        public void SetQaCameraPan(float x, float z)
+        {
+            _cameraPanWorld = new Vector3(x, 0f, z);
+            ApplyCameraFacing(true);
         }
 #endif
 
         public void PanCameraViewport(int horizontal, int vertical)
         {
             if (_camera == null || (horizontal == 0 && vertical == 0)) return;
-            var groundRight = Vector3.ProjectOnPlane(_camera.transform.right, Vector3.up).normalized;
-            var groundUp = Vector3.ProjectOnPlane(_camera.transform.up, Vector3.up).normalized;
             const float stepMeters = 5f;
-            // Move the camera opposite the requested screen direction so the
-            // entire lot appears to move with the arrow.
-            _cameraPanWorld += (-groundRight * horizontal - groundUp * vertical) * stepMeters;
-            _cameraPanWorld.x = Mathf.Clamp(_cameraPanWorld.x,
-                -LotWidthMeters * 0.5f, LotWidthMeters * 0.5f);
-            _cameraPanWorld.z = Mathf.Clamp(_cameraPanWorld.z,
-                -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f);
-            ApplyCameraFacing();
-            NotifyStateChanged();
+            PanCameraInScreenPlane(horizontal * stepMeters, vertical * stepMeters);
+            ApplyCameraFacing(true);
         }
 
         public void PanCameraViewport(Vector2 screenDelta, Vector2 viewportSize)
@@ -1529,23 +1706,32 @@ namespace CityForgeV3.World
             if (_camera == null || screenDelta.sqrMagnitude < 0.01f ||
                 viewportSize.y <= 1f) return;
 
-            var groundRight = Vector3.ProjectOnPlane(
-                _camera.transform.right, Vector3.up).normalized;
-            var groundUp = Vector3.ProjectOnPlane(
-                _camera.transform.up, Vector3.up).normalized;
             var metersPerPixel =
                 (2f * _camera.orthographicSize) / viewportSize.y;
 
             // UI Toolkit Y grows downward. Move the camera opposite the drag
             // so the lot follows the hand in both screen axes.
-            _cameraPanWorld +=
-                -groundRight * screenDelta.x * metersPerPixel +
-                groundUp * screenDelta.y * metersPerPixel;
-            _cameraPanWorld.x = Mathf.Clamp(_cameraPanWorld.x,
+            PanCameraInScreenPlane(
+                screenDelta.x * metersPerPixel,
+                -screenDelta.y * metersPerPixel);
+            ApplyCameraFacing(true);
+        }
+
+        private void PanCameraInScreenPlane(float screenRight, float screenUp)
+        {
+            // Orthographic panning must remain parallel to the image plane.
+            // Projecting camera-up onto the ground adds a camera-forward
+            // component; repeated vertical pans then carry stationary billboard
+            // buildings through the near plane one at a time.
+            var cameraRight = _camera.transform.right;
+            var cameraUp = _camera.transform.up;
+            var next = _cameraPanWorld -
+                       cameraRight * screenRight - cameraUp * screenUp;
+            var rightOffset = Mathf.Clamp(Vector3.Dot(next, cameraRight),
                 -LotWidthMeters * 0.5f, LotWidthMeters * 0.5f);
-            _cameraPanWorld.z = Mathf.Clamp(_cameraPanWorld.z,
+            var upOffset = Mathf.Clamp(Vector3.Dot(next, cameraUp),
                 -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f);
-            ApplyCameraFacing();
+            _cameraPanWorld = cameraRight * rightOffset + cameraUp * upOffset;
         }
 
         public void SetCameraPanInteraction(bool active)
@@ -1561,6 +1747,7 @@ namespace CityForgeV3.World
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
             _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
             _floraDragActive = false;
             _propDragActive = false;
             if (_roadCursor != null) _roadCursor.gameObject.SetActive(false);
@@ -1575,6 +1762,8 @@ namespace CityForgeV3.World
         public void DeselectAll()
         {
             ClearObjectHover();
+            _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
             ActiveObjectSelection = LotObjectSelectionKind.None;
             _session.Select(false);
             RoadCursorSelected = false;
@@ -1588,9 +1777,21 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
+        private void ReconcileBuildingFocusBeforeObjectSwitch()
+        {
+            if (!_buildingFocusFreezeActive) return;
+            _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
+            _session.Select(false);
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            ApplySessionState();
+        }
+
         public void SetBuildingEditorContext(bool selectable, bool faded)
         {
             var enteringBuildingEditor = selectable && !_buildingAuthoringActive;
+            var leavingFocusedBuildingEditor = !selectable &&
+                _buildingAuthoringActive && _buildingFocusFreezeActive;
             _buildingsSelectable = true;
             _buildingAuthoringActive = selectable;
             if (enteringBuildingEditor && !TopDownViewEnabled)
@@ -1607,12 +1808,16 @@ namespace CityForgeV3.World
             _presentation?.SetOpacity(artworkOpacity);
             foreach (var presentation in _otherBuildingPresentations)
                 presentation?.SetOpacity(artworkOpacity);
-            if (selectable)
+            if (leavingFocusedBuildingEditor)
+            {
+                _buildingDragActive = false;
+                _buildingFocusFreezeActive = false;
+                ApplySessionState();
+            }
+            else if (enteringBuildingEditor)
                 ApplySessionState();
             if (_selectionFootprint != null)
-                _selectionFootprint.gameObject.SetActive(
-                    HasBuilding && IsSelected &&
-                    ActiveObjectSelection == LotObjectSelectionKind.Building);
+                UpdateSelectedBuildingSelectionVisuals(HasBuilding);
         }
 
         public void SetCirculationEditorContext(bool active)
@@ -1633,10 +1838,24 @@ namespace CityForgeV3.World
             if (!TryFindBuildingPlacement(_buildingPackage, out var cell)) return false;
             _session.AddBuilding(buildingId, cell.x, cell.y);
             ApplySessionState();
-            // Package selection happens before the session contains the new
-            // building. Reframe again after its artwork is visible so tall
-            // hybrid renders participate in the real Lot Editor fit.
-            ApplyCameraFacing();
+            // Adding content must not steal the player's framing. The camera
+            // is fit when a lot is opened, then remains entirely user-owned.
+            NotifyStateChanged();
+            return true;
+        }
+
+        public bool BeginBuildingPlacementAtCenter(string buildingId)
+        {
+            SelectCatalogBuilding(buildingId);
+            if (!TryFindBuildingPlacement(_buildingPackage, out var cell)) return false;
+            _session.AddBuilding(buildingId, cell.x, cell.y);
+            ActiveObjectSelection = LotObjectSelectionKind.Building;
+            SelectedFloraIndex = -1;
+            SelectedPropIndex = -1;
+            _buildingDragActive = true;
+            _buildingFocusFreezeActive = true;
+            _buildingDragOffset = Vector2.zero;
+            ApplySessionState();
             NotifyStateChanged();
             return true;
         }
@@ -1654,10 +1873,109 @@ namespace CityForgeV3.World
         public void NudgeSelected(int deltaX, int deltaZ)
         {
             MoveBuildingTo(
-                _session.Data.CellX + deltaX,
-                _session.Data.CellZ + deltaZ);
+                Mathf.RoundToInt(_session.Data.CellX) + deltaX,
+                Mathf.RoundToInt(_session.Data.CellZ) + deltaZ);
             ApplySessionState();
             NotifyStateChanged();
+        }
+
+        public bool NudgeSelectedBuildingByScreenPixels(int horizontal, int vertical)
+        {
+            if (!HasBuilding || _buildingPackage == null || _camera == null ||
+                (horizontal == 0 && vertical == 0)) return false;
+            if (!TryGroundDeltaForArrowKey(horizontal, vertical, out var delta))
+                return false;
+            var odd = Mathf.Abs(_session.Data.RotationQuarterTurns) % 2 == 1;
+            var width = odd ? _buildingPackage.DepthMeters : _buildingPackage.WidthMeters;
+            var depth = odd ? _buildingPackage.WidthMeters : _buildingPackage.DepthMeters;
+            var minimumX = -LotWidthMeters * 0.5f + width * 0.5f;
+            var maximumX = LotWidthMeters * 0.5f - width * 0.5f;
+            var minimumZ = -LotDepthMeters * 0.5f + depth * 0.5f;
+            var maximumZ = LotDepthMeters * 0.5f - depth * 0.5f;
+            if (minimumX > maximumX) minimumX = maximumX = 0f;
+            if (minimumZ > maximumZ) minimumZ = maximumZ = 0f;
+            var targetX = Mathf.Clamp(_session.Data.CellX + delta.x,
+                minimumX, maximumX);
+            var targetZ = Mathf.Clamp(_session.Data.CellZ + delta.z,
+                minimumZ, maximumZ);
+            if (Mathf.Approximately(targetX, _session.Data.CellX) &&
+                Mathf.Approximately(targetZ, _session.Data.CellZ)) return false;
+            _session.Move(targetX, targetZ);
+            if (_buildingFocusFreezeActive)
+                ApplySelectedBuildingPositionOnly();
+            else
+                ApplySessionState();
+            return true;
+        }
+
+        private void ApplySelectedBuildingPositionOnly()
+        {
+            var position = new Vector3(
+                _session.Data.CellX, 0f, _session.Data.CellZ);
+            var previousPosition = _presentation != null
+                ? _presentation.transform.position
+                : _proxy != null
+                    ? _proxy.position
+                    : position;
+            var worldDelta = position - previousPosition;
+            if (_presentation != null) _presentation.transform.position = position;
+            if (_proxy != null) _proxy.position = position;
+            if (_buildingDepthOccluder != null)
+                _buildingDepthOccluder.position = position;
+            if (_projectedShadow != null) _projectedShadow.position = position;
+            if (_selectionFootprint != null)
+                _selectionFootprint.position = position +
+                    new Vector3(0f, 0.025f, 0f);
+            if (_registrationDiagnostics != null)
+                _registrationDiagnostics.position = position;
+            TranslateBuildingPropPresentationsForBuilding(
+                _session.SelectedBuildingIndex, worldDelta);
+            _buildingFocusLiveMoveCountForQa++;
+        }
+
+        private void ApplySelectedBuildingRotationOnly()
+        {
+            ApplySelectedBuildingPositionOnly();
+            var rotation = BuildingRotation();
+            var primitiveRotation = PrimitiveRotation(
+                _buildingPackage, _session.Data.RotationQuarterTurns);
+            if (_proxy != null) _proxy.rotation = primitiveRotation;
+            if (_buildingDepthOccluder != null)
+                _buildingDepthOccluder.rotation = primitiveRotation;
+            if (_registrationDiagnostics != null)
+                _registrationDiagnostics.rotation = primitiveRotation;
+            ApplyPresentationFacing();
+            if (_presentation != null && _buildingPackage != null)
+                _presentation.RegisterToProxy(
+                    _proxyLocalVertices, primitiveRotation);
+            if (_selectionFootprint != null)
+                _selectionFootprint.rotation = rotation;
+            RepositionBuildingPropPresentationsForBuilding(
+                _session.SelectedBuildingIndex);
+            UpdateProjectedShadow();
+        }
+
+        private bool TryGroundDeltaForArrowKey(int horizontal, int vertical,
+            out Vector3 delta)
+        {
+            delta = Vector3.zero;
+            if (_camera == null) return false;
+            var center = new Vector2(
+                Mathf.Max(1, _camera.pixelWidth) * 0.5f,
+                Mathf.Max(1, _camera.pixelHeight) * 0.5f);
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            var fromRay = _camera.ScreenPointToRay(center);
+            // One arrow press maps to one camera pixel. The previous 0.2
+            // subpixel calibration could quantize away at common Game View
+            // resolutions and made selected buildings appear immovable.
+            const float displayedPixelScale = 1f;
+            var toRay = _camera.ScreenPointToRay(center + new Vector2(
+                horizontal * displayedPixelScale,
+                vertical * displayedPixelScale));
+            if (!ground.Raycast(fromRay, out var fromDistance) ||
+                !ground.Raycast(toRay, out var toDistance)) return false;
+            delta = toRay.GetPoint(toDistance) - fromRay.GetPoint(fromDistance);
+            return true;
         }
 
         public void ToggleGridVisibility()
@@ -1692,8 +2010,12 @@ namespace CityForgeV3.World
                         _session.Data.Buildings[_session.SelectedBuildingIndex],
                         direction);
             }
-            ApplySessionState();
-            NotifyStateChanged();
+            var focused = _buildingFocusFreezeActive;
+            if (focused)
+                ApplySelectedBuildingRotationOnly();
+            else
+                ApplySessionState();
+            if (!focused) NotifyStateChanged();
         }
 
         public bool DeleteSelectedBuilding()
@@ -1704,12 +2026,10 @@ namespace CityForgeV3.World
             _session.Delete();
             _session.Select(false);
             ClearObjectHover();
+            _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
             ActiveObjectSelection = LotObjectSelectionKind.None;
             ApplySessionState();
-            // A tall package may have raised the camera target substantially.
-            // Restore framing from the remaining lot/buildings immediately;
-            // otherwise an empty lot can remain below the viewport.
-            ApplyCameraFacing();
             NotifyStateChanged();
             return true;
         }
@@ -1718,7 +2038,7 @@ namespace CityForgeV3.World
 
         public void RefreshCameraFraming()
         {
-            ApplyCameraFacing();
+            ApplyCameraFacing(false);
         }
 
         public void NewEmptyLot(string name = "Untitled Lot",
@@ -1730,6 +2050,8 @@ namespace CityForgeV3.World
         public void NewEmptyLot(string name, LotType lotType,
             int widthCells, int depthCells)
         {
+            _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
             _session.NewLot(name, lotType, Mathf.Max(widthCells, depthCells) * 10);
             _session.SetLotDimensions(widthCells, depthCells);
             _session.MarkClean();
@@ -1797,6 +2119,7 @@ namespace CityForgeV3.World
 
         public List<string> MissingDependencies(string lotId, string root = null)
         {
+            _vehicleType ??= VehicleTypePackage.LoadModelT();
             var available = new HashSet<string> { _vehicleType.Id };
             foreach (var package in RoadPiecePackageCatalog.Packages)
                 available.Add(package.Id);
@@ -1814,6 +2137,8 @@ namespace CityForgeV3.World
                 lotId = saves[0].LotId;
             }
             if (MissingDependencies(lotId, root).Count > 0) return false;
+            _buildingDragActive = false;
+            _buildingFocusFreezeActive = false;
             var loaded = LotSaveStore.Load(_session, lotId, root);
             if (loaded && _session.Data.HasBuilding)
             {
@@ -1821,6 +2146,8 @@ namespace CityForgeV3.World
             }
             if (loaded)
             {
+                _buildingDragActive = false;
+                _buildingFocusFreezeActive = false;
                 // Restore changes the data dimensions, but the existing world
                 // was built at the previous lot size. Rebuild every piece of
                 // size-dependent presentation without mutating the restored
@@ -1969,7 +2296,6 @@ namespace CityForgeV3.World
                     RoadPlacementModel.MinimumCellForLot(LotDepthMeters),
                     RoadPlacementModel.MaximumCellForLot(LotDepthMeters)));
             ApplyRoadCursor();
-            if (ZoomLevel == LotZoomLevel.Detail) ApplyCameraFacing();
             NotifyStateChanged();
         }
 
@@ -1998,7 +2324,6 @@ namespace CityForgeV3.World
                 _selectedRoadCenterMarkingStyle = selected.CenterMarkingStyle;
             }
             ApplyRoadCursor();
-            if (notify && ZoomLevel == LotZoomLevel.Detail) ApplyCameraFacing();
             if (notify) NotifyStateChanged();
             return true;
         }
@@ -2047,19 +2372,22 @@ namespace CityForgeV3.World
             SelectedPropIndex = -1;
             ApplyFloraSelection();
             ApplyPropSelection();
+            var selectionChanged = hitIndex != _session.SelectedBuildingIndex ||
+                !_session.IsSelected || !_buildingFocusFreezeActive;
             if (hitIndex != _session.SelectedBuildingIndex)
             {
                 _session.SelectBuilding(hitIndex);
                 EnsureBuildingPackage(_session.Data.BuildingId);
-                ApplySessionState();
             }
 
             _buildingDragActive = true;
+            _buildingFocusFreezeActive = true;
             _buildingDragOffset = new Vector2(
                 _session.Data.CellX - lotPoint.x,
                 _session.Data.CellZ - lotPoint.z);
             _session.Select(true);
-            ApplySessionState();
+            if (selectionChanged)
+                ApplySessionState();
             return true;
         }
 
@@ -2072,6 +2400,11 @@ namespace CityForgeV3.World
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
             var buildingPropIndex = BuildingPropPresentationIndexAtCameraPixel(pixel);
+            if (_buildingFocusFreezeActive && buildingPropIndex >= 0)
+            {
+                ReconcileBuildingFocusBeforeObjectSwitch();
+                buildingPropIndex = BuildingPropPresentationIndexAtCameraPixel(pixel);
+            }
             if (buildingPropIndex >= 0 && BeginBuildingPropDragFromPanel(
                     buildingPropIndex, panelPosition, panelSize))
                 return LotObjectSelectionKind.BuildingProp;
@@ -2116,6 +2449,10 @@ namespace CityForgeV3.World
                     new Vector3(prop.PositionX, 0f, prop.PositionZ));
             }
 
+            if (_buildingFocusFreezeActive &&
+                kind is LotObjectSelectionKind.Flora or LotObjectSelectionKind.Prop)
+                ReconcileBuildingFocusBeforeObjectSwitch();
+
             return kind switch
             {
                 LotObjectSelectionKind.Building when
@@ -2131,7 +2468,8 @@ namespace CityForgeV3.World
         public LotObjectSelectionKind UpdateObjectHoverFromPanel(
             Vector2 panelPosition, Vector2 panelSize, bool suppress = false)
         {
-            if (_cameraPanInteractionActive || suppress || _buildingDragActive ||
+            if ((_buildingFocusFreezeActive && !_buildingDragActive) ||
+                _cameraPanInteractionActive || suppress || _buildingDragActive ||
                 _floraDragActive || _propDragActive ||
                 BuildingPropDragActive)
             {
@@ -2289,29 +2627,11 @@ namespace CityForgeV3.World
             HybridBuildingPresentation presentation,
             Vector2 pixel)
         {
-            if (_camera == null || presentation == null) return false;
-            var renderers = presentation.GetComponentsInChildren<Renderer>();
-            var hasBounds = false;
-            var minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
-            var maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
-            foreach (var renderer in renderers)
-            {
-                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
-                var bounds = renderer.bounds;
-                for (var x = -1; x <= 1; x += 2)
-                for (var y = -1; y <= 1; y += 2)
-                for (var z = -1; z <= 1; z += 2)
-                {
-                    var screen = _camera.WorldToScreenPoint(
-                        bounds.center + Vector3.Scale(bounds.extents, new Vector3(x, y, z)));
-                    if (screen.z <= 0f) continue;
-                    minimum = Vector2.Min(minimum, screen);
-                    maximum = Vector2.Max(maximum, screen);
-                    hasBounds = true;
-                }
-            }
-            return hasBounds && pixel.x >= minimum.x && pixel.x <= maximum.x &&
-                pixel.y >= minimum.y && pixel.y <= maximum.y;
+            // A billboard's renderer bounds include its entire transparent
+            // rectangle. Hit the tight alpha-derived sprite mesh instead so
+            // empty sky/ground around the artwork cannot select the building.
+            return presentation != null &&
+                presentation.ContainsVisibleArtworkPixel(_camera, pixel);
         }
 
         public bool DragBuildingFromPanel(Vector2 panelPosition, Vector2 panelSize)
@@ -2324,11 +2644,7 @@ namespace CityForgeV3.World
             var cellZ = Mathf.RoundToInt(lotPoint.z + _buildingDragOffset.y);
             if (cellX == _session.Data.CellX && cellZ == _session.Data.CellZ) return false;
             if (!MoveBuildingTo(cellX, cellZ)) return false;
-            var cameraPosition = _camera != null ? _camera.transform.position : Vector3.zero;
-            var cameraRotation = _camera != null ? _camera.transform.rotation : Quaternion.identity;
-            var cameraSize = _camera != null ? _camera.orthographicSize : 0f;
-            ApplySessionState();
-            RestoreCameraFraming(cameraPosition, cameraRotation, cameraSize);
+            ApplySelectedBuildingPositionOnly();
             return true;
         }
 
@@ -2394,42 +2710,18 @@ namespace CityForgeV3.World
             int rotationQuarterTurns,
             int ignoredIndex)
         {
-            var odd = Mathf.Abs(rotationQuarterTurns) % 2 == 1;
-            var width = odd ? package.DepthMeters : package.WidthMeters;
-            var depth = odd ? package.WidthMeters : package.DepthMeters;
-            var buildings = _session.Data.Buildings ?? new List<PlacedBuilding>();
-            for (var index = 0; index < buildings.Count; index++)
-            {
-                if (index == ignoredIndex) continue;
-                var other = buildings[index];
-                var otherPackage = HybridBuildingPackageRegistry.Load(
-                    BuildingCatalog.Find(other.BuildingId).PackageResourcePath);
-                var otherOdd = Mathf.Abs(other.RotationQuarterTurns) % 2 == 1;
-                var otherWidth = otherOdd ? otherPackage.DepthMeters : otherPackage.WidthMeters;
-                var otherDepth = otherOdd ? otherPackage.WidthMeters : otherPackage.DepthMeters;
-                if (Mathf.Abs(cellX - other.CellX) < (width + otherWidth) * 0.5f + 0.5f &&
-                    Mathf.Abs(cellZ - other.CellZ) < (depth + otherDepth) * 0.5f + 0.5f)
-                    return false;
-            }
-            foreach (var flora in _session.Data.Flora ?? new List<PlacedFlora>())
-                if (Mathf.Abs(cellX - flora.PositionX) < width * 0.5f + 0.65f &&
-                    Mathf.Abs(cellZ - flora.PositionZ) < depth * 0.5f + 0.65f)
-                    return false;
+            // Placement inside the lot is intentionally permissive. Buildings,
+            // trees, props, and sidewalks are authoring layers rather than hard
+            // physics obstacles; overlap is a visual choice for the lot maker.
             return true;
         }
 
         public bool EndBuildingDrag()
         {
             if (!_buildingDragActive) return false;
-            var cameraPosition = _camera != null ? _camera.transform.position : Vector3.zero;
-            var cameraRotation = _camera != null ? _camera.transform.rotation : Quaternion.identity;
-            var cameraSize = _camera != null ? _camera.orthographicSize : 0f;
             _buildingDragActive = false;
             if (_buildingAuthoringActive && !TopDownViewEnabled)
                 InspectionMode = BuildingInspectionMode.Artwork;
-            ApplySessionState();
-            RestoreCameraFraming(cameraPosition, cameraRotation, cameraSize);
-            NotifyStateChanged();
             return true;
         }
 
@@ -2727,6 +3019,7 @@ namespace CityForgeV3.World
             _groundRenderer = ground.GetComponent<Renderer>();
             _groundRenderer.material =
                 ShadowReceivingLotMaterial(GroundColor);
+            _groundRenderer.receiveShadows = true;
             ApplyTimeOfDay();
         }
 
@@ -2735,6 +3028,7 @@ namespace CityForgeV3.World
             if (_ground == null) return;
             _ground.localScale = new Vector3(
                 (LotWidthMeters + 4f) / 10f, 1f, (LotDepthMeters + 4f) / 10f);
+            ResizeSnowGroundCover();
         }
 
         private void ClampRoadCursorToLot()
@@ -2838,6 +3132,7 @@ namespace CityForgeV3.World
                 new Color(1f, 0.67f, 0.08f, 0.12f), 2004);
             SeedRoadVerticalSlice();
             RebuildRoadArtwork();
+            BuildStreetcarTrackLayer();
             RebuildOutsideConnectorMarkers();
             ApplyRoadCursor();
             ApplyLotPlanningState();
@@ -2891,6 +3186,7 @@ namespace CityForgeV3.World
                     piece.RotationQuarterTurns);
                 AddRoadExperimentHighlight(piece);
             }
+            RebuildStreetcarTracks();
         }
 
         private Vector2 RoadArtworkCenter(PlacedRoadPiece piece, RoadPiecePackage package)
@@ -3083,7 +3379,10 @@ namespace CityForgeV3.World
             {
                 name = $"{package.DisplayName} {topology} Overlay",
                 mainTexture = texture,
-                renderQueue = 2452
+                // Roads are ground color. They must draw before invisible
+                // prop/building depth prepasses (2435/2440), otherwise those
+                // prepasses punch rectangular holes in exposed road pixels.
+                renderQueue = 2430
             };
             if (package.Id != RoadPiecePackage.LegacyPackageId)
             {
@@ -3232,7 +3531,7 @@ namespace CityForgeV3.World
         private Transform BuildTraveler(string name, Color color, float size)
         {
             var traveler = Cube(name, _circulationTravelerRoot, Vector3.up * 0.42f,
-                new Vector3(size, size, size), color);
+                new Vector3(size, size, size), color, true);
             traveler.GetComponent<Collider>().enabled = false;
             return traveler.transform;
         }
@@ -3306,6 +3605,8 @@ namespace CityForgeV3.World
             {
                 name = "CF Invisible Building Depth Occluder"
             };
+            ConfigureBuildingDepthStencil(
+                depthMaterial, _session.SelectedBuildingIndex);
             var depthInstance = Instantiate(proxyAsset, transform);
             depthInstance.name = "Hybrid Building Depth Occluder";
             _buildingDepthOccluder = depthInstance.transform;
@@ -3321,9 +3622,20 @@ namespace CityForgeV3.World
                 renderer.receiveShadows = false;
                 renderer.shadowCastingMode =
                     UnityEngine.Rendering.ShadowCastingMode.Off;
-                renderer.enabled =
-                    renderer.gameObject.name != "CF_ANCHOR_ENTRANCE";
+                renderer.enabled = IsPerceptualBuildingOccluder(renderer);
             }
+        }
+
+        private static bool IsPerceptualBuildingOccluder(Renderer renderer)
+        {
+            if (renderer == null) return false;
+            var objectName = renderer.gameObject.name;
+            // Foundations own placement, selection, occupancy, and grounding.
+            // They are deliberately excluded from the visual depth mask: an
+            // oblique camera ray can encounter the broad ground slab before a
+            // billboard's canopy and incorrectly hide the entire tree. Only
+            // authored above-ground massing may occlude presentation pixels.
+            return objectName.Contains("WALL") || objectName.Contains("ROOF");
         }
 
         private void CaptureProxyLocalVertices()
@@ -3430,7 +3742,7 @@ namespace CityForgeV3.World
             // receiver-compatible projection even when a ShadowsOnly proxy is
             // also active for lit receivers. Its geometry comes exclusively
             // from the current package's spatial contract below.
-            var visible = hasBuilding && rayDirection.y < -0.01f &&
+            var visible = hasBuilding && !IsRaining && rayDirection.y < -0.01f &&
                 TimeOfDay != TimeOfDayPreset.Night;
             shadow.gameObject.SetActive(visible);
             if (!visible)
@@ -3663,6 +3975,8 @@ namespace CityForgeV3.World
                     new Color(0.025f, 0.032f, 0.038f, 0.20f),
                 TimeOfDayPreset.Evening =>
                     new Color(0.035f, 0.042f, 0.050f, 0.28f),
+                TimeOfDayPreset.Morning or TimeOfDayPreset.Afternoon =>
+                    new Color(0.028f, 0.034f, 0.040f, 0.175f),
                 _ => new Color(0.028f, 0.034f, 0.040f, 0.25f)
             };
 
@@ -3812,7 +4126,46 @@ namespace CityForgeV3.World
                 new Vector3(-halfWidth, height, halfDepth),
                 new Vector3(-halfWidth, height, -halfDepth), material);
             _selectionFootprint = selection.transform;
+            BuildSelectedBuildingFrontMarker(selection.transform, material);
             _selectionFootprint.gameObject.SetActive(false);
+        }
+
+        private void BuildSelectedBuildingFrontMarker(
+            Transform selection,
+            Material material)
+        {
+            var marker = new GameObject(
+                "Selected Building Authored Front Direction").transform;
+            marker.SetParent(selection, false);
+            marker.localRotation = Quaternion.Euler(
+                0f, _buildingPackage.EntranceFacingDegrees, 0f);
+            var packageDirection = AuthoredBuildingFrontDirection(
+                _buildingPackage, 0);
+            var edgeDistance = Mathf.Abs(packageDirection.x) *
+                _buildingPackage.WidthMeters * 0.5f +
+                Mathf.Abs(packageDirection.z) *
+                _buildingPackage.DepthMeters * 0.5f;
+            const float markerHeight = 0.22f;
+            var tail = new Vector3(0f, markerHeight, edgeDistance + 0.25f);
+            var tip = new Vector3(0f, markerHeight, edgeDistance + 2.1f);
+            AddDiagnosticLine(marker, "Front Arrow Shaft", tail, tip, material);
+            AddDiagnosticLine(marker, "Front Arrow Head Left", tip,
+                tip + new Vector3(-0.48f, 0f, -0.62f), material);
+            AddDiagnosticLine(marker, "Front Arrow Head Right", tip,
+                tip + new Vector3(0.48f, 0f, -0.62f), material);
+            _selectionFrontMarker = marker;
+            marker.gameObject.SetActive(false);
+        }
+
+        private void UpdateSelectedBuildingSelectionVisuals(bool visible)
+        {
+            if (_selectionFootprint == null) return;
+            var selected = visible && IsSelected && _buildingsSelectable &&
+                ActiveObjectSelection == LotObjectSelectionKind.Building;
+            _selectionFootprint.gameObject.SetActive(selected);
+            if (_selectionFrontMarker != null)
+                _selectionFrontMarker.gameObject.SetActive(
+                    selected && TopDownViewEnabled);
         }
 
         private void BuildObjectHoverHighlight()
@@ -3950,12 +4303,16 @@ namespace CityForgeV3.World
             _camera.enabled = true;
             _camera.depth = 100f;
             _camera.orthographic = true;
+            // Camera-facing building sprites can otherwise retain a stale
+            // hardware-occlusion result after the camera pans. In the bounded
+            // Lot Editor scene deterministic building visibility is preferable.
+            _camera.useOcclusionCulling = false;
             _camera.orthographicSize = OrthographicSizeForLot(ZoomLevel, LotSizeMeters);
             _camera.nearClipPlane = 0.1f;
             _camera.farClipPlane = FarClipPlaneForLot(LotSizeMeters);
             _camera.backgroundColor = new Color(0.075f, 0.105f, 0.13f);
             _camera.clearFlags = CameraClearFlags.SolidColor;
-            ApplyCameraFacing();
+            ApplyCameraFacing(false);
             ApplyTimeOfDay();
 
             RetireCompetingScreenCameras();
@@ -3963,26 +4320,82 @@ namespace CityForgeV3.World
 
         private void ApplyTimeOfDay()
         {
+            ApplyExperimentalBuilding3DShadowDistance();
             var spec = TimeOfDayLighting.For(TimeOfDay);
-            RenderSettings.ambientMode =
-                UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = spec.AmbientColor;
+            var ambientLight = IsRaining
+                ? Color.Lerp(spec.AmbientColor, new Color(0.18f, 0.22f, 0.26f), 0.55f)
+                : spec.AmbientColor;
+            if (ExperimentalBuilding3DCount > 0)
+                ApplyExperimentalBuilding3DStudioEnvironment();
+            else
+            {
+                RestoreExperimentalBuilding3DStudioEnvironment();
+                RenderSettings.ambientMode =
+                    UnityEngine.Rendering.AmbientMode.Flat;
+                RenderSettings.ambientLight = ambientLight *
+                    _environmentAmbientIntensityScale;
+            }
 
             if (_sun != null)
             {
-                _sun.intensity = spec.SunIntensity;
-                _sun.color = spec.SunColor;
-                // Match native lighting to the package's displayed-compass
-                // registration used by projected and flora shadows.
-                var directionOffset = _buildingPackage != null
-                    ? _buildingPackage.ShadowDirectionOffsetDegrees
-                    : 0f;
+                var sunIntensity = spec.SunIntensity;
+                var sunColor = spec.SunColor;
+                if (ExperimentalBuilding3DCount > 0)
+                {
+                    sunIntensity = TimeOfDay switch
+                    {
+                        TimeOfDayPreset.Morning => 0.62f,
+                        TimeOfDayPreset.Noon => 0.55f,
+                        TimeOfDayPreset.Afternoon => 0.50f,
+                        TimeOfDayPreset.Evening => 0.14f,
+                        _ => 0.035f
+                    };
+                    if (TimeOfDay == TimeOfDayPreset.Morning)
+                    {
+                        // Make warmth a subtle directional cue rather than an
+                        // orange exposure wash across every PBR surface.
+                        sunColor = new Color(1f, 0.985f, 0.96f);
+                    }
+                }
+                _sun.intensity = sunIntensity * _environmentSunIntensityScale *
+                    (IsRaining ? 0.32f : 1f);
+                _sun.color = sunColor;
+                _sun.shadows = IsRaining ? LightShadows.None : LightShadows.Soft;
+                _sun.shadowStrength = ExperimentalBuilding3DCount > 0
+                    ? _environmentShadowStrength
+                    : 0.72f;
+                _sun.shadowCustomResolution = ExperimentalBuilding3DCount > 0
+                    ? 4096
+                    : 0;
+                _sun.shadowBias = ExperimentalBuilding3DCount > 0
+                    ? 0.055f
+                    : 0.035f;
+                _sun.shadowNormalBias = ExperimentalBuilding3DCount > 0
+                    ? 0.36f
+                    : 0.28f;
+                // The layer-31 duplicate is a private ShadowsOnly caster for
+                // flora/billboard receivers. If the main sun also sees it,
+                // every real 3D building casts twice onto ordinary ground.
+                _sun.cullingMask = ExperimentalBuilding3DCount > 0
+                    ? ~(1 << FloraShadowReceiverLayer)
+                    : ~0;
+                // Native 3D objects live in the Lot Editor's world compass.
+                // A hybrid building package may register its pre-rendered
+                // artwork with a visual offset, but that must never rotate a
+                // walking character's physical shadow.
                 _sun.transform.rotation =
-                    Quaternion.Euler(0f, directionOffset, 0f) *
-                    TimeOfDayLighting.SunRotation(TimeOfDay);
+                    ExperimentalBuilding3DSunRotation();
+                if (ExperimentalBuilding3DCount <= 0 &&
+                    (_environmentSunElevationOffset != 0f ||
+                     _environmentSunAzimuthOffset != 0f))
+                    _sun.transform.rotation *= Quaternion.Euler(
+                        _environmentSunElevationOffset,
+                        _environmentSunAzimuthOffset, 0f);
             }
 
             UpdateFloraShadowSun();
+            UpdateExperimentalBuilding3DProjectedGroundShadows();
+            ApplyExperimentalBuilding3DColorGrade();
 
             if (_groundRenderer != null)
             {
@@ -3990,6 +4403,17 @@ namespace CityForgeV3.World
                     _session.Data.BaseTextureId)
                     ? spec.GroundColor
                     : LotTextureTint(TimeOfDay);
+                if (ExperimentalBuilding3DCount > 0 &&
+                    BaseTextureHasExactSeasonResource())
+                {
+                    // Seasonal grass is already fully color-authored. A warm
+                    // time-of-day multiplier turns its deep green into olive;
+                    // sunlight supplies the time cue without recoloring it.
+                    groundBaseline = Color.white;
+                }
+                if (string.IsNullOrWhiteSpace(_session.Data.BaseTextureId))
+                    groundBaseline = ExperimentalBuilding3DGroundColor(
+                        groundBaseline);
                 _groundRenderer.sharedMaterial.color =
                     BaseTextureHasExactSeasonResource()
                         ? groundBaseline
@@ -4008,15 +4432,20 @@ namespace CityForgeV3.World
 
             if (_camera != null)
             {
-                _camera.backgroundColor = spec.BackgroundColor;
+                _camera.backgroundColor = IsRaining
+                    ? Color.Lerp(spec.BackgroundColor,
+                        new Color(0.20f, 0.25f, 0.30f), 0.62f)
+                    : spec.BackgroundColor;
             }
 
             _presentation?.SetTimeOfDay(TimeOfDay);
             _presentation?.SetSeason(Season);
+            _presentation?.SetRain(IsRaining);
             foreach (var presentation in _otherBuildingPresentations)
             {
                 presentation?.SetTimeOfDay(TimeOfDay);
                 presentation?.SetSeason(Season);
+                presentation?.SetRain(IsRaining);
             }
             foreach (var vehicle in _vehiclePresentations)
                 vehicle.SetTimeOfDay(TimeOfDay);
@@ -4027,7 +4456,7 @@ namespace CityForgeV3.World
             UpdateThreeLanternLamppostLighting();
             UpdateLotTextureLighting();
             if (_floraPreview != null)
-                _floraPreview.color = FloraColorForTime(0.5f);
+                _floraPreview.color = FloraColorForTime(1f);
             if (_roadArtworkRoot != null)
             {
                 var roadTint = spec.NeutralArtworkTint;
@@ -4038,9 +4467,10 @@ namespace CityForgeV3.World
             }
             UpdateProjectedShadow();
             UpdateOtherBuildingProjectedShadows();
+            UpdateBuildingGapShadowAppearance();
         }
 
-        private void ApplyCameraFacing()
+        private void ApplyCameraFacing(bool preserveProjectionFit = true)
         {
             if (_camera == null)
             {
@@ -4051,22 +4481,32 @@ namespace CityForgeV3.World
 
             if (TopDownViewEnabled)
             {
-                ApplyTopDownCamera();
+                ApplyTopDownCamera(preserveProjectionFit);
                 return;
             }
 
-            var angle =
-                _buildingPackage.Facing(_facing).CameraAzimuthDegrees;
+            var experimental3D = ExperimentalBuilding3DCount > 0;
+            var angle = experimental3D
+                ? 20f
+                : _buildingPackage.Facing(_facing).CameraAzimuthDegrees;
             var azimuthRadians = angle * Mathf.Deg2Rad;
-            var elevationRadians =
-                _buildingPackage.CameraElevationDegrees * Mathf.Deg2Rad;
+            // Tall native 3D façades read too top-down at the 28–30 degree
+            // elevation used to register pre-rendered billboard artwork.
+            // The experimental mesh lot uses the shallower CityForge view.
+            var cameraElevationDegrees = experimental3D
+                ? 20f
+                : _buildingPackage.CameraElevationDegrees;
+            var elevationRadians = cameraElevationDegrees * Mathf.Deg2Rad;
             var cameraRadius = CameraRadiusForLot(
-                _buildingPackage.CameraRadiusMeters, LotSizeMeters);
+                experimental3D ? 60f : _buildingPackage.CameraRadiusMeters,
+                LotSizeMeters);
             var horizontalRadius =
                 cameraRadius * Mathf.Cos(elevationRadians);
             var target = new Vector3(
                 0f,
-                HasBuilding ? _buildingPackage.CameraTargetHeightMeters : 0f,
+                HasBuilding && !experimental3D
+                    ? _buildingPackage.CameraTargetHeightMeters
+                    : 0f,
                 0f);
             if (ZoomLevel == LotZoomLevel.Detail && LotType == LotType.Neighborhood)
             {
@@ -4087,12 +4527,14 @@ namespace CityForgeV3.World
             _camera.transform.position += compositionShift;
             target += compositionShift;
             _camera.transform.LookAt(target);
+            AlignBuildingPresentationsToCamera();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();
-            ApplyProjectedLotFit();
+            if (!preserveProjectionFit)
+                ApplyProjectedLotFit();
         }
 
-        private void ApplyTopDownCamera()
+        private void ApplyTopDownCamera(bool preserveProjectionFit = false)
         {
             var target = new Vector3(0f, 0f, 0f) + _cameraPanWorld;
             var cameraHeight = Mathf.Max(
@@ -4102,12 +4544,26 @@ namespace CityForgeV3.World
             _camera.transform.position = target + Vector3.up * cameraHeight;
             _camera.transform.rotation = ResolveTopDownRotation(
                 _topDownWorldZScreenDirection);
-            _camera.orthographicSize = OrthographicSizeForLot(
-                ZoomLevel, LotSizeMeters);
+            if (!preserveProjectionFit)
+                _camera.orthographicSize = OrthographicSizeForLot(
+                    ZoomLevel, LotSizeMeters);
             ApplyPresentationFacing();
+            AlignBuildingPresentationsToCamera();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();
-            ApplyProjectedLotFit();
+            if (!preserveProjectionFit)
+                ApplyProjectedLotFit();
+        }
+
+        private void AlignBuildingPresentationsToCamera()
+        {
+            // Camera panning happens from UI events, before the normal
+            // LateUpdate billboard pass. Realign immediately so Unity never
+            // evaluates a building's previous-frame renderer bounds against
+            // the newly moved camera and incorrectly culls the artwork.
+            _presentation?.AlignToCamera();
+            foreach (var presentation in _otherBuildingPresentations)
+                presentation?.AlignToCamera();
         }
 
         public static Quaternion ResolveTopDownRotation(
@@ -4152,8 +4608,11 @@ namespace CityForgeV3.World
             {
                 var presentation = PresentationForBuildingIndex(index);
                 var building = _session.Data.Buildings[index];
-                presentation?.SetSortingOrder(DepthSortingOrder(
-                    new Vector3(building.CellX, 0f, building.CellZ)));
+                if (presentation != null)
+                {
+                    presentation.SetSortingOrder(DepthSortingOrder(
+                        new Vector3(building.CellX, 0f, building.CellZ)));
+                }
             }
             for (var index = 0; index < _floraPresentations.Count &&
                  index < (_session.Data.Flora?.Count ?? 0); index++)
@@ -4161,14 +4620,17 @@ namespace CityForgeV3.World
                 var flora = _session.Data.Flora[index];
                 if (_floraPresentations[index] != null)
                 {
+                    var renderer = _floraPresentations[index];
                     var order = DepthSortingOrder(
                         new Vector3(flora.PositionX, 0f, flora.PositionZ));
-                    _floraPresentations[index].sortingOrder = order;
-                    _floraPresentations[index].sharedMaterial =
-                        IsBeyondNearestBuildingFront(new Vector3(
-                            flora.PositionX, 0f, flora.PositionZ))
-                            ? FloraFrontPriorityMaterial()
-                            : FloraLitShadowReceiverMaterial();
+                    renderer.sortingOrder = order;
+                    var inFrontApron = TryResolveVisibleBuildingFrontHosts(
+                        new Vector3(flora.PositionX, 0f, flora.PositionZ),
+                        _floraFrontHostStencilReferences);
+                    renderer.sharedMaterial = inFrontApron
+                        ? FloraHostFrontRecoveryMaterial(
+                            _floraFrontHostStencilReferences)
+                        : FloraLitShadowReceiverMaterial();
                     if (index < _floraCastShadows.Count &&
                         _floraCastShadows[index] != null)
                         _floraCastShadows[index].sortingOrder = order - 1;
@@ -4277,8 +4739,10 @@ namespace CityForgeV3.World
         private void Update()
         {
             HandleWorldClick();
+            UpdateThreeDimensionalCharacters();
             UpdateNeighborhoodTraffic();
             UpdateCirculationTravelers();
+            UpdateStreetcars();
         }
 
         private void LateUpdate()
@@ -4304,6 +4768,7 @@ namespace CityForgeV3.World
                          FindObjectsSortMode.None))
             {
                 if (otherCamera == null || otherCamera == _camera ||
+                    otherCamera == _propFrontRecoveryCamera ||
                     otherCamera.targetTexture != null)
                     continue;
 
@@ -4330,6 +4795,10 @@ namespace CityForgeV3.World
         }
 
         public bool SpawnTestVehicle(VehiclePaintVariant variant)
+            => SpawnTestVehicle(TestVehicleModel.FordModelT, variant);
+
+        public bool SpawnTestVehicle(TestVehicleModel vehicleModel,
+            VehiclePaintVariant variant = VehiclePaintVariant.Green)
         {
             if (!CanSpawnTestVehicle || _circulationTravelerRoot == null)
                 return false;
@@ -4343,8 +4812,11 @@ namespace CityForgeV3.World
             if (pathLength <= 0.001f)
                 return false;
             var presentation = VehicleRuntimePresentation.Create(
-                _circulationTravelerRoot, variant);
-            presentation.gameObject.name = $"Test Vehicle — Ford Model T — {variant}";
+                _circulationTravelerRoot, vehicleModel, variant);
+            var displayName = vehicleModel == TestVehicleModel.RollsRoyce1926
+                ? "1926 Rolls-Royce"
+                : $"Ford Model T — {variant}";
+            presentation.gameObject.name = $"Test Vehicle — {displayName}";
             presentation.SetTimeOfDay(TimeOfDay);
             var traveler = new TestVehicleTraveler
             {
@@ -4371,8 +4843,13 @@ namespace CityForgeV3.World
 
         private void UpdateTestVehicles(float deltaTime)
         {
-            if (_trafficGraph == null || deltaTime <= 0f) return;
-            var speed = Mathf.Max(2f, _trafficGraph.SpeedMetersPerSecond * 0.72f);
+            if (deltaTime <= 0f) return;
+            // A hand-authored open vehicle path is also a valid test route and
+            // does not necessarily build a lane graph. Keep those vehicles
+            // moving with a conservative city speed instead of freezing them.
+            var speed = _trafficGraph != null
+                ? Mathf.Max(2f, _trafficGraph.SpeedMetersPerSecond * 0.72f)
+                : 5f;
             foreach (var traveler in _testVehicles)
             {
                 traveler.DistanceMeters += speed * deltaTime;
@@ -4607,37 +5084,42 @@ namespace CityForgeV3.World
 
         public static float OrthographicSizeForLot(LotZoomLevel level, int lotSizeMeters)
         {
-            if (level == LotZoomLevel.Detail) return 8.5f;
-            if (lotSizeMeters > 40)
-            {
-                var overview = Mathf.Clamp(lotSizeMeters, 20, 80) * 0.63f;
-                var farOverview = Mathf.Clamp(lotSizeMeters, 20, 80);
-                return level switch
-                {
-                    LotZoomLevel.Inspection => Mathf.Lerp(8.5f, overview, 0.07f),
-                    LotZoomLevel.CloseUp => Mathf.Lerp(8.5f, overview, 0.12f),
-                    LotZoomLevel.Close => Mathf.Lerp(8.5f, overview, 0.18f),
-                    LotZoomLevel.Near => Mathf.Lerp(8.5f, overview, 0.30f),
-                    LotZoomLevel.Lot => Mathf.Lerp(8.5f, overview, 0.42f),
-                    LotZoomLevel.Wide => Mathf.Lerp(8.5f, overview, 0.70f),
-                    LotZoomLevel.Far => Mathf.Lerp(8.5f, farOverview, 0.82f),
-                    _ => farOverview
-                };
-            }
-            var lotFit = Mathf.Max(11.5f, lotSizeMeters * 0.55f);
-            var neighborhoodFit = Mathf.Max(28f, lotSizeMeters);
+            // These are absolute editorial camera bands, not lot-relative fits.
+            // Keeping them independent of lot dimensions makes a given zoom
+            // level read consistently as an approximate altitude.
             return level switch
             {
-                LotZoomLevel.Inspection => Mathf.Lerp(8.5f, lotFit, 0.17f),
-                LotZoomLevel.CloseUp => Mathf.Lerp(8.5f, lotFit, 0.33f),
-                LotZoomLevel.Close => (8.5f + lotFit) * 0.5f,
-                LotZoomLevel.Near => Mathf.Lerp(8.5f, lotFit, 0.75f),
-                LotZoomLevel.Lot => lotFit,
-                LotZoomLevel.Wide => (lotFit + neighborhoodFit) * 0.5f,
-                LotZoomLevel.Far => Mathf.Lerp(lotFit, neighborhoodFit, 0.75f),
-                _ => neighborhoodFit
+                LotZoomLevel.Detail => 11.4375f,
+                LotZoomLevel.Close => 22f,       // approximately 200 ft
+                LotZoomLevel.Lot => 44f,         // approximately 400 ft
+                LotZoomLevel.Wide => 88f,        // approximately 800 ft
+                LotZoomLevel.Far => 132f,        // approximately 1,200 ft
+                LotZoomLevel.Neighborhood => 220f, // approximately 2,000 ft
+                // Retained for old serialized/editor references; interactive
+                // zooming skips these superseded intermediate bands.
+                LotZoomLevel.Inspection => 13f,
+                LotZoomLevel.CloseUp => 17.5f,
+                LotZoomLevel.Near => 33f,
+                _ => 44f
             };
         }
+
+        public static int ApproximateZoomAltitudeFeet(LotZoomLevel level) => level switch
+        {
+            LotZoomLevel.Detail => 105,
+            LotZoomLevel.Close => 200,
+            LotZoomLevel.Lot => 400,
+            LotZoomLevel.Wide => 800,
+            LotZoomLevel.Far => 1200,
+            LotZoomLevel.Neighborhood => 2000,
+            LotZoomLevel.Inspection => 110,
+            LotZoomLevel.CloseUp => 150,
+            LotZoomLevel.Near => 300,
+            _ => 400
+        };
+
+        public static bool ShowsThreeDimensionalCharacters(LotZoomLevel level) =>
+            level is LotZoomLevel.Detail or LotZoomLevel.Close or LotZoomLevel.Lot;
 
         public static float CameraFramingOffsetMeters(int lotSizeMeters) =>
             Mathf.Clamp(lotSizeMeters, 20, 80) * 0.12f;
@@ -4652,11 +5134,28 @@ namespace CityForgeV3.World
                 ? authoredRadiusMeters
                 : Mathf.Max(authoredRadiusMeters, lotSizeMeters * 1.5f);
 
-        public static LotZoomLevel NextZoomLevel(LotZoomLevel current, int direction) =>
-            (LotZoomLevel)Mathf.Clamp(
-                (int)current + direction,
-                (int)LotZoomLevel.Detail,
-                (int)LotZoomLevel.Neighborhood);
+        public static LotZoomLevel NextZoomLevel(LotZoomLevel current, int direction)
+        {
+            var levels = new[]
+            {
+                LotZoomLevel.Detail,
+                LotZoomLevel.Close,
+                LotZoomLevel.Lot,
+                LotZoomLevel.Wide,
+                LotZoomLevel.Far,
+                LotZoomLevel.Neighborhood
+            };
+            var currentIndex = System.Array.IndexOf(levels, current);
+            if (currentIndex < 0)
+            {
+                var altitude = ApproximateZoomAltitudeFeet(current);
+                currentIndex = 0;
+                while (currentIndex < levels.Length - 1 &&
+                       ApproximateZoomAltitudeFeet(levels[currentIndex]) < altitude)
+                    currentIndex++;
+            }
+            return levels[Mathf.Clamp(currentIndex + direction, 0, levels.Length - 1)];
+        }
 
         private void ApplyLotPlanningState()
         {
@@ -4721,6 +5220,8 @@ namespace CityForgeV3.World
 
         private void ApplySessionState()
         {
+            _sessionStateApplyCountForQa++;
+            var preservedCamera = CaptureCameraFraming();
             ApplyLotPlanningState();
             ApplyBaseTexturePresentation();
             if (HasBuilding)
@@ -4732,8 +5233,11 @@ namespace CityForgeV3.World
                 _session.Data.CellX,
                 0f,
                 _session.Data.CellZ);
-            if (_presentation != null)
+            if (_presentation != null && _buildingPackage != null)
             {
+                _presentation.SetHostBuildingStencilReference(
+                    BuildingDepthOcclusionStencilReference(
+                        _session.SelectedBuildingIndex));
                 _presentation.transform.position = position;
                 _presentation.SetVisible(
                     visible &&
@@ -4743,13 +5247,17 @@ namespace CityForgeV3.World
                 ApplyPresentationFacing();
                 _presentation.RegisterToProxy(
                     _proxyLocalVertices,
-                    BuildingRotation());
+                    PrimitiveRotation(
+                        _buildingPackage,
+                        _session.Data.RotationQuarterTurns));
             }
 
-            if (_proxy != null)
+            if (_proxy != null && _buildingPackage != null)
             {
                 _proxy.position = position;
-                _proxy.rotation = BuildingRotation();
+                _proxy.rotation = PrimitiveRotation(
+                    _buildingPackage,
+                    _session.Data.RotationQuarterTurns);
                 foreach (var renderer in _proxyRenderers)
                 {
                     var entranceDiagnostic =
@@ -4784,10 +5292,18 @@ namespace CityForgeV3.World
             if (_buildingDepthOccluder != null)
             {
                 _buildingDepthOccluder.position = position;
-                _buildingDepthOccluder.rotation = BuildingRotation();
+                _buildingDepthOccluder.rotation = PrimitiveRotation(
+                    _buildingPackage,
+                    _session.Data.RotationQuarterTurns);
+                ConfigureBuildingDepthStencil(
+                    _buildingDepthOccluderRenderers,
+                    _session.SelectedBuildingIndex);
                 foreach (var renderer in _buildingDepthOccluderRenderers)
+                    // Perceptual occlusion is authored by above-ground semantic
+                    // massing for every building. Foundations remain placement
+                    // data only and may never become invisible visual walls.
                     renderer.enabled = visible &&
-                        renderer.gameObject.name != "CF_ANCHOR_ENTRANCE";
+                        IsPerceptualBuildingOccluder(renderer);
             }
 
             UpdateProjectedShadow();
@@ -4798,28 +5314,34 @@ namespace CityForgeV3.World
                 _selectionFootprint.position =
                     position + new Vector3(0f, 0.025f, 0f);
                 _selectionFootprint.rotation = BuildingRotation();
-                _selectionFootprint.gameObject.SetActive(
-                    visible && IsSelected && _buildingsSelectable &&
-                    ActiveObjectSelection == LotObjectSelectionKind.Building);
+                UpdateSelectedBuildingSelectionVisuals(visible);
             }
             if (_registrationDiagnostics != null)
             {
                 _registrationDiagnostics.position = position;
-                _registrationDiagnostics.rotation = BuildingRotation();
+                _registrationDiagnostics.rotation = PrimitiveRotation(
+                    _buildingPackage,
+                    _session.Data.RotationQuarterTurns);
                 _registrationDiagnostics.gameObject.SetActive(
                     visible && RegistrationDiagnosticsVisible);
             }
             RebuildOtherBuildingPresentations();
+            RebuildExperimentalBuilding3DPresentations();
             RebuildFloraPresentations();
             RebuildPropPresentations();
             RebuildOverlayTexturePresentations();
             UpdatePresentationDepthOrdering();
+            // Selection swaps the primary presentation and reconstructs the
+            // remaining building views. Reapply persistent street wetness only
+            // after every new presentation exists, otherwise the building that
+            // just became primary can miss the earlier rain transition.
+            UpdateWetStreetReflections();
+            ScheduleWetStreetReflectionRefresh();
 
-            // EnsureBuildingPackage initially builds hidden artwork. The
-            // first camera fit therefore cannot include a newly selected
-            // building. Refit only after visibility and all placed-building
-            // presentations have been restored, and likewise after deletion.
-            ApplyProjectedLotFit();
+            // Selection and ordinary lot-state changes must never reposition
+            // or re-zoom the camera. Camera framing is owned only by initial
+            // load/setup and explicit camera controls.
+            RestoreCameraFraming(preservedCamera);
         }
 
         private void RebuildOtherBuildingPresentations()
@@ -4832,11 +5354,19 @@ namespace CityForgeV3.World
                 }
             _otherBuildingPresentations.Clear();
             _otherBuildingIndices.Clear();
+            foreach (var occluder in _otherBuildingDepthOccluders)
+                if (occluder != null)
+                    DestroyForCurrentMode(occluder.gameObject);
+            _otherBuildingDepthOccluders.Clear();
             foreach (var shadow in _otherBuildingProjectedShadows)
                 if (shadow != null)
                     DestroyForCurrentMode(shadow.gameObject);
             _otherBuildingProjectedShadows.Clear();
             _otherBuildingShadowPackages.Clear();
+            foreach (var renderer in _buildingGapShadowRenderers)
+                if (renderer != null)
+                    DestroyForCurrentMode(renderer.gameObject);
+            _buildingGapShadowRenderers.Clear();
             if (_camera == null || _session.Data.Buildings == null) return;
             for (var index = 0; index < _session.Data.Buildings.Count; index++)
             {
@@ -4848,22 +5378,204 @@ namespace CityForgeV3.World
                 root.transform.SetParent(transform);
                 var presentation = root.AddComponent<HybridBuildingPresentation>();
                 presentation.Build(_camera, package);
+                presentation.SetHostBuildingStencilReference(
+                    BuildingDepthOcclusionStencilReference(index));
                 root.transform.position = new Vector3(placed.CellX, 0f, placed.CellZ);
                 presentation.ApplyFacing(package.PresentationFacing(
                     _facing, placed.RotationQuarterTurns));
                 presentation.SetBuildingRotation(placed.RotationQuarterTurns);
                 presentation.SetArtworkSource(ArtworkSource);
                 presentation.SetTimeOfDay(TimeOfDay);
+                presentation.SetRain(IsRaining);
+                presentation.SetWetReflection(RoadWetness,
+                    WetReflectionDirectionFor(new Vector3(
+                        placed.CellX, 0f, placed.CellZ)));
                 presentation.SetVisible(BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
                 presentation.SetOpacity(BuildingInspectionPolicy.ArtworkOpacity(
                     InspectionMode, _buildingContextOpacity));
                 _otherBuildingPresentations.Add(presentation);
                 _otherBuildingIndices.Add(index);
+                _otherBuildingDepthOccluders.Add(
+                    CreateOtherBuildingDepthOccluder(placed, package, index));
                 _otherBuildingProjectedShadows.Add(CreateProjectedShadow(
                     $"Building {index + 1} Projected Shadow", package));
                 _otherBuildingShadowPackages.Add(package);
             }
+            RebuildBuildingGapShadows();
             UpdateOtherBuildingProjectedShadows();
+        }
+
+        private readonly struct BuildingGroundFootprint
+        {
+            public readonly float MinX;
+            public readonly float MaxX;
+            public readonly float MinZ;
+            public readonly float MaxZ;
+
+            public BuildingGroundFootprint(PlacedBuilding placed,
+                HybridBuildingPackage package)
+            {
+                var swapsAxes = (placed.RotationQuarterTurns & 1) != 0;
+                var width = swapsAxes ? package.DepthMeters : package.WidthMeters;
+                var depth = swapsAxes ? package.WidthMeters : package.DepthMeters;
+                MinX = placed.CellX - width * 0.5f;
+                MaxX = placed.CellX + width * 0.5f;
+                MinZ = placed.CellZ - depth * 0.5f;
+                MaxZ = placed.CellZ + depth * 0.5f;
+            }
+        }
+
+        private void RebuildBuildingGapShadows()
+        {
+            if (_session?.Data?.Buildings == null) return;
+            var footprints = new List<BuildingGroundFootprint>();
+            foreach (var placed in _session.Data.Buildings)
+            {
+                var catalogEntry = BuildingCatalog.Find(placed.BuildingId);
+                if (string.IsNullOrWhiteSpace(catalogEntry.PackageResourcePath))
+                    continue;
+                var package = HybridBuildingPackageRegistry.Load(
+                    catalogEntry.PackageResourcePath);
+                if (package != null)
+                    footprints.Add(new BuildingGroundFootprint(placed, package));
+            }
+
+            for (var first = 0; first < footprints.Count; first++)
+            for (var second = first + 1; second < footprints.Count; second++)
+            {
+                var a = footprints[first];
+                var b = footprints[second];
+                var overlapZ = Mathf.Min(a.MaxZ, b.MaxZ) -
+                    Mathf.Max(a.MinZ, b.MinZ);
+                if (overlapZ > 0.35f && TryOrderedGap(
+                        a.MinX, a.MaxX, b.MinX, b.MaxX,
+                        out var gapMinX, out var gapMaxX))
+                {
+                    CreateBuildingGapShadow(
+                        new Vector2(gapMinX, Mathf.Max(a.MinZ, b.MinZ)),
+                        new Vector2(gapMaxX, Mathf.Min(a.MaxZ, b.MaxZ)));
+                }
+
+                var overlapX = Mathf.Min(a.MaxX, b.MaxX) -
+                    Mathf.Max(a.MinX, b.MinX);
+                if (overlapX > 0.35f && TryOrderedGap(
+                        a.MinZ, a.MaxZ, b.MinZ, b.MaxZ,
+                        out var gapMinZ, out var gapMaxZ))
+                {
+                    CreateBuildingGapShadow(
+                        new Vector2(Mathf.Max(a.MinX, b.MinX), gapMinZ),
+                        new Vector2(Mathf.Min(a.MaxX, b.MaxX), gapMaxZ));
+                }
+            }
+            UpdateBuildingGapShadowAppearance();
+        }
+
+        private static bool TryOrderedGap(float aMin, float aMax,
+            float bMin, float bMax, out float gapMin, out float gapMax)
+        {
+            gapMin = gapMax = 0f;
+            if (aMax <= bMin)
+            {
+                gapMin = aMax;
+                gapMax = bMin;
+            }
+            else if (bMax <= aMin)
+            {
+                gapMin = bMax;
+                gapMax = aMin;
+            }
+            else return false;
+
+            return gapMax - gapMin <= 3.5f;
+        }
+
+        private void CreateBuildingGapShadow(Vector2 minimum, Vector2 maximum)
+        {
+            const float edgeBleed = 0.12f;
+            minimum -= Vector2.one * edgeBleed;
+            maximum += Vector2.one * edgeBleed;
+            if (maximum.x - minimum.x < 0.05f ||
+                maximum.y - minimum.y < 0.05f) return;
+
+            var shadowObject = new GameObject("Primitive Neighbor Gap Shadow");
+            shadowObject.transform.SetParent(transform, false);
+            var filter = shadowObject.AddComponent<MeshFilter>();
+            var renderer = shadowObject.AddComponent<MeshRenderer>();
+            var mesh = new Mesh { name = "CF Building Gap Contact Shadow" };
+            mesh.vertices = new[]
+            {
+                new Vector3(minimum.x, 0.066f, minimum.y),
+                new Vector3(maximum.x, 0.066f, minimum.y),
+                new Vector3(maximum.x, 0.066f, maximum.y),
+                new Vector3(minimum.x, 0.066f, maximum.y)
+            };
+            mesh.uv = new[]
+            {
+                new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(1f, 1f), new Vector2(0f, 1f)
+            };
+            mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            mesh.RecalculateBounds();
+            filter.sharedMesh = mesh;
+            renderer.sharedMaterial = LotSurfaceMaterial(
+                BuildingGapShadowColor(TimeOfDay), 2002);
+            renderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            _buildingGapShadowRenderers.Add(renderer);
+        }
+
+        private void UpdateBuildingGapShadowAppearance()
+        {
+            var color = BuildingGapShadowColor(TimeOfDay);
+            foreach (var renderer in _buildingGapShadowRenderers)
+                if (renderer != null && renderer.sharedMaterial != null)
+                {
+                    renderer.enabled = TimeOfDay != TimeOfDayPreset.Night;
+                    renderer.sharedMaterial.color = color;
+                }
+        }
+
+        public static Color BuildingGapShadowColor(TimeOfDayPreset preset) =>
+            new Color(0.025f, 0.03f, 0.038f, preset switch
+            {
+                TimeOfDayPreset.Morning => 0.34f,
+                TimeOfDayPreset.Noon => 0.20f,
+                TimeOfDayPreset.Afternoon => 0.30f,
+                TimeOfDayPreset.Evening => 0.24f,
+                _ => 0f
+            });
+
+        private Transform CreateOtherBuildingDepthOccluder(
+            PlacedBuilding placed, HybridBuildingPackage package, int index)
+        {
+            var proxyAsset = Resources.Load<GameObject>(
+                package.PrimitiveResourcePath);
+            var shader = Shader.Find("CityForgeV3/BuildingDepthOccluder");
+            if (proxyAsset == null || shader == null) return null;
+
+            var instance = Instantiate(proxyAsset, transform);
+            instance.name = $"Building {index + 1} Depth Occluder";
+            instance.transform.position = new Vector3(
+                placed.CellX, 0f, placed.CellZ);
+            instance.transform.rotation = PrimitiveRotation(
+                package, placed.RotationQuarterTurns);
+            foreach (var collider in instance.GetComponentsInChildren<Collider>())
+                collider.enabled = false;
+            var material = new Material(shader)
+            {
+                name = $"CF Building {index + 1} Invisible Depth Occluder"
+            };
+            ConfigureBuildingDepthStencil(material, index);
+            foreach (var renderer in instance.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = material;
+                renderer.receiveShadows = false;
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.enabled = IsPerceptualBuildingOccluder(renderer);
+            }
+            return instance.transform;
         }
 
         private void UpdateOtherBuildingProjectedShadows()
@@ -4887,10 +5599,9 @@ namespace CityForgeV3.World
                     _otherBuildingProjectedShadows[listIndex],
                     _otherBuildingShadowPackages[listIndex],
                     new Vector3(placed.CellX, 0f, placed.CellZ),
-                    Quaternion.Euler(
-                        0f,
-                        placed.RotationQuarterTurns * 90f,
-                        0f),
+                    PrimitiveRotation(
+                        _otherBuildingShadowPackages[listIndex],
+                        placed.RotationQuarterTurns),
                     true,
                     false);
             }
@@ -4902,9 +5613,18 @@ namespace CityForgeV3.World
                 _session.Data.RotationQuarterTurns * 90f,
                 0f);
 
+        public static Quaternion PrimitiveRotation(
+            HybridBuildingPackage package, int placedRotationQuarterTurns) =>
+            Quaternion.Euler(
+                0f,
+                placedRotationQuarterTurns * 90f +
+                (package?.PrimitiveRotationOffsetDegrees ?? 0f),
+                0f);
+
         private void ApplyPresentationFacing()
         {
-            if (_presentation == null)
+            if (_presentation == null || _buildingPackage == null ||
+                _session?.Data == null)
             {
                 return;
             }
@@ -4926,6 +5646,10 @@ namespace CityForgeV3.World
 
             _presentation.SetArtworkSource(ArtworkSource);
             _presentation.SetTimeOfDay(TimeOfDay);
+            _presentation.SetRain(IsRaining);
+            _presentation.SetWetReflection(RoadWetness,
+                WetReflectionDirectionFor(new Vector3(
+                    _session.Data.CellX, 0f, _session.Data.CellZ)));
         }
 
         private void NotifyStateChanged()
@@ -4951,6 +5675,7 @@ namespace CityForgeV3.World
             if (_presentation != null) DestroyForCurrentMode(_presentation.gameObject);
             if (_selectionFootprint != null)
                 DestroyForCurrentMode(_selectionFootprint.gameObject);
+            _selectionFrontMarker = null;
             if (_registrationDiagnostics != null)
                 DestroyForCurrentMode(_registrationDiagnostics.gameObject);
 
@@ -4962,7 +5687,11 @@ namespace CityForgeV3.World
                 BuildHybridPresentation();
                 BuildSelectionFootprint();
                 BuildRegistrationDiagnostics();
-                ApplyCameraFacing();
+                // A package swap happens during building selection. Keep the
+                // user's exact camera transform and only orient the newly
+                // constructed billboard to that existing view.
+                ApplyPresentationFacing();
+                _presentation?.AlignToCamera();
                 UpdateFloraShadowSun();
             }
         }
@@ -4973,10 +5702,11 @@ namespace CityForgeV3.World
             var directionOffset = _buildingPackage != null
                 ? _buildingPackage.ShadowDirectionOffsetDegrees
                 : 0f;
-            _floraShadowSun.enabled = TimeOfDay != TimeOfDayPreset.Night;
+            _floraShadowSun.enabled = !IsRaining &&
+                TimeOfDay != TimeOfDayPreset.Night;
             _floraShadowSun.transform.rotation =
                 Quaternion.Euler(0f, directionOffset, 0f) *
-                TimeOfDayLighting.SunRotation(TimeOfDay);
+                ExperimentalBuilding3DSunRotation();
         }
 
         private static void DestroyForCurrentMode(GameObject target)
@@ -4991,14 +5721,20 @@ namespace CityForgeV3.World
             Transform parent,
             Vector3 position,
             Vector3 scale,
-            Color color)
+            Color color,
+            bool castShadows = false)
         {
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = name;
             cube.transform.SetParent(parent);
             cube.transform.localPosition = position;
             cube.transform.localScale = scale;
-            cube.GetComponent<Renderer>().material = Material(color, 0.55f);
+            var renderer = cube.GetComponent<Renderer>();
+            renderer.material = Material(color, 0.55f);
+            renderer.shadowCastingMode = castShadows
+                ? UnityEngine.Rendering.ShadowCastingMode.On
+                : UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = castShadows;
             return cube;
         }
 

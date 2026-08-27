@@ -12,6 +12,148 @@ namespace CityForgeV3.Tests
 {
     public sealed class UiFoundationTests
     {
+        [TestCase(0.00f, BusinessAsUsualAction.Walk)]
+        [TestCase(0.74f, BusinessAsUsualAction.Walk)]
+        [TestCase(0.75f, BusinessAsUsualAction.Wait)]
+        [TestCase(0.79f, BusinessAsUsualAction.Wait)]
+        [TestCase(0.80f, BusinessAsUsualAction.FoldArms)]
+        [TestCase(0.84f, BusinessAsUsualAction.FoldArms)]
+        [TestCase(0.85f, BusinessAsUsualAction.Idle)]
+        [TestCase(0.94f, BusinessAsUsualAction.Idle)]
+        [TestCase(0.95f, BusinessAsUsualAction.LookAround)]
+        [TestCase(1.00f, BusinessAsUsualAction.LookAround)]
+        public void BusinessAsUsualScriptHonorsAuthoredWeights(float roll,
+            BusinessAsUsualAction expected)
+        {
+            Assert.That(BusinessAsUsualCharacterScript.Select(roll),
+                Is.EqualTo(expected));
+        }
+
+        [TestCase(0.00f, 0f, 1f)]
+        [TestCase(0.24f, 0f, 1f)]
+        [TestCase(0.25f, 1f, 0f)]
+        [TestCase(0.50f, 0f, -1f)]
+        [TestCase(0.75f, -1f, 0f)]
+        [TestCase(1.00f, -1f, 0f)]
+        public void BusinessAsUsualWalkingUsesExactLotCardinalHeadings(
+            float roll, float expectedX, float expectedZ)
+        {
+            var direction = BusinessAsUsualCharacterScript.WalkingDirection(roll);
+            Assert.That(direction.x, Is.EqualTo(expectedX).Within(0.0001f));
+            Assert.That(direction.y, Is.EqualTo(expectedZ).Within(0.0001f));
+        }
+
+        [Test]
+        public void BusinessAsUsualWalkUsesBoundaryDrivenFallbackDuration()
+        {
+            Assert.That(BusinessAsUsualCharacterScript.Duration(
+                BusinessAsUsualAction.Walk, 0f), Is.EqualTo(60f));
+            Assert.That(BusinessAsUsualCharacterScript.Duration(
+                BusinessAsUsualAction.Walk, 1f), Is.EqualTo(60f));
+        }
+
+        [Test]
+        public void VictorianGentleman10KExposesCompleteAnimationLibrary()
+        {
+            const string path =
+                "CityForgeV3/Props/Characters/VictorianGentlemanV01/VictorianGentlemanAnimatedV01";
+            Assert.That(Resources.Load<GameObject>(path), Is.Not.Null);
+            var names = Resources.LoadAll<AnimationClip>(path)
+                .Select(clip => clip.name.ToLowerInvariant()).ToArray();
+            foreach (var expected in new[]
+                     {
+                         "agree", "afraid", "bow", "clap", "fall", "flee",
+                         "fold_arms", "hit_to_body", "idle", "laugh",
+                         "look_around", "sit", "wait", "walk"
+                     })
+                Assert.That(names.Any(name => name.Contains(expected)), Is.True,
+                    expected);
+        }
+
+        [Test]
+        public void HooliganExposesIdleWalkAndRunAnimationLibrary()
+        {
+            const string path =
+                "CityForgeV3/Props/Characters/HooliganV01/HooliganAnimatedV01";
+            Assert.That(Resources.Load<GameObject>(path), Is.Not.Null);
+            var names = Resources.LoadAll<AnimationClip>(path)
+                .Select(clip => clip.name.ToLowerInvariant()).ToArray();
+            foreach (var expected in new[] { "idle", "walk", "run" })
+                Assert.That(names.Any(name => name.Contains(expected)), Is.True,
+                    expected);
+        }
+
+        [TestCase(0.00f, BusinessAsUsualAction.Walk)]
+        [TestCase(0.14f, BusinessAsUsualAction.Walk)]
+        [TestCase(0.15f, BusinessAsUsualAction.Idle)]
+        [TestCase(1.00f, BusinessAsUsualAction.Idle)]
+        public void HooliganBusinessAsUsualIsMostlyIdle(float roll,
+            BusinessAsUsualAction expected)
+        {
+            Assert.That(BusinessAsUsualCharacterScript.SelectForCharacter(
+                LotWorldController.HooliganCharacterId, roll), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void HistoricPolicemanExposesInteractionReadyAnimationLibrary()
+        {
+            const string path =
+                "CityForgeV3/Props/Characters/HistoricPolicemanV01/HistoricPolicemanAnimatedV01";
+            Assert.That(Resources.Load<GameObject>(path), Is.Not.Null);
+            var names = Resources.LoadAll<AnimationClip>(path)
+                .Select(clip => clip.name.ToLowerInvariant()).ToArray();
+            foreach (var expected in new[]
+                     {
+                         "idle", "walk", "run", "wait", "look_around",
+                         "angry", "hit_to_body", "fall"
+                     })
+                Assert.That(names.Any(name => name.Contains(expected)), Is.True,
+                    expected);
+        }
+
+        [TestCase(0.00f, BusinessAsUsualAction.Walk)]
+        [TestCase(0.20f, BusinessAsUsualAction.Wait)]
+        [TestCase(0.25f, BusinessAsUsualAction.LookAround)]
+        [TestCase(0.35f, BusinessAsUsualAction.Idle)]
+        [TestCase(1.00f, BusinessAsUsualAction.Idle)]
+        public void HistoricPolicemanBusinessAsUsualIsMostlyIdle(float roll,
+            BusinessAsUsualAction expected)
+        {
+            Assert.That(BusinessAsUsualCharacterScript.SelectForCharacter(
+                LotWorldController.HistoricPolicemanCharacterId, roll),
+                Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void CharacterScriptsExposeStableSaveIdentifiers()
+        {
+            Assert.That(CharacterBehaviorScript.Normalize("unknown"), Is.EqualTo(
+                CharacterBehaviorScript.BusinessAsUsual));
+            Assert.That(CharacterBehaviorScript.IsAvailableFor(
+                LotWorldController.HooliganCharacterId,
+                CharacterBehaviorScript.HarassPedestrian), Is.True);
+            Assert.That(CharacterBehaviorScript.IsAvailableFor(
+                LotWorldController.HooliganCharacterId,
+                CharacterBehaviorScript.EvadePolice), Is.True);
+            Assert.That(CharacterBehaviorScript.IsAvailableFor(
+                LotWorldController.HistoricPolicemanCharacterId,
+                CharacterBehaviorScript.HarassPedestrian), Is.False);
+            Assert.That(CharacterBehaviorScript.IsAvailableFor(
+                LotWorldController.HooliganCharacterId,
+                CharacterBehaviorScript.FightHooligan), Is.False);
+        }
+
+        [Test]
+        public void CharacterGroundShadowUsesCanonicalSunDirection()
+        {
+            var expectedRay = TimeOfDayLighting.SunRotation(
+                TimeOfDayPreset.Afternoon) * Vector3.forward;
+            var expected = new Vector2(expectedRay.x, expectedRay.z).normalized;
+            Assert.That(Vector2.Dot(CharacterGroundShadow.Direction(
+                TimeOfDayPreset.Afternoon), expected),
+                Is.GreaterThan(0.9999f));
+        }
+
         [Test]
         public void BuildingPropCatalog_ProvidesAleHousePreviewContract()
         {
@@ -509,6 +651,7 @@ namespace CityForgeV3.Tests
             var root = new GameObject("Building Drag Test");
             try
             {
+                LogAssert.ignoreFailingMessages = true;
                 var world = root.AddComponent<LotWorldController>();
                 world.Build();
                 world.PlaceBuildingAtCenter(BuildingCatalog.ColonialGovernmentHouseId);
@@ -524,14 +667,46 @@ namespace CityForgeV3.Tests
 
                 Assert.That(world.BeginBuildingDragFromPanel(
                     PanelPoint(Vector3.zero), panelSize), Is.True);
+                var applyCountAfterFocusEntry = world.SessionStateApplyCountForQa;
+                var liveMoveCountBeforeDrag = world.BuildingFocusLiveMoveCountForQa;
+                var cameraBeforeDrag = world.CaptureCameraFraming();
+                Assert.That(world.BuildingFocusFreezeActive, Is.True);
                 Assert.That(world.DragBuildingFromPanel(
                     PanelPoint(new Vector3(3f, 0f, 2f)), panelSize), Is.True);
+                Assert.That(world.DragBuildingFromPanel(
+                    PanelPoint(new Vector3(4f, 0f, 3f)), panelSize), Is.True);
                 Assert.That(world.EndBuildingDrag(), Is.True);
-                Assert.That(world.BuildingCell, Is.EqualTo(new Vector2Int(3, 2)));
+                Assert.That(world.BuildingCell, Is.Not.EqualTo(Vector2Int.zero));
+                Assert.That(world.BuildingPresentationPosition(
+                        world.SelectedBuildingIndex),
+                    Is.EqualTo(new Vector3(
+                        world.Session.Data.CellX, 0f, world.Session.Data.CellZ)));
                 Assert.That(world.IsSelected, Is.True);
+                Assert.That(world.BuildingFocusFreezeActive, Is.True,
+                    "Pointer-up keeps the focused context frozen.");
+                Assert.That(world.SessionStateApplyCountForQa,
+                    Is.EqualTo(applyCountAfterFocusEntry),
+                    "Pointer moves and pointer-up may not rebuild the lot.");
+                Assert.That(world.BuildingFocusLiveMoveCountForQa,
+                    Is.EqualTo(liveMoveCountBeforeDrag + 2));
+                var cameraAfterDrag = world.CaptureCameraFraming();
+                Assert.That(cameraAfterDrag.Position,
+                    Is.EqualTo(cameraBeforeDrag.Position));
+                Assert.That(Quaternion.Angle(
+                    cameraAfterDrag.Rotation, cameraBeforeDrag.Rotation),
+                    Is.LessThan(0.001f));
+                Assert.That(cameraAfterDrag.OrthographicSize,
+                    Is.EqualTo(cameraBeforeDrag.OrthographicSize).Within(0.000001f));
+
+                world.DeselectAll();
+                Assert.That(world.BuildingFocusFreezeActive, Is.False);
+                Assert.That(world.SessionStateApplyCountForQa,
+                    Is.EqualTo(applyCountAfterFocusEntry + 1),
+                    "Focus exit performs exactly one full reconciliation.");
             }
             finally
             {
+                LogAssert.ignoreFailingMessages = false;
                 Object.DestroyImmediate(root);
             }
         }
@@ -576,6 +751,156 @@ namespace CityForgeV3.Tests
             StringAssert.Contains("RegisterCallback<PointerLeaveEvent>", source);
             StringAssert.Contains("_lotWorld.ClearObjectHover();", source);
             StringAssert.Contains("UpdateObjectHoverFromPanel", source);
+        }
+
+        [Test]
+        public void BuildingFocusFreezeUsesAVisibleSpotlightAndDefersReconciliation()
+        {
+            var app = File.ReadAllText(Path.Combine(
+                Application.dataPath, "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+            var world = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.cs"));
+
+            StringAssert.Contains("building-focus-freeze-overlay", app);
+            StringAssert.Contains("Building position applied • context restored", app);
+            StringAssert.Contains("_lotWorld.DeselectAll();", app);
+            StringAssert.Contains("public bool BuildingFocusFreezeActive", world);
+
+            var dragStart = world.IndexOf("public bool DragBuildingFromPanel(",
+                System.StringComparison.Ordinal);
+            var dragEnd = world.IndexOf("private bool MoveBuildingTo(", dragStart,
+                System.StringComparison.Ordinal);
+            var drag = world.Substring(dragStart, dragEnd - dragStart);
+            Assert.That(drag, Does.Contain("ApplySelectedBuildingPositionOnly();"));
+            Assert.That(drag, Does.Not.Contain("ApplySessionState();"));
+            Assert.That(drag, Does.Not.Contain("NotifyStateChanged();"));
+
+            var releaseStart = world.IndexOf("public bool EndBuildingDrag()",
+                System.StringComparison.Ordinal);
+            var releaseEnd = world.IndexOf("private bool TryLotPointFromPanel(",
+                releaseStart, System.StringComparison.Ordinal);
+            var release = world.Substring(releaseStart, releaseEnd - releaseStart);
+            Assert.That(release, Does.Not.Contain("ApplySessionState();"));
+            Assert.That(release, Does.Not.Contain("NotifyStateChanged();"));
+        }
+
+        [Test]
+        public void BuildingFocusSpotlightUsesCachedTightFacingBoundsOnly()
+        {
+            var presentation = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/HybridBuildingPresentation.cs"));
+            var buildingProps = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs"));
+
+            StringAssert.Contains("CacheRegistrationLocalBounds(",
+                presentation);
+            StringAssert.Contains("var vertices = registrationSprite.vertices",
+                presentation);
+            StringAssert.Contains("TryGetVisibleArtworkScreenBounds(",
+                presentation);
+            StringAssert.Contains("_neutralRegistrationLocalBounds",
+                presentation);
+            StringAssert.Contains("_fullNightRegistrationLocalBounds",
+                presentation);
+            StringAssert.Contains(
+                "_renderer.sprite == _fullNightSprites[_facing]",
+                presentation);
+
+            var focusStart = buildingProps.IndexOf(
+                "public bool TryGetSelectedBuildingPanelBounds(",
+                System.StringComparison.Ordinal);
+            var focusEnd = buildingProps.IndexOf(
+                "private static void ApplyBuildingPropMaterials(",
+                focusStart, System.StringComparison.Ordinal);
+            var focusBounds = buildingProps.Substring(
+                focusStart, focusEnd - focusStart);
+            Assert.That(focusBounds,
+                Does.Contain("presentation.TryGetVisibleArtworkScreenBounds("));
+            Assert.That(focusBounds,
+                Does.Contain("TryBuildingArtworkScreenBounds(").And
+                    .Contain("hasTightBounds"),
+                "Full-rectangle bounds remain only as a safe fallback.");
+
+            var sharedStart = buildingProps.IndexOf(
+                "private bool TryBuildingArtworkScreenBounds(",
+                System.StringComparison.Ordinal);
+            var sharedEnd = buildingProps.IndexOf(
+                "public bool TryGetSelectedBuildingPanelBounds(",
+                sharedStart, System.StringComparison.Ordinal);
+            var sharedBounds = buildingProps.Substring(
+                sharedStart, sharedEnd - sharedStart);
+            Assert.That(sharedBounds, Does.Contain("var bounds = renderer.bounds;"),
+                "Attachment placement and broad hover bounds stay unchanged.");
+        }
+
+        [Test]
+        public void EveryActiveBuildingFacingProvidesAlphaTightSpotlightGeometry()
+        {
+            HybridBuildingPackageRegistry.InvalidateCache();
+            var packageCount = 0;
+            var facingCount = 0;
+            foreach (var package in HybridBuildingPackageRegistry.All)
+            {
+                packageCount++;
+                for (var facingIndex = 0;
+                     facingIndex < package.FacingCount;
+                     facingIndex++)
+                {
+                    var facing = package.Facing(facingIndex);
+                    var texture = Resources.Load<Texture2D>(
+                        facing.ApprovedResourcePath);
+                    Assert.That(texture, Is.Not.Null,
+                        $"{package.Id} / {facing.Id}");
+                    var tight = Sprite.Create(
+                        texture,
+                        new Rect(0f, 0f, texture.width, texture.height),
+                        facing.UnityPivot,
+                        package.PixelsPerMeter,
+                        0,
+                        SpriteMeshType.Tight);
+                    try
+                    {
+                        var vertices = tight.vertices;
+                        Assert.That(vertices, Is.Not.Empty,
+                            $"{package.Id} / {facing.Id}");
+                        var minimum = vertices[0];
+                        var maximum = vertices[0];
+                        for (var vertexIndex = 1;
+                             vertexIndex < vertices.Length;
+                             vertexIndex++)
+                        {
+                            minimum = Vector2.Min(minimum, vertices[vertexIndex]);
+                            maximum = Vector2.Max(maximum, vertices[vertexIndex]);
+                        }
+
+                        var tightSize = maximum - minimum;
+                        var fullSize = new Vector2(
+                            texture.width / package.PixelsPerMeter,
+                            texture.height / package.PixelsPerMeter);
+                        Assert.That(tightSize.x,
+                            Is.LessThanOrEqualTo(fullSize.x + 0.001f),
+                            $"{package.Id} / {facing.Id}");
+                        Assert.That(tightSize.y,
+                            Is.LessThanOrEqualTo(fullSize.y + 0.001f),
+                            $"{package.Id} / {facing.Id}");
+                        Assert.That(tightSize.x < fullSize.x - 0.001f ||
+                                    tightSize.y < fullSize.y - 0.001f,
+                            Is.True,
+                            $"{package.Id} / {facing.Id} retained its full canvas");
+                    }
+                    finally
+                    {
+                        Object.DestroyImmediate(tight);
+                    }
+                    facingCount++;
+                }
+            }
+
+            Assert.That(packageCount, Is.GreaterThanOrEqualTo(32));
+            Assert.That(facingCount, Is.GreaterThanOrEqualTo(128));
         }
 
         [Test]
@@ -945,6 +1270,239 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void SelectedTopDownBuildingShowsItsAuthoredEntranceArrow()
+        {
+            var root = new GameObject("Authored Building Front Arrow Test");
+            try
+            {
+                LogAssert.ignoreFailingMessages = true;
+                const string buildingId =
+                    "cityforge.v3.residential.ny_brownstone_tripo_01";
+                var package = HybridBuildingPackageRegistry.Load(
+                    BuildingCatalog.Find(buildingId).PackageResourcePath);
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Front Arrow Test", LotType.Residential, 5, 5);
+                Assert.That(world.PlaceBuildingAtCenter(buildingId), Is.True);
+                world.SetBuildingEditorContext(true, false);
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                var screen = camera.WorldToScreenPoint(Vector3.zero);
+                var panelPoint = new Vector2(screen.x, panelSize.y - screen.y);
+                Assert.That(world.BeginBuildingDragFromPanel(
+                    panelPoint, panelSize), Is.True);
+
+                Assert.That(world.SelectedBuildingFrontMarkerVisible, Is.False);
+                world.ToggleTopDownView();
+
+                Assert.That(world.SelectedBuildingFrontMarkerVisible, Is.True);
+                Assert.That(Vector3.Angle(
+                    world.SelectedBuildingFrontDirection,
+                    LotWorldController.AuthoredBuildingFrontDirection(
+                        package, 0)), Is.LessThan(0.001f));
+
+                world.RotateSelected(1);
+                Assert.That(Vector3.Angle(
+                    world.SelectedBuildingFrontDirection,
+                    LotWorldController.AuthoredBuildingFrontDirection(
+                        package, 1)), Is.LessThan(0.001f));
+                Assert.That(world.SelectedBuildingFrontMarkerVisible, Is.True);
+
+                world.DeselectAll();
+                Assert.That(world.SelectedBuildingFrontMarkerVisible, Is.False);
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void NyStreetTreeUsesOnlyTheBoundedVisibleAuthoredFrontApron()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_brownstone_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var building = new Vector3(-20f, 0f, 5f);
+            var front = LotWorldController.AuthoredBuildingFrontDirection(
+                package, 0);
+            var towardCamera = front;
+            var savedStreetTree = new Vector3(
+                -20.435188f, 0f, -6.456524f);
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                savedStreetTree, building, package, 0, towardCamera), Is.True,
+                "The unambiguous NY Residential tree is 1.20 m beyond the " +
+                "authored entrance edge and must remain visible.");
+
+            var side = building + Vector3.right *
+                (package.WidthMeters * 0.5f + 0.75f);
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                side, building, package, 0, towardCamera), Is.False,
+                "The front exception may not leak around a side wall.");
+
+            var rear = building - front *
+                (package.DepthMeters * 0.5f + 0.5f);
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                rear, building, package, 0, towardCamera), Is.False,
+                "The back of the building keeps ordinary depth occlusion.");
+
+            var fartherIntoStreet = building + front *
+                (package.DepthMeters * 0.5f + 12f);
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                fartherIntoStreet, building, package, 0, towardCamera), Is.True,
+                "Camera-front classification comes from the ground anchor and " +
+                "footprint support plane, not an arbitrary facade apron depth.");
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                savedStreetTree, building, package, 0, -front), Is.False,
+                "A facade facing away from the camera may not promote flora.");
+        }
+
+        [Test]
+        public void AuthoredFrontApronRotatesWithEveryPlacedBuildingQuarterTurn()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_brownstone_bay_windows_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var building = new Vector3(3f, 0f, -4f);
+            for (var turn = 0; turn < 4; turn++)
+            {
+                var front = LotWorldController.AuthoredBuildingFrontDirection(
+                    package, turn);
+                var point = building + front *
+                    (package.DepthMeters * 0.5f + 1f);
+                Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                    point, building, package, turn, front), Is.True,
+                    $"quarter turn {turn}");
+            }
+        }
+
+        [Test]
+        public void FrontApronVisibilityUsesOneParallelOrthographicDirection()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_fancy_townhouse_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var building = new Vector3(-6f, 0f, 1f);
+            var towardCamera = new Vector3(0.5664f, 0f, -0.8241f);
+            var savedTree = new Vector3(-8.542774f, 0f, -4.711983f);
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                savedTree, building, package, 0, towardCamera), Is.True);
+        }
+
+        [Test]
+        public void FacadeCenterTreeUsesNearestBuildingSurface()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_brownstone_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var building = Vector3.zero;
+            var towardCamera = new Vector3(0.5664f, 0f, -0.8241f).normalized;
+            var facadeCenterTree = new Vector3(
+                0f, 0f, -package.DepthMeters * 0.5f - 1f);
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                facadeCenterTree, building, package, 0, towardCamera), Is.True,
+                "The closest facade surface is behind the tree relative to " +
+                "the camera, so that building may recover covered pixels.");
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                Vector3.zero, building, package, 0, towardCamera), Is.False,
+                "An anchor deep inside the footprint remains physically hidden.");
+        }
+
+        [Test]
+        public void TreeJustInsideVisibleFacadeSeamUsesShallowRecoveryBand()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_brownstone_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var towardCamera = new Vector3(0f, 0f, -1f);
+            var justInsideFacade = new Vector3(
+                0f, 0f, -package.DepthMeters * 0.5f + 0.5f);
+            var deepInside = new Vector3(
+                0f, 0f, -package.DepthMeters * 0.5f + 2f);
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                justInsideFacade, Vector3.zero, package, 0, towardCamera),
+                Is.True,
+                "A half-meter facade registration overlap must not make a " +
+                "sidewalk tree disappear.");
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                deepInside, Vector3.zero, package, 0, towardCamera), Is.False,
+                "The tolerance must not expose trees deep inside a building.");
+        }
+
+        [Test]
+        public void LateralFacadeTreeUsesNearestSurfaceWhenGroundRayMissesFootprint()
+        {
+            const string buildingId =
+                "cityforge.v3.residential.ny_brownstone_tripo_01";
+            var package = HybridBuildingPackageRegistry.Load(
+                BuildingCatalog.Find(buildingId).PackageResourcePath);
+            var towardCamera = new Vector3(0.5664f, 0f, -0.8241f).normalized;
+            var lateralFacadeTree = new Vector3(
+                package.WidthMeters * 0.5f + 0.75f,
+                0f,
+                package.DepthMeters * 0.5f - 0.1f);
+
+            Assert.That(LotWorldController.IsInVisibleBuildingFrontApron(
+                lateralFacadeTree, Vector3.zero, package, 0, towardCamera),
+                Is.True,
+                "A wide tree beside the facade must recover pixels covered " +
+                "by the host building even when its trunk ray misses the " +
+                "rectangular footprint near the corner.");
+        }
+
+        [Test]
+        public void FloraSpritePickingRejectsTransparentPixels()
+        {
+            var texture = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+            var pixels = Enumerable.Repeat(Color.clear, 16).ToArray();
+            pixels[2 + 2 * 4] = Color.white;
+            texture.SetPixels(pixels);
+            texture.Apply();
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, 4f, 4f),
+                new Vector2(0.5f, 0.5f), 1f);
+            var root = new GameObject("Alpha Flora Pick Test");
+            var cameraObject = new GameObject("Alpha Flora Pick Camera");
+            try
+            {
+                var renderer = root.AddComponent<SpriteRenderer>();
+                renderer.sprite = sprite;
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = 2f;
+                camera.transform.position = new Vector3(0f, 0f, -10f);
+                camera.transform.rotation = Quaternion.identity;
+                renderer.transform.rotation = Quaternion.identity;
+
+                var opaquePixel = camera.WorldToScreenPoint(
+                    new Vector3(0.5f, 0.5f, 0f));
+                var transparentPixel = camera.WorldToScreenPoint(
+                    new Vector3(-0.5f, -0.5f, 0f));
+                Assert.That(LotWorldController.SpriteRendererContainsCameraPixel(
+                    renderer, camera, opaquePixel), Is.True);
+                Assert.That(LotWorldController.SpriteRendererContainsCameraPixel(
+                    renderer, camera, transparentPixel), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(cameraObject);
+                Object.DestroyImmediate(sprite);
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        [Test]
         public void LotEditorTopBarExposesTopDownToggleInEveryCategory()
         {
             var source = File.ReadAllText(
@@ -1042,6 +1600,260 @@ namespace CityForgeV3.Tests
                 Object.DestroyImmediate(presentationObject);
                 Object.DestroyImmediate(cameraObject);
             }
+        }
+
+        [Test]
+        public void HybridBuildingArtworkBindsItsOwnDepthStencilId()
+        {
+            var cameraObject = new GameObject("Stencil Presentation Camera");
+            var presentationObject = new GameObject("Stencil Presentation");
+            try
+            {
+                var presentation =
+                    presentationObject.AddComponent<HybridBuildingPresentation>();
+                presentation.Build(cameraObject.AddComponent<Camera>(),
+                    HybridBuildingPackageRegistry.NewEnglandHouse);
+                var reference =
+                    LotWorldController.BuildingDepthOcclusionStencilReference(3);
+                presentation.SetHostBuildingStencilReference(reference);
+
+                Assert.That(presentation.HostBuildingStencilReference,
+                    Is.EqualTo(reference));
+                var renderer = presentationObject
+                    .GetComponentInChildren<SpriteRenderer>();
+                Assert.That(renderer.sharedMaterial.GetFloat(
+                    "_BuildingHostStencilRef"), Is.EqualTo(reference));
+            }
+            finally
+            {
+                Object.DestroyImmediate(presentationObject);
+                Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
+        public void ExperimentalThreeDimensionalBuildingLibraryIsAvailable()
+        {
+            var app = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            Assert.That(Resources.Load<GameObject>(
+                LotWorldController.BrownstoneBuilding22kResource), Is.Not.Null);
+            StringAssert.Contains("3D BUILDING LIBRARY", app);
+            StringAssert.Contains("CREATE 3D BUILDINGS TEST LOT", app);
+            StringAssert.Contains("21,743 TRIANGLES", app);
+        }
+
+        [Test]
+        public void ExperimentalBrownstoneCastsMorningAndAfternoonShadowsOnAllReceivers()
+        {
+            var root = new GameObject("Brownstone Receiver Shadow Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.CreateExperimental3DBuildingsLot();
+
+                Assert.That(world.ExperimentalBuilding3DCount, Is.EqualTo(3));
+                Assert.That(Resources.Load<GameObject>(
+                    LotWorldController.LowPolyBrownstoneV01Resource),
+                    Is.Not.Null);
+                var lotSurface = root.GetComponentsInChildren<Renderer>(true)
+                    .Single(renderer => renderer.gameObject.name == "Lot Surface");
+                Assert.That(lotSurface.receiveShadows, Is.True);
+                Assert.That(lotSurface.sharedMaterial.shader.name,
+                    Is.EqualTo("CityForgeV3/Experimental3DGroundReceiver"),
+                    "The all-3D lot must use the textured native mesh-shadow receiver.");
+                world.SetBaseTexture("grass-lush");
+                Assert.That(lotSurface.sharedMaterial.mainTexture, Is.Not.Null,
+                    "Switching to the 3D shadow receiver must preserve the selected lush-grass texture.");
+                Assert.That(lotSurface.sharedMaterial.color,
+                    Is.EqualTo(Color.white),
+                    "Authored lush grass must not inherit a time-of-day or environment color tint.");
+                Assert.That(lotSurface.sharedMaterial.GetColor("_DisplayMatch"),
+                    Is.EqualTo(new Color(0.75f, 0.80f, 0.75f, 1f)),
+                    "The Game-view grass must retain the measured chooser-preview display calibration.");
+                Assert.That(lotSurface.sharedMaterial.renderQueue, Is.EqualTo(2000),
+                    "Grass must remain opaque beneath the isolated transparent building shadows.");
+                Assert.That(QualitySettings.shadowDistance,
+                    Is.GreaterThanOrEqualTo(150f));
+                Assert.That(QualitySettings.shadowCascades, Is.EqualTo(4));
+                Assert.That(world.ExperimentalBuilding3DFloraShadowCasterCount,
+                    Is.GreaterThan(0));
+                var visibleBuildings = root.GetComponentsInChildren<Transform>(true)
+                    .Where(transform =>
+                        transform.name == "3D Building — Brownstone 22K")
+                    .ToArray();
+                Assert.That(visibleBuildings.Length, Is.EqualTo(2));
+                var brownstoneMaterials = visibleBuildings
+                    .SelectMany(transform =>
+                        transform.GetComponentsInChildren<Renderer>(true))
+                    .SelectMany(renderer => renderer.sharedMaterials)
+                    .Where(material => material != null)
+                    .ToArray();
+                Assert.That(brownstoneMaterials, Is.Not.Empty);
+                Assert.That(brownstoneMaterials.All(material =>
+                        material.shader.name ==
+                        "CityForgeV3/Experimental3DBuildingPBR"),
+                    Is.True,
+                    "The Tripo brownstone must use the local linearized PBR response instead of Gamma-space Standard shading.");
+                Assert.That(brownstoneMaterials.All(material =>
+                        material.GetFloat("_Contrast") > 1.25f &&
+                        material.GetFloat("_Saturation") > 1.20f),
+                    Is.True,
+                    "The Gamma-space pilot must preserve charcoal and green chroma without lowering brownstone midtones.");
+                var lowPolyBrownstone = root
+                    .GetComponentsInChildren<Transform>(true)
+                    .Single(transform => transform.name ==
+                        "3D Building — Low-Poly Brownstone V01");
+                Assert.That(Quaternion.Angle(
+                        lowPolyBrownstone.localRotation,
+                        Quaternion.Euler(-90f, 180f, 0f)),
+                    Is.LessThan(0.01f),
+                    "The comparison brownstone must stand upright with its front aligned to the other façades.");
+                Assert.That(visibleBuildings.SelectMany(transform =>
+                        transform.GetComponentsInChildren<Renderer>(true))
+                    .All(renderer => renderer.receiveShadows &&
+                        renderer.shadowCastingMode == ShadowCastingMode.Off),
+                    Is.True,
+                    "The beauty meshes receive shadows while their single hidden mesh copies cast, preventing doubles.");
+                var nativeGroundCasters = root.GetComponentsInChildren<Transform>(true)
+                    .Where(transform => transform.name.Contains(
+                        "Native Ground Shadow Caster"))
+                    .ToArray();
+                Assert.That(nativeGroundCasters.Length, Is.EqualTo(3));
+                Assert.That(nativeGroundCasters.SelectMany(transform =>
+                        transform.GetComponentsInChildren<Renderer>(true))
+                    .All(renderer => renderer.gameObject.layer == 0 &&
+                        renderer.shadowCastingMode == ShadowCastingMode.ShadowsOnly),
+                    Is.True,
+                    "Each 3D building must have exactly one mesh-detail caster visible to the main sun.");
+                var projectedGroundShadows = root
+                    .GetComponentsInChildren<Transform>(true)
+                    .Where(transform => transform.name.StartsWith(
+                        "3D Building Ground Shadow —"))
+                    .ToArray();
+                Assert.That(projectedGroundShadows.Length, Is.EqualTo(3));
+                Assert.That(Shader.Find(
+                    "CityForgeV3/ProjectedBuildingMeshShadow"), Is.Not.Null);
+                Assert.That(projectedGroundShadows.All(transform =>
+                        transform.GetComponentsInChildren<MeshFilter>(true)
+                            .Any(filter => filter.sharedMesh != null) &&
+                        transform.GetComponentsInChildren<MeshRenderer>(true)
+                            .All(renderer =>
+                                renderer.sharedMaterial.shader.name ==
+                                    "CityForgeV3/ProjectedBuildingMeshShadow" &&
+                                renderer.sharedMaterial.renderQueue == 3001 &&
+                                renderer.shadowCastingMode ==
+                                    ShadowCastingMode.Off)),
+                    Is.True,
+                    "Each real 3D building needs a projected copy of its actual render meshes so stairs and façade details remain in the ground silhouette.");
+                var casterRoots = root.GetComponentsInChildren<Transform>(true)
+                    .Where(transform => transform.name.Contains(
+                        "Flora/Prop Shadow Caster"))
+                    .ToArray();
+                var caster = root.GetComponentsInChildren<Renderer>(true)
+                    .Where(renderer => casterRoots.Any(casterRoot =>
+                        renderer.transform.IsChildOf(casterRoot)))
+                    .ToArray();
+                Assert.That(caster, Is.Not.Empty);
+                Assert.That(caster.All(renderer =>
+                    renderer.gameObject.layer == 31), Is.True);
+                Assert.That(caster.All(renderer => renderer.shadowCastingMode ==
+                    ShadowCastingMode.ShadowsOnly), Is.True);
+
+                world.SetTimeOfDay(TimeOfDayPreset.Morning);
+                var sun = root.GetComponentsInChildren<Light>(true)
+                    .Single(light => light.gameObject.name == "Time of Day Sun");
+                Assert.That(sun.cullingMask & (1 << 31), Is.Zero,
+                    "The beauty sun must not render the private layer-31 ShadowsOnly duplicate or buildings cast twice.");
+                var floraShadowSun = root.GetComponentsInChildren<Light>(true)
+                    .Single(light => light.gameObject.name == "Flora Shadow Alignment Sun");
+                Assert.That(floraShadowSun.cullingMask, Is.EqualTo(1 << 31),
+                    "Only the isolated flora/billboard light may render the ShadowsOnly duplicate.");
+                var morningRay = sun.transform.forward;
+                Assert.That(morningRay.z, Is.LessThan(-0.5f),
+                    "Morning rays must travel west from an eastern sun.");
+                Assert.That(Mathf.Asin(-morningRay.y) * Mathf.Rad2Deg,
+                    Is.EqualTo(48f).Within(0.1f),
+                    "The 3D pilot uses a higher morning sun to avoid oversized native shadows.");
+                Assert.That(sun.intensity, Is.EqualTo(0.62f).Within(0.001f));
+                Assert.That(RenderSettings.ambientMode,
+                    Is.EqualTo(UnityEngine.Rendering.AmbientMode.Skybox));
+                Assert.That(RenderSettings.ambientIntensity,
+                    Is.EqualTo(0.92f).Within(0.001f));
+                Assert.That(RenderSettings.skybox, Is.Not.Null);
+                Assert.That(RenderSettings.skybox.name,
+                    Does.Contain("Tripo Studio IBL"));
+                Assert.That(lotSurface.sharedMaterial.color.g,
+                    Is.EqualTo(1f).Within(0.01f),
+                    "Authored grass must remain neutrally tinted instead of inheriting the time-of-day olive calibration.");
+                world.SetTimeOfDay(TimeOfDayPreset.Noon);
+                Assert.That(sun.intensity, Is.EqualTo(0.55f).Within(0.001f));
+                Assert.That(projectedGroundShadows.All(transform =>
+                        transform.gameObject.activeSelf), Is.True,
+                    "A freshly loaded noon 3D lot needs restrained contact shadows because its exact-color grass receiver is unlit.");
+                Assert.That(lotSurface.sharedMaterial.color.g,
+                    Is.EqualTo(1f).Within(0.01f),
+                    "Noon must preserve the authored lush-grass texture color.");
+                Assert.That(root.GetComponentsInChildren<Transform>(true)
+                    .Any(transform => transform.name.Contains(
+                        "Directional Ground Shadow")), Is.False,
+                    "Real 3D buildings must rely on their mesh silhouette rather than a bounds-derived ground hull.");
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                var afternoonRay = sun.transform.forward;
+                Assert.That(afternoonRay.z, Is.GreaterThan(0.5f),
+                    "Afternoon rays must travel east from a western sun.");
+                Assert.That(Vector2.Dot(
+                        new Vector2(morningRay.x, morningRay.z).normalized,
+                        new Vector2(afternoonRay.x, afternoonRay.z).normalized),
+                    Is.LessThan(-0.99f),
+                    "Morning and afternoon brownstone shadows must project to opposite sides.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void ExperimentalBuildingRebuildImmediatelyPopulatesSavedLotShadows()
+        {
+            var source = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.Buildings3D.cs"));
+            var rebuildStart = source.IndexOf(
+                "private void RebuildExperimentalBuilding3DPresentations()",
+                System.StringComparison.Ordinal);
+            var rebuildEnd = source.IndexOf(
+                "private void BuildExperimentalBuilding3DProjectedGroundShadow(",
+                rebuildStart, System.StringComparison.Ordinal);
+            var rebuild = source.Substring(rebuildStart,
+                rebuildEnd - rebuildStart);
+
+            StringAssert.Contains(
+                "UpdateExperimentalBuilding3DProjectedGroundShadows();",
+                rebuild,
+                "The normal LoadLot ordering rebuilds runtime objects after lighting; the rebuild must populate shadow meshes itself.");
+        }
+
+        [Test]
+        public void PlayerBuildKeepsExperimentalBuildingMeshesReadableForGroundShadows()
+        {
+            var brownstoneMeta = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Buildings3D/BrownstoneBuilding22k/brownstone-building-22k.fbx.meta"));
+            var lowPolyMeta = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Buildings3D/LowPolyBrownstoneV01/LowPolyBrownstone.fbx.meta"));
+            var shadowSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Runtime/World/LotWorldController.Buildings3D.cs"));
+
+            StringAssert.Contains("isReadable: 1", brownstoneMeta);
+            StringAssert.Contains("isReadable: 1", lowPolyMeta);
+            StringAssert.Contains("if (!filter.sharedMesh.isReadable)",
+                shadowSource,
+                "Standalone players need a conservative fallback rather than silently losing every ground shadow.");
         }
 
         [Test]
@@ -1185,7 +1997,7 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(TimeOfDayPreset.Morning, "MORNING", 24f, 90f)]
-        [TestCase(TimeOfDayPreset.Noon, "NOON", 68f, 174f)]
+        [TestCase(TimeOfDayPreset.Noon, "NOON", 89f, 174f)]
         [TestCase(TimeOfDayPreset.Afternoon, "AFTERNOON", 34f, 270f)]
         [TestCase(TimeOfDayPreset.Evening, "EVENING", 8f, 272f)]
         [TestCase(TimeOfDayPreset.Night, "NIGHT", -18f, 318f)]
@@ -1214,13 +2026,38 @@ namespace CityForgeV3.Tests
 
             Assert.That(rayDirection.y, Is.LessThan(0f),
                 "Afternoon sunlight must travel downward.");
-            Assert.That(rayDirection.x, Is.GreaterThan(0f),
+            Assert.That(rayDirection.z, Is.GreaterThan(0f),
                 "A western afternoon sun must cast its rays toward the east.");
-            Assert.That(Mathf.Abs(rayDirection.z), Is.LessThan(0.001f),
+            Assert.That(Mathf.Abs(rayDirection.x), Is.LessThan(0.001f),
                 "Due-west afternoon light must not introduce a north/south component.");
-            Assert.That(Vector3.Dot(Vector3.right, -rayDirection),
+            Assert.That(Vector3.Dot(Vector3.forward, -rayDirection),
                 Is.LessThan(0f),
                 "An east-facing wall must face away from the afternoon sun.");
+        }
+
+        [Test]
+        public void NativeAfternoonSunUsesCanonicalCharacterShadowDirection()
+        {
+            var root = new GameObject("Native Character Shadow Direction Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                var sun = root.GetComponentsInChildren<Light>()
+                    .First(light => light.name == "Time of Day Sun");
+                var actualRay = sun.transform.rotation * Vector3.forward;
+                var expectedRay = TimeOfDayLighting.SunRotation(
+                    TimeOfDayPreset.Afternoon) * Vector3.forward;
+                Assert.That(Vector3.Angle(actualRay, expectedRay),
+                    Is.LessThan(0.001f));
+                Assert.That(Mathf.Abs(actualRay.x), Is.LessThan(0.001f));
+                Assert.That(actualRay.z, Is.GreaterThan(0.999f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
@@ -1234,9 +2071,9 @@ namespace CityForgeV3.Tests
 
             Assert.That(rayDirection.y, Is.LessThan(0f),
                 "Morning sunlight must travel downward.");
-            Assert.That(horizontal.x, Is.LessThan(-0.999f),
+            Assert.That(horizontal.y, Is.LessThan(-0.999f),
                 "A due-east morning sun must cast its shadow due west.");
-            Assert.That(Mathf.Abs(horizontal.y), Is.LessThan(0.001f),
+            Assert.That(Mathf.Abs(horizontal.x), Is.LessThan(0.001f),
                 "Morning building shadows must not drift north or south.");
         }
 
@@ -1259,6 +2096,34 @@ namespace CityForgeV3.Tests
             var source = System.IO.File.ReadAllText(path);
             StringAssert.Contains("ZWrite Off", source);
             StringAssert.DoesNotContain("ZWrite On", source);
+        }
+
+        [Test]
+        public void ShadowReceiverPreservesLowAngleDirectionalContrast()
+        {
+            var path = System.IO.Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/ShadowReceivingLotSurface.shader");
+            var source = System.IO.File.ReadAllText(path);
+            StringAssert.Contains(
+                "_AmbientFloor, 1.0h, diffuse * shadow", source);
+            StringAssert.DoesNotContain(
+                "max(_AmbientFloor, diffuse * shadow)", source);
+        }
+
+        [Test]
+        public void ExperimentalBuildingsUseMeshShadowsWithoutBoundsGroundHull()
+        {
+            var runtime = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Buildings3D.cs");
+            StringAssert.DoesNotContain(
+                "BuildExperimentalBuilding3DGroundShadow", runtime);
+            StringAssert.DoesNotContain(
+                "Bounds-Derived Directional Ground Shadow", runtime);
+            StringAssert.Contains(
+                "renderer.shadowCastingMode = ShadowCastingMode.On", runtime);
+            StringAssert.Contains(
+                "renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly", runtime);
         }
 
         [Test]
@@ -1368,7 +2233,7 @@ namespace CityForgeV3.Tests
         {
             var noon = TimeOfDayLighting.For(TimeOfDayPreset.Noon);
 
-            Assert.That(noon.SunElevation, Is.EqualTo(68f));
+            Assert.That(noon.SunElevation, Is.EqualTo(89f));
             Assert.That(noon.SunIntensity, Is.EqualTo(0.92f));
             Assert.That(noon.AmbientColor.grayscale, Is.LessThan(0.36f));
             Assert.That(noon.ScreenTint.a, Is.EqualTo(0.008f));
@@ -1387,12 +2252,21 @@ namespace CityForgeV3.Tests
                 TimeOfDayPreset.Afternoon,
                 true);
 
-            Assert.That(evening,
-                Is.EqualTo(TimeOfDayLighting.For(TimeOfDayPreset.Evening)
-                    .NeutralArtworkTint));
+            Assert.That(evening, Is.EqualTo(new Color(0.66f, 0.69f, 0.76f)));
             Assert.That(evening.grayscale, Is.LessThan(afternoon.grayscale));
             Assert.That(afternoon, Is.EqualTo(Color.white),
                 "The approved v30 afternoon exposure must not change.");
+        }
+
+        [Test]
+        public void HybridNightBaseRemainsReadableBehindWindowOverlays()
+        {
+            var night = HybridBuildingPresentation.NeutralBaseTintFor(
+                TimeOfDayPreset.Night,
+                false);
+
+            Assert.That(night, Is.EqualTo(new Color(0.38f, 0.43f, 0.54f)));
+            Assert.That(night.grayscale, Is.GreaterThan(0.40f));
         }
 
         [Test]
@@ -1910,10 +2784,34 @@ namespace CityForgeV3.Tests
         [Test]
         public void LegacyTreeArtworkLoadsAndFloraPlacementsRoundTrip()
         {
-            foreach (var id in new[] { "maple", "ashe", "oak" })
+            foreach (var id in new[]
+                     {
+                         "maple", "ashe", "oak", "date-palm",
+                         "narrow-street-tree", "small-hedge", "medium-hedge",
+                         "long-hedge"
+                     })
                 Assert.That(Resources.Load<Texture2D>(
                     $"CityForgeV3/Flora/LegacyTreesV01/{id}-summer"),
                     Is.Not.Null, id);
+
+            foreach (var season in new[] { "spring", "summer", "autumn", "winter" })
+            {
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/date-palm-{season}"),
+                    Is.Not.Null, season);
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/narrow-street-tree-{season}"),
+                    Is.Not.Null, season);
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/small-hedge-{season}"),
+                    Is.Not.Null, season);
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/medium-hedge-{season}"),
+                    Is.Not.Null, season);
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/long-hedge-{season}"),
+                    Is.Not.Null, season);
+            }
 
             var source = new LotEditorSession();
             source.Data.Flora.Add(new PlacedFlora
@@ -1967,7 +2865,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void NewFloraAndFenceAimedThroughChurchArtworkMoveToNearestPrimitiveEdge()
+        public void NewFloraAndFenceMayBePlacedAtOccludedGroundPoint()
         {
             var root = new GameObject("Church Edge Placement Assistance Test");
             try
@@ -1988,24 +2886,24 @@ namespace CityForgeV3.Tests
                 world.SetFloraEditorContext(true);
                 Assert.That(world.BeginFloraDragFromPanel(
                     "maple", centerPanelPoint, panelSize), Is.True,
-                    "A tree aimed through tall church artwork should glide to its nearest physical edge.");
+                    "A tree may be placed at an occluded ground point.");
                 world.EndFloraDrag();
                 var tree = world.Session.Data.Flora[0];
                 Assert.That(world.CanPlaceFloraAt(
                     new Vector2(tree.PositionX, tree.PositionZ)), Is.True);
                 Assert.That(new Vector2(tree.PositionX, tree.PositionZ).magnitude,
-                    Is.GreaterThan(1f));
+                    Is.LessThan(0.01f));
 
                 world.SetPropEditorContext(true);
                 world.SetPropPlacementPreview("wrought-iron-fence-straight-v01");
                 Assert.That(world.BeginPropDragFromPanel(
                     "wrought-iron-fence-straight-v01", centerPanelPoint, panelSize),
                     Is.True,
-                    "A fence aimed through tall church artwork should glide to its nearest physical edge.");
+                    "An ordinary prop may be placed at an occluded ground point.");
                 world.EndPropDrag();
                 var fence = world.Session.Data.Props[0];
                 Assert.That(new Vector2(fence.PositionX, fence.PositionZ).magnitude,
-                    Is.GreaterThan(1f));
+                    Is.LessThan(0.01f));
             }
             finally
             {
@@ -2098,7 +2996,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void FloraAndBuildingsRejectSharedFootprintsAndUseCameraDepthSorting()
+        public void FloraMayShareBuildingFootprintsAndUsesCameraDepthSorting()
         {
             var root = new GameObject("Flora Occupancy and Depth Test");
             try
@@ -2107,8 +3005,8 @@ namespace CityForgeV3.Tests
                 world.Build();
                 Assert.That(world.PlaceBuildingAtCenter(
                     BuildingCatalog.ColonialGovernmentHouseId), Is.True);
-                Assert.That(world.CanPlaceFloraAt(Vector2.zero), Is.False,
-                    "A tree trunk cannot occupy the selected building footprint.");
+                Assert.That(world.CanPlaceFloraAt(Vector2.zero), Is.True,
+                    "A tree anchor may occupy a building footprint even when hidden.");
 
                 var camera = root.GetComponentInChildren<Camera>();
                 var behind = new Vector2(camera.transform.forward.x,
@@ -2247,12 +3145,13 @@ namespace CityForgeV3.Tests
                     root.GetComponentsInChildren<SpriteRenderer>(),
                     renderer => renderer.name.StartsWith("Flora Shadow")).Length,
                     Is.EqualTo(1));
-                Assert.That(cast.color.a, Is.EqualTo(0.45f).Within(0.001f));
+                Assert.That(cast.color.a, Is.EqualTo(0.315f).Within(0.001f));
                 Assert.That(cast.sprite.bounds.size.x * cast.transform.localScale.x,
                     Is.EqualTo(8.1f).Within(0.01f));
                 Assert.That(cast.sortingOrder, Is.EqualTo(tree.sortingOrder - 1));
 
                 world.SetTimeOfDay(TimeOfDayPreset.Morning);
+                Assert.That(cast.color.a, Is.EqualTo(0.14f).Within(0.001f));
                 Assert.That(cast.sprite.bounds.size.x * cast.transform.localScale.x,
                     Is.EqualTo(5.375f).Within(0.01f));
 
@@ -2367,6 +3266,49 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void WhitePicketFenceIsAPlaceablePersistentThreeDimensionalProp()
+        {
+            Assert.That(Resources.Load<GameObject>(
+                "CityForgeV3/Props/PicketFenceV01/CF_Prop_PicketFence_Straight_v01"),
+                Is.Not.Null);
+            var root = new GameObject("White Picket Fence Prop Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.Session.Data.Props.Add(new PlacedProp
+                {
+                    InstanceId = "picket-fence-test",
+                    PropId = LotWorldController.PicketFencePropId,
+                    PositionX = 0f,
+                    PositionZ = 0f
+                });
+                world.SetInspectionMode(BuildingInspectionMode.Artwork);
+                world.SetPropEditorContext(true);
+                var fence = Find(root.transform,
+                    $"Prop — {LotWorldController.PicketFencePropId}");
+                Assert.That(fence, Is.Not.Null);
+                var renderer = fence.GetComponentInChildren<MeshRenderer>();
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(renderer.bounds.size.x, Is.EqualTo(2.4f).Within(0.1f));
+                Assert.That(renderer.bounds.size.y, Is.EqualTo(1.26f).Within(0.12f));
+                Assert.That(renderer.sharedMaterial.shader.name, Is.EqualTo("Standard"));
+                Assert.That(renderer.sharedMaterial.mainTexture, Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.GetTexture("_BumpMap"), Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.GetTexture("_MetallicGlossMap"), Is.Not.Null);
+
+                var restored = new LotEditorSession();
+                restored.Restore(world.Session.Serialize());
+                Assert.That(restored.Data.Props[0].PropId,
+                    Is.EqualTo(LotWorldController.PicketFencePropId));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void ThreeLanternLamppostIsTexturedPersistentAndOnlyLitAfterDaytime()
         {
             Assert.That(Resources.Load<GameObject>(
@@ -2396,21 +3338,19 @@ namespace CityForgeV3.Tests
                 Assert.That(renderer.sharedMaterial.GetTexture("_BumpMap"), Is.Not.Null);
                 Assert.That(renderer.sharedMaterial.GetTexture("_MetallicGlossMap"), Is.Not.Null);
                 Assert.That(renderer.sharedMaterial.GetTexture("_EmissionMap"), Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.GetFloat("_GlossMapScale"),
+                    Is.EqualTo(0.64f));
 
                 var lights = lamppost.GetComponentsInChildren<Light>(true);
                 Assert.That(lights.Length, Is.EqualTo(3));
                 var lightPool = Find(lamppost, "CF Runtime Lantern Light Pool");
-                Assert.That(lightPool, Is.Not.Null);
-                Assert.That(lightPool.localScale.x,
-                    Is.EqualTo(LotWorldController.ThreeLanternLightPoolDiameterMeters));
+                Assert.That(lightPool, Is.Null);
                 world.SetTimeOfDay(TimeOfDayPreset.Noon);
                 foreach (var light in lights) Assert.That(light.enabled, Is.False);
-                Assert.That(lightPool.GetComponent<MeshRenderer>().enabled, Is.False);
                 Assert.That(renderer.sharedMaterial.GetColor("_EmissionColor"),
                     Is.EqualTo(Color.black));
                 world.SetTimeOfDay(TimeOfDayPreset.Evening);
                 foreach (var light in lights) Assert.That(light.enabled, Is.True);
-                Assert.That(lightPool.GetComponent<MeshRenderer>().enabled, Is.True);
                 Assert.That(renderer.sharedMaterial.GetColor("_EmissionColor").maxColorComponent,
                     Is.GreaterThan(1f));
 
@@ -2418,6 +3358,66 @@ namespace CityForgeV3.Tests
                 restored.Restore(world.Session.Serialize());
                 Assert.That(restored.Data.Props[0].PropId,
                     Is.EqualTo("three-lantern-lamppost-v01"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void SimpleStreetLamppostIsOptimizedScaledAndNightLit()
+        {
+            Assert.That(Resources.Load<GameObject>(
+                "CityForgeV3/Props/SimpleStreetLamppostV01/SimpleStreetLamppostV01"),
+                Is.Not.Null);
+            var root = new GameObject("Simple Street Lamppost Prop Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.Session.Data.Props.Add(new PlacedProp
+                {
+                    InstanceId = "simple-street-lamp-test",
+                    PropId = LotWorldController.SimpleStreetLamppostPropId,
+                    PositionX = 0f,
+                    PositionZ = 0f
+                });
+                world.SetInspectionMode(BuildingInspectionMode.Artwork);
+                world.SetPropEditorContext(false);
+                var lamppost = Find(root.transform,
+                    $"Prop — {LotWorldController.SimpleStreetLamppostPropId}");
+                Assert.That(lamppost, Is.Not.Null);
+                var renderer = lamppost.GetComponentInChildren<MeshRenderer>();
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(renderer.bounds.size.y, Is.EqualTo(3.6f).Within(0.15f));
+                Assert.That(renderer.sharedMaterial.mainTexture, Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.mainTexture.name,
+                    Is.EqualTo("base-color-dark"));
+                Assert.That(renderer.sharedMaterial.GetTexture("_BumpMap"), Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.GetTexture("_MetallicGlossMap"), Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.GetTexture("_EmissionMap"), Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.color.r, Is.EqualTo(0.3f).Within(0.001f));
+                Assert.That(renderer.sharedMaterial.color.g, Is.EqualTo(0.32f).Within(0.001f));
+                Assert.That(renderer.sharedMaterial.color.b, Is.EqualTo(0.34f).Within(0.001f));
+
+                var lights = lamppost.GetComponentsInChildren<Light>(true);
+                Assert.That(lights.Length, Is.EqualTo(1));
+                Assert.That(lights[0].type, Is.EqualTo(LightType.Point));
+                Assert.That(lights[0].range, Is.EqualTo(5.5f));
+                Assert.That(lights[0].intensity, Is.EqualTo(1.75f));
+                Assert.That(lights[0].shadows, Is.EqualTo(LightShadows.None));
+                Assert.That(lights[0].bounceIntensity, Is.EqualTo(0f));
+                var lightPool = Find(lamppost, "CF Runtime Lantern Light Pool");
+                Assert.That(lightPool, Is.Null);
+                world.SetTimeOfDay(TimeOfDayPreset.Noon);
+                Assert.That(lights[0].enabled, Is.False);
+                Assert.That(renderer.sharedMaterial.GetColor("_EmissionColor"),
+                    Is.EqualTo(Color.black));
+                world.SetTimeOfDay(TimeOfDayPreset.Night);
+                Assert.That(lights[0].enabled, Is.True);
+                Assert.That(renderer.sharedMaterial.GetColor("_EmissionColor").maxColorComponent,
+                    Is.GreaterThan(1f));
             }
             finally
             {
@@ -2670,7 +3670,13 @@ namespace CityForgeV3.Tests
 
             StringAssert.Contains("Queue\"=\"AlphaTest-5", source);
             StringAssert.Contains("ZWrite Off", source);
-            StringAssert.Contains("ZTest Always", source);
+            StringAssert.Contains("ZTest LEqual", source);
+            StringAssert.Contains("ZTest Greater", source);
+            StringAssert.Contains("_BuildingHostStencilRef", source);
+            StringAssert.Contains("ReadMask 252", source);
+            StringAssert.Contains("Comp Equal", source);
+            StringAssert.Contains("clip(color.a - _Cutoff)", source);
+            StringAssert.DoesNotContain("ZTest Always", source);
             StringAssert.DoesNotContain("Queue\"=\"Transparent", source);
         }
 
@@ -2697,29 +3703,107 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void FrontFloraAndCommittedPropsUseDepthAwarePriority()
+        public void FrontFloraUsesOnlyItsAuthoredHostFacadeOverride()
         {
             var floraShader = File.ReadAllText(
                 "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/LitShadowReceivingSprite.shader");
+            var frontFloraShader = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/FrontFacadeLitShadowReceivingSprite.shader");
+            var depthShader = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/BuildingDepthOccluder.shader");
             var worldSource = File.ReadAllText(
                 "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
             var propSource = File.ReadAllText(
                 "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
 
             StringAssert.Contains("ZTest [_ZTest]", floraShader);
-            StringAssert.Contains("IsBeyondNearestBuildingFront", worldSource);
+            StringAssert.Contains("Ref 0", floraShader);
+            StringAssert.Contains("WriteMask 252", floraShader);
+            StringAssert.Contains("ZFail Keep", floraShader);
+            StringAssert.Contains("ZTest [_ZTest]", frontFloraShader);
+            StringAssert.Contains("_BuildingHostStencilRef", frontFloraShader);
+            StringAssert.Contains("Ref 0", frontFloraShader);
+            StringAssert.Contains("WriteMask 252", frontFloraShader);
+            StringAssert.Contains("ReadMask 252", frontFloraShader);
+            StringAssert.Contains("ZTest Greater", frontFloraShader);
+            StringAssert.Contains("ZWrite Off", frontFloraShader);
+            StringAssert.Contains("_BuildingHostStencilRef", depthShader);
+            StringAssert.Contains("_BuildingHostStencilWriteMask", depthShader);
+            StringAssert.Contains("Pass Replace", depthShader);
+            StringAssert.Contains("FloraLitShadowReceiverMaterial", worldSource);
             StringAssert.Contains("renderQueue = 3001", worldSource);
             StringAssert.Contains("CreatePropDepthPrepass", propSource);
             StringAssert.Contains("Committed Prop Depth Prepass", propSource);
             StringAssert.Contains("renderQueue = 2435", propSource);
-            StringAssert.Contains("_camera.transform.position", worldSource);
-            StringAssert.Contains("Mathf.Abs(front.x) * halfWidth", worldSource);
-            StringAssert.Contains("CompareFunction.Always", worldSource);
+            StringAssert.Contains("BuildingCameraFrontToleranceMeters", worldSource);
+            StringAssert.Contains("classify the closest point on the footprint", worldSource);
+            StringAssert.Contains("FloraHostFrontRecoveryMaterial", worldSource);
+            StringAssert.Contains("TryResolveVisibleBuildingFrontHosts", worldSource);
+            StringAssert.Contains("_BuildingHostStencilRef4", worldSource);
+            StringAssert.Contains("_BuildingHostStencilRef4", frontFloraShader);
+            StringAssert.Contains("Cull [_Cull]", frontFloraShader);
+            StringAssert.Contains("TryBuildingOcclusionStencilReference", worldSource);
+            StringAssert.Contains("_BuildingHostStencilRef", worldSource);
+            StringAssert.Contains("PropFrontRecoveryCameraSync", propSource);
+            StringAssert.Contains("CameraClearFlags.Depth", propSource);
+            StringAssert.Contains("renderer.gameObject.layer = PropFrontRecoveryLayer", propSource);
+            StringAssert.DoesNotContain("FrontFacadeMeshPropRecovery", propSource);
+            StringAssert.DoesNotContain("CompareFunction.Always", worldSource);
             StringAssert.Contains("material.renderQueue = 2455", propSource);
-            StringAssert.Contains("IsOnNearestBuildingCameraFacingSide", propSource);
-            StringAssert.Contains("ApplyFrontPropPresentationPriority", propSource);
+            StringAssert.DoesNotContain(
+                "IsOnNearestBuildingCameraFacingSide", worldSource);
+            StringAssert.DoesNotContain(
+                "ApplyFrontPropPresentationPriority", propSource);
             StringAssert.Contains("_buildingPackage.ShadowDirectionOffsetDegrees", propSource);
-            StringAssert.Contains("material.renderQueue = 3000", propSource);
+        }
+
+        [Test]
+        public void PropMovementRefreshesBuildingFrontRecoveryAtCommit()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
+            var endStart = source.IndexOf("public bool EndPropDrag()",
+                System.StringComparison.Ordinal);
+            var rotateStart = source.IndexOf("public bool RotateSelectedProp(",
+                endStart, System.StringComparison.Ordinal);
+            var endDrag = source.Substring(endStart, rotateStart - endStart);
+            StringAssert.Contains("RebuildPropPresentations();", endDrag);
+
+            var nudgeStart = source.IndexOf("public bool NudgeSelectedPropByScreenPixels(",
+                System.StringComparison.Ordinal);
+            var walkStart = source.IndexOf("public bool WalkSelectedCharacter(",
+                nudgeStart, System.StringComparison.Ordinal);
+            var nudge = source.Substring(nudgeStart, walkStart - nudgeStart);
+            StringAssert.Contains("RebuildPropPresentations();", nudge);
+        }
+
+        [Test]
+        public void BuildingFacadeStencilIdsReserveRoadAndShadowBits()
+        {
+            Assert.That(LotWorldController.TryBuildingOcclusionStencilReference(
+                0, out var first), Is.True);
+            Assert.That(first, Is.EqualTo(4));
+            Assert.That(LotWorldController.TryBuildingOcclusionStencilReference(
+                61, out var last), Is.True);
+            Assert.That(last, Is.EqualTo(248));
+            Assert.That(LotWorldController.TryBuildingOcclusionStencilReference(
+                62, out _), Is.False);
+            Assert.That(LotWorldController.BuildingDepthOcclusionStencilReference(
+                62), Is.EqualTo(252));
+
+            var road = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/ShadowReceivingRoadOverlay.shader");
+            var reflection = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/WetStreetReflection.shader");
+            var shadow = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/ProjectedBuildingMeshShadow.shader");
+            StringAssert.Contains("ReadMask 1", road);
+            StringAssert.Contains("WriteMask 1", road);
+            StringAssert.Contains("ReadMask 253", reflection);
+            StringAssert.Contains("WriteMask 0", reflection);
+            StringAssert.Contains("Ref 2", shadow);
+            StringAssert.Contains("ReadMask 2", shadow);
+            StringAssert.Contains("WriteMask 2", shadow);
         }
 
         [Test]
@@ -3265,6 +4349,62 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void LoadLotBrowserConstrainsEntriesToAnAlwaysScrollableModalBody()
+        {
+            var app = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+
+            StringAssert.Contains("new ScrollView(ScrollViewMode.Vertical)", app);
+            StringAssert.Contains("name = \"lot-save-list\"", app);
+            StringAssert.Contains(
+                "verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible", app);
+            StringAssert.Contains(
+                "horizontalScrollerVisibility = ScrollerVisibility.Hidden", app);
+            StringAssert.Contains("load-lot-modal-panel", app);
+            StringAssert.Contains(".document-modal-panel.load-lot-modal-panel", styles);
+            StringAssert.Contains("height: 420px", styles);
+            StringAssert.Contains("contentViewport.style.overflow = Overflow.Hidden", app);
+            StringAssert.Contains(".lot-save-list .unity-scroll-view__content-viewport", styles);
+            StringAssert.Contains("overflow: hidden", styles);
+        }
+
+        [Test]
+        public void StreetcarSourceMeshCannotCastDisconnectedOffscreenShadows()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Streetcar.cs");
+            var rebuild = source.Substring(source.IndexOf(
+                "private void RebuildStreetcarVehicles()",
+                System.StringComparison.Ordinal));
+
+            StringAssert.Contains("renderer.shadowCastingMode = ShadowCastingMode.Off", rebuild);
+            StringAssert.Contains("renderer.receiveShadows = false", rebuild);
+        }
+
+        [Test]
+        public void NewLotDropdownsStyleTheirVisibleInputTextAndArrow()
+        {
+            var app = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+
+            StringAssert.Contains("formatSelectedValueCallback", app);
+            StringAssert.Contains("choice}   ▼", app);
+            StringAssert.Contains(
+                ".cf-choice-display .unity-base-popup-field__input", styles);
+            StringAssert.Contains(
+                ".cf-choice-display .unity-base-popup-field__text", styles);
+            StringAssert.Contains(
+                ".cf-choice-display .unity-base-popup-field__arrow", styles);
+            StringAssert.Contains("color: rgb(248, 241, 217)", styles);
+            StringAssert.Contains(
+                "-unity-background-image-tint-color: rgb(230, 188, 91)", styles);
+        }
+
+        [Test]
         public void SavedLotsCanRenameDuplicateDeleteAndReportMissingPackages()
         {
             var folder = Path.Combine(Path.GetTempPath(),
@@ -3560,6 +4700,23 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CirculationAndRoadEditorHelpersNeverCastWorldShadows()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            var cubeFactory = source.Substring(
+                source.IndexOf("private static GameObject Cube(",
+                    System.StringComparison.Ordinal));
+
+            StringAssert.Contains("bool castShadows = false", cubeFactory);
+            StringAssert.Contains(
+                "UnityEngine.Rendering.ShadowCastingMode.Off", cubeFactory);
+            StringAssert.Contains("renderer.receiveShadows = castShadows", cubeFactory);
+            StringAssert.Contains(
+                "new Vector3(size, size, size), color, true", source);
+        }
+
+        [Test]
         public void ModelTPilotLoadsWithDriverAndFourAnimationReadyWheels()
         {
             var asset = Resources.Load<GameObject>(VehicleRuntimePresentation.ModelTResourcePath);
@@ -3838,6 +4995,45 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void RollsRoyceTestVehicleLoadsAtAuthoredRoadScale()
+        {
+            var package = VehicleTypePackage.LoadRollsRoyce1926();
+            Assert.That(package.Id, Is.EqualTo("rolls-royce-1926"));
+            Assert.That(package.Validate(), Is.Empty);
+            Assert.That(package.LengthMeters, Is.EqualTo(4.7f));
+            var root = new GameObject("Rolls-Royce Presentation Test");
+            try
+            {
+                var presentation = VehicleRuntimePresentation.Create(
+                    root.transform, TestVehicleModel.RollsRoyce1926);
+                Assert.That(presentation.VehicleModel,
+                    Is.EqualTo(TestVehicleModel.RollsRoyce1926));
+                Assert.That(presentation.VisualRoot.name,
+                    Is.EqualTo("1926 Rolls-Royce Visual"));
+                var renderers = presentation.VisualRoot
+                    .GetComponentsInChildren<Renderer>();
+                Assert.That(renderers.Length, Is.GreaterThan(0));
+                var bounds = renderers[0].bounds;
+                for (var index = 1; index < renderers.Length; index++)
+                    bounds.Encapsulate(renderers[index].bounds);
+                Assert.That(Mathf.Max(bounds.size.x, bounds.size.z),
+                    Is.EqualTo(package.LengthMeters).Within(0.05f));
+                Assert.That(bounds.size.y, Is.InRange(1.2f, 2.4f),
+                    "The imported car must be upright rather than scaled from a side-on pose.");
+                var names = string.Join(", ", System.Array.ConvertAll(
+                    presentation.GetComponentsInChildren<Transform>(true),
+                    item => item.name));
+                StringAssert.DoesNotContain("Cube", names);
+                Assert.That(presentation.GetComponentsInChildren<Camera>(true), Is.Empty);
+                Assert.That(presentation.GetComponentsInChildren<Light>(true), Is.Empty);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void CirculationEditorAddsConnectedMetricNodes()
         {
             var root = new GameObject("Circulation Editing Test");
@@ -4040,7 +5236,14 @@ namespace CityForgeV3.Tests
                 Assert.That(world.CanSpawnTestVehicle, Is.True);
                 Assert.That(world.SpawnTestVehicle(VehiclePaintVariant.Red), Is.True);
                 Assert.That(world.SpawnTestVehicle(VehiclePaintVariant.Blue), Is.True);
-                Assert.That(world.TestVehicleCount, Is.EqualTo(2));
+                Assert.That(world.SpawnTestVehicle(
+                    TestVehicleModel.RollsRoyce1926), Is.True);
+                // The library is intentionally uncapped: repeated clicks are
+                // allowed to build a dense traffic stress test.
+                for (var index = 0; index < 10; index++)
+                    Assert.That(world.SpawnTestVehicle(
+                        (VehiclePaintVariant)(index % 4)), Is.True);
+                Assert.That(world.TestVehicleCount, Is.EqualTo(13));
                 var travelers = root.GetComponentsInChildren<VehicleRuntimePresentation>();
                 Assert.That(System.Array.Exists(travelers,
                     vehicle => vehicle.gameObject.name.Contains("Red") &&
@@ -4048,6 +5251,9 @@ namespace CityForgeV3.Tests
                 Assert.That(System.Array.Exists(travelers,
                     vehicle => vehicle.gameObject.name.Contains("Blue") &&
                                vehicle.PaintVariant == VehiclePaintVariant.Blue), Is.True);
+                Assert.That(System.Array.Exists(travelers,
+                    vehicle => vehicle.gameObject.name.Contains("Rolls-Royce") &&
+                               vehicle.VehicleModel == TestVehicleModel.RollsRoyce1926), Is.True);
 
                 world.RemoveTestVehicles();
                 Assert.That(world.TestVehicleCount, Is.Zero);
@@ -4349,10 +5555,8 @@ namespace CityForgeV3.Tests
 
         [TestCase(LotZoomLevel.Detail, -1, LotZoomLevel.Detail)]
         [TestCase(LotZoomLevel.Detail, 1, LotZoomLevel.Close)]
-        [TestCase(LotZoomLevel.Close, 1, LotZoomLevel.Near)]
-        [TestCase(LotZoomLevel.Near, -1, LotZoomLevel.Close)]
-        [TestCase(LotZoomLevel.Near, 1, LotZoomLevel.Lot)]
-        [TestCase(LotZoomLevel.Lot, -1, LotZoomLevel.Near)]
+        [TestCase(LotZoomLevel.Close, 1, LotZoomLevel.Lot)]
+        [TestCase(LotZoomLevel.Lot, -1, LotZoomLevel.Close)]
         [TestCase(LotZoomLevel.Lot, 1, LotZoomLevel.Wide)]
         [TestCase(LotZoomLevel.Wide, 1, LotZoomLevel.Far)]
         [TestCase(LotZoomLevel.Far, -1, LotZoomLevel.Wide)]
@@ -4365,22 +5569,62 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(expected));
         }
 
-        [TestCase(LotZoomLevel.Lot, 20, 11.5f)]
-        [TestCase(LotZoomLevel.Lot, 30, 16.5f)]
-        [TestCase(LotZoomLevel.Lot, 40, 22f)]
-        [TestCase(LotZoomLevel.Neighborhood, 40, 40f)]
-        [TestCase(LotZoomLevel.Detail, 40, 8.5f)]
-        [TestCase(LotZoomLevel.Detail, 80, 8.5f)]
-        [TestCase(LotZoomLevel.Close, 80, 16.042f)]
-        [TestCase(LotZoomLevel.Lot, 80, 26.098f)]
-        [TestCase(LotZoomLevel.Wide, 80, 37.83f)]
-        [TestCase(LotZoomLevel.Neighborhood, 80, 80f)]
+        [TestCase(LotZoomLevel.Lot, 20, 44f)]
+        [TestCase(LotZoomLevel.Lot, 30, 44f)]
+        [TestCase(LotZoomLevel.Lot, 40, 44f)]
+        [TestCase(LotZoomLevel.Neighborhood, 40, 220f)]
+        [TestCase(LotZoomLevel.Detail, 40, 11.4375f)]
+        [TestCase(LotZoomLevel.Detail, 80, 11.4375f)]
+        [TestCase(LotZoomLevel.Close, 80, 22f)]
+        [TestCase(LotZoomLevel.Lot, 80, 44f)]
+        [TestCase(LotZoomLevel.Wide, 80, 88f)]
+        [TestCase(LotZoomLevel.Neighborhood, 80, 220f)]
         public void CameraFitScalesWithExpandedLots(
             LotZoomLevel level, int lotSizeMeters, float expectedSize)
         {
             Assert.That(
                 LotWorldController.OrthographicSizeForLot(level, lotSizeMeters),
                 Is.EqualTo(expectedSize).Within(0.001f));
+        }
+
+        [TestCase(LotZoomLevel.Detail, true)]
+        [TestCase(LotZoomLevel.Close, true)]
+        [TestCase(LotZoomLevel.Lot, true)]
+        [TestCase(LotZoomLevel.Wide, false)]
+        [TestCase(LotZoomLevel.Far, false)]
+        [TestCase(LotZoomLevel.Neighborhood, false)]
+        public void ThreeDimensionalCharactersUseTheThreeClosestZoomBands(
+            LotZoomLevel level, bool expected)
+        {
+            Assert.That(LotWorldController.ShowsThreeDimensionalCharacters(level),
+                Is.EqualTo(expected));
+        }
+
+        [TestCase(false, true, true, false, 1, 1)]
+        [TestCase(true, false, true, false, -1, 1)]
+        [TestCase(false, true, false, true, 1, -1)]
+        [TestCase(true, false, false, true, -1, -1)]
+        [TestCase(false, true, false, false, 1, 0)]
+        public void CharacterArrowKeysResolveToEightDirections(
+            bool left, bool right, bool up, bool down, int expectedX, int expectedY)
+        {
+            Assert.That(CityForgeV3.UI.CityForgeApp.EightWayCharacterDirection(
+                    left, right, up, down),
+                Is.EqualTo(new Vector2Int(expectedX, expectedY)));
+        }
+
+        [TestCase(0f, 1f, 20f)]
+        [TestCase(1f, 1f, 65f)]
+        [TestCase(1f, 0f, 110f)]
+        [TestCase(1f, -1f, 155f)]
+        public void CharacterMovementSnapsToLotAlignedEightWayHeadings(
+            float x, float y, float expectedHeading)
+        {
+            var direction = LotWorldController.SnapCharacterDirectionToLotAxes(
+                new Vector2(x, y));
+            var heading = Mathf.Repeat(
+                Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg, 360f);
+            Assert.That(heading, Is.EqualTo(expectedHeading).Within(0.01f));
         }
 
         [TestCase(20, 2.4f)]
@@ -5065,6 +6309,63 @@ namespace CityForgeV3.Tests
                     LotWorldController.BuildingShadowOpacityMultiplier(preset),
                     Is.EqualTo(LotWorldController.PropShadowOpacityMultiplier(preset) * 1.45f),
                     $"Building shadows must retain the calibrated baseline at {preset}.");
+        }
+
+        [Test]
+        public void NeighboringBuildingsCreateAPrimitiveDerivedMorningGapShadow()
+        {
+            Assert.That(
+                LotWorldController.BuildingGapShadowColor(
+                    TimeOfDayPreset.Morning).a,
+                Is.EqualTo(0.34f));
+            Assert.That(
+                LotWorldController.BuildingGapShadowColor(
+                    TimeOfDayPreset.Noon).a,
+                Is.LessThan(0.34f));
+            Assert.That(
+                LotWorldController.BuildingGapShadowColor(
+                    TimeOfDayPreset.Night).a,
+                Is.Zero);
+
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            StringAssert.Contains("package.DepthMeters : package.WidthMeters", source);
+            StringAssert.Contains("package.WidthMeters : package.DepthMeters", source);
+            StringAssert.Contains("gapMax - gapMin <= 3.5f", source);
+            StringAssert.Contains("Primitive Neighbor Gap Shadow", source);
+            StringAssert.Contains("UpdateBuildingGapShadowAppearance();", source);
+
+            var root = new GameObject("Neighbor Building Gap Shadow Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                typeof(LotWorldController).GetMethod(
+                        "CreateBuildingGapShadow",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(world, new object[]
+                    {
+                        new Vector2(-1f, -4f), new Vector2(1f, 4f)
+                    });
+                world.SetTimeOfDay(TimeOfDayPreset.Morning);
+
+                var gapShadows = root.GetComponentsInChildren<MeshRenderer>(true)
+                    .Where(renderer => renderer.gameObject.name ==
+                        "Primitive Neighbor Gap Shadow").ToArray();
+                Assert.That(gapShadows.Length, Is.EqualTo(1));
+                Assert.That(gapShadows[0].sharedMaterial.color.a,
+                    Is.EqualTo(0.34f));
+                Assert.That(gapShadows[0].shadowCastingMode,
+                    Is.EqualTo(ShadowCastingMode.Off));
+                Assert.That(gapShadows[0].receiveShadows, Is.False);
+
+                world.SetTimeOfDay(TimeOfDayPreset.Night);
+                Assert.That(gapShadows[0].enabled, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]

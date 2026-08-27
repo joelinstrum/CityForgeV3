@@ -18,6 +18,8 @@ public static class LiveLotPlacementQaShortcut
         "cityforge.v3.residential.frontier_log_cabin_tripo_01";
     private const string NewEnglandChurchTripoId =
         "cityforge.v3.civics.culture.new_england_church_tripo_01";
+    private const string LawOfficeTripoId =
+        "cityforge.v3.commercial.law_office_tripo_01";
     private static string _requestedBuildingId = BuildingId;
     private static string _requestedSavedLotId = "";
     private static int _startupFramesRemaining;
@@ -38,6 +40,8 @@ public static class LiveLotPlacementQaShortcut
         "/tmp/cityforge-commit-ale-house-building-prop-qa";
     private const string WinterFloraTimeTriggerPath =
         "/tmp/cityforge-set-winter-flora-time-qa";
+    private const string StreetCarPanUpTriggerPath =
+        "/tmp/cityforge-pan-streetcar-qa-up";
     // Persists the requested preset across Unity's play-mode domain reload.
     private const string PendingTriggerPath = "/tmp/cityforge-art-deco-qa-pending";
     private static TimeOfDayPreset _requestedTime = TimeOfDayPreset.Afternoon;
@@ -97,7 +101,16 @@ public static class LiveLotPlacementQaShortcut
 
     private static void PollFileTriggers()
     {
-        if (File.Exists(WinterFloraTimeTriggerPath))
+        if (File.Exists(StreetCarPanUpTriggerPath))
+        {
+            File.Delete(StreetCarPanUpTriggerPath);
+            var world = Object.FindFirstObjectByType<LotWorldController>();
+            if (world == null)
+                Debug.LogError("Could not find the active StreetCar QA world.");
+            else
+                world.PanCameraViewport(0, 1);
+        }
+        else if (File.Exists(WinterFloraTimeTriggerPath))
         {
             var requestedPreset = File.ReadAllText(
                 WinterFloraTimeTriggerPath).Trim();
@@ -230,6 +243,15 @@ public static class LiveLotPlacementQaShortcut
         app.OpenBuildingInspectionQa(NewEnglandChurchTripoId);
     }
 
+    [MenuItem("City Forge/QA/Open Law Office Inspection")]
+    private static void OpenLawOfficeInspection()
+    {
+        _requestedSavedLotId = "";
+        _requestedBuildingId = LawOfficeTripoId;
+        _requestedTime = TimeOfDayPreset.Afternoon;
+        OpenArtDecoCornerLivePlacement();
+    }
+
     [MenuItem("City Forge/QA/Set Live QA Winter Flora")]
     private static void SetLiveQaWinterFlora()
     {
@@ -328,6 +350,80 @@ public static class LiveLotPlacementQaShortcut
             Debug.LogError("Could not open the saved Boston Pub Buildings rotation QA.");
     }
 
+    [MenuItem("City Forge/QA/Open SanFranciscoLot Occlusion QA")]
+    private static void OpenSanFranciscoLotOcclusionQa()
+    {
+        _requestedSavedLotId = "sanfranciscolot";
+        _requestedTime = TimeOfDayPreset.Noon;
+        OpenPersistentQaWorld();
+        if (_qaWorld == null) return;
+        _qaWorld.SelectBuildingAtLotPoint(new Vector2(-12f, -20f));
+        _qaWorld.SetInspectionMode(BuildingInspectionMode.Artwork);
+        _qaWorld.SetZoomLevel(LotZoomLevel.Detail);
+        _qaWorld.SetQaOrthographicSize(10f);
+        _qaWorld.SetQaCameraPan(-12f, -20f);
+        EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Open StreetCar Pan Visibility QA _F10")]
+    private static void OpenStreetCarPanVisibilityQa()
+    {
+        _requestedSavedLotId = "streetcar-test";
+        _requestedTime = TimeOfDayPreset.Night;
+        if (!EditorApplication.isPlaying)
+        {
+            File.WriteAllText(PendingTriggerPath,
+                $"LOT:{_requestedSavedLotId}|{_requestedTime}");
+            EditorApplication.isPlaying = true;
+            return;
+        }
+        OpenPersistentQaWorld();
+    }
+
+    [MenuItem("City Forge/QA/Pan StreetCar QA Up _F11")]
+    private static void PanStreetCarQaUp()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Could not find the active StreetCar QA world.");
+            return;
+        }
+        world.PanCameraViewport(0, 1);
+    }
+
+    [MenuItem("City Forge/QA/Select SanFranciscoLot Green Occluder")]
+    private static void SelectSanFranciscoLotGreenOccluder()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null || !world.SelectBuildingAtLotPoint(new Vector2(-12f, -20f)))
+            Debug.LogError("Could not select the rotated Green Victorian in SanFranciscoLot.");
+        else
+            EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Select SanFranciscoLot Red Occluder")]
+    private static void SelectSanFranciscoLotRedOccluder()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null || !world.SelectBuildingAtLotPoint(new Vector2(-6f, -20f)))
+            Debug.LogError("Could not select the rotated Red Victorian in SanFranciscoLot.");
+        else
+            EditorApplication.delayCall += DumpLivePlacement;
+    }
+
+    [MenuItem("City Forge/QA/Prepare Active Lot Primitive Occlusion QA")]
+    private static void PrepareActiveLotPrimitiveOcclusionQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null)
+        {
+            Debug.LogError("Could not find the active City Forge app.");
+            return;
+        }
+        app.PrepareOcclusionQaView();
+    }
+
     [MenuItem("City Forge/QA/Rotate Boston Pub Buildings QA Clockwise")]
     private static void RotateBostonPubBuildingsQaClockwise()
     {
@@ -408,8 +504,18 @@ public static class LiveLotPlacementQaShortcut
 
     private static void OpenPersistentQaWorld()
     {
-        if (_qaRoot != null)
-            Object.Destroy(_qaRoot);
+        // Play-mode script recompiles reset these static fields without
+        // destroying the already-created QA scene object. Remove every stale
+        // QA root synchronously so a capture can never contain two worlds,
+        // cameras, proxy sets, or flora presentations composited together.
+        foreach (var existingWorld in Object.FindObjectsByType<LotWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            if (existingWorld.transform.root.name == "Building Live Placement QA")
+                Object.DestroyImmediate(existingWorld.transform.root.gameObject);
+        }
+        _qaRoot = null;
+        _qaWorld = null;
 
         HybridBuildingPackageRegistry.InvalidateCache();
 
@@ -461,7 +567,9 @@ public static class LiveLotPlacementQaShortcut
         // Keep the exact saved-lot regression fixture large enough to inspect
         // all five lamppost silhouettes and their shadow anchors in one frame.
         // This is QA-only framing; production camera behavior is unchanged.
-        if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
+        if (_requestedSavedLotId == "streetcar-test")
+            world.SetQaOrthographicSize(8f);
+        else if (!string.IsNullOrWhiteSpace(_requestedSavedLotId))
             world.SetQaOrthographicSize(22f);
         else if (_requestedBuildingId == FrontierLogCabinTripoId)
             world.SetQaOrthographicSize(7f);
@@ -487,7 +595,14 @@ public static class LiveLotPlacementQaShortcut
     {
         private void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.R)) return;
+            // Command-R is Unity's script refresh shortcut. Treat only an
+            // unmodified R as the QA rotate command so recompiling cannot
+            // silently rotate the fixture or call into a torn-down session.
+            if (!Input.GetKeyDown(KeyCode.R) ||
+                Input.GetKey(KeyCode.LeftCommand) ||
+                Input.GetKey(KeyCode.RightCommand) ||
+                Input.GetKey(KeyCode.LeftControl) ||
+                Input.GetKey(KeyCode.RightControl)) return;
             var world = Object.FindFirstObjectByType<LotWorldController>();
             if (world != null && world.name == "Building Live Placement QA")
                 world.RotateSelected(1);

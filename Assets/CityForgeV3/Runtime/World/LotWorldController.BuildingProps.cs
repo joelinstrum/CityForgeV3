@@ -317,6 +317,52 @@ namespace CityForgeV3.World
                 ApplyBuildingPropHover(_selectedBuildingPropPresentationIndex);
         }
 
+        private void RepositionBuildingPropPresentationsForBuilding(
+            int buildingIndex)
+        {
+            if (buildingIndex < 0 ||
+                buildingIndex >= (_session.Data.Buildings?.Count ?? 0)) return;
+            var attachments = _session.Data.Buildings[buildingIndex].Attachments;
+            if (attachments == null) return;
+            var count = Mathf.Min(
+                _buildingPropPresentations.Count,
+                _buildingPropPresentationKeys.Count);
+            for (var presentationIndex = 0;
+                 presentationIndex < count;
+                 presentationIndex++)
+            {
+                var key = _buildingPropPresentationKeys[presentationIndex];
+                if (key.x != buildingIndex || key.y < 0 ||
+                    key.y >= attachments.Count ||
+                    _buildingPropPresentations[presentationIndex] == null)
+                    continue;
+                PositionBuildingPropModel(
+                    _buildingPropPresentations[presentationIndex].transform,
+                    buildingIndex,
+                    attachments[key.y]);
+            }
+        }
+
+        private void TranslateBuildingPropPresentationsForBuilding(
+            int buildingIndex, Vector3 worldDelta)
+        {
+            if (buildingIndex < 0 || worldDelta.sqrMagnitude <= 0.0000001f)
+                return;
+            var count = Mathf.Min(
+                _buildingPropPresentations.Count,
+                _buildingPropPresentationKeys.Count);
+            for (var presentationIndex = 0;
+                 presentationIndex < count;
+                 presentationIndex++)
+            {
+                if (_buildingPropPresentationKeys[presentationIndex].x != buildingIndex)
+                    continue;
+                var presentation = _buildingPropPresentations[presentationIndex];
+                if (presentation != null)
+                    presentation.transform.position += worldDelta;
+            }
+        }
+
         private int BuildingPropPresentationIndexAtCameraPixel(Vector2 pixel)
         {
             if (_camera == null) return -1;
@@ -749,17 +795,8 @@ namespace CityForgeV3.World
             maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
             if (_camera == null) return false;
             var presentation = PresentationForBuildingIndex(buildingIndex);
-            if (presentation == null) return false;
-            foreach (var candidate in
-                     presentation.GetComponentsInChildren<SpriteRenderer>(true))
-            {
-                if (!candidate.enabled || !candidate.gameObject.activeInHierarchy ||
-                    candidate.sprite == null) continue;
-                if (renderer == null || candidate.name == "Directional Render")
-                    renderer = candidate;
-                if (candidate.name == "Directional Render") break;
-            }
-            if (renderer == null) return false;
+            if (presentation == null ||
+                !presentation.TryGetArtworkRenderer(out renderer)) return false;
             var bounds = renderer.bounds;
             var found = false;
             for (var x = -1; x <= 1; x += 2)
@@ -775,6 +812,39 @@ namespace CityForgeV3.World
                 found = true;
             }
             return found;
+        }
+
+        public bool TryGetSelectedBuildingPanelBounds(
+            Vector2 panelSize, out Rect panelBounds)
+        {
+            panelBounds = default;
+            if (_camera == null || panelSize.x <= 0f || panelSize.y <= 0f ||
+                _session.SelectedBuildingIndex < 0)
+                return false;
+            var selectedIndex = _session.SelectedBuildingIndex;
+            var presentation = PresentationForBuildingIndex(selectedIndex);
+            var minimum = new Vector2(
+                float.PositiveInfinity, float.PositiveInfinity);
+            var maximum = new Vector2(
+                float.NegativeInfinity, float.NegativeInfinity);
+            var hasTightBounds = presentation != null &&
+                presentation.TryGetVisibleArtworkScreenBounds(
+                    _camera, out minimum, out maximum);
+            if (!hasTightBounds && !TryBuildingArtworkScreenBounds(
+                    selectedIndex, out _, out minimum, out maximum))
+                return false;
+            var cameraWidth = Mathf.Max(1f, _camera.pixelWidth);
+            var cameraHeight = Mathf.Max(1f, _camera.pixelHeight);
+            var left = minimum.x / cameraWidth * panelSize.x;
+            var right = maximum.x / cameraWidth * panelSize.x;
+            var top = (1f - maximum.y / cameraHeight) * panelSize.y;
+            var bottom = (1f - minimum.y / cameraHeight) * panelSize.y;
+            panelBounds = Rect.MinMaxRect(
+                Mathf.Clamp(left, 0f, panelSize.x),
+                Mathf.Clamp(top, 0f, panelSize.y),
+                Mathf.Clamp(right, 0f, panelSize.x),
+                Mathf.Clamp(bottom, 0f, panelSize.y));
+            return panelBounds.width > 0f && panelBounds.height > 0f;
         }
 
         private static void ApplyBuildingPropMaterials(GameObject root,

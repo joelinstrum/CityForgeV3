@@ -1,0 +1,103 @@
+{
+  "id": "cityforge.v3.residential.victorian_row_tripo_01",
+  "displayName": "Victorian Row Houses",
+  "shortDisplayName": "Victorian Row",
+  "category": "Residential",
+  "subcategory": "Mid-Wealth",
+  "sizeClass": "medium",
+  "libraryShortcut": "V",
+  "reviewStatus": "V01 BLENDER INTAKE - NEUTRAL FACINGS - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 20.5674,
+    "depthMeters": 8.2782,
+    "heightMeters": 11.7726,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 37.8,
+    "targetHeightMeters": 5.04
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/semantic-primitive-v03",
+    "sourceVersion": "V03 2.1-times metric scale, persisted-pivot correction, and 90% XY primitive review adjustment",
+    "roofRidgeAxis": "x",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 34.761905,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "brighter V02 neutral review facings reused pending lighting pass",
+    "policy": "review placeholder"
+  },
+  "shadow": {
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 12.6,
+    "morningLengthScale": 0.9,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.15,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.0,
+    "semanticVertices": [
+      -9.25533, 0.0, -3.72519, 9.25533, 0.0, -3.72519, 9.25533, 0.0, 3.72519, -9.25533, 0.0,
+      3.72519, -9.25533, 11.7726, -3.72519, 9.25533, 11.7726, -3.72519, 9.25533, 11.7726, 3.72519,
+      -9.25533, 11.7726, 3.72519
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.5, 0.6510669],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-right-neutral-v02",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-right-neutral-v02",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.5, 0.6510669],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-right-neutral-v02",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-right-neutral-v02",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.5, 0.6510669],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-left-neutral-v02",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-left-neutral-v02",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.5, 0.6510669],
+      "approvedResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-left-neutral-v02",
+      "neutralResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-left-neutral-v02",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/VictorianRowTripoV01/front-left-night"
+    }
+  ]
+}

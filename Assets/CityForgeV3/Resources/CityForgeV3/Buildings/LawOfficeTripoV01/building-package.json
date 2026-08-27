@@ -1,0 +1,143 @@
+{
+  "id": "cityforge.v3.commercial.law_office_tripo_01",
+  "displayName": "Historic Law Office",
+  "shortDisplayName": "Law Office",
+  "category": "Commercial",
+  "subcategory": null,
+  "sizeClass": "medium",
+  "libraryShortcut": "L",
+  "reviewStatus": "V02 FOUR-FACING NEUTRAL - 135% SCALE CALIBRATION",
+  "schema": "cityforge-v3-hybrid-building-package-v1",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 8.632371,
+    "depthMeters": 9.4617,
+    "heightMeters": 13.227265,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [
+      0,
+      0,
+      0
+    ]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 24.0,
+    "targetHeightMeters": 5.687724
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V02 centered metric envelope, uniform 135% scale calibration",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_ROOF_FLAT",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 44.444444,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/plan-neutral",
+    "pivot": [
+      0.5,
+      0.5
+    ]
+  },
+  "night": {
+    "source": "pending individually traced window masks",
+    "policy": "transparent review placeholders"
+  },
+  "shadow": {
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 9.45,
+    "morningLengthScale": 0.9,
+    "noonLengthScale": 0.45,
+    "afternoonLengthScale": 1.15,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 1.0,
+    "semanticVertices": [
+      -3.884567,
+      0,
+      -4.257765,
+      3.884567,
+      0,
+      -4.257765,
+      3.884567,
+      0,
+      4.257765,
+      -3.884567,
+      0,
+      4.257765,
+      -3.884567,
+      13.227265,
+      -4.257765,
+      3.884567,
+      13.227265,
+      -4.257765,
+      3.884567,
+      13.227265,
+      4.257765,
+      -3.884567,
+      13.227265,
+      4.257765
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [
+        0.5,
+        0.717967302
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [
+        0.500000358,
+        0.717967391
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [
+        0.499999702,
+        0.717967093
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [
+        0.499999821,
+        0.717967153
+      ],
+      "approvedResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/LawOfficeTripoV01/front-left-night"
+    }
+  ]
+}

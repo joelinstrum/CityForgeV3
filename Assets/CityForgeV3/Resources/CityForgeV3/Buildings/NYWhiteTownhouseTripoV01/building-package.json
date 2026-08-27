@@ -1,0 +1,105 @@
+{
+  "id": "cityforge.v3.residential.ny_white_townhouse_tripo_01",
+  "displayName": "NY White Townhouse",
+  "shortDisplayName": "White Townhouse",
+  "category": "Residential",
+  "subcategory": "Urban Multi-Family",
+  "sizeClass": "large",
+  "libraryShortcut": "N",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 1,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 7.544923,
+    "depthMeters": 17.26618,
+    "heightMeters": 13.0,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 38.0,
+    "targetHeightMeters": 5.59
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 church-derived source voxel-remesh silhouette",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 39.384615385,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "not yet authored",
+    "policy": "four intentional transparent overlays pending user window guide"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 15.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -3.772462, 0, -8.63309, 3.772462, 0, -8.63309,
+      3.772462, 0, 8.63309, -3.772462, 0, 8.63309,
+      -3.772462, 13.0, -8.63309, 3.772462, 13.0, -8.63309,
+      3.772462, 13.0, 8.63309, -3.772462, 13.0, 8.63309
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.49999997, 0.689833701],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.50000006, 0.68983382],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.499999791, 0.689833879],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.500000119, 0.68983376],
+      "approvedResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NYWhiteTownhouseTripoV01/front-left-night"
+    }
+  ]
+}

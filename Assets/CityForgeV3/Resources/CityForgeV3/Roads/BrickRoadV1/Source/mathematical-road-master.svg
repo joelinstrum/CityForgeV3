@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 2048 2048">
+  <defs>
+    <pattern id="brick" width="64" height="32" patternUnits="userSpaceOnUse">
+      <rect width="64" height="32" fill="#75483b"/>
+      <path d="M0 0H64M0 16H64M0 32H64M0 0V16M32 16V32M64 0V16"
+            fill="none" stroke="#3b241e" stroke-width="3"/>
+      <path d="M2 3H29M34 19H61" fill="none" stroke="#9b6654" stroke-width="2" opacity=".42"/>
+    </pattern>
+    <path id="centerline" d="M512 0V1024 A512 512 0 0 0 1024 1536 H2048"/>
+  </defs>
+  <g fill="none" stroke-linejoin="round">
+    <use href="#centerline" stroke="#3a302c" stroke-width="836"/>
+    <use href="#centerline" stroke="#c4b7ad" stroke-width="824"/>
+    <use href="#centerline" stroke="#8d8179" stroke-width="786"/>
+    <use href="#centerline" stroke="url(#brick)" stroke-width="760"/>
+    <use href="#centerline" stroke="#2f1d18" stroke-width="4" stroke-dasharray="52 8" opacity=".45"/>
+  </g>
+</svg>

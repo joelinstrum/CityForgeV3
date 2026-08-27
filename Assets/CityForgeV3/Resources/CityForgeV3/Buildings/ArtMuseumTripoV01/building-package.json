@@ -1,0 +1,57 @@
+{
+  "id": "cityforge.v3.civic.art_museum_tripo_01",
+  "displayName": "City Forge Art Museum",
+  "shortDisplayName": "Art Museum",
+  "category": "Civic",
+  "subcategory": "Museum",
+  "sizeClass": "large",
+  "libraryShortcut": "C",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 3,
+  "occupancyDepth": 3,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 20.226227,
+    "depthMeters": 27.691572,
+    "heightMeters": 24.0,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 42.0,
+    "targetHeightMeters": 10.32
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/ArtMuseumTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 church-derived voxel-remesh silhouette; 3.0 m ceremonial-door scale review",
+    "roofRidgeAxis": "depth",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": ["CF_PROXY_FOUNDATION", "CF_PROXY_WALLS", "CF_PROXY_BUILDING_GENERATED", "CF_ANCHOR_ENTRANCE"]
+  },
+  "render": {"pixelsPerMeter": 34.133333333, "canvasWidth": 1024, "canvasHeight": 1024},
+  "plan": {"resourcePath": "CityForgeV3/Buildings/ArtMuseumTripoV01/plan-neutral", "pivot": [0.5, 0.5]},
+  "night": {"source": "pending user-traced window masks", "policy": "four intentional transparent placeholders"},
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 24.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [-10.11,0,-13.85,10.11,0,-13.85,10.11,0,13.85,-10.11,0,13.85,-10.11,18,-13.85,10.11,18,-13.85,10.11,18,13.85,-10.11,18,13.85,-7,24,-7,7,24,-7,7,24,7,-7,24,7]
+  },
+  "facings": [
+    {"id":"front-right","cameraAzimuthDegrees":-55.5,"pivotTopOrigin":[0.5,0.803734303],"approvedResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-right-neutral","neutralResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-right-neutral","nightOverlayResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-right-night"},
+    {"id":"rear-right","cameraAzimuthDegrees":34.5,"pivotTopOrigin":[0.500000119,0.803733662],"approvedResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-right-neutral","neutralResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-right-neutral","nightOverlayResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-right-night"},
+    {"id":"rear-left","cameraAzimuthDegrees":124.5,"pivotTopOrigin":[0.499999702,0.803734049],"approvedResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-left-neutral","neutralResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-left-neutral","nightOverlayResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/rear-left-night"},
+    {"id":"front-left","cameraAzimuthDegrees":-145.5,"pivotTopOrigin":[0.499999881,0.803734079],"approvedResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-left-neutral","neutralResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-left-neutral","nightOverlayResourcePath":"CityForgeV3/Buildings/ArtMuseumTripoV01/front-left-night"}
+  ]
+}

@@ -16,13 +16,23 @@ namespace CityForgeV3.World
         private SpriteRenderer _renderer;
         private SpriteRenderer _nightRenderer;
         private SpriteRenderer _shadeRenderer;
+        private MeshRenderer _wetReflectionRenderer;
+        private MeshFilter _wetReflectionFilter;
         private Material _alwaysVisibleMaterial;
+        private Material _wetReflectionMaterial;
+        private Mesh _wetReflectionMesh;
         private Transform _visualRoot;
         private Sprite[] _sprites;
         private Sprite[] _registrationSprites;
+        private Bounds[] _registrationLocalBounds;
+        private bool[] _registrationLocalBoundsValid;
         private Sprite[] _neutralSprites;
+        private Bounds[] _neutralRegistrationLocalBounds;
+        private bool[] _neutralRegistrationLocalBoundsValid;
         private Sprite[] _nightOverlays;
         private Sprite[] _fullNightSprites;
+        private Bounds[] _fullNightRegistrationLocalBounds;
+        private bool[] _fullNightRegistrationLocalBoundsValid;
         private Sprite[,] _shadeOverlays;
         private int _facing;
         private bool _visible;
@@ -30,9 +40,13 @@ namespace CityForgeV3.World
         private BuildingArtworkSource _artworkSource;
         private TimeOfDayPreset _timeOfDay = TimeOfDayPreset.Noon;
         private SeasonPreset _season = SeasonPreset.Summer;
+        private bool _isRaining;
+        private float _wetReflectionStrength;
+        private Vector3 _wetReflectionWorldDirection = Vector3.back;
         private int _buildingRotationQuarterTurns;
         private float _proxyRegistrationScale = 1f;
         private Vector2 _proxyRegistrationOffset;
+        private int _hostBuildingStencilReference;
 
         public string FacingId => _package.Facing(_facing).Id;
         public int FacingIndex => _facing;
@@ -53,10 +67,95 @@ namespace CityForgeV3.World
             _artworkSource == BuildingArtworkSource.NeutralPilot &&
             !NeutralPilotCompatible;
         public float Opacity => _opacity;
+        public int HostBuildingStencilReference =>
+            _hostBuildingStencilReference;
+
+        public bool TryGetArtworkRenderer(out SpriteRenderer renderer)
+        {
+            renderer = _renderer;
+            return renderer != null && renderer.enabled &&
+                   renderer.gameObject.activeInHierarchy &&
+                   renderer.sprite != null;
+        }
+
+        public bool TryGetVisibleArtworkScreenBounds(
+            Camera renderCamera, out Vector2 minimum, out Vector2 maximum)
+        {
+            minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            if (!_visible || renderCamera == null || _renderer == null ||
+                !_renderer.enabled || !_renderer.gameObject.activeInHierarchy ||
+                !TryGetVisibleArtworkLocalBounds(out var bounds))
+                return false;
+
+            var found = false;
+            for (var x = -1; x <= 1; x += 2)
+            for (var y = -1; y <= 1; y += 2)
+            {
+                var local = new Vector3(
+                    x < 0 ? bounds.min.x : bounds.max.x,
+                    y < 0 ? bounds.min.y : bounds.max.y,
+                    0f);
+                if (_renderer.flipX) local.x = -local.x;
+                if (_renderer.flipY) local.y = -local.y;
+                var screen = renderCamera.WorldToScreenPoint(
+                    _renderer.transform.TransformPoint(local));
+                if (screen.z <= 0f) continue;
+                minimum = Vector2.Min(minimum, screen);
+                maximum = Vector2.Max(maximum, screen);
+                found = true;
+            }
+
+            return found;
+        }
+
+        public bool ContainsVisibleArtworkPixel(Camera renderCamera, Vector2 pixel)
+        {
+            if (!_visible || _renderer == null || !_renderer.enabled ||
+                renderCamera == null || _registrationSprites == null ||
+                _facing < 0 || _facing >= _registrationSprites.Length)
+                return false;
+            var tightSprite = _registrationSprites[_facing];
+            if (tightSprite == null) return false;
+
+            var plane = new Plane(_renderer.transform.forward,
+                _renderer.transform.position);
+            var ray = renderCamera.ScreenPointToRay(pixel);
+            if (!plane.Raycast(ray, out var distance)) return false;
+            var local = (Vector2)_renderer.transform.InverseTransformPoint(
+                ray.GetPoint(distance));
+            var vertices = tightSprite.vertices;
+            var triangles = tightSprite.triangles;
+            for (var index = 0; index + 2 < triangles.Length; index += 3)
+            {
+                if (PointInTriangle(local,
+                        vertices[triangles[index]],
+                        vertices[triangles[index + 1]],
+                        vertices[triangles[index + 2]]))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool PointInTriangle(Vector2 point, Vector2 a,
+            Vector2 b, Vector2 c)
+        {
+            static float Cross(Vector2 lhs, Vector2 rhs) =>
+                lhs.x * rhs.y - lhs.y * rhs.x;
+            var ab = Cross(b - a, point - a);
+            var bc = Cross(c - b, point - b);
+            var ca = Cross(a - c, point - c);
+            const float tolerance = 0.00001f;
+            var hasNegative = ab < -tolerance || bc < -tolerance || ca < -tolerance;
+            var hasPositive = ab > tolerance || bc > tolerance || ca > tolerance;
+            return !(hasNegative && hasPositive);
+        }
 
         public void SetSortingOrder(int order)
         {
             if (_renderer != null) _renderer.sortingOrder = order;
+            if (_wetReflectionRenderer != null)
+                _wetReflectionRenderer.sortingOrder = order - 2;
             if (_shadeRenderer != null) _shadeRenderer.sortingOrder = order + 1;
             if (_nightRenderer != null) _nightRenderer.sortingOrder = order + 2;
         }
@@ -69,9 +168,15 @@ namespace CityForgeV3.World
             _package = package;
             _sprites = new Sprite[_package.FacingCount];
             _registrationSprites = new Sprite[_package.FacingCount];
+            _registrationLocalBounds = new Bounds[_package.FacingCount];
+            _registrationLocalBoundsValid = new bool[_package.FacingCount];
             _neutralSprites = new Sprite[_package.FacingCount];
+            _neutralRegistrationLocalBounds = new Bounds[_package.FacingCount];
+            _neutralRegistrationLocalBoundsValid = new bool[_package.FacingCount];
             _nightOverlays = new Sprite[_package.FacingCount];
             _fullNightSprites = new Sprite[_package.FacingCount];
+            _fullNightRegistrationLocalBounds = new Bounds[_package.FacingCount];
+            _fullNightRegistrationLocalBoundsValid = new bool[_package.FacingCount];
             _shadeOverlays = new Sprite[_package.FacingCount, 4];
 
             for (var index = 0; index < _sprites.Length; index++)
@@ -104,6 +209,11 @@ namespace CityForgeV3.World
                     SpriteMeshType.Tight);
                 _registrationSprites[index].name =
                     $"{_package.DisplayName} Tight Registration {spec.Id}";
+                CacheRegistrationLocalBounds(
+                    _registrationSprites[index],
+                    _registrationLocalBounds,
+                    _registrationLocalBoundsValid,
+                    index);
 
                 var neutralTexture =
                     Resources.Load<Texture2D>(spec.NeutralResourcePath);
@@ -133,6 +243,21 @@ namespace CityForgeV3.World
                     SpriteMeshType.FullRect);
                 _neutralSprites[index].name =
                     $"Five Bay Neutral v12 {spec.Id}";
+                var neutralRegistrationSprite = Sprite.Create(
+                    neutralTexture,
+                    new Rect(0f, 0f, neutralTexture.width, neutralTexture.height),
+                    spec.UnityPivot,
+                    _package.PixelsPerMeter,
+                    0,
+                    SpriteMeshType.Tight);
+                neutralRegistrationSprite.name =
+                    $"{_package.DisplayName} Tight Neutral Registration {spec.Id}";
+                CacheRegistrationLocalBounds(
+                    neutralRegistrationSprite,
+                    _neutralRegistrationLocalBounds,
+                    _neutralRegistrationLocalBoundsValid,
+                    index);
+                DestroyTemporaryRegistrationSprite(neutralRegistrationSprite);
 
                 if (nightTexture != null)
                 {
@@ -162,6 +287,22 @@ namespace CityForgeV3.World
                         SpriteMeshType.FullRect);
                     _fullNightSprites[index].name =
                         $"{_package.DisplayName} Full Night {spec.Id}";
+                    var fullNightRegistrationSprite = Sprite.Create(
+                        fullNightTexture,
+                        new Rect(0f, 0f,
+                            fullNightTexture.width, fullNightTexture.height),
+                        spec.UnityPivot,
+                        _package.PixelsPerMeter,
+                        0,
+                        SpriteMeshType.Tight);
+                    fullNightRegistrationSprite.name =
+                        $"{_package.DisplayName} Tight Full Night Registration {spec.Id}";
+                    CacheRegistrationLocalBounds(
+                        fullNightRegistrationSprite,
+                        _fullNightRegistrationLocalBounds,
+                        _fullNightRegistrationLocalBoundsValid,
+                        index);
+                    DestroyTemporaryRegistrationSprite(fullNightRegistrationSprite);
                 }
 
                 for (var timeIndex = 0; timeIndex < 4; timeIndex++)
@@ -195,6 +336,7 @@ namespace CityForgeV3.World
             _visualRoot.localPosition = new Vector3(0f, 0f, -0.08f);
             _renderer = _visualRoot.gameObject.AddComponent<SpriteRenderer>();
             _renderer.name = "Directional Render";
+            _renderer.allowOcclusionWhenDynamic = false;
             _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _renderer.receiveShadows = false;
             _renderer.sortingOrder = 10;
@@ -206,11 +348,43 @@ namespace CityForgeV3.World
             {
                 name = "CF Always Visible Building Sprite"
             };
+            _alwaysVisibleMaterial.SetFloat("_BuildingHostStencilRef",
+                _hostBuildingStencilReference);
             _renderer.sharedMaterial = _alwaysVisibleMaterial;
+            var reflectionObject = new GameObject("Wet Street Reflection");
+            reflectionObject.transform.SetParent(transform, false);
+            _wetReflectionFilter = reflectionObject.AddComponent<MeshFilter>();
+            _wetReflectionRenderer = reflectionObject.AddComponent<MeshRenderer>();
+            _wetReflectionRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            _wetReflectionRenderer.receiveShadows = false;
+            var reflectionShader = Shader.Find("CityForgeV3/WetStreetReflection");
+            if (reflectionShader == null)
+                throw new MissingReferenceException(
+                    "City Forge V3 wet street reflection shader is required.");
+            _wetReflectionMaterial = new Material(reflectionShader)
+            {
+                name = "CF Ground-Projected Wet Street Reflection",
+                renderQueue = 2460
+            };
+            _wetReflectionRenderer.sharedMaterial = _wetReflectionMaterial;
+            _wetReflectionMesh = new Mesh
+            {
+                name = "CF Screen-Mirrored Ground Projection"
+            };
+            _wetReflectionMesh.vertices = new Vector3[4];
+            _wetReflectionMesh.uv = new[]
+            {
+                new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(1f, 1f), new Vector2(0f, 1f)
+            };
+            _wetReflectionMesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            _wetReflectionFilter.sharedMesh = _wetReflectionMesh;
             var shadeOverlayObject =
                 new GameObject("Directional Light and Shade Overlay");
             shadeOverlayObject.transform.SetParent(_visualRoot, false);
             _shadeRenderer = shadeOverlayObject.AddComponent<SpriteRenderer>();
+            _shadeRenderer.allowOcclusionWhenDynamic = false;
             _shadeRenderer.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
             _shadeRenderer.receiveShadows = false;
@@ -220,6 +394,7 @@ namespace CityForgeV3.World
                 new GameObject("Directional Night Light Overlay");
             nightOverlayObject.transform.SetParent(_visualRoot, false);
             _nightRenderer = nightOverlayObject.AddComponent<SpriteRenderer>();
+            _nightRenderer.allowOcclusionWhenDynamic = false;
             _nightRenderer.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
             _nightRenderer.receiveShadows = false;
@@ -227,6 +402,91 @@ namespace CityForgeV3.World
             _nightRenderer.sharedMaterial = _alwaysVisibleMaterial;
             transform.position = _package.PresentationAnchor;
             ApplyFacing(0);
+        }
+
+        private bool TryGetVisibleArtworkLocalBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (_renderer == null || _facing < 0) return false;
+
+            if (_fullNightSprites != null &&
+                _facing < _fullNightSprites.Length &&
+                _renderer.sprite == _fullNightSprites[_facing] &&
+                TryGetCachedLocalBounds(
+                    _fullNightRegistrationLocalBounds,
+                    _fullNightRegistrationLocalBoundsValid,
+                    _facing,
+                    out bounds))
+                return true;
+
+            if (_neutralSprites != null &&
+                _facing < _neutralSprites.Length &&
+                _renderer.sprite == _neutralSprites[_facing] &&
+                TryGetCachedLocalBounds(
+                    _neutralRegistrationLocalBounds,
+                    _neutralRegistrationLocalBoundsValid,
+                    _facing,
+                    out bounds))
+                return true;
+
+            return TryGetCachedLocalBounds(
+                _registrationLocalBounds,
+                _registrationLocalBoundsValid,
+                _facing,
+                out bounds);
+        }
+
+        private static bool TryGetCachedLocalBounds(
+            Bounds[] localBounds,
+            bool[] validBounds,
+            int facing,
+            out Bounds bounds)
+        {
+            bounds = default;
+            if (localBounds == null || validBounds == null ||
+                facing < 0 || facing >= localBounds.Length ||
+                facing >= validBounds.Length || !validBounds[facing])
+                return false;
+            bounds = localBounds[facing];
+            return true;
+        }
+
+        private static void CacheRegistrationLocalBounds(
+            Sprite registrationSprite,
+            Bounds[] localBounds,
+            bool[] validBounds,
+            int facing)
+        {
+            if (registrationSprite == null || localBounds == null ||
+                validBounds == null || facing < 0 ||
+                facing >= localBounds.Length || facing >= validBounds.Length)
+                return;
+
+            var vertices = registrationSprite.vertices;
+            if (vertices == null || vertices.Length == 0) return;
+            var minimum = vertices[0];
+            var maximum = vertices[0];
+            for (var index = 1; index < vertices.Length; index++)
+            {
+                minimum = Vector2.Min(minimum, vertices[index]);
+                maximum = Vector2.Max(maximum, vertices[index]);
+            }
+
+            var center = (minimum + maximum) * 0.5f;
+            var size = maximum - minimum;
+            localBounds[facing] = new Bounds(
+                new Vector3(center.x, center.y, 0f),
+                new Vector3(size.x, size.y, 0f));
+            validBounds[facing] = size.x > 0.001f && size.y > 0.001f;
+        }
+
+        private static void DestroyTemporaryRegistrationSprite(Sprite sprite)
+        {
+            if (sprite == null) return;
+            if (Application.isPlaying)
+                Object.Destroy(sprite);
+            else
+                Object.DestroyImmediate(sprite);
         }
 
         public void ApplyFacing(int facing)
@@ -258,11 +518,33 @@ namespace CityForgeV3.World
             ApplyAppearance();
         }
 
+        public void SetRain(bool isRaining)
+        {
+            _isRaining = isRaining;
+            ApplyAppearance();
+        }
+
+        public void SetWetReflection(float strength, Vector3 worldDirection)
+        {
+            _wetReflectionStrength = Mathf.Clamp01(strength);
+            if (worldDirection.sqrMagnitude > 0.0001f)
+                _wetReflectionWorldDirection = worldDirection.normalized;
+            ApplyAppearance();
+        }
+
         public void SetBuildingRotation(int quarterTurns)
         {
             _buildingRotationQuarterTurns =
                 FiveBayHybridContract.WrapFacing(quarterTurns);
             ApplyAppearance();
+        }
+
+        public void SetHostBuildingStencilReference(int reference)
+        {
+            _hostBuildingStencilReference = Mathf.Clamp(reference, 0, 252);
+            if (_alwaysVisibleMaterial != null)
+                _alwaysVisibleMaterial.SetFloat("_BuildingHostStencilRef",
+                    _hostBuildingStencilReference);
         }
 
         public void RegisterToProxy(
@@ -360,6 +642,15 @@ namespace CityForgeV3.World
                 return;
             }
 
+            // During an editor domain reload, surviving scene presentations can
+            // receive a time-of-day refresh before their package data is rebound.
+            // Leave their current artwork intact until initialization completes.
+            if (_package == null)
+            {
+                _renderer.enabled = _visible;
+                return;
+            }
+
             // Appearance refreshes happen after placement, selection, movement,
             // time-of-day changes, and package-facing changes. Reassert the
             // presentation's authoritative visibility here so a refresh cannot
@@ -372,6 +663,8 @@ namespace CityForgeV3.World
             var useFullNight =
                 (_timeOfDay == TimeOfDayPreset.Evening ||
                  _timeOfDay == TimeOfDayPreset.Night) &&
+                _fullNightSprites != null &&
+                _facing >= 0 && _facing < _fullNightSprites.Length &&
                 _fullNightSprites[_facing] != null;
 
             if (useFullNight)
@@ -379,12 +672,18 @@ namespace CityForgeV3.World
                 _renderer.sprite = _fullNightSprites[_facing];
                 _renderer.color = Color.white;
             }
-            else if (NeutralPilotShowing && _neutralSprites[_facing] != null)
+            else if (NeutralPilotShowing &&
+                     _neutralSprites != null &&
+                     _facing >= 0 && _facing < _neutralSprites.Length &&
+                     _neutralSprites[_facing] != null)
             {
                 _renderer.sprite = _neutralSprites[_facing];
                 var shadePreset = DirectionalShadePreset;
                 var hasDirectionalShade =
                     _timeOfDay != TimeOfDayPreset.Night &&
+                    _shadeOverlays != null &&
+                    _facing >= 0 && _facing < _shadeOverlays.GetLength(0) &&
+                    (int)shadePreset < _shadeOverlays.GetLength(1) &&
                     _shadeOverlays[_facing, (int)shadePreset] != null;
                 _renderer.color = NeutralBaseTintFor(
                     _timeOfDay,
@@ -392,23 +691,34 @@ namespace CityForgeV3.World
             }
             else
             {
-                _renderer.sprite = _sprites[_facing];
+                _renderer.sprite = _sprites != null &&
+                                   _facing >= 0 && _facing < _sprites.Length
+                    ? _sprites[_facing]
+                    : null;
                 _renderer.color = Color.white;
             }
 
             if (_shadeRenderer != null)
             {
                 var daytime = _timeOfDay != TimeOfDayPreset.Night;
-                _shadeRenderer.sprite = daytime
+                var shadePresetIndex = (int)DirectionalShadePreset;
+                var hasShadeOverlay = daytime &&
+                                      _shadeOverlays != null &&
+                                      _facing >= 0 &&
+                                      _facing < _shadeOverlays.GetLength(0) &&
+                                      shadePresetIndex >= 0 &&
+                                      shadePresetIndex < _shadeOverlays.GetLength(1);
+                _shadeRenderer.sprite = hasShadeOverlay
                     ? _shadeOverlays[_facing, (int)DirectionalShadePreset]
                     : null;
                 _shadeRenderer.color = new Color(
                     1f, 1f, 1f,
                     _package.ShadeOpacity(
                         _timeOfDay,
-                        DirectionalShadeOpacityFor(_timeOfDay)));
+                        DirectionalShadeOpacityFor(_timeOfDay)) *
+                    MorningAfternoonShadowOpacityScale(_timeOfDay));
                 _shadeRenderer.enabled =
-                    _visible && NeutralPilotShowing && !useFullNight &&
+                    _visible && NeutralPilotShowing && !useFullNight && !_isRaining &&
                     _shadeRenderer.sprite != null;
             }
 
@@ -417,7 +727,9 @@ namespace CityForgeV3.World
                 _nightRenderer.sprite = _nightOverlays[_facing];
                 _nightRenderer.color =
                     _timeOfDay == TimeOfDayPreset.Night
-                        ? new Color(1.10f, 1.02f, 0.92f, 1f)
+                        ? new Color(
+                            1.10f, 1.02f, 0.92f,
+                            _package.NightOverlayOpacity)
                         : new Color(1f, 0.86f, 0.68f, 0.38f);
                 _nightRenderer.enabled =
                     _visible &&
@@ -425,6 +737,21 @@ namespace CityForgeV3.World
                     !useFullNight &&
                     (_timeOfDay == TimeOfDayPreset.Evening ||
                      _timeOfDay == TimeOfDayPreset.Night);
+            }
+
+            if (_wetReflectionRenderer != null)
+            {
+                _wetReflectionRenderer.enabled = _visible &&
+                    _wetReflectionStrength > 0.001f && _renderer.sprite != null;
+                if (_wetReflectionMaterial != null && _renderer.sprite != null)
+                {
+                    _wetReflectionMaterial.mainTexture =
+                        _renderer.sprite.texture;
+                    _wetReflectionMaterial.SetFloat(
+                        "_Wetness", _wetReflectionStrength);
+                    _wetReflectionMaterial.SetFloat(
+                        "_RainActive", _isRaining ? 1f : 0f);
+                }
             }
 
             ApplyOpacity(_renderer);
@@ -451,6 +778,12 @@ namespace CityForgeV3.World
             _ => 0f
         };
 
+        public static float MorningAfternoonShadowOpacityScale(
+            TimeOfDayPreset preset) =>
+            preset is TimeOfDayPreset.Morning or TimeOfDayPreset.Afternoon
+                ? 0.70f
+                : 1f;
+
         private void ApplyOpacity(SpriteRenderer spriteRenderer)
         {
             if (spriteRenderer == null) return;
@@ -463,9 +796,21 @@ namespace CityForgeV3.World
             TimeOfDayPreset preset,
             bool hasDirectionalOverlay)
         {
-            // Registered overlays describe directional variation; they do not
-            // replace the low ambient exposure of dusk or night.
-            if (!hasDirectionalOverlay || preset == TimeOfDayPreset.Evening)
+            // Hybrid sprites already contain their neutral material response.
+            // Keep dusk and night readable while the environment darkens;
+            // window overlays should accent the building, not become the only
+            // visible part of it.
+            if (preset == TimeOfDayPreset.Evening)
+            {
+                return new Color(0.66f, 0.69f, 0.76f);
+            }
+
+            if (preset == TimeOfDayPreset.Night)
+            {
+                return new Color(0.38f, 0.43f, 0.54f);
+            }
+
+            if (!hasDirectionalOverlay)
             {
                 return TimeOfDayLighting.For(preset).NeutralArtworkTint;
             }
@@ -488,7 +833,41 @@ namespace CityForgeV3.World
                     renderCamera.transform.right * _proxyRegistrationOffset.x +
                     renderCamera.transform.up * _proxyRegistrationOffset.y;
                 _visualRoot.localScale = Vector3.one * _proxyRegistrationScale;
+                ProjectWetReflectionOntoRoad(renderCamera);
             }
+        }
+
+        private void ProjectWetReflectionOntoRoad(Camera renderCamera)
+        {
+            if (_wetReflectionMesh == null || _renderer == null ||
+                _renderer.sprite == null || renderCamera == null) return;
+
+            var bounds = _renderer.sprite.bounds;
+            var spriteCorners = new[]
+            {
+                new Vector3(bounds.min.x, bounds.min.y, 0f),
+                new Vector3(bounds.max.x, bounds.min.y, 0f),
+                new Vector3(bounds.max.x, bounds.max.y, 0f),
+                new Vector3(bounds.min.x, bounds.max.y, 0f)
+            };
+            var foundationScreenY = renderCamera.WorldToScreenPoint(
+                transform.position).y;
+            var roadPlane = new Plane(Vector3.up,
+                new Vector3(0f, 0.058f, 0f));
+            var vertices = new Vector3[4];
+            for (var index = 0; index < spriteCorners.Length; index++)
+            {
+                var worldCorner = _renderer.transform.TransformPoint(
+                    spriteCorners[index]);
+                var screenCorner = renderCamera.WorldToScreenPoint(worldCorner);
+                screenCorner.y = 2f * foundationScreenY - screenCorner.y;
+                var ray = renderCamera.ScreenPointToRay(screenCorner);
+                if (!roadPlane.Raycast(ray, out var distance)) continue;
+                vertices[index] = transform.InverseTransformPoint(
+                    ray.GetPoint(distance));
+            }
+            _wetReflectionMesh.vertices = vertices;
+            _wetReflectionMesh.RecalculateBounds();
         }
 
         public void AlignToCamera()

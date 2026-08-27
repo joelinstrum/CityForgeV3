@@ -23,6 +23,61 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         ZWrite On
         Blend SrcAlpha OneMinusSrcAlpha
 
+        // Establish a screen-space mask for wet reflections. Semantic road
+        // pixels write stencil 1; sidewalks and transparent artwork do not.
+        Pass
+        {
+            ColorMask 0
+            ZWrite Off
+            Stencil
+            {
+                Ref 1
+                ReadMask 1
+                WriteMask 1
+                Comp Always
+                Pass Replace
+            }
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "UnityCG.cginc"
+            struct AppData { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
+            struct Varyings { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float _UseMaterialZones;
+            Varyings vert(AppData input)
+            {
+                Varyings output;
+                output.pos = UnityObjectToClipPos(input.vertex);
+                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                return output;
+            }
+            fixed4 frag(Varyings input) : SV_Target
+            {
+                fixed4 artwork = tex2D(_MainTex, input.uv);
+                clip(artwork.a - 0.02);
+                if (_UseMaterialZones > 0.5)
+                {
+                    fixed3 semantic = artwork.rgb;
+                    #ifndef UNITY_COLORSPACE_GAMMA
+                    semantic = LinearToGammaSpace(semantic);
+                    #endif
+                    fixed3 converted = LinearToGammaSpace(artwork.rgb);
+                    fixed roadMask = max(
+                        1.0 - smoothstep(0.035, 0.075, min(
+                            distance(semantic, fixed3(0.349, 0.388, 0.420)),
+                            distance(semantic, fixed3(0.788, 0.537, 0.447)))),
+                        1.0 - smoothstep(0.035, 0.075, min(
+                            distance(converted, fixed3(0.349, 0.388, 0.420)),
+                            distance(converted, fixed3(0.788, 0.537, 0.447)))));
+                    clip(roadMask - 0.5);
+                }
+                return 0;
+            }
+            ENDCG
+        }
+
         Pass
         {
             Tags { "LightMode" = "ForwardBase" }
@@ -97,6 +152,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                         input.uv * _SidewalkMaterialTiling).rgb;
                     artwork.rgb = lerp(artwork.rgb, roadSurface, roadMask);
                     artwork.rgb = lerp(artwork.rgb, sidewalkSurface, sidewalkMask);
+
                 }
                 fixed shadow = SHADOW_ATTENUATION(input);
                 // Road art remains legible at night while still showing the

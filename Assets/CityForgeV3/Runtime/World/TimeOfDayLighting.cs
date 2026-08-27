@@ -71,7 +71,7 @@ namespace CityForgeV3.World
             new(
                 TimeOfDayPreset.Noon,
                 "NOON",
-                68f,
+                89f,
                 174f,
                 0.92f,
                 new Color(1f, 0.985f, 0.95f),
@@ -126,10 +126,13 @@ namespace CityForgeV3.World
             var spec = For(preset);
             // Unity's directional-light forward vector is the direction the
             // rays travel. Our azimuth contract describes where the sun is,
-            // so the ray direction is the opposite compass bearing.
+            // so the ray direction is the opposite compass bearing. The Lot
+            // Editor's displayed compass is rotated 90 degrees counter-clockwise
+            // from Unity's raw X/Z heading. The visual lot is authoritative:
+            // morning and afternoon must land on its west and east axes.
             return Quaternion.Euler(
                 spec.SunElevation,
-                spec.SunAzimuth + 180f,
+                spec.SunAzimuth + 90f,
                 0f);
         }
     }

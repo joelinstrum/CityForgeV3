@@ -1,0 +1,105 @@
+{
+  "id": "cityforge.v3.commercial.plymouth_store_tripo_01",
+  "displayName": "Plymouth Store",
+  "shortDisplayName": "Plymouth Store",
+  "category": "Commercial",
+  "subcategory": "Retail",
+  "sizeClass": "small",
+  "libraryShortcut": "P",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 1,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 5.087944,
+    "depthMeters": 8.222546,
+    "heightMeters": 10.36,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 23.8,
+    "targetHeightMeters": 4.3512
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V02 church-derived source voxel-remesh silhouette; 40% uniform scale correction",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 69.659863946,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "pending user-traced storefront and window masks",
+    "policy": "four intentional transparent placeholders"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 11.2,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -2.544, 0, -4.111, 2.544, 0, -4.111,
+      2.544, 0, 4.111, -2.544, 0, 4.111,
+      -2.544, 10.36, -4.111, 2.544, 10.36, -4.111,
+      2.544, 10.36, 4.111, -2.544, 10.36, 4.111
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.500000119, 0.761352599],
+      "approvedResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.50000006, 0.761352539],
+      "approvedResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.499999762, 0.761352375],
+      "approvedResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.499999851, 0.76135239],
+      "approvedResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/PlymouthStoreTripoV01/front-left-night"
+    }
+  ]
+}

@@ -12,6 +12,12 @@ namespace CityForgeV3.World
         Yellow
     }
 
+    public enum TestVehicleModel
+    {
+        FordModelT,
+        RollsRoyce1926
+    }
+
     /// <summary>
     /// Presentation-only controller for a vehicle traveling on a circulation graph.
     /// Route ownership remains in the simulation/network layer.
@@ -52,11 +58,19 @@ namespace CityForgeV3.World
         public Transform ShadowProxyRoot { get; private set; }
         public Transform ContactShadow { get; private set; }
         public VehiclePaintVariant PaintVariant { get; private set; }
+        public TestVehicleModel VehicleModel { get; private set; }
 
         public static VehicleRuntimePresentation Create(
             Transform parent, VehiclePaintVariant paintVariant = VehiclePaintVariant.Green)
+            => Create(parent, TestVehicleModel.FordModelT, paintVariant);
+
+        public static VehicleRuntimePresentation Create(
+            Transform parent, TestVehicleModel vehicleModel,
+            VehiclePaintVariant paintVariant = VehiclePaintVariant.Green)
         {
-            var vehicleType = VehicleTypePackage.LoadModelT();
+            var vehicleType = vehicleModel == TestVehicleModel.RollsRoyce1926
+                ? VehicleTypePackage.LoadRollsRoyce1926()
+                : VehicleTypePackage.LoadModelT();
             var asset = Resources.Load<GameObject>(vehicleType.ModelResourcePath);
             if (asset == null)
                 throw new MissingReferenceException(
@@ -65,22 +79,73 @@ namespace CityForgeV3.World
             var traveler = new GameObject("Vehicle Traveler");
             traveler.transform.SetParent(parent, false);
             var presentation = traveler.AddComponent<VehicleRuntimePresentation>();
-            var visual = Instantiate(asset, traveler.transform, false);
-            visual.name = "Ford Model T Visual";
+            presentation.VehicleModel = vehicleModel;
+            presentation.PaintVariant = paintVariant;
+            var imported = Instantiate(asset, traveler.transform, false);
+            var visual = vehicleModel == TestVehicleModel.RollsRoyce1926
+                ? ExtractPrimaryVehicleMesh(imported, traveler.transform)
+                : imported;
+            visual.name = $"{vehicleType.DisplayName} Visual";
             visual.transform.localPosition = Vector3.zero;
             visual.transform.localRotation =
-                Quaternion.Euler(0f, ModelYawOffsetDegrees, 0f) * visual.transform.localRotation;
+                (vehicleModel == TestVehicleModel.RollsRoyce1926
+                    // This FBX already imports Y-up with its length on Unity Z.
+                    ? Quaternion.identity
+                    : Quaternion.Euler(0f, ModelYawOffsetDegrees, 0f)) *
+                visual.transform.localRotation;
             presentation.VisualRoot = visual.transform;
+            if (vehicleModel == TestVehicleModel.RollsRoyce1926)
+                presentation.NormalizeVisualLength(vehicleType.LengthMeters);
             presentation.ConfigureImportedHierarchy();
-            presentation.BuildFrontAxleBrace();
+            if (vehicleModel == TestVehicleModel.FordModelT)
+                presentation.BuildFrontAxleBrace();
             presentation.GroundVisual();
-            presentation.ApplyPaintVariant(paintVariant);
+            if (vehicleModel == TestVehicleModel.FordModelT)
+                presentation.ApplyPaintVariant(paintVariant);
             presentation.PromoteVehicleAboveRoadDecals();
             presentation.BuildShadowPresentation();
-            presentation.BuildHeadlights();
+            if (vehicleModel == TestVehicleModel.FordModelT)
+                presentation.BuildHeadlights();
             presentation.SetTimeOfDay(TimeOfDayPreset.Noon);
-            traveler.transform.localScale = Vector3.one * PresentationScale;
+            traveler.transform.localScale = vehicleModel == TestVehicleModel.FordModelT
+                ? Vector3.one * PresentationScale
+                : Vector3.one;
             return presentation;
+        }
+
+        private static GameObject ExtractPrimaryVehicleMesh(
+            GameObject imported, Transform parent)
+        {
+            Renderer primary = null;
+            var largestBounds = 0f;
+            foreach (var renderer in imported.GetComponentsInChildren<Renderer>(true))
+            {
+                var size = renderer.bounds.size.sqrMagnitude;
+                if (!renderer.name.StartsWith("tripo_node_", StringComparison.OrdinalIgnoreCase) ||
+                    size <= largestBounds) continue;
+                primary = renderer;
+                largestBounds = size;
+            }
+            if (primary == null) return imported;
+            var visual = primary.gameObject;
+            if (visual == imported) return imported;
+            visual.transform.SetParent(parent, true);
+            imported.SetActive(false);
+            if (Application.isPlaying) Destroy(imported);
+            else DestroyImmediate(imported);
+            return visual;
+        }
+
+        private void NormalizeVisualLength(float desiredLengthMeters)
+        {
+            var renderers = VisualRoot.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++)
+                bounds.Encapsulate(renderers[index].bounds);
+            var footprintLength = Mathf.Max(bounds.size.x, bounds.size.z);
+            if (footprintLength <= 0.001f) return;
+            VisualRoot.localScale *= desiredLengthMeters / footprintLength;
         }
 
         public static Color PaintColor(VehiclePaintVariant variant) => variant switch
@@ -214,15 +279,24 @@ namespace CityForgeV3.World
                 // Instance the imported materials so this vehicle alone draws
                 // after its road-level shadow decal. The road is Geometry+2,
                 // the decal Geometry+4, and the visible vehicle Geometry+10.
-                var materials = renderer.materials;
-                foreach (var material in materials)
-                    if (material != null) material.renderQueue = 2460;
-                renderer.materials = materials;
+                var sourceMaterials = renderer.sharedMaterials;
+                var materials = new Material[sourceMaterials.Length];
+                for (var index = 0; index < sourceMaterials.Length; index++)
+                {
+                    var source = sourceMaterials[index];
+                    materials[index] = source == null ? null : new Material(source)
+                    {
+                        name = $"{source.name} — Vehicle Instance",
+                        renderQueue = 2460
+                    };
+                }
+                renderer.sharedMaterials = materials;
             }
             if (FrontAxleBrace != null)
             {
                 var renderer = FrontAxleBrace.GetComponent<Renderer>();
-                if (renderer != null) renderer.material.renderQueue = 2460;
+                if (renderer != null && renderer.sharedMaterial != null)
+                    renderer.sharedMaterial.renderQueue = 2460;
             }
         }
 

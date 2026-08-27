@@ -1,0 +1,105 @@
+{
+  "id": "cityforge.v3.commercial.19th_century_retail_shops_tripo_01",
+  "displayName": "19th-Century Retail Shops",
+  "shortDisplayName": "Retail Shops",
+  "category": "Commercial",
+  "subcategory": "Retail",
+  "sizeClass": "large",
+  "libraryShortcut": "R",
+  "reviewStatus": "V01 FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 3,
+  "occupancyDepth": 1,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 29.268133,
+    "depthMeters": 7.725878,
+    "heightMeters": 10.36,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 45.0,
+    "targetHeightMeters": 4.3512
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 church-derived source voxel-remesh silhouette",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 30.117647059,
+    "canvasWidth": 1024,
+    "canvasHeight": 1024
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "pending user-traced storefront and upper-window masks",
+    "policy": "four intentional transparent placeholders"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 12.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -14.634, 0, -3.863, 14.634, 0, -3.863,
+      14.634, 0, 3.863, -14.634, 0, 3.863,
+      -14.634, 10.36, -3.863, 14.634, 10.36, -3.863,
+      14.634, 10.36, 3.863, -14.634, 10.36, 3.863
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.50000006, 0.612996638],
+      "approvedResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.50000006, 0.612996578],
+      "approvedResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.50000006, 0.612996638],
+      "approvedResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.499999851, 0.612996519],
+      "approvedResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/NineteenthCenturyRetailShopsTripoV01/front-left-night"
+    }
+  ]
+}
