@@ -13,6 +13,7 @@ namespace CityForgeV3.World
         private Transform _shadow;
         private Material _material;
         private TimeOfDayPreset _preset;
+        private Vector3 _sunRay;
         private bool _visible = true;
 
         public void Initialize()
@@ -37,14 +38,24 @@ namespace CityForgeV3.World
 
         public void SetLighting(TimeOfDayPreset preset, bool visible)
         {
+            SetLighting(preset, visible,
+                TimeOfDayLighting.SunRotation(preset) * Vector3.forward);
+        }
+
+        public void SetLighting(TimeOfDayPreset preset, bool visible,
+            Vector3 sunRay)
+        {
             _preset = preset;
             _visible = visible;
+            _sunRay = sunRay;
         }
 
         private void LateUpdate()
         {
             if (_shadow == null) return;
-            var ray = TimeOfDayLighting.SunRotation(_preset) * Vector3.forward;
+            var ray = _sunRay.sqrMagnitude > 0.0001f
+                ? _sunRay.normalized
+                : TimeOfDayLighting.SunRotation(_preset) * Vector3.forward;
             var horizontal = new Vector3(ray.x, 0f, ray.z);
             var active = _visible && ray.y < -0.01f &&
                 horizontal.sqrMagnitude > 0.0001f;
@@ -61,8 +72,11 @@ namespace CityForgeV3.World
         public static Vector2 Direction(TimeOfDayPreset preset)
         {
             var ray = TimeOfDayLighting.SunRotation(preset) * Vector3.forward;
-            return new Vector2(ray.x, ray.z).normalized;
+            return Direction(ray);
         }
+
+        public static Vector2 Direction(Vector3 sunRay) =>
+            new Vector2(sunRay.x, sunRay.z).normalized;
 
         private static Mesh BuildFeatheredEllipse()
         {

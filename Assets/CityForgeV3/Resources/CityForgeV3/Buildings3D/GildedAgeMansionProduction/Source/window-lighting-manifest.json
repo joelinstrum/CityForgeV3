@@ -1,0 +1,33 @@
+{
+  "schema": "cityforge-window-lighting-v1",
+  "sourceCandidates": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/lighting-discovery/window-lighting-candidates.json",
+  "reviewedPaneCount": 3,
+  "acceptedCandidateIds": [
+    "W009",
+    "W044",
+    "W046"
+  ],
+  "rejectedCandidateIds": [
+    "W014",
+    "W016",
+    "W033",
+    "W034",
+    "W035",
+    "W036",
+    "W037",
+    "W038",
+    "W052",
+    "W054",
+    "W055",
+    "W057",
+    "W058",
+    "W060",
+    "W065",
+    "W069",
+    "W071",
+    "W072"
+  ],
+  "sharedAcrossLods": true,
+  "emissionStrength": 3.0,
+  "fbx": "GildedAgeMansion_WindowLighting.fbx"
+}

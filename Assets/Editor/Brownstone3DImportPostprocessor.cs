@@ -10,9 +10,13 @@ namespace CityForge.Editor
         private const string LowPolyBrownstoneFolder =
             "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/LowPolyBrownstoneV01/";
 
+        private const string ArtMuseumFolder =
+            "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/ArtMuseumProduction/";
+
         private bool IsProjectedShadowBuilding =>
             assetPath.StartsWith(Brownstone22kFolder) ||
-            assetPath.StartsWith(LowPolyBrownstoneFolder);
+            assetPath.StartsWith(LowPolyBrownstoneFolder) ||
+            assetPath.StartsWith(ArtMuseumFolder);
 
         private void OnPreprocessModel()
         {
@@ -26,7 +30,8 @@ namespace CityForge.Editor
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(Brownstone22kFolder)) return;
+            if (!assetPath.StartsWith(Brownstone22kFolder) &&
+                !assetPath.StartsWith(ArtMuseumFolder)) return;
             var importer = (TextureImporter)assetImporter;
             importer.maxTextureSize = 2048;
             importer.mipmapEnabled = true;

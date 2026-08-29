@@ -9,7 +9,10 @@ Shader "CityForgeV3/VehicleContactShadow"
         // Explicit road decal ordering is intentional: ordinary road artwork
         // otherwise rejects this plane, while the selected-road quad does not.
         // Visible vehicle materials draw afterward and cover the decal.
-        ZTest Always
+        // The shadow is queued after road artwork, but it must still obey the
+        // scene depth buffer. Always-testing made it paint over the vehicle
+        // itself and remain visible through intervening buildings.
+        ZTest LEqual
         Offset -8, -8
         Blend SrcAlpha OneMinusSrcAlpha
         Pass

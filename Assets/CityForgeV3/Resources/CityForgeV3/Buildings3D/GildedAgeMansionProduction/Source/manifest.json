@@ -1,0 +1,194 @@
+{
+  "schema": "cityforge-building-lod-package-v1",
+  "assetId": "gilded-age-mansion-v01",
+  "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/source/raw/tripo_convert_a4bd3397-5beb-4db4-85b5-d5e569b7e484.fbx",
+  "sourceArchivePreserved": true,
+  "canonicalSourceModified": false,
+  "coordinateSystem": "blender-metric-origin-centered",
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": [
+    0,
+    0,
+    0
+  ],
+  "targetHeightMeters": 16.0,
+  "export": {
+    "forward": "-Z",
+    "up": "Y",
+    "applyUnitScale": true,
+    "bakeSpaceTransform": false,
+    "identicalPathForAllLods": true
+  },
+  "canonicalBounds": {
+    "min": [
+      -7.330642,
+      -7.325176,
+      0.0
+    ],
+    "max": [
+      7.330642,
+      7.325176,
+      16.0
+    ]
+  },
+  "lods": [
+    {
+      "level": 0,
+      "triangles": 180655,
+      "percentOfLod0": 100.0,
+      "boundsDimensions": [
+        14.661284,
+        14.650352,
+        16.0
+      ],
+      "boundsCenter": [
+        0.0,
+        0.0,
+        8.0
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_a4bd3397"
+      ],
+      "fbx": "fbx/GildedAgeMansion_LOD0.fbx"
+    },
+    {
+      "level": 1,
+      "triangles": 108393,
+      "percentOfLod0": 60.0,
+      "boundsDimensions": [
+        14.661966,
+        14.648538,
+        15.998383
+      ],
+      "boundsCenter": [
+        -0.000341,
+        0.001577,
+        8.000809
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_a4bd3397"
+      ],
+      "fbx": "fbx/GildedAgeMansion_LOD1.fbx"
+    },
+    {
+      "level": 2,
+      "triangles": 54196,
+      "percentOfLod0": 30.0,
+      "boundsDimensions": [
+        14.642385,
+        14.651542,
+        15.992066
+      ],
+      "boundsCenter": [
+        0.003247,
+        0.001442,
+        7.999367
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_a4bd3397"
+      ],
+      "fbx": "fbx/GildedAgeMansion_LOD2.fbx"
+    },
+    {
+      "level": 3,
+      "triangles": 22580,
+      "percentOfLod0": 12.5,
+      "boundsDimensions": [
+        14.619424,
+        14.642688,
+        15.979391
+      ],
+      "boundsCenter": [
+        0.0092,
+        -0.002085,
+        7.993194
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_a4bd3397"
+      ],
+      "fbx": "fbx/GildedAgeMansion_LOD3.fbx"
+    }
+  ],
+  "textures": [
+    "textures/architectural_building_3d_model_basecolor.JPEG",
+    "textures/architectural_building_3d_model_metallic.JPEG",
+    "textures/architectural_building_3d_model_normal.JPEG",
+    "textures/architectural_building_3d_model_rm.JPEG",
+    "textures/architectural_building_3d_model_roughness.JPEG"
+  ],
+  "billboards": [
+    "billboards/gilded-age-mansion-yaw-000.png",
+    "billboards/gilded-age-mansion-yaw-045.png",
+    "billboards/gilded-age-mansion-yaw-090.png",
+    "billboards/gilded-age-mansion-yaw-135.png",
+    "billboards/gilded-age-mansion-yaw-180.png",
+    "billboards/gilded-age-mansion-yaw-225.png",
+    "billboards/gilded-age-mansion-yaw-270.png",
+    "billboards/gilded-age-mansion-yaw-315.png"
+  ],
+  "qa": {
+    "cameraElevationDegrees": 20,
+    "transparentBackground": true,
+    "bakedGroundShadow": false
+  }
+}

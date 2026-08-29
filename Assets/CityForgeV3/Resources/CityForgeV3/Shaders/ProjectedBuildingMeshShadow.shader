@@ -6,6 +6,7 @@ Shader "CityForgeV3/ProjectedBuildingMeshShadow"
         _ShadowDisplacement ("World Shadow Displacement", Vector) = (1, 0, 1, 0)
         _GroundY ("World Ground Height", Float) = 0.062
         _ReferenceHeight ("Reference Building Height", Float) = 10.0
+        _LotHalfExtents ("Lot Half Extents XZ", Vector) = (40, 40, 0, 0)
     }
     SubShader
     {
@@ -18,11 +19,16 @@ Shader "CityForgeV3/ProjectedBuildingMeshShadow"
             Offset -1, -1
             Stencil
             {
-                Ref 2
-                ReadMask 2
+                // Bit 0 is written by semantic road pixels. Manual projection
+                // is only needed by the unlit experimental grass receiver;
+                // roads receive the live Unity shadow map and must not get this
+                // second, baked-looking copy. Bit 1 still prevents overlapping
+                // projected mesh fragments from darkening each other.
+                Ref 0
+                ReadMask 3
                 WriteMask 2
-                Comp NotEqual
-                Pass Replace
+                Comp Equal
+                Pass Invert
             }
 
             CGPROGRAM
@@ -34,9 +40,14 @@ Shader "CityForgeV3/ProjectedBuildingMeshShadow"
             float4 _ShadowDisplacement;
             float _GroundY;
             float _ReferenceHeight;
+            float4 _LotHalfExtents;
 
             struct appdata { float4 vertex : POSITION; };
-            struct v2f { float4 vertex : SV_POSITION; };
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+                float2 worldXZ : TEXCOORD0;
+            };
 
             v2f vert(appdata input)
             {
@@ -47,10 +58,16 @@ Shader "CityForgeV3/ProjectedBuildingMeshShadow"
                 world.xz += _ShadowDisplacement.xz * heightRatio;
                 world.y = _GroundY;
                 output.vertex = UnityWorldToClipPos(world);
+                output.worldXZ = world.xz;
                 return output;
             }
 
-            fixed4 frag(v2f input) : SV_Target { return _Color; }
+            fixed4 frag(v2f input) : SV_Target
+            {
+                clip(_LotHalfExtents.x - abs(input.worldXZ.x));
+                clip(_LotHalfExtents.y - abs(input.worldXZ.y));
+                return _Color;
+            }
             ENDCG
         }
     }

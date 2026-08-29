@@ -220,6 +220,7 @@ namespace CityForgeV3.World
         public float X;
         public float Z;
         public int RotationQuarterTurns;
+        public int RotationEighthTurns = -1;
     }
 
     public sealed class LotEditorSession

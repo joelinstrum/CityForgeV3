@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CityForgeV3.Buildings3D;
 using UnityEngine;
 
 namespace CityForgeV3.World
@@ -48,6 +49,7 @@ namespace CityForgeV3.World
         private Transform _majorGrid;
         private Transform _majorStripDeletionPreview;
         private bool _gridVisible = true;
+        private bool _gridEditorActive = true;
         private Transform _neighborhoodRoad;
         private Transform _roadArtworkRoot;
         private Transform _outsideConnectorRoot;
@@ -104,6 +106,7 @@ namespace CityForgeV3.World
         private Transform _ground;
         private Renderer _groundRenderer;
         private int _facing;
+        private int _cameraOrbitOctant;
         private string _placementBuildingId =
             BuildingCatalog.ColonialGovernmentHouseId;
         private readonly LotEditorSession _session = new();
@@ -111,6 +114,8 @@ namespace CityForgeV3.World
         private readonly Stack<string> _roadRedo = new();
         private string _roadStrokeStart;
         private bool _buildingDragActive;
+        private bool _buildingPlacementPreviewActive;
+        public const float BuildingPlacementPreviewOpacity = 0.75f;
         private bool _buildingFocusFreezeActive;
         private int _sessionStateApplyCountForQa;
         private int _buildingFocusLiveMoveCountForQa;
@@ -179,6 +184,9 @@ namespace CityForgeV3.World
         public float SuburbanTripLengthMeters => TrafficLotModel.TripLength(_suburbanTrip);
 
         public string FacingLabel => _buildingPackage.Facing(_facing).Id;
+        public int CameraOrbitOctant => _cameraOrbitOctant;
+        public float CameraAzimuthDegrees => Mathf.Repeat(
+            45f + _cameraOrbitOctant * 45f, 360f);
         public BuildingInspectionMode InspectionMode { get; private set; } =
             BuildingInspectionMode.Artwork;
         public bool TopDownViewEnabled { get; private set; }
@@ -198,6 +206,8 @@ namespace CityForgeV3.World
         public bool CameraPanInteractionActive => _cameraPanInteractionActive;
         public float BuildingContextOpacity => _buildingContextOpacity;
         public float SelectedBuildingOpacity => _presentation?.Opacity ?? 0f;
+        public bool BuildingPlacementPreviewActive =>
+            _buildingPlacementPreviewActive;
         public string CurrentLotName => _session.Data.Name;
         public string CurrentEraId => _session.Data.EraId;
         public string CurrentLotId => _session.Data.LotId;
@@ -954,8 +964,73 @@ namespace CityForgeV3.World
                 ResolveFloraResourcePath(floraId, Season));
             return texture == null ? null : Sprite.Create(texture,
                 new Rect(0f, 0f, texture.width, texture.height),
-                new Vector2(0.5f, 0f), 32f);
+                FloraPivot(texture.name), 32f);
         }
+
+        private static Vector2 FloraPivot(string textureName) =>
+            textureName switch
+            {
+                // Vendor billboard canvases include generous transparent
+                // margins. Register each sprite on the lowest opaque pixel in
+                // its central trunk band rather than the canvas bottom.
+                "vendor-red-maple-spring" => new(526f / 1024f, 196f / 1024f),
+                "vendor-red-maple-summer" => new(526f / 1024f, 196f / 1024f),
+                "vendor-red-maple-autumn" => new(512f / 1024f, 201f / 1024f),
+                "vendor-red-maple-winter" => new(529f / 1024f, 233f / 1024f),
+                "vendor-red-maple-young-spring" => new(0.5f, 177f / 1024f),
+                "vendor-red-maple-young-summer" => new(0.5f, 177f / 1024f),
+                "vendor-red-maple-young-autumn" => new(0.5f, 69f / 1024f),
+                "vendor-red-maple-young-winter" => new(0.5f, 69f / 1024f),
+                "vendor-balsam-fir-broad-spring" => new(0.5f, 120f / 1024f),
+                "vendor-balsam-fir-broad-summer" => new(0.5f, 120f / 1024f),
+                "vendor-balsam-fir-broad-autumn" => new(0.5f, 120f / 1024f),
+                "vendor-balsam-fir-broad-winter" => new(0.5f, 120f / 1024f),
+                "vendor-balsam-fir-tall-spring" => new(0.5f, 0f),
+                "vendor-balsam-fir-tall-summer" => new(0.5f, 0f),
+                "vendor-balsam-fir-tall-autumn" => new(0.5f, 0f),
+                "vendor-balsam-fir-tall-winter" => new(0.5f, 0f),
+                "vendor-balsam-fir-classic-spring" => new(0.5f, 0f),
+                "vendor-balsam-fir-classic-summer" => new(0.5f, 0f),
+                "vendor-balsam-fir-classic-autumn" => new(0.5f, 0f),
+                "vendor-balsam-fir-classic-winter" => new(0.5f, 0f),
+                "vendor-hickory-spring" => new(0.5f, 165f / 1024f),
+                "vendor-hickory-summer" => new(0.5f, 165f / 1024f),
+                "vendor-hickory-autumn" => new(0.5f, 165f / 1024f),
+                "vendor-hickory-winter" => new(0.5f, 165f / 1024f),
+                "vendor-willow-spring" => new(0.5f, 203f / 1024f),
+                "vendor-willow-summer" => new(0.5f, 203f / 1024f),
+                "vendor-willow-autumn" => new(0.5f, 203f / 1024f),
+                "vendor-willow-winter" => new(0.5f, 203f / 1024f),
+                "vendor-cypress-oak-spring" => new(0.5f, 126f / 1024f),
+                "vendor-cypress-oak-summer" => new(0.5f, 126f / 1024f),
+                "vendor-cypress-oak-autumn" => new(0.5f, 159f / 1024f),
+                "vendor-cypress-oak-winter" => new(0.5f, 171f / 1024f),
+                "vendor-cypress-oak-wide-spring" => new(0.5f, 228f / 1024f),
+                "vendor-cypress-oak-wide-summer" => new(0.5f, 228f / 1024f),
+                "vendor-cypress-oak-wide-autumn" => new(0.5f, 217f / 1024f),
+                "vendor-cypress-oak-wide-winter" => new(0.5f, 225f / 1024f),
+                "vendor-oregon-ash-spring" => new(0.5f, 172f / 1024f),
+                "vendor-oregon-ash-summer" => new(0.5f, 172f / 1024f),
+                "vendor-oregon-ash-autumn" => new(0.5f, 173f / 1024f),
+                "vendor-oregon-ash-winter" => new(0.5f, 171f / 1024f),
+                "vendor-oregon-ash-wide-spring" => new(0.5f, 174f / 1024f),
+                "vendor-oregon-ash-wide-summer" => new(0.5f, 174f / 1024f),
+                "vendor-oregon-ash-wide-autumn" => new(0.5f, 173f / 1024f),
+                "vendor-oregon-ash-wide-winter" => new(0.5f, 173f / 1024f),
+                "vendor-spruce-narrow-spring" => new(0.5f, 0f),
+                "vendor-spruce-narrow-summer" => new(0.5f, 0f),
+                "vendor-spruce-narrow-autumn" => new(0.5f, 0f),
+                "vendor-spruce-narrow-winter" => new(0.5f, 0f),
+                "vendor-spruce-classic-spring" => new(0.5f, 0f),
+                "vendor-spruce-classic-summer" => new(0.5f, 0f),
+                "vendor-spruce-classic-autumn" => new(0.5f, 0f),
+                "vendor-spruce-classic-winter" => new(0.5f, 0f),
+                "vendor-spruce-wide-spring" => new(0.5f, 0f),
+                "vendor-spruce-wide-summer" => new(0.5f, 0f),
+                "vendor-spruce-wide-autumn" => new(0.5f, 0f),
+                "vendor-spruce-wide-winter" => new(0.5f, 0f),
+                _ => new(0.5f, 0f)
+            };
 
         private Material FloraLitShadowReceiverMaterial()
         {
@@ -1238,8 +1313,23 @@ namespace CityForgeV3.World
 
         public void Rotate(int direction)
         {
+            if (ExperimentalBuilding3DCount > 0)
+            {
+                SetCameraOrbitOctant(_cameraOrbitOctant + direction);
+                return;
+            }
             _facing = _buildingPackage.WrapFacing(_facing + direction);
             ApplyCameraFacing(true);
+            NotifyStateChanged();
+        }
+
+        public void SetCameraOrbitOctant(int octant)
+        {
+            _cameraOrbitOctant = ((octant % 8) + 8) % 8;
+            if (TopDownViewEnabled)
+                ToggleTopDownView();
+            else
+                ApplyCameraFacing(true);
             NotifyStateChanged();
         }
 
@@ -1293,7 +1383,11 @@ namespace CityForgeV3.World
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             var timeChanged = TimeOfDay != preset;
+            if (timeChanged)
+                SaveEnvironmentLightingState(TimeOfDay);
             TimeOfDay = preset;
+            if (timeChanged)
+                LoadEnvironmentLightingState(preset);
             if (timeChanged)
                 ClearRoadWetness();
             ApplyTimeOfDay();
@@ -1747,6 +1841,7 @@ namespace CityForgeV3.World
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
             _buildingDragActive = false;
+            _buildingPlacementPreviewActive = false;
             _buildingFocusFreezeActive = false;
             _floraDragActive = false;
             _propDragActive = false;
@@ -1763,6 +1858,7 @@ namespace CityForgeV3.World
         {
             ClearObjectHover();
             _buildingDragActive = false;
+            _buildingPlacementPreviewActive = false;
             _buildingFocusFreezeActive = false;
             ActiveObjectSelection = LotObjectSelectionKind.None;
             _session.Select(false);
@@ -1781,6 +1877,7 @@ namespace CityForgeV3.World
         {
             if (!_buildingFocusFreezeActive) return;
             _buildingDragActive = false;
+            _buildingPlacementPreviewActive = false;
             _buildingFocusFreezeActive = false;
             _session.Select(false);
             ActiveObjectSelection = LotObjectSelectionKind.None;
@@ -1803,14 +1900,16 @@ namespace CityForgeV3.World
                 InspectionMode = BuildingInspectionMode.Artwork;
             }
             _buildingContextOpacity = faded ? 0.32f : 1f;
-            var artworkOpacity = BuildingInspectionPolicy.ArtworkOpacity(
-                InspectionMode, _buildingContextOpacity);
+            var artworkOpacity = SelectedBuildingArtworkOpacity();
             _presentation?.SetOpacity(artworkOpacity);
+            var contextArtworkOpacity = BuildingInspectionPolicy.ArtworkOpacity(
+                InspectionMode, _buildingContextOpacity);
             foreach (var presentation in _otherBuildingPresentations)
-                presentation?.SetOpacity(artworkOpacity);
+                presentation?.SetOpacity(contextArtworkOpacity);
             if (leavingFocusedBuildingEditor)
             {
                 _buildingDragActive = false;
+                _buildingPlacementPreviewActive = false;
                 _buildingFocusFreezeActive = false;
                 ApplySessionState();
             }
@@ -1853,6 +1952,7 @@ namespace CityForgeV3.World
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
             _buildingDragActive = true;
+            _buildingPlacementPreviewActive = true;
             _buildingFocusFreezeActive = true;
             _buildingDragOffset = Vector2.zero;
             ApplySessionState();
@@ -1983,6 +2083,13 @@ namespace CityForgeV3.World
             _gridVisible = !_gridVisible;
             ApplyGridVisibility();
             NotifyStateChanged();
+        }
+
+        public void SetGridEditorContext(bool active)
+        {
+            if (_gridEditorActive == active) return;
+            _gridEditorActive = active;
+            ApplyGridVisibility();
         }
 
         public void RotateSelected(int direction)
@@ -2720,9 +2827,22 @@ namespace CityForgeV3.World
         {
             if (!_buildingDragActive) return false;
             _buildingDragActive = false;
+            var wasPlacementPreview = _buildingPlacementPreviewActive;
+            _buildingPlacementPreviewActive = false;
             if (_buildingAuthoringActive && !TopDownViewEnabled)
                 InspectionMode = BuildingInspectionMode.Artwork;
+            if (wasPlacementPreview && _presentation != null)
+                _presentation.SetOpacity(SelectedBuildingArtworkOpacity());
             return true;
+        }
+
+        private float SelectedBuildingArtworkOpacity()
+        {
+            var opacity = BuildingInspectionPolicy.ArtworkOpacity(
+                InspectionMode, _buildingContextOpacity);
+            return _buildingPlacementPreviewActive
+                ? Mathf.Min(opacity, BuildingPlacementPreviewOpacity)
+                : opacity;
         }
 
         private bool TryLotPointFromPanel(
@@ -3066,28 +3186,32 @@ namespace CityForgeV3.World
                 _majorGrid.SetParent(transform);
             }
             else ClearChildren(_majorGrid);
+            // Native 3D lots promote their textured ground receiver to queue
+            // 2000 and painted surface overlays to 2001. Construction lines
+            // must render after both or they disappear beneath the grass, but
+            // remain well below roads and placed objects (2430+).
             var minorMaterial =
-                LotSurfaceMaterial(new Color(0.72f, 0.76f, 0.65f, 0.42f), 1999);
+                GridLineMaterial(new Color(0.42f, 0.62f, 0.60f, 1f), 3100);
             var majorMaterial =
-                LotSurfaceMaterial(new Color(0.93f, 0.77f, 0.34f, 0.72f), 2000);
+                GridLineMaterial(new Color(0.98f, 0.80f, 0.30f, 1f), 3101);
 
             for (var index = -LotWidthMeters / 2; index <= LotWidthMeters / 2; index++)
             {
                 var major = IsMajorGridLine(index, LotWidthMeters);
                 var root = major ? _majorGrid : _minorGrid;
                 var material = major ? majorMaterial : minorMaterial;
-                var width = major ? 0.055f : 0.018f;
-                AddLine(root, new Vector3(index, 0.012f, -LotDepthMeters / 2f),
-                    new Vector3(index, 0.012f, LotDepthMeters / 2f), material, width);
+                var width = major ? 0.14f : 0.06f;
+                AddGridStrip(root, new Vector3(index, 0.12f, -LotDepthMeters / 2f),
+                    new Vector3(index, 0.12f, LotDepthMeters / 2f), material, width);
             }
             for (var index = -LotDepthMeters / 2; index <= LotDepthMeters / 2; index++)
             {
                 var major = IsMajorGridLine(index, LotDepthMeters);
                 var root = major ? _majorGrid : _minorGrid;
                 var material = major ? majorMaterial : minorMaterial;
-                var width = major ? 0.055f : 0.018f;
-                AddLine(root, new Vector3(-LotWidthMeters / 2f, 0.012f, index),
-                    new Vector3(LotWidthMeters / 2f, 0.012f, index), material, width);
+                var width = major ? 0.14f : 0.06f;
+                AddGridStrip(root, new Vector3(-LotWidthMeters / 2f, 0.12f, index),
+                    new Vector3(LotWidthMeters / 2f, 0.12f, index), material, width);
             }
             ApplyZoomLevel();
         }
@@ -3218,8 +3342,17 @@ namespace CityForgeV3.World
                 package.ArtworkWidthMeters * 0.965f,
                 package.ArtworkLengthMeters * 0.965f, 1f);
             receiver.GetComponent<Collider>().enabled = false;
-            receiver.GetComponent<Renderer>().sharedMaterial = LotSurfaceMaterial(
+            var receiverRenderer = receiver.GetComponent<Renderer>();
+            receiverRenderer.sharedMaterial = LotSurfaceMaterial(
                 new Color(1f, 0.67f, 0.08f, 0f), 2003);
+            // This transparent helper predates the road shader's own shadow
+            // receiver. LotSurfaceColor includes a generic SHADOWCASTER pass,
+            // which made every invisible helper quad cast a solid rectangular
+            // shadow onto its road tile. Keep the helper non-casting and let
+            // the visible road artwork receive lighting directly.
+            receiverRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            receiverRenderer.receiveShadows = false;
         }
 
         private void RebuildRoadVehicleNetwork()
@@ -3379,10 +3512,13 @@ namespace CityForgeV3.World
             {
                 name = $"{package.DisplayName} {topology} Overlay",
                 mainTexture = texture,
-                // Roads are ground color. They must draw before invisible
-                // prop/building depth prepasses (2435/2440), otherwise those
-                // prepasses punch rectangular holes in exposed road pixels.
-                renderQueue = 2430
+                // Experimental buildings use a mesh projection at 3001 for
+                // unlit grass. Draw road artwork immediately afterward so the
+                // projection cannot be baked across road tiles; this shader
+                // then applies the road's native live shadow map itself. The
+                // old invisible depth helpers are earlier and non-casting, so
+                // drawing after them also prevents rectangular road holes.
+                renderQueue = 3002
             };
             if (package.Id != RoadPiecePackage.LegacyPackageId)
             {
@@ -3402,6 +3538,9 @@ namespace CityForgeV3.World
             if (material.HasProperty("_TimeTint"))
                 material.SetColor("_TimeTint",
                     TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
+            if (material.HasProperty("_ReceiveSunShadow"))
+                material.SetFloat("_ReceiveSunShadow",
+                    TimeOfDay == TimeOfDayPreset.Noon ? 0f : 1f);
         }
 
         private void BuildCirculationEditor()
@@ -3456,6 +3595,9 @@ namespace CityForgeV3.World
                     _circulationTravelerRoot, variant);
                 presentation.gameObject.name = $"Vehicle Traveler — {variant}";
                 presentation.SetTimeOfDay(TimeOfDay);
+                presentation.SetShadowLighting(
+                    ExperimentalBuilding3DSunRotation() * Vector3.forward,
+                    !IsRaining && TimeOfDay != TimeOfDayPreset.Night);
                 _vehiclePresentations.Add(presentation);
             }
             _vehiclePresentation = _vehiclePresentations[0];
@@ -3996,7 +4138,7 @@ namespace CityForgeV3.World
                 TimeOfDayPreset.Morning => 0.90f,
                 TimeOfDayPreset.Noon => 0.45f,
                 TimeOfDayPreset.Afternoon => 1.15f,
-                TimeOfDayPreset.Evening => 0.65f,
+                TimeOfDayPreset.Evening => 0.40f,
                 _ => 0.45f
             };
 
@@ -4325,16 +4467,15 @@ namespace CityForgeV3.World
             var ambientLight = IsRaining
                 ? Color.Lerp(spec.AmbientColor, new Color(0.18f, 0.22f, 0.26f), 0.55f)
                 : spec.AmbientColor;
-            if (ExperimentalBuilding3DCount > 0)
-                ApplyExperimentalBuilding3DStudioEnvironment();
-            else
-            {
-                RestoreExperimentalBuilding3DStudioEnvironment();
-                RenderSettings.ambientMode =
-                    UnityEngine.Rendering.AmbientMode.Flat;
-                RenderSettings.ambientLight = ambientLight *
-                    _environmentAmbientIntensityScale;
-            }
+            // Adding a building must not replace the open lot's environment
+            // with the old asset-inspection studio skybox. Keep the lot's
+            // active time-of-day lighting and let the building participate in
+            // it like every other placed object.
+            RestoreExperimentalBuilding3DStudioEnvironment();
+            RenderSettings.ambientMode =
+                UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = ambientLight *
+                _environmentAmbientIntensityScale;
 
             if (_sun != null)
             {
@@ -4396,6 +4537,19 @@ namespace CityForgeV3.World
             UpdateFloraShadowSun();
             UpdateExperimentalBuilding3DProjectedGroundShadows();
             ApplyExperimentalBuilding3DColorGrade();
+            foreach (var root in _experimentalBuilding3DVisibleRoots)
+            {
+                if (root == null) continue;
+                var nightAmount = TimeOfDay switch
+                {
+                    TimeOfDayPreset.Evening => 0.65f,
+                    TimeOfDayPreset.Night => 1f,
+                    _ => 0f
+                };
+                var packageInstance = root == null
+                    ? null : root.GetComponent<Building3DPackageInstance>();
+                packageInstance?.SetNightAmount(nightAmount);
+            }
 
             if (_groundRenderer != null)
             {
@@ -4409,7 +4563,14 @@ namespace CityForgeV3.World
                     // Seasonal grass is already fully color-authored. A warm
                     // time-of-day multiplier turns its deep green into olive;
                     // sunlight supplies the time cue without recoloring it.
-                    groundBaseline = Color.white;
+                    groundBaseline = TimeOfDay switch
+                    {
+                        TimeOfDayPreset.Evening =>
+                            new Color(0.34f, 0.38f, 0.43f),
+                        TimeOfDayPreset.Night =>
+                            new Color(0.16f, 0.20f, 0.26f),
+                        _ => Color.white
+                    };
                 }
                 if (string.IsNullOrWhiteSpace(_session.Data.BaseTextureId))
                     groundBaseline = ExperimentalBuilding3DGroundColor(
@@ -4448,7 +4609,13 @@ namespace CityForgeV3.World
                 presentation?.SetRain(IsRaining);
             }
             foreach (var vehicle in _vehiclePresentations)
+            {
                 vehicle.SetTimeOfDay(TimeOfDay);
+                vehicle.SetShadowLighting(
+                    ExperimentalBuilding3DSunRotation() * Vector3.forward,
+                    !IsRaining && TimeOfDay != TimeOfDayPreset.Night);
+            }
+            UpdateStreetcarShadowLighting();
             foreach (var flora in _floraPresentations)
                 if (flora != null) flora.color = FloraColorForTime(1f);
             UpdateFloraShadows();
@@ -4463,7 +4630,12 @@ namespace CityForgeV3.World
                 foreach (var renderer in _roadArtworkRoot.GetComponentsInChildren<Renderer>())
                     if (renderer.sharedMaterial != null &&
                         renderer.sharedMaterial.HasProperty("_TimeTint"))
+                    {
                         renderer.sharedMaterial.SetColor("_TimeTint", roadTint);
+                        if (renderer.sharedMaterial.HasProperty("_ReceiveSunShadow"))
+                            renderer.sharedMaterial.SetFloat("_ReceiveSunShadow",
+                                TimeOfDay == TimeOfDayPreset.Noon ? 0f : 1f);
+                    }
             }
             UpdateProjectedShadow();
             UpdateOtherBuildingProjectedShadows();
@@ -4486,8 +4658,13 @@ namespace CityForgeV3.World
             }
 
             var experimental3D = ExperimentalBuilding3DCount > 0;
+            // Keep the shallow 20-degree CityForge elevation, but view native
+            // 3D lots from the diagonal. At any other azimuth an orthographic
+            // camera gives the two ground axes different projected lengths;
+            // 45 degrees makes the edges of every square grid cell equal on
+            // screen without non-uniformly stretching the world or buildings.
             var angle = experimental3D
-                ? 20f
+                ? CameraAzimuthDegrees
                 : _buildingPackage.Facing(_facing).CameraAzimuthDegrees;
             var azimuthRadians = angle * Mathf.Deg2Rad;
             // Tall native 3D façades read too top-down at the 28–30 degree
@@ -4818,6 +4995,9 @@ namespace CityForgeV3.World
                 : $"Ford Model T — {variant}";
             presentation.gameObject.name = $"Test Vehicle — {displayName}";
             presentation.SetTimeOfDay(TimeOfDay);
+            presentation.SetShadowLighting(
+                ExperimentalBuilding3DSunRotation() * Vector3.forward,
+                !IsRaining && TimeOfDay != TimeOfDayPreset.Night);
             var traveler = new TestVehicleTraveler
             {
                 Presentation = presentation,
@@ -5076,10 +5256,16 @@ namespace CityForgeV3.World
 
         private void ApplyGridVisibility()
         {
+            // The production 3D-building workflow permits selection and
+            // movement from any Lot Editor tool. Its construction grid must
+            // therefore follow the user's G toggle rather than disappearing
+            // whenever a modal temporarily changes the legacy editor context.
             if (_minorGrid != null)
                 _minorGrid.gameObject.SetActive(
-                    _gridVisible && LotMetricScale.ShowsMinorGrid(ZoomLevel));
-            if (_majorGrid != null) _majorGrid.gameObject.SetActive(_gridVisible);
+                    _gridVisible &&
+                    LotMetricScale.ShowsMinorGrid(ZoomLevel));
+            if (_majorGrid != null)
+                _majorGrid.gameObject.SetActive(_gridVisible);
         }
 
         public static float OrthographicSizeForLot(LotZoomLevel level, int lotSizeMeters)
@@ -5242,8 +5428,7 @@ namespace CityForgeV3.World
                 _presentation.SetVisible(
                     visible &&
                     BuildingInspectionPolicy.ShowsArtwork(InspectionMode));
-                _presentation.SetOpacity(BuildingInspectionPolicy.ArtworkOpacity(
-                    InspectionMode, _buildingContextOpacity));
+                _presentation.SetOpacity(SelectedBuildingArtworkOpacity());
                 ApplyPresentationFacing();
                 _presentation.RegisterToProxy(
                     _proxyLocalVertices,
@@ -5753,6 +5938,27 @@ namespace CityForgeV3.World
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
+        private static void AddGridStrip(
+            Transform parent, Vector3 start, Vector3 end,
+            Material material, float width)
+        {
+            var strip = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            strip.name = "Grid Line";
+            strip.transform.SetParent(parent, false);
+            strip.transform.localPosition = (start + end) * 0.5f;
+            var delta = end - start;
+            strip.transform.localScale = Mathf.Abs(delta.x) >= Mathf.Abs(delta.z)
+                ? new Vector3(Mathf.Abs(delta.x), 0.012f, width)
+                : new Vector3(width, 0.012f, Mathf.Abs(delta.z));
+            var collider = strip.GetComponent<Collider>();
+            if (collider != null) collider.enabled = false;
+            var renderer = strip.GetComponent<Renderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
         private static Material Material(Color color, float roughness)
         {
             var shader = Shader.Find("CityForgeV3/WorldColor");
@@ -5780,6 +5986,23 @@ namespace CityForgeV3.World
                     "Required Resources shader CityForgeV3/LotSurfaceColor was not included.");
             }
 
+            return new Material(shader)
+            {
+                color = color,
+                renderQueue = renderQueue
+            };
+        }
+
+        private static Material GridLineMaterial(Color color, int renderQueue)
+        {
+            // Grid strips are opaque editor guides. Keeping them off the
+            // transparent lot-surface shader avoids queue/depth ambiguity with
+            // the textured 3D ground receiver.
+            var shader = Shader.Find("Unlit/Color") ??
+                         Shader.Find("CityForgeV3/WorldColor");
+            if (shader == null)
+                throw new MissingReferenceException(
+                    "A grid-compatible color shader is required.");
             return new Material(shader)
             {
                 color = color,

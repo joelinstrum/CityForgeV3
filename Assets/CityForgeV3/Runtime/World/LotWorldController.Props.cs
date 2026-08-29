@@ -453,7 +453,8 @@ namespace CityForgeV3.World
                 presentation.gameObject.SetActive(visible);
                 if (!visible) continue;
                 presentation.GetComponent<CharacterGroundShadow>()?.SetLighting(
-                    TimeOfDay, !IsRaining && TimeOfDay != TimeOfDayPreset.Night);
+                    TimeOfDay, !IsRaining && TimeOfDay != TimeOfDayPreset.Night,
+                    ExperimentalBuilding3DSunRotation() * Vector3.forward);
                 UpdateCharacterBusinessAsUsual(index, character);
                 if (new Vector2(character.MovementX,
                         character.MovementZ).sqrMagnitude < 0.01f) continue;
@@ -813,7 +814,10 @@ namespace CityForgeV3.World
 
         private void UpdatePropProjectedShadows()
         {
-            var ray = TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
+            // Props and buildings share one physical world sun. Keep the
+            // lightweight projected prop shadows on the exact same bearing
+            // as native 3D geometry, including the southwest 3D afternoon.
+            var ray = ExperimentalBuilding3DSunRotation() * Vector3.forward;
             if (_buildingPackage != null)
                 ray = Quaternion.Euler(0f,
                     _buildingPackage.ShadowDirectionOffsetDegrees, 0f) * ray;

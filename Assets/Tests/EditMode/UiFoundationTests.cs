@@ -155,6 +155,17 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CharacterGroundShadowAcceptsTheActiveWorldSunDirection()
+        {
+            var southwestRay = Quaternion.Euler(34f, 315f, 0f) *
+                Vector3.forward;
+            var expected = new Vector2(southwestRay.x, southwestRay.z).normalized;
+            Assert.That(Vector2.Dot(
+                CharacterGroundShadow.Direction(southwestRay), expected),
+                Is.GreaterThan(0.999f));
+        }
+
+        [Test]
         public void BuildingPropCatalog_ProvidesAleHousePreviewContract()
         {
             var item = BuildingPropCatalog.Find(BuildingPropCatalog.AleHouseSignId);
@@ -2564,6 +2575,68 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CatalogBuildingFollowsPointerAsASeventyFivePercentPreviewUntilCommitted()
+        {
+            var root = new GameObject("Building Placement Preview Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Placement Preview", LotType.Mixed, 5, 5);
+                world.SetBuildingEditorContext(true, false);
+
+                Assert.That(world.BeginBuildingPlacementAtCenter(
+                    BuildingCatalog.ColonialGovernmentHouseId), Is.True);
+                Assert.That(world.BuildingPlacementPreviewActive, Is.True);
+                Assert.That(world.IsSelected, Is.True);
+                Assert.That(world.ActiveObjectSelection,
+                    Is.EqualTo(LotObjectSelectionKind.Building));
+                Assert.That(world.SelectedBuildingOpacity,
+                    Is.EqualTo(LotWorldController.BuildingPlacementPreviewOpacity)
+                        .Within(0.001f));
+
+                Assert.That(world.EndBuildingDrag(), Is.True);
+                Assert.That(world.BuildingPlacementPreviewActive, Is.False);
+                Assert.That(world.SelectedBuildingOpacity, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(world.IsSelected, Is.True,
+                    "The first click commits placement but keeps normal building selection.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void Production3DBuildingBeginsAsASeventyFivePercentPlacementPreview()
+        {
+            var root = new GameObject("3D Building Placement Preview Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("3D Placement Preview", LotType.Mixed, 6, 6);
+
+                Assert.That(world.BeginExperimentalBuilding3DPlacement(
+                    LotWorldController.PlymouthStoreProductionId), Is.True);
+                Assert.That(world.ExperimentalBuilding3DCount, Is.EqualTo(1));
+                Assert.That(world.Building3DPlacementPreviewActive, Is.True);
+                Assert.That(LotWorldController.Building3DPlacementPreviewOpacity,
+                    Is.EqualTo(0.75f));
+
+                world.EndBuilding3DDrag();
+                Assert.That(world.Building3DPlacementPreviewActive, Is.False,
+                    "The first placement click must restore authored materials.");
+                Assert.That(world.SelectedBuilding3DIndex, Is.EqualTo(0),
+                    "Committed placement remains selected for normal editing.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void ArtworkModeHidesEveryVisibleProxySurface()
         {
             var root = new GameObject("Artwork Proxy Visibility Test");
@@ -2787,7 +2860,15 @@ namespace CityForgeV3.Tests
             foreach (var id in new[]
                      {
                          "maple", "ashe", "oak", "date-palm",
-                         "narrow-street-tree", "small-hedge", "medium-hedge",
+                         "narrow-street-tree", "street-tree-3d",
+                         "vendor-red-maple", "vendor-red-maple-young",
+                         "vendor-balsam-fir-broad", "vendor-balsam-fir-tall",
+                         "vendor-balsam-fir-classic", "vendor-hickory",
+                         "vendor-willow", "vendor-cypress-oak",
+                         "vendor-cypress-oak-wide", "vendor-oregon-ash",
+                         "vendor-oregon-ash-wide", "vendor-spruce-narrow",
+                         "vendor-spruce-classic", "vendor-spruce-wide",
+                         "small-hedge", "medium-hedge",
                          "long-hedge"
                      })
                 Assert.That(Resources.Load<Texture2D>(
@@ -2802,6 +2883,22 @@ namespace CityForgeV3.Tests
                 Assert.That(Resources.Load<Texture2D>(
                     $"CityForgeV3/Flora/LegacyTreesV01/narrow-street-tree-{season}"),
                     Is.Not.Null, season);
+                Assert.That(Resources.Load<Texture2D>(
+                    $"CityForgeV3/Flora/LegacyTreesV01/street-tree-3d-{season}"),
+                    Is.Not.Null, season);
+                foreach (var vendorId in new[]
+                         {
+                             "vendor-red-maple", "vendor-red-maple-young",
+                             "vendor-balsam-fir-broad", "vendor-balsam-fir-tall",
+                             "vendor-balsam-fir-classic", "vendor-hickory",
+                             "vendor-willow", "vendor-cypress-oak",
+                             "vendor-cypress-oak-wide", "vendor-oregon-ash",
+                             "vendor-oregon-ash-wide", "vendor-spruce-narrow",
+                             "vendor-spruce-classic", "vendor-spruce-wide"
+                         })
+                    Assert.That(Resources.Load<Texture2D>(
+                        $"CityForgeV3/Flora/LegacyTreesV01/{vendorId}-{season}"),
+                        Is.Not.Null, $"{vendorId}-{season}");
                 Assert.That(Resources.Load<Texture2D>(
                     $"CityForgeV3/Flora/LegacyTreesV01/small-hedge-{season}"),
                     Is.Not.Null, season);
@@ -4384,6 +4481,24 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void StreetVehicleProjectionIsDepthOccludedAndFootprintShaped()
+        {
+            var shader = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/Shaders/VehicleContactShadow.shader");
+
+            StringAssert.Contains("ZTest LEqual", shader,
+                "Vehicle shadows must disappear behind cars and buildings.");
+            StringAssert.DoesNotContain("ZTest Always", shader,
+                "Always-on-top shadows cut through vehicles and buildings.");
+            Assert.That(StreetVehicleGroundShadow.MaximumDirectionalTailMeters,
+                Is.LessThanOrEqualTo(1.65f),
+                "A vehicle shadow should retain its footprint instead of becoming a long ray.");
+            Assert.That(StreetVehicleGroundShadow.FootprintWidthScale,
+                Is.GreaterThanOrEqualTo(1f),
+                "The projection must remain at least as broad as the vehicle footprint.");
+        }
+
+        [Test]
         public void NewLotDropdownsStyleTheirVisibleInputTextAndArrow()
         {
             var app = File.ReadAllText(
@@ -4749,6 +4864,15 @@ namespace CityForgeV3.Tests
                 Assert.That(presentation.ShadowProxyRendererCount, Is.EqualTo(7));
                 Assert.That(presentation.ShadowProxyRoot, Is.Not.Null);
                 Assert.That(presentation.ContactShadow, Is.Not.Null);
+                Assert.That(presentation.DirectionalShadow, Is.Not.Null,
+                    "Moving road vehicles need a late directional street shadow.");
+                var directionalRenderer = Find(
+                    presentation.DirectionalShadow.transform,
+                    "CF Directional Street Vehicle Shadow")
+                    ?.GetComponent<Renderer>();
+                Assert.That(directionalRenderer, Is.Not.Null);
+                Assert.That(directionalRenderer.sharedMaterial.renderQueue,
+                    Is.EqualTo(StreetVehicleGroundShadow.RenderQueue));
                 var contactRenderer = presentation.ContactShadow.GetComponent<Renderer>();
                 Assert.That(contactRenderer.sharedMaterial.shader.name,
                     Is.EqualTo("CityForgeV3/VehicleContactShadow"));
@@ -6289,7 +6413,7 @@ namespace CityForgeV3.Tests
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Morning), Is.EqualTo(0.90f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.45f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Afternoon), Is.EqualTo(1.15f));
-            Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Evening), Is.EqualTo(0.65f));
+            Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Evening), Is.EqualTo(0.40f));
             Assert.That(
                 LotWorldController.BuildingShadowOpacityMultiplier(
                     TimeOfDayPreset.Morning),

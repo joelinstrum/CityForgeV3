@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: BrownstoneProduction
+  m_EditorClassIdentifier: 
+  SchemaVersion: 1
+  AssetId: brownstone-production-v01
+  SourceProvenance: Original Brownstone Building 22K FBX, preserved in place; no
+    automatic reduction.
+  AuthoredScale: {x: 1, y: 1, z: 1}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 8.1, y: 12.8}
+  BoundsTolerance: 0.05
+  UseCrossFade: 1
+  CrossFadeWidth: 0.12
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  Representations:
+  - Level: 2
+    ScreenRelativeHeight: 0.12
+    VisualPrefab: {fileID: 919132149155446097, guid: adf52f79430be4d11981d5523e868b58, type: 3}
+    ShadowPrefab: {fileID: 0}
+    TargetTriangleBudget: 20000
+    Provenance: Existing artist/source-supplied 22K pilot mesh; registered without
+      modification.

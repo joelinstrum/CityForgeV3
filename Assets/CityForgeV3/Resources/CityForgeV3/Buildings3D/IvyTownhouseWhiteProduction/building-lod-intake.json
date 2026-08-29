@@ -1,0 +1,73 @@
+{
+  "schema": "cityforge.building-lod-intake.v1",
+  "buildingName": "IvyTownhouse",
+  "generatedUtc": "2026-08-27T04:28:45.966694+00:00",
+  "sourceDirectory": "/Users/joelinstrum/Downloads/buildings/NY Townhouse White",
+  "sourceMutation": "none",
+  "automaticMeshReduction": false,
+  "lods": [
+    {
+      "level": 0,
+      "archive": "IvyTownhouse-LOD0.zip",
+      "sha256": "24b43c4cf894fe858951db24322ace0934345a2f1868bca0978b9f0b05d423e3",
+      "fbx": "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbx",
+      "textures": [
+        "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbm/ivy-covered_townhouse_3d_model_basecolor.JPEG",
+        "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbm/ivy-covered_townhouse_3d_model_rm.JPEG",
+        "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbm/ivy-covered_townhouse_3d_model_normal.JPEG",
+        "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbm/ivy-covered_townhouse_3d_model_metallic.JPEG",
+        "tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbm/ivy-covered_townhouse_3d_model_roughness.JPEG"
+      ]
+    },
+    {
+      "level": 1,
+      "archive": "IvyTownhouse-LOD1.zip",
+      "sha256": "05a2a5d738a21e95da2ed215a5009fbf54de78c4d60e2ac53f0dbaec336373ad",
+      "fbx": "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbx",
+      "textures": [
+        "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbm/ivy_covered_townhouse_3d_model_roughness.JPEG",
+        "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbm/ivy_covered_townhouse_3d_model_rm.JPEG",
+        "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbm/ivy_covered_townhouse_3d_model_metallic.JPEG",
+        "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbm/ivy_covered_townhouse_3d_model_normal.JPEG",
+        "tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbm/ivy_covered_townhouse_3d_model_basecolor.JPEG"
+      ]
+    },
+    {
+      "level": 2,
+      "archive": "IvyTownhouse-LOD2.zip",
+      "sha256": "ee743b23123a7e8c5b10a415bfb2cf09bbd4e4a3221ea60101f519283956db2e",
+      "fbx": "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbx",
+      "textures": [
+        "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbm/townhouse_3d_model_rm.JPEG",
+        "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbm/townhouse_3d_model_normal.JPEG",
+        "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbm/townhouse_3d_model_roughness.JPEG",
+        "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbm/townhouse_3d_model_basecolor.JPEG",
+        "tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbm/townhouse_3d_model_metallic.JPEG"
+      ]
+    },
+    {
+      "level": 3,
+      "archive": "IvyTownhouse-LOD3.zip",
+      "sha256": "89cf3b59f9fbfbee8dc36d4971a4904d6acba2e9f1e24d99c80848574fe08fb0",
+      "fbx": "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbx",
+      "textures": [
+        "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbm/classic_townhouse_3d_model_roughness.JPEG",
+        "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbm/classic_townhouse_3d_model_rm.JPEG",
+        "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbm/classic_townhouse_3d_model_basecolor.JPEG",
+        "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbm/classic_townhouse_3d_model_metallic.JPEG",
+        "tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbm/classic_townhouse_3d_model_normal.JPEG"
+      ]
+    }
+  ],
+  "progress": {
+    "sourceIntake": "complete",
+    "unityImport": "complete",
+    "packagePrefab": "complete",
+    "boundsValidation": "complete",
+    "materialValidation": "complete",
+    "transitionQa": "in_progress",
+    "impostor": "pending",
+    "normalLotQa": "in_progress",
+    "performanceQa": "pending"
+  }
+}

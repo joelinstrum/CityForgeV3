@@ -1,0 +1,193 @@
+{
+  "schema": "cityforge-building-lod-package-v1",
+  "assetId": "plymouth-store-comparison-v01",
+  "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/PlymouthStoreComparison/v01_lod_pipeline/source/raw/tripo_convert_967f2e15-c35e-4b14-8dfd-147d8356da96.fbx",
+  "sourceArchivePreserved": true,
+  "canonicalSourceModified": false,
+  "coordinateSystem": "blender-metric-origin-centered",
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": [
+    0,
+    0,
+    0
+  ],
+  "targetHeightMeters": 12.0,
+  "export": {
+    "forward": "-Z",
+    "up": "Y",
+    "applyUnitScale": true,
+    "bakeSpaceTransform": false,
+    "identicalPathForAllLods": true
+  },
+  "canonicalBounds": {
+    "min": [
+      -2.756793,
+      -4.627594,
+      0.0
+    ],
+    "max": [
+      2.756793,
+      4.627594,
+      12.0
+    ]
+  },
+  "lods": [
+    {
+      "level": 0,
+      "triangles": 87701,
+      "percentOfLod0": 100.0,
+      "boundsDimensions": [
+        5.513585,
+        9.255187,
+        12.0
+      ],
+      "boundsCenter": [
+        0.0,
+        0.0,
+        6.0
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_967f2e15"
+      ],
+      "fbx": "fbx/PlymouthStore_Comparison_LOD0.fbx"
+    },
+    {
+      "level": 1,
+      "triangles": 52619,
+      "percentOfLod0": 60.0,
+      "boundsDimensions": [
+        5.51308,
+        9.255187,
+        12.000132
+      ],
+      "boundsCenter": [
+        -0.000196,
+        0.0,
+        5.999934
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_967f2e15"
+      ],
+      "fbx": "fbx/PlymouthStore_Comparison_LOD1.fbx"
+    },
+    {
+      "level": 2,
+      "triangles": 26309,
+      "percentOfLod0": 30.0,
+      "boundsDimensions": [
+        5.509449,
+        9.251242,
+        12.000964
+      ],
+      "boundsCenter": [
+        -0.001246,
+        -0.001973,
+        6.001121
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_967f2e15"
+      ],
+      "fbx": "fbx/PlymouthStore_Comparison_LOD2.fbx"
+    },
+    {
+      "level": 3,
+      "triangles": 10962,
+      "percentOfLod0": 12.5,
+      "boundsDimensions": [
+        5.488096,
+        9.251242,
+        12.000183
+      ],
+      "boundsCenter": [
+        0.000886,
+        -0.001973,
+        6.001512
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotationEulerRadians": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": [
+        "tripo_mat_967f2e15"
+      ],
+      "fbx": "fbx/PlymouthStore_Comparison_LOD3.fbx"
+    }
+  ],
+  "textures": [
+    "textures/historic_townhouse_3d_model_basecolor.JPEG",
+    "textures/historic_townhouse_3d_model_metallic.JPEG",
+    "textures/historic_townhouse_3d_model_normal.JPEG",
+    "textures/historic_townhouse_3d_model_roughness.JPEG"
+  ],
+  "billboards": [
+    "billboards/plymouth-store-comparison-yaw-000.png",
+    "billboards/plymouth-store-comparison-yaw-045.png",
+    "billboards/plymouth-store-comparison-yaw-090.png",
+    "billboards/plymouth-store-comparison-yaw-135.png",
+    "billboards/plymouth-store-comparison-yaw-180.png",
+    "billboards/plymouth-store-comparison-yaw-225.png",
+    "billboards/plymouth-store-comparison-yaw-270.png",
+    "billboards/plymouth-store-comparison-yaw-315.png"
+  ],
+  "qa": {
+    "cameraElevationDegrees": 20,
+    "transparentBackground": true,
+    "bakedGroundShadow": false
+  }
+}

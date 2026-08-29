@@ -671,6 +671,68 @@
     margin-bottom: 0;
 }
 
+.lot-orbit-dial {
+    position: relative;
+    align-self: center;
+    width: 180px;
+    height: 180px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    background-color: rgba(8, 18, 24, 0.72);
+    border-width: 2px;
+    border-color: rgba(91, 181, 201, 0.35);
+    border-radius: 90px;
+}
+
+.lot-orbit-dial .cf-button--orbit-segment,
+.lot-orbit-dial .cf-button--orbit-segment-selected {
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    border-width: 2px;
+    border-radius: 21px;
+    font-size: 9px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.lot-orbit-dial .cf-button--orbit-segment {
+    color: var(--cf-paper-200);
+    background-color: rgba(28, 45, 55, 0.96);
+    border-color: rgba(91, 181, 201, 0.48);
+}
+
+.lot-orbit-dial .cf-button--orbit-segment:hover {
+    color: rgb(241, 246, 247);
+    background-color: rgba(50, 92, 105, 0.98);
+    border-color: rgb(100, 215, 235);
+}
+
+.lot-orbit-dial .cf-button--orbit-segment-selected {
+    color: rgb(8, 22, 27);
+    background-color: rgb(102, 211, 229);
+    border-color: rgb(207, 249, 255);
+}
+
+.lot-orbit-center {
+    position: absolute;
+    left: 57px;
+    top: 64px;
+    width: 66px;
+    height: 52px;
+    padding-top: 8px;
+    color: var(--cf-paper-100);
+    background-color: rgba(13, 28, 35, 0.98);
+    border-width: 1px;
+    border-color: rgba(193, 155, 72, 0.65);
+    border-radius: 26px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
 .viewport-hint {
     position: absolute;
     left: 50%;
