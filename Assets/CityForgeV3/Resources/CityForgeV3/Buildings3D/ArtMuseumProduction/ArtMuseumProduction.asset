@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: ArtMuseumProduction
+  m_EditorClassIdentifier: 
+  SchemaVersion: 1
+  AssetId: art-museum-production-v01
+  SourceProvenance: Four user-supplied Tripo FBX LOD archives imported unchanged
+    from Source/; SHA-256 hashes recorded in documentation.
+  AuthoredScale: {x: 40, y: 40, z: 40}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 28.4, y: 38.8}
+  BoundsTolerance: 0.05
+  UseCrossFade: 1
+  CrossFadeWidth: 0.12
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.6
+    VisualPrefab: {fileID: 919132149155446097, guid: dac96d553ed1845e599fbbd8ac7e266e, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 2c70a0817ae97461a9112e62285902d3, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 3f81b12e4a03248138af672a08599cd6, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 250000
+    Provenance: User-supplied ArtMuseum-LOD0.zip; imported unchanged.
+  - Level: 1
+    ScreenRelativeHeight: 0.3
+    VisualPrefab: {fileID: 919132149155446097, guid: 69e87e3eae1e54db2a467e79cf73f5ba, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 0596b76db1c4f4cc493623cc3d25eca6, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 3f81b12e4a03248138af672a08599cd6, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 80000
+    Provenance: User-supplied ArtMuseum-LOD1.zip; imported unchanged.
+  - Level: 2
+    ScreenRelativeHeight: 0.12
+    VisualPrefab: {fileID: 919132149155446097, guid: 3f81b12e4a03248138af672a08599cd6, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 2ce05ab778a954803b4a3626b4ae7cf6, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: bbb8cbe9fc97d42c8b678753ce22de44, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 20000
+    Provenance: User-supplied ArtMuseum-LOD2.zip; imported unchanged.
+  - Level: 3
+    ScreenRelativeHeight: 0.035
+    VisualPrefab: {fileID: 919132149155446097, guid: bbb8cbe9fc97d42c8b678753ce22de44, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 811ee518275634b528de6e48012d7003, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: bbb8cbe9fc97d42c8b678753ce22de44, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 5000
+    Provenance: User-supplied ArtMuseum-LOD3.zip; imported unchanged.

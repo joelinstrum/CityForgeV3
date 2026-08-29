@@ -349,7 +349,23 @@ namespace CityForgeV3.World
                     renderer.shadowCastingMode = ShadowCastingMode.Off;
                     renderer.receiveShadows = false;
                 }
+                var directionalShadow = streetcar.AddComponent<
+                    StreetVehicleGroundShadow>();
+                directionalShadow.Initialize(streetcar.transform);
+                directionalShadow.SetLighting(
+                    ExperimentalBuilding3DSunRotation() * Vector3.forward,
+                    !IsRaining && TimeOfDay != TimeOfDayPreset.Night);
             }
+        }
+
+        private void UpdateStreetcarShadowLighting()
+        {
+            if (_streetcarVehicleRoot == null) return;
+            var ray = ExperimentalBuilding3DSunRotation() * Vector3.forward;
+            var visible = !IsRaining && TimeOfDay != TimeOfDayPreset.Night;
+            foreach (var shadow in _streetcarVehicleRoot.GetComponentsInChildren<
+                         StreetVehicleGroundShadow>(true))
+                shadow.SetLighting(ray, visible);
         }
 
         private void RebuildStreetcarStops()

@@ -1,0 +1,1017 @@
+{
+  "schema": "cityforge-window-lighting-candidates-v1",
+  "method": "warm-region discovery; human approval required",
+  "selectionRate": 0.45,
+  "candidateCount": 72,
+  "defaultSelectedCount": 32,
+  "candidates": [
+    {
+      "id": "W001",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        588,
+        203,
+        608,
+        247
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 633
+    },
+    {
+      "id": "W002",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        88,
+        207,
+        108,
+        246
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 506
+    },
+    {
+      "id": "W003",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        492,
+        236,
+        511,
+        280
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 595
+    },
+    {
+      "id": "W004",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        186,
+        239,
+        205,
+        279
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 537
+    },
+    {
+      "id": "W005",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        271,
+        270,
+        302,
+        312
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 671
+    },
+    {
+      "id": "W006",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        87,
+        290,
+        106,
+        330
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 592
+    },
+    {
+      "id": "W007",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        581,
+        292,
+        603,
+        342
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 702
+    },
+    {
+      "id": "W008",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        152,
+        314,
+        170,
+        351
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 516
+    },
+    {
+      "id": "W009",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        216,
+        334,
+        234,
+        373
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 560
+    },
+    {
+      "id": "W010",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        367,
+        367,
+        383,
+        410
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 589
+    },
+    {
+      "id": "W011",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        289,
+        368,
+        306,
+        401
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 370
+    },
+    {
+      "id": "W012",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        322,
+        369,
+        337,
+        408
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 479
+    },
+    {
+      "id": "W013",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        584,
+        377,
+        603,
+        426
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 708
+    },
+    {
+      "id": "W014",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        88,
+        385,
+        105,
+        406
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 268
+    },
+    {
+      "id": "W015",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        522,
+        399,
+        540,
+        447
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 603
+    },
+    {
+      "id": "W016",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        88,
+        401,
+        96,
+        424
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 180
+    },
+    {
+      "id": "W017",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        435,
+        419,
+        476,
+        489
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 1053
+    },
+    {
+      "id": "W018",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        152,
+        423,
+        160,
+        447
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 150
+    },
+    {
+      "id": "W019",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        215,
+        427,
+        234,
+        469
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 562
+    },
+    {
+      "id": "W020",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        364,
+        444,
+        381,
+        504
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 748
+    },
+    {
+      "id": "W021",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        400,
+        446,
+        418,
+        498
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 691
+    },
+    {
+      "id": "W022",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        289,
+        450,
+        306,
+        497
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 523
+    },
+    {
+      "id": "W023",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        322,
+        450,
+        338,
+        503
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 754
+    },
+    {
+      "id": "W024",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        580,
+        483,
+        598,
+        538
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 646
+    },
+    {
+      "id": "W025",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        90,
+        490,
+        109,
+        536
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 532
+    },
+    {
+      "id": "W026",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        509,
+        505,
+        537,
+        544
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 656
+    },
+    {
+      "id": "W027",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        436,
+        549,
+        454,
+        571
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 268
+    },
+    {
+      "id": "W028",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        399,
+        554,
+        417,
+        610
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 774
+    },
+    {
+      "id": "W029",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        290,
+        556,
+        307,
+        609
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 585
+    },
+    {
+      "id": "W030",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        324,
+        557,
+        340,
+        615
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 793
+    },
+    {
+      "id": "W031",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        364,
+        559,
+        382,
+        617
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 854
+    },
+    {
+      "id": "W032",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        510,
+        573,
+        545,
+        626
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 831
+    },
+    {
+      "id": "W033",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        163,
+        585,
+        183,
+        625
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 380
+    },
+    {
+      "id": "W034",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        196,
+        590,
+        237,
+        654
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 921
+    },
+    {
+      "id": "W035",
+      "view": "front-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-left.png",
+      "pixelBounds": [
+        461,
+        592,
+        500,
+        653
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 1091
+    },
+    {
+      "id": "W036",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        616,
+        94,
+        624,
+        113
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 123
+    },
+    {
+      "id": "W037",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        606,
+        118,
+        630,
+        178
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 699
+    },
+    {
+      "id": "W038",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        647,
+        203,
+        662,
+        221
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 209
+    },
+    {
+      "id": "W039",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        577,
+        207,
+        599,
+        255
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 666
+    },
+    {
+      "id": "W040",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        483,
+        240,
+        502,
+        282
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 530
+    },
+    {
+      "id": "W041",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        383,
+        275,
+        406,
+        317
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 595
+    },
+    {
+      "id": "W042",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        587,
+        297,
+        610,
+        345
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 608
+    },
+    {
+      "id": "W043",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        506,
+        320,
+        521,
+        358
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 401
+    },
+    {
+      "id": "W044",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        443,
+        342,
+        457,
+        374
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 351
+    },
+    {
+      "id": "W045",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        381,
+        364,
+        395,
+        403
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 364
+    },
+    {
+      "id": "W046",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        593,
+        380,
+        606,
+        411
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 315
+    },
+    {
+      "id": "W047",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        506,
+        412,
+        520,
+        441
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 296
+    },
+    {
+      "id": "W048",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        445,
+        432,
+        458,
+        460
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 242
+    },
+    {
+      "id": "W049",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        381,
+        454,
+        395,
+        481
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 268
+    },
+    {
+      "id": "W050",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        592,
+        490,
+        604,
+        513
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 234
+    },
+    {
+      "id": "W051",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        605,
+        518,
+        631,
+        571
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 577
+    },
+    {
+      "id": "W052",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        556,
+        560,
+        582,
+        610
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 556
+    },
+    {
+      "id": "W053",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        378,
+        563,
+        391,
+        581
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 203
+    },
+    {
+      "id": "W054",
+      "view": "front-right",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/front-right.png",
+      "pixelBounds": [
+        511,
+        604,
+        540,
+        643
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 518
+    },
+    {
+      "id": "W055",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        70,
+        103,
+        101,
+        187
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 1558
+    },
+    {
+      "id": "W056",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        194,
+        237,
+        221,
+        291
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 790
+    },
+    {
+      "id": "W057",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        134,
+        241,
+        156,
+        269
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 390
+    },
+    {
+      "id": "W058",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        64,
+        261,
+        77,
+        287
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 212
+    },
+    {
+      "id": "W059",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        287,
+        269,
+        312,
+        314
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 707
+    },
+    {
+      "id": "W060",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        235,
+        338,
+        251,
+        382
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 588
+    },
+    {
+      "id": "W061",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        297,
+        359,
+        315,
+        414
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 639
+    },
+    {
+      "id": "W062",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        87,
+        380,
+        103,
+        429
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 507
+    },
+    {
+      "id": "W063",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        171,
+        402,
+        186,
+        451
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 533
+    },
+    {
+      "id": "W064",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        236,
+        424,
+        251,
+        462
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 477
+    },
+    {
+      "id": "W065",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        97,
+        426,
+        109,
+        445
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 162
+    },
+    {
+      "id": "W066",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        298,
+        446,
+        313,
+        494
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 530
+    },
+    {
+      "id": "W067",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        90,
+        486,
+        104,
+        526
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 443
+    },
+    {
+      "id": "W068",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        240,
+        529,
+        256,
+        569
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 425
+    },
+    {
+      "id": "W069",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        98,
+        539,
+        111,
+        558
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 180
+    },
+    {
+      "id": "W070",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        302,
+        551,
+        317,
+        586
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 417
+    },
+    {
+      "id": "W071",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        114,
+        563,
+        140,
+        609
+      ],
+      "selectedByDefault": true,
+      "status": "candidate",
+      "detectionAreaPixels": 505
+    },
+    {
+      "id": "W072",
+      "view": "rear-left",
+      "source": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/IncomingTripo/GildedAgeMansion/v01_lod_pipeline/output/qa/rear-left.png",
+      "pixelBounds": [
+        149,
+        577,
+        189,
+        636
+      ],
+      "selectedByDefault": false,
+      "status": "candidate",
+      "detectionAreaPixels": 969
+    }
+  ]
+}

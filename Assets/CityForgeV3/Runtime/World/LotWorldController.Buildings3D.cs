@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CityForgeV3.Buildings3D;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -15,10 +16,28 @@ namespace CityForgeV3.World
         public const string BrownstoneBuilding22kId = "brownstone-building-22k";
         public const string BrownstoneBuilding22kResource =
             "CityForgeV3/Buildings3D/BrownstoneBuilding22k/brownstone-building-22k";
+        public const string BrownstoneProductionResource =
+            "CityForgeV3/Buildings3D/BrownstoneProduction/Prefabs/BrownstoneProduction";
         public const string LowPolyBrownstoneV01Id = "low-poly-brownstone-v01";
         public const string LowPolyBrownstoneV01Resource =
             "CityForgeV3/Buildings3D/LowPolyBrownstoneV01/LowPolyBrownstone";
+        public const string ArtMuseumProductionId = "art-museum-production-v01";
+        public const string ArtMuseumProductionResource =
+            "CityForgeV3/Buildings3D/ArtMuseumProduction/Prefabs/ArtMuseumProduction";
+        public const string IvyTownhouseWhiteProductionId =
+            "ivy-townhouse-white-production-v01";
+        public const string IvyTownhouseWhiteProductionResource =
+            "CityForgeV3/Buildings3D/IvyTownhouseWhiteProduction/Prefabs/IvyTownhouseWhiteProduction";
+        public const string PlymouthStoreProductionId =
+            "plymouth-store-v01";
+        public const string PlymouthStoreProductionResource =
+            "CityForgeV3/Buildings3D/PlymouthStoreProduction/Prefabs/PlymouthStoreComparisonV01";
+        public const string GildedAgeMansionProductionId =
+            "gilded-age-mansion-v01";
+        public const string GildedAgeMansionProductionResource =
+            "CityForgeV3/Buildings3D/GildedAgeMansionProduction/Prefabs/GildedAgeMansionV01";
         private readonly List<GameObject> _experimentalBuilding3DRoots = new();
+        private readonly List<GameObject> _experimentalBuilding3DVisibleRoots = new();
         private readonly List<Material> _experimentalBuilding3DMaterials = new();
         private readonly Dictionary<GameObject, GameObject>
             _experimentalBuilding3DGroundShadows = new();
@@ -42,6 +61,31 @@ namespace CityForgeV3.World
             DefaultExperimentalBuildingContrast;
         private float _environmentBuildingSaturation =
             DefaultExperimentalBuildingSaturation;
+        private readonly Dictionary<TimeOfDayPreset, EnvironmentLightingState>
+            _environmentLightingByTime = new();
+
+        private struct EnvironmentLightingState
+        {
+            public float SunIntensity;
+            public float SunElevation;
+            public float SunAzimuth;
+            public float Ambient;
+            public float Exposure;
+            public float ShadowStrength;
+            public float Contrast;
+            public float Saturation;
+        }
+        private int _selectedBuilding3DIndex = -1;
+        private bool _building3DDragActive;
+        private bool _building3DPlacementPreviewActive;
+        private Vector2 _building3DDragOffset;
+        public const float Building3DPlacementPreviewOpacity = 0.75f;
+        public bool Building3DPlacementPreviewActive =>
+            _building3DPlacementPreviewActive;
+        private GameObject _building3DSelectionOutline;
+        private Material _building3DSelectionOutlineMaterial;
+
+        public int SelectedBuilding3DIndex => _selectedBuilding3DIndex;
 
         public float EnvironmentSunIntensityScale => _environmentSunIntensityScale;
         public float EnvironmentSunElevationOffset => _environmentSunElevationOffset;
@@ -92,12 +136,86 @@ namespace CityForgeV3.World
             SaveLot();
         }
 
+        public void CreateArtMuseumLODTestLot()
+        {
+            // Neighborhood mode keeps the real road-art presentation active,
+            // allowing this fixture to exercise road shadow composition as
+            // well as the museum's experimental 3D ground receiver.
+            NewEmptyLot("Art Museum LOD", LotType.Neighborhood, 8, 8);
+            _session.Data.Buildings3D = new List<PlacedBuilding3D>();
+            AddExperimentalBuilding3D(ArtMuseumProductionId, 0f, 0f, 0);
+            SetBaseTexture("grass-lush");
+            SaveLot();
+        }
+
+        public void CreateIvyTownhouseWhiteLODTestLot()
+        {
+            NewEmptyLot("Ivy Townhouse White LOD", LotType.Residential, 6, 6);
+            _session.Data.Buildings3D = new List<PlacedBuilding3D>();
+            AddExperimentalBuilding3D(IvyTownhouseWhiteProductionId, 0f, 0f, 0);
+            SetBaseTexture("grass-lush");
+            SaveLot();
+        }
+
+        public void CreatePlymouthStoreLODTestLot()
+        {
+            NewEmptyLot("Plymouth Store LOD", LotType.Commercial, 6, 6);
+            _session.Data.Buildings3D = new List<PlacedBuilding3D>();
+            AddExperimentalBuilding3D(PlymouthStoreProductionId, 0f, 0f, 0);
+            SetBaseTexture("grass-lush");
+            SaveLot();
+        }
+
+        public void CreatePlymouthStoreComparisonTestLot()
+        {
+            CreatePlymouthStoreLODTestLot();
+        }
+
+        public void CreateGildedAgeMansionLODTestLot()
+        {
+            NewEmptyLot("Gilded Age Mansion LOD", LotType.Residential, 6, 6);
+            _session.Data.Buildings3D = new List<PlacedBuilding3D>();
+            AddExperimentalBuilding3D(GildedAgeMansionProductionId, 0f, 0f, 0);
+            SetBaseTexture("grass-lush");
+            SaveLot();
+        }
+
+        public void PrepareArtMuseumSurfaceQa()
+        {
+            // Exercise the real experimental-ground path, not a generic empty
+            // lot: a road circuit surrounds the museum while brick overlays
+            // remain visible on both sides of the authored grass receiver.
+            SeedRoadVerticalSlice();
+            RebuildRoadArtwork();
+            RebuildRoadVehicleNetwork();
+            ApplyLotPlanningState();
+            SetOverlayEditorContext(true);
+            foreach (var cell in new[]
+                     {
+                         new Vector2Int(0, 0), new Vector2Int(7, 0),
+                         new Vector2Int(0, 7), new Vector2Int(7, 7)
+                     })
+            {
+                BeginOverlayPaintAtCell("brick-walkway", cell.x, cell.y);
+                EndOverlayPaint();
+            }
+            Debug.Log($"Art Museum surface QA prepared: " +
+                      $"{PlacedRoadCount} road pieces, " +
+                      $"{OverlayTextureCount} overlay tiles, " +
+                      $"zoom lot {LotWidthCells}x{LotDepthCells}.");
+            NotifyStateChanged();
+        }
+
         public bool AddExperimentalBuilding3D(string assetId,
             float? worldX = null, float? worldZ = null,
             int? rotationQuarterTurns = null)
         {
             if (assetId != BrownstoneBuilding22kId &&
-                assetId != LowPolyBrownstoneV01Id) return false;
+                assetId != LowPolyBrownstoneV01Id &&
+                assetId != ArtMuseumProductionId &&
+                assetId != IvyTownhouseWhiteProductionId &&
+                assetId != PlymouthStoreProductionId &&
+                assetId != GildedAgeMansionProductionId) return false;
             _session.Data.Buildings3D ??= new List<PlacedBuilding3D>();
             var index = _session.Data.Buildings3D.Count;
             var offset = index * 2.5f;
@@ -106,13 +224,71 @@ namespace CityForgeV3.World
                 AssetId = assetId,
                 X = worldX ?? Mathf.Clamp(-10f + offset, -15f, 15f),
                 Z = worldZ ?? Mathf.Clamp(-5f + offset, -15f, 15f),
-                RotationQuarterTurns = rotationQuarterTurns ?? index % 4
+                RotationQuarterTurns = rotationQuarterTurns ?? index % 4,
+                RotationEighthTurns = (rotationQuarterTurns ?? index % 4) * 2
             });
             RebuildExperimentalBuilding3DPresentations();
+            // A library-card click is an add-and-select action. Selection must
+            // be established after rebuilding because the visible runtime root
+            // does not exist until that pass has completed.
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            SelectedFloraIndex = -1;
+            SelectedPropIndex = -1;
+            _selectedBuilding3DIndex = index;
+            _building3DDragActive = false;
+            RefreshBuilding3DSelectionOutline();
             ApplyTimeOfDay();
             ApplyCameraFacing(false);
             NotifyStateChanged();
             return true;
+        }
+
+        public bool BeginExperimentalBuilding3DPlacement(string assetId)
+        {
+            if (!AddExperimentalBuilding3D(assetId)) return false;
+            _building3DPlacementPreviewActive = true;
+            _building3DDragActive = true;
+            _building3DDragOffset = Vector2.zero;
+            ApplySelectedBuilding3DPlacementOpacity();
+            return true;
+        }
+
+        private void ApplySelectedBuilding3DPlacementOpacity()
+        {
+            if (!_building3DPlacementPreviewActive ||
+                _selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= _experimentalBuilding3DVisibleRoots.Count)
+                return;
+            var root = _experimentalBuilding3DVisibleRoots[_selectedBuilding3DIndex];
+            if (root == null) return;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (IsPackageShadowRenderer(renderer)) continue;
+                foreach (var material in renderer.materials)
+                {
+                    if (material == null) continue;
+                    if (material.HasProperty("_BaseColor"))
+                    {
+                        var color = material.GetColor("_BaseColor");
+                        color.a = Building3DPlacementPreviewOpacity;
+                        material.SetColor("_BaseColor", color);
+                    }
+                    if (material.HasProperty("_Color"))
+                    {
+                        var color = material.GetColor("_Color");
+                        color.a = Building3DPlacementPreviewOpacity;
+                        material.SetColor("_Color", color);
+                    }
+                    if (material.HasProperty("_Surface")) material.SetFloat("_Surface", 1f);
+                    if (material.HasProperty("_SrcBlend"))
+                        material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+                    if (material.HasProperty("_DstBlend"))
+                        material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                    if (material.HasProperty("_ZWrite")) material.SetFloat("_ZWrite", 0f);
+                    material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                    material.renderQueue = (int)RenderQueue.Transparent;
+                }
+            }
         }
 
         private void ApplyExperimentalBuilding3DShadowDistance()
@@ -152,18 +328,32 @@ namespace CityForgeV3.World
             if (ExperimentalBuilding3DCount <= 0)
                 return TimeOfDayLighting.SunRotation(TimeOfDay);
             var spec = TimeOfDayLighting.For(TimeOfDay);
-            // Raising only the 3D pilot's morning elevation from 24° to 48°
-            // retains its due-east compass while shortening the native shadow
-            // footprint to roughly 40% of the former projection.
+            // The cinematic 8° evening sun makes a tall 3D building cast a
+            // several-lot-long shadow. Keep the evening palette and compass,
+            // but use a game-readable elevation for native 3D shadows.
+            // Morning is likewise calibrated separately from the 2D artwork.
             // Preserve the universal compass contract: the azimuth describes
             // where the sun is, while a Unity directional light points along
             // the rays. Morning sun is east, therefore its rays and shadows
             // travel west. Afternoon uses the exact opposite bearing.
+            // Bias the native-3D afternoon sun toward one principal facade.
+            // With the 45-degree lot camera, a due-west light grazes both
+            // visible faces and makes the whole building read uniformly dim.
+            // This quarter-turn creates the intended bright-face/shaded-face
+            // separation without changing the camera or environment colors.
+            var native3DAzimuthBias = TimeOfDay == TimeOfDayPreset.Afternoon
+                ? -45f
+                : 0f;
             return Quaternion.Euler(
-                (TimeOfDay == TimeOfDayPreset.Morning
-                    ? 48f : spec.SunElevation) +
+                (TimeOfDay switch
+                {
+                    TimeOfDayPreset.Morning => 48f,
+                    TimeOfDayPreset.Evening => 28f,
+                    _ => spec.SunElevation
+                }) +
                 _environmentSunElevationOffset,
-                spec.SunAzimuth + 90f + _environmentSunAzimuthOffset,
+                spec.SunAzimuth + 90f + native3DAzimuthBias +
+                _environmentSunAzimuthOffset,
                 0f);
         }
 
@@ -230,6 +420,12 @@ namespace CityForgeV3.World
 
         private void ApplyExperimentalBuilding3DColorGrade()
         {
+            var timeBrightness = TimeOfDay switch
+            {
+                TimeOfDayPreset.Evening => 0.38f,
+                TimeOfDayPreset.Night => 0.08f,
+                _ => 1f
+            };
             foreach (var root in _experimentalBuilding3DRoots)
             {
                 if (root == null) continue;
@@ -239,8 +435,21 @@ namespace CityForgeV3.World
                     if (material == null || material.shader == null ||
                         material.shader.name !=
                         "CityForgeV3/Experimental3DBuildingPBR") continue;
-                    material.SetFloat("_Contrast", _environmentBuildingContrast);
-                    material.SetFloat("_Saturation", _environmentBuildingSaturation);
+                    if (!material.name.StartsWith("ArtMuseum-LOD"))
+                    {
+                        material.SetFloat("_Contrast", _environmentBuildingContrast);
+                        material.SetFloat("_Saturation", _environmentBuildingSaturation);
+                    }
+                    if (material.HasProperty("_EnvironmentDim"))
+                        material.SetFloat("_EnvironmentDim", timeBrightness);
+                    if (material.HasProperty("_DirectionalContrast"))
+                        material.SetFloat("_DirectionalContrast",
+                            TimeOfDay == TimeOfDayPreset.Afternoon ? 1f : 0f);
+                    if (material.HasProperty("_SunIntensityScale"))
+                        material.SetFloat("_SunIntensityScale",
+                            TimeOfDay == TimeOfDayPreset.Afternoon
+                                ? _environmentSunIntensityScale
+                                : 1f);
                 }
             }
         }
@@ -250,7 +459,7 @@ namespace CityForgeV3.World
             switch (control)
             {
                 case "sun-intensity":
-                    _environmentSunIntensityScale = Mathf.Clamp(value, 0f, 2f);
+                    _environmentSunIntensityScale = Mathf.Clamp(value, 0f, 3f);
                     break;
                 case "sun-elevation":
                     _environmentSunElevationOffset = Mathf.Clamp(value, -35f, 35f);
@@ -278,9 +487,53 @@ namespace CityForgeV3.World
             }
             ApplyTimeOfDay();
             ApplyExperimentalBuilding3DColorGrade();
+            SaveEnvironmentLightingState(TimeOfDay);
+        }
+
+        private void SaveEnvironmentLightingState(TimeOfDayPreset preset)
+        {
+            _environmentLightingByTime[preset] = new EnvironmentLightingState
+            {
+                SunIntensity = _environmentSunIntensityScale,
+                SunElevation = _environmentSunElevationOffset,
+                SunAzimuth = _environmentSunAzimuthOffset,
+                Ambient = _environmentAmbientIntensityScale,
+                Exposure = _environmentSkyExposure,
+                ShadowStrength = _environmentShadowStrength,
+                Contrast = _environmentBuildingContrast,
+                Saturation = _environmentBuildingSaturation
+            };
+        }
+
+        private void LoadEnvironmentLightingState(TimeOfDayPreset preset)
+        {
+            if (!_environmentLightingByTime.TryGetValue(preset, out var state))
+            {
+                ResetEnvironmentLightingControls(false);
+                // Afternoon is intentionally the high-contrast architectural
+                // preset. Its southwest key light needs enough energy to make
+                // the sun-facing facade read brightly against the shaded one.
+                if (preset == TimeOfDayPreset.Afternoon)
+                    _environmentSunIntensityScale = 3f;
+                SaveEnvironmentLightingState(preset);
+                return;
+            }
+            _environmentSunIntensityScale = state.SunIntensity;
+            _environmentSunElevationOffset = state.SunElevation;
+            _environmentSunAzimuthOffset = state.SunAzimuth;
+            _environmentAmbientIntensityScale = state.Ambient;
+            _environmentSkyExposure = state.Exposure;
+            _environmentShadowStrength = state.ShadowStrength;
+            _environmentBuildingContrast = state.Contrast;
+            _environmentBuildingSaturation = state.Saturation;
         }
 
         public void ResetEnvironmentLightingControls()
+        {
+            ResetEnvironmentLightingControls(true);
+        }
+
+        private void ResetEnvironmentLightingControls(bool apply)
         {
             _environmentSunIntensityScale = 1f;
             _environmentSunElevationOffset = 0f;
@@ -290,8 +543,12 @@ namespace CityForgeV3.World
             _environmentShadowStrength = 0.86f;
             _environmentBuildingContrast = DefaultExperimentalBuildingContrast;
             _environmentBuildingSaturation = DefaultExperimentalBuildingSaturation;
-            ApplyTimeOfDay();
-            ApplyExperimentalBuilding3DColorGrade();
+            SaveEnvironmentLightingState(TimeOfDay);
+            if (apply)
+            {
+                ApplyTimeOfDay();
+                ApplyExperimentalBuilding3DColorGrade();
+            }
         }
 
         private void RestoreExperimentalBuilding3DStudioEnvironment()
@@ -382,6 +639,8 @@ namespace CityForgeV3.World
                 if (root != null && !staleRoots.Contains(root))
                     DestroyForCurrentMode(root);
             _experimentalBuilding3DRoots.Clear();
+            _experimentalBuilding3DVisibleRoots.Clear();
+            _building3DSelectionOutline = null;
             _experimentalBuilding3DGroundShadows.Clear();
             foreach (var material in _experimentalBuilding3DMaterials)
                 if (material != null)
@@ -399,21 +658,43 @@ namespace CityForgeV3.World
                 var source = Resources.Load<GameObject>(
                     placed.AssetId == LowPolyBrownstoneV01Id
                         ? LowPolyBrownstoneV01Resource
-                        : BrownstoneBuilding22kResource);
+                        : placed.AssetId == ArtMuseumProductionId
+                            ? ArtMuseumProductionResource
+                        : placed.AssetId == IvyTownhouseWhiteProductionId
+                            ? IvyTownhouseWhiteProductionResource
+                        : placed.AssetId == PlymouthStoreProductionId
+                            ? PlymouthStoreProductionResource
+                        : placed.AssetId == GildedAgeMansionProductionId
+                            ? GildedAgeMansionProductionResource
+                        : BrownstoneProductionResource);
                 if (source == null)
                 {
-                    Debug.LogError($"Missing experimental 3D building: {BrownstoneBuilding22kResource}");
+                    Debug.LogError($"Missing production 3D building: {BrownstoneProductionResource}");
                     continue;
                 }
                 var root = Instantiate(source, transform);
-                root.name = placed.AssetId == LowPolyBrownstoneV01Id
-                    ? "3D Building — Low-Poly Brownstone V01"
-                    : "3D Building — Brownstone 22K";
+                root.name = placed.AssetId switch
+                {
+                    LowPolyBrownstoneV01Id =>
+                        "3D Building — Low-Poly Brownstone V01",
+                    ArtMuseumProductionId =>
+                        "3D Building — Art Museum Production V01",
+                    IvyTownhouseWhiteProductionId =>
+                        "3D Building — Ivy Townhouse White Production V01",
+                    PlymouthStoreProductionId =>
+                        "3D Building — Plymouth Store V01",
+                    GildedAgeMansionProductionId =>
+                        "3D Building — Gilded Age Mansion V01",
+                    _ => "3D Building — Brownstone Production V01"
+                };
                 root.transform.localPosition = new Vector3(placed.X, 0f, placed.Z);
                 root.transform.localRotation = ExperimentalBuildingRotation(placed);
                 var material = placed.AssetId == BrownstoneBuilding22kId
                     ? CreateBrownstoneBuilding22kMaterial()
                     : null;
+                var packageInstance = root.GetComponent<Building3DPackageInstance>();
+                var hasPackageShadowLod = packageInstance != null &&
+                    HasPackageShadowRenderers(root);
                 foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
                 {
                     if (material != null)
@@ -428,21 +709,42 @@ namespace CityForgeV3.World
                                     materials[index] = material;
                         renderer.sharedMaterials = materials;
                     }
-                    renderer.shadowCastingMode = ShadowCastingMode.On;
-                    renderer.receiveShadows = true;
+                    renderer.shadowCastingMode = hasPackageShadowLod
+                        ? (IsPackageShadowRenderer(renderer)
+                            ? ShadowCastingMode.ShadowsOnly
+                            : ShadowCastingMode.Off)
+                        : ShadowCastingMode.On;
+                    // A separately authored lower-detail caster occupies the
+                    // same volume. Letting the beauty mesh receive that
+                    // mismatched topology self-shadows the entire museum to
+                    // black. It still receives directional/ambient lighting;
+                    // the package caster continues to shadow ground and props.
+                    renderer.receiveShadows = !hasPackageShadowLod ||
+                        IsPackageShadowRenderer(renderer);
                     renderer.allowOcclusionWhenDynamic = true;
                 }
                 GroundExperimentalBuilding(root);
+                // Package-level unit conversion changes the representation
+                // bounds after the prefab's LODGroup was authored. Recompute
+                // here so Unity does not cull a meter-sized building using
+                // the original centimeter-sized LOD bounds.
+                packageInstance?.LodGroup?.RecalculateBounds();
                 _experimentalBuilding3DRoots.Add(root);
+                _experimentalBuilding3DVisibleRoots.Add(root);
                 BuildExperimentalBuilding3DReceiverShadowCaster(root);
                 BuildExperimentalBuilding3DProjectedGroundShadow(root);
             }
-            ApplyExperimentalBuilding3DColorGrade();
+            // Lot reconstruction may run after SetTimeOfDay (the QA helpers
+            // schedule it through ApplySessionState). Apply the current preset
+            // again now that package instances and their night controllers
+            // actually exist.
+            ApplyTimeOfDay();
             // Normal saved-lot loading applies the current lighting before
             // ApplySessionState reconstructs these runtime shadow objects.
             // Populate their meshes immediately after reconstruction so the
             // loaded lot does not wait for a later time-of-day interaction.
             UpdateExperimentalBuilding3DProjectedGroundShadows();
+            RefreshBuilding3DSelectionOutline();
         }
 
         private void BuildExperimentalBuilding3DProjectedGroundShadow(
@@ -466,8 +768,30 @@ namespace CityForgeV3.World
             material.name = $"CF Ground Shadow — {visibleRoot.name}";
             foreach (var collider in shadow.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
+            var packageInstance = visibleRoot.GetComponent<Building3DPackageInstance>();
+            var hasAuthoredShadowLod = packageInstance != null &&
+                HasPackageShadowRenderers(visibleRoot);
+            // A package clone contains every beauty LOD. For packages without
+            // an authored ShadowLOD, projecting all of those renderers creates
+            // stacked silhouettes and lets the shadow clone select a different
+            // LOD from the visible building. Use one normalized, stable mesh.
+            var fallbackShadowRoot = packageInstance != null &&
+                !hasAuthoredShadowLod
+                    ? shadow.transform.Find("Representations/LOD3") ??
+                      shadow.transform.Find("Representations/LOD0")
+                    : null;
+            DisableClonedPackageLodControl(shadow);
             foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
             {
+                var useRenderer = hasAuthoredShadowLod
+                    ? IsPackageShadowRenderer(renderer)
+                    : fallbackShadowRoot == null ||
+                      renderer.transform.IsChildOf(fallbackShadowRoot);
+                if (!useRenderer)
+                {
+                    renderer.enabled = false;
+                    continue;
+                }
                 var count = Mathf.Max(1, renderer.sharedMaterials.Length);
                 var materials = new Material[count];
                 for (var index = 0; index < count; index++)
@@ -487,12 +811,13 @@ namespace CityForgeV3.World
         {
             if (ExperimentalBuilding3DCount <= 0 || _sun == null) return;
             var ray = _sun.transform.forward;
-            // The exact-color grass receiver is intentionally unlit, so it
-            // cannot display Unity's native shadow map. Keep the mesh-derived
-            // projection active at noon as a short contact shadow; disabling
-            // it left a freshly loaded 3D Buildings lot with no ground shadow
-            // at all. Night and rain remain intentionally shadow-free.
+            // The exact-color grass receiver is intentionally unlit, so the
+            // mesh projection supplies morning/afternoon silhouettes. At noon
+            // the native light is nearly vertical; retaining a flattened copy
+            // made the museum silhouette look permanently baked into roads.
+            // Noon, night, and rain therefore use no manual projection.
             var visible = !IsRaining &&
+                TimeOfDay != TimeOfDayPreset.Noon &&
                 TimeOfDay != TimeOfDayPreset.Night &&
                 ray.y < -0.01f;
             var lengthScale = TimeOfDay == TimeOfDayPreset.Noon
@@ -527,12 +852,23 @@ namespace CityForgeV3.World
                 var displacement = new Vector3(ray.x, 0f, ray.z) *
                     (referenceHeight / -ray.y) * lengthScale;
                 foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
-                foreach (var material in renderer.sharedMaterials)
                 {
-                    material.SetColor("_Color", new Color(0f, 0f, 0f, opacity));
-                    material.SetVector("_ShadowDisplacement", displacement);
-                    material.SetFloat("_GroundY", 0.018f);
-                    material.SetFloat("_ReferenceHeight", referenceHeight);
+                    if (!renderer.enabled) continue;
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material == null || material.shader == null ||
+                            material.shader.name !=
+                            "CityForgeV3/ProjectedBuildingMeshShadow")
+                            continue;
+                        material.SetColor("_Color",
+                            new Color(0f, 0f, 0f, opacity));
+                        material.SetVector("_ShadowDisplacement", displacement);
+                        material.SetFloat("_GroundY", 0.018f);
+                        material.SetFloat("_ReferenceHeight", referenceHeight);
+                        material.SetVector("_LotHalfExtents", new Vector4(
+                            LotWidthMeters * 0.5f + 2f,
+                            LotDepthMeters * 0.5f + 2f, 0f, 0f));
+                    }
                 }
             }
         }
@@ -541,7 +877,9 @@ namespace CityForgeV3.World
             PlacedBuilding3D placed) => Quaternion.Euler(
             -90f,
             BrownstoneDefaultFacingDegrees +
-            placed.RotationQuarterTurns * 90f,
+            (placed.RotationEighthTurns >= 0
+                ? placed.RotationEighthTurns * 45f
+                : placed.RotationQuarterTurns * 90f),
             0f);
 
         private static void GroundExperimentalBuilding(GameObject root)
@@ -560,6 +898,13 @@ namespace CityForgeV3.World
         private void BuildExperimentalBuilding3DReceiverShadowCaster(
             GameObject visibleRoot)
         {
+            var packageInstance =
+                visibleRoot.GetComponent<Building3DPackageInstance>();
+            if (packageInstance != null && HasPackageShadowRenderers(visibleRoot))
+            {
+                BuildPackageFloraShadowCaster(visibleRoot);
+                return;
+            }
             // The experimental PBR beauty shader is not a reliable native
             // caster on every graphics backend. Give the main sun one hidden,
             // mesh-identical caster and disable casting on the visible copy so
@@ -569,6 +914,12 @@ namespace CityForgeV3.World
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
             var groundCaster = Instantiate(visibleRoot, transform);
             groundCaster.name = "3D Building — Brownstone Native Ground Shadow Caster";
+            var packageGroundCasterRoot = groundCaster
+                .GetComponent<Building3DPackageInstance>() != null
+                    ? groundCaster.transform.Find("Representations/LOD3") ??
+                      groundCaster.transform.Find("Representations/LOD0")
+                    : null;
+            DisableClonedPackageLodControl(groundCaster);
             foreach (var child in groundCaster.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = 0;
             foreach (var collider in groundCaster.GetComponentsInChildren<Collider>(true))
@@ -579,6 +930,14 @@ namespace CityForgeV3.World
                     "Unity Standard shader is required for native 3D building shadows.");
             foreach (var renderer in groundCaster.GetComponentsInChildren<Renderer>(true))
             {
+                var useRenderer = packageGroundCasterRoot == null ||
+                    renderer.transform.IsChildOf(packageGroundCasterRoot);
+                renderer.enabled = useRenderer;
+                if (!useRenderer)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    continue;
+                }
                 // The caster is never drawn, so use the engine's canonical
                 // opaque ShadowCaster pass instead of the beauty material.
                 renderer.sharedMaterial = new Material(casterShader)
@@ -600,18 +959,73 @@ namespace CityForgeV3.World
             // alpha-cutout flora and any future billboard prop receivers.
             var caster = Instantiate(visibleRoot, transform);
             caster.name = "3D Building — Brownstone Flora/Prop Shadow Caster";
+            var packageFloraCasterRoot = caster
+                .GetComponent<Building3DPackageInstance>() != null
+                    ? caster.transform.Find("Representations/LOD3") ??
+                      caster.transform.Find("Representations/LOD0")
+                    : null;
+            DisableClonedPackageLodControl(caster);
             foreach (var child in caster.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = FloraShadowReceiverLayer;
             foreach (var collider in caster.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
             foreach (var renderer in caster.GetComponentsInChildren<Renderer>(true))
             {
-                renderer.enabled = true;
+                var useRenderer = packageFloraCasterRoot == null ||
+                    renderer.transform.IsChildOf(packageFloraCasterRoot);
+                renderer.enabled = useRenderer;
                 renderer.receiveShadows = false;
-                renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                renderer.shadowCastingMode = useRenderer
+                    ? ShadowCastingMode.ShadowsOnly : ShadowCastingMode.Off;
                 renderer.allowOcclusionWhenDynamic = false;
             }
             _experimentalBuilding3DRoots.Add(caster);
+        }
+
+        private static void DisableClonedPackageLodControl(GameObject clone)
+        {
+            var lodGroup = clone.GetComponent<LODGroup>();
+            if (lodGroup != null) lodGroup.enabled = false;
+            var package = clone.GetComponent<Building3DPackageInstance>();
+            if (package != null) package.enabled = false;
+        }
+
+        private void BuildPackageFloraShadowCaster(GameObject visibleRoot)
+        {
+            // The package already contains one configurable layer-0 shadow LOD.
+            // Clone only that authored caster onto the isolated flora receiver
+            // layer; cloning beauty renderers would double cost and opacity.
+            var caster = Instantiate(visibleRoot, transform);
+            caster.name = "3D Building — Package Flora/Prop Shadow Caster";
+            foreach (var child in caster.GetComponentsInChildren<Transform>(true))
+                child.gameObject.layer = FloraShadowReceiverLayer;
+            foreach (var collider in caster.GetComponentsInChildren<Collider>(true))
+                collider.enabled = false;
+            foreach (var renderer in caster.GetComponentsInChildren<Renderer>(true))
+            {
+                var isShadow = IsPackageShadowRenderer(renderer);
+                renderer.enabled = isShadow;
+                renderer.receiveShadows = false;
+                renderer.shadowCastingMode = isShadow
+                    ? ShadowCastingMode.ShadowsOnly : ShadowCastingMode.Off;
+                renderer.allowOcclusionWhenDynamic = false;
+            }
+            _experimentalBuilding3DRoots.Add(caster);
+        }
+
+        private static bool IsPackageShadowRenderer(Renderer renderer)
+        {
+            for (var current = renderer.transform; current != null;
+                 current = current.parent)
+                if (current.name == "ShadowLOD") return true;
+            return false;
+        }
+
+        private static bool HasPackageShadowRenderers(GameObject root)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                if (IsPackageShadowRenderer(renderer)) return true;
+            return false;
         }
 
         private Material CreateBrownstoneBuilding22kMaterial()
@@ -652,6 +1066,288 @@ namespace CityForgeV3.World
             }
             _experimentalBuilding3DMaterials.Add(material);
             return material;
+        }
+
+        public bool BeginBuilding3DDragFromPanel(Vector2 panelPosition,
+            Vector2 panelSize)
+        {
+            if (_camera == null || _session?.Data?.Buildings3D == null) return false;
+            var pixel = PanelToCameraPixel(panelPosition, panelSize,
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var ray = _camera.ScreenPointToRay(pixel);
+            var bestDistance = float.PositiveInfinity;
+            var bestIndex = -1;
+            for (var index = 0; index < _experimentalBuilding3DVisibleRoots.Count;
+                 index++)
+            {
+                var root = _experimentalBuilding3DVisibleRoots[index];
+                if (root == null) continue;
+                var hasMeshSelectionSurface = false;
+                foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    var renderer = filter.GetComponent<Renderer>();
+                    if (filter.sharedMesh == null || renderer == null ||
+                        !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
+                        IsPackageShadowRenderer(renderer)) continue;
+                    hasMeshSelectionSurface = true;
+                    var collider = filter.GetComponent<MeshCollider>();
+                    if (collider == null)
+                        collider = filter.gameObject.AddComponent<MeshCollider>();
+                    collider.sharedMesh = filter.sharedMesh;
+                    collider.convex = false;
+                    collider.enabled = true;
+                    if (collider.Raycast(ray, out var hit,
+                            _camera.farClipPlane) && hit.distance < bestDistance)
+                    {
+                        bestDistance = hit.distance;
+                        bestIndex = index;
+                    }
+                }
+
+                // Primitive-only pilot assets may have no MeshFilter. Preserve
+                // a bounds fallback for those assets, but never let a complex
+                // museum's broad rectangular bounds steal clicks from props in
+                // empty screen space beside its real silhouette.
+                if (!hasMeshSelectionSurface)
+                {
+                    var bounds = CombinedRendererBounds(root, out var hasBounds);
+                    if (hasBounds && bounds.IntersectRay(ray, out var distance) &&
+                        distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestIndex = index;
+                    }
+                }
+            }
+            if (bestIndex < 0 || bestIndex >= _session.Data.Buildings3D.Count)
+                return false;
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            if (!ground.Raycast(ray, out var groundDistance)) return false;
+            var point = ray.GetPoint(groundDistance);
+            var placed = _session.Data.Buildings3D[bestIndex];
+            ActiveObjectSelection = LotObjectSelectionKind.None;
+            SelectedFloraIndex = -1;
+            SelectedPropIndex = -1;
+            _selectedBuilding3DIndex = bestIndex;
+            _building3DDragOffset = new Vector2(placed.X - point.x,
+                placed.Z - point.z);
+            _building3DDragActive = true;
+            RefreshBuilding3DSelectionOutline();
+            return true;
+        }
+
+        public bool DragBuilding3DFromPanel(Vector2 panelPosition,
+            Vector2 panelSize)
+        {
+            if (!_building3DDragActive || _camera == null ||
+                _selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
+                return false;
+            var pixel = PanelToCameraPixel(panelPosition, panelSize,
+                new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            var ray = _camera.ScreenPointToRay(pixel);
+            var ground = new Plane(Vector3.up, Vector3.zero);
+            if (!ground.Raycast(ray, out var distance)) return false;
+            var point = ray.GetPoint(distance);
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            var halfWidth = Mathf.Max(1f, LotWidthMeters * 0.5f);
+            var halfDepth = Mathf.Max(1f, LotDepthMeters * 0.5f);
+            placed.X = Mathf.Clamp(point.x + _building3DDragOffset.x,
+                -halfWidth, halfWidth);
+            placed.Z = Mathf.Clamp(point.z + _building3DDragOffset.y,
+                -halfDepth, halfDepth);
+            RebuildExperimentalBuilding3DPresentations();
+            ApplySelectedBuilding3DPlacementOpacity();
+            UpdateExperimentalBuilding3DProjectedGroundShadows();
+            NotifyStateChanged();
+            return true;
+        }
+
+        public void EndBuilding3DDrag()
+        {
+            _building3DDragActive = false;
+            if (!_building3DPlacementPreviewActive) return;
+            _building3DPlacementPreviewActive = false;
+            // Reinstantiating restores the package's exact authored material
+            // modes after the temporary transparent placement treatment.
+            RebuildExperimentalBuilding3DPresentations();
+        }
+
+        public bool SelectBuilding3DForQa(int index)
+        {
+            if (index < 0 || index >= (_session?.Data?.Buildings3D?.Count ?? 0) ||
+                index >= _experimentalBuilding3DVisibleRoots.Count)
+                return false;
+            _selectedBuilding3DIndex = index;
+            _building3DDragActive = false;
+            RefreshBuilding3DSelectionOutline();
+            return true;
+        }
+
+        public void DeselectBuilding3D()
+        {
+            if (_selectedBuilding3DIndex < 0 &&
+                _building3DSelectionOutline == null) return;
+            _selectedBuilding3DIndex = -1;
+            _building3DDragActive = false;
+            var restorePlacementMaterials = _building3DPlacementPreviewActive;
+            _building3DPlacementPreviewActive = false;
+            if (restorePlacementMaterials)
+                RebuildExperimentalBuilding3DPresentations();
+            RefreshBuilding3DSelectionOutline();
+            NotifyStateChanged();
+        }
+
+        public bool RotateSelectedBuilding3D(int direction)
+        {
+            if (_selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
+                return false;
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            var eighthTurns = placed.RotationEighthTurns >= 0
+                ? placed.RotationEighthTurns
+                : placed.RotationQuarterTurns * 2;
+            placed.RotationEighthTurns = (eighthTurns + direction % 8 + 8) % 8;
+            placed.RotationQuarterTurns = placed.RotationEighthTurns / 2;
+            RebuildExperimentalBuilding3DPresentations();
+            ApplyTimeOfDay();
+            NotifyStateChanged();
+            return true;
+        }
+
+        private void RefreshBuilding3DSelectionOutline()
+        {
+            if (_building3DSelectionOutline != null)
+                DestroyForCurrentMode(_building3DSelectionOutline);
+            _building3DSelectionOutline = null;
+            if (_selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= _experimentalBuilding3DVisibleRoots.Count)
+                return;
+            var source = _experimentalBuilding3DVisibleRoots[
+                _selectedBuilding3DIndex];
+            if (source == null) return;
+            var stableLod = source.transform.Find("Representations/LOD0");
+            var bounds = CombinedRendererBounds(
+                stableLod == null ? source : stableLod.gameObject,
+                out var hasBounds);
+            if (!hasBounds) return;
+            var shader = Shader.Find("Sprites/Default");
+            if (shader == null) return;
+            if (_building3DSelectionOutlineMaterial == null)
+                _building3DSelectionOutlineMaterial = new Material(shader)
+                {
+                    name = "CF 3D Building Selection — Light Blue"
+                };
+            _building3DSelectionOutlineMaterial.color =
+                new Color(0.3f, 0.82f, 1f, 0.95f);
+            _building3DSelectionOutline = new GameObject(
+                "3D Building Selection Outline");
+            _building3DSelectionOutline.transform.SetParent(transform, true);
+            _building3DSelectionOutline.name = "3D Building Selection Outline";
+            var min = bounds.min;
+            var max = bounds.max;
+            var corners = new Vector3[8];
+            var package = source.GetComponent<Building3DPackageInstance>()?.Package;
+            if (package != null && package.FootprintMeters.x > 0f &&
+                package.FootprintMeters.y > 0f && _session?.Data?.Buildings3D != null)
+            {
+                var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+                var eighthTurns = placed.RotationEighthTurns >= 0
+                    ? placed.RotationEighthTurns
+                    : placed.RotationQuarterTurns * 2;
+                var yaw = Quaternion.Euler(0f,
+                    BrownstoneDefaultFacingDegrees + eighthTurns * 45f, 0f);
+                var halfWidth = package.FootprintMeters.x * 0.5f + 0.08f;
+                var halfDepth = package.FootprintMeters.y * 0.5f + 0.08f;
+                var center = new Vector3(placed.X, 0f, placed.Z);
+                var footprint = new[]
+                {
+                    new Vector3(-halfWidth, 0f, -halfDepth),
+                    new Vector3(halfWidth, 0f, -halfDepth),
+                    new Vector3(halfWidth, 0f, halfDepth),
+                    new Vector3(-halfWidth, 0f, halfDepth)
+                };
+                for (var index = 0; index < 4; index++)
+                {
+                    var groundPoint = center + yaw * footprint[index];
+                    corners[index] = new Vector3(
+                        groundPoint.x, Mathf.Max(0.02f, min.y), groundPoint.z);
+                    corners[index + 4] = new Vector3(
+                        groundPoint.x, max.y + 0.08f, groundPoint.z);
+                }
+            }
+            else
+            {
+                corners = new[]
+                {
+                    new Vector3(min.x, min.y, min.z), new Vector3(max.x, min.y, min.z),
+                    new Vector3(max.x, min.y, max.z), new Vector3(min.x, min.y, max.z),
+                    new Vector3(min.x, max.y, min.z), new Vector3(max.x, max.y, min.z),
+                    new Vector3(max.x, max.y, max.z), new Vector3(min.x, max.y, max.z)
+                };
+            }
+            var edges = new[]
+            {
+                0,1, 1,2, 2,3, 3,0, 4,5, 5,6, 6,7, 7,4,
+                0,4, 1,5, 2,6, 3,7
+            };
+            for (var edge = 0; edge < edges.Length; edge += 2)
+            {
+                var lineObject = new GameObject($"Outer Edge {edge / 2 + 1}");
+                lineObject.transform.SetParent(_building3DSelectionOutline.transform,
+                    true);
+                var line = lineObject.AddComponent<LineRenderer>();
+                line.sharedMaterial = _building3DSelectionOutlineMaterial;
+                line.useWorldSpace = true;
+                line.positionCount = 2;
+                line.startWidth = line.endWidth = 0.08f;
+                line.numCapVertices = 2;
+                line.shadowCastingMode = ShadowCastingMode.Off;
+                line.receiveShadows = false;
+                line.SetPosition(0, corners[edges[edge]]);
+                line.SetPosition(1, corners[edges[edge + 1]]);
+            }
+            _experimentalBuilding3DRoots.Add(_building3DSelectionOutline);
+        }
+
+        private static Bounds CombinedRendererBounds(GameObject root,
+            out bool hasBounds)
+        {
+            var bounds = default(Bounds);
+            hasBounds = false;
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!renderer.enabled || IsPackageShadowRenderer(renderer)) continue;
+                if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
+                else bounds.Encapsulate(renderer.bounds);
+            }
+            return bounds;
+        }
+
+        private bool ProjectedBoundsContainsPixel(Bounds bounds, Vector2 pixel,
+            out float nearestDepth)
+        {
+            nearestDepth = float.PositiveInfinity;
+            if (_camera == null) return false;
+            var min = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            var max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            var center = bounds.center;
+            var extents = bounds.extents;
+            var hasVisibleCorner = false;
+            for (var x = -1; x <= 1; x += 2)
+            for (var y = -1; y <= 1; y += 2)
+            for (var z = -1; z <= 1; z += 2)
+            {
+                var screen = _camera.WorldToScreenPoint(center +
+                    Vector3.Scale(extents, new Vector3(x, y, z)));
+                if (screen.z <= 0f) continue;
+                hasVisibleCorner = true;
+                nearestDepth = Mathf.Min(nearestDepth, screen.z);
+                min = Vector2.Min(min, screen);
+                max = Vector2.Max(max, screen);
+            }
+            return hasVisibleCorner && pixel.x >= min.x && pixel.x <= max.x &&
+                   pixel.y >= min.y && pixel.y <= max.y;
         }
     }
 }

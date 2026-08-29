@@ -11,6 +11,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         _SidewalkMaterialTiling ("Sidewalk Material Tiling", Float) = 5
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _TimeTint ("Time of Day Tint", Color) = (1, 1, 1, 1)
+        _ReceiveSunShadow ("Receive Sun Shadow", Range(0, 1)) = 1
     }
 
     SubShader
@@ -21,7 +22,6 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         // their depth gives vehicle shadows a stable receiver without needing
         // the selection highlight to establish one first.
         ZWrite On
-        Blend SrcAlpha OneMinusSrcAlpha
 
         // Establish a screen-space mask for wet reflections. Semantic road
         // pixels write stencil 1; sidewalks and transparent artwork do not.
@@ -57,22 +57,10 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             {
                 fixed4 artwork = tex2D(_MainTex, input.uv);
                 clip(artwork.a - 0.02);
-                if (_UseMaterialZones > 0.5)
-                {
-                    fixed3 semantic = artwork.rgb;
-                    #ifndef UNITY_COLORSPACE_GAMMA
-                    semantic = LinearToGammaSpace(semantic);
-                    #endif
-                    fixed3 converted = LinearToGammaSpace(artwork.rgb);
-                    fixed roadMask = max(
-                        1.0 - smoothstep(0.035, 0.075, min(
-                            distance(semantic, fixed3(0.349, 0.388, 0.420)),
-                            distance(semantic, fixed3(0.788, 0.537, 0.447)))),
-                        1.0 - smoothstep(0.035, 0.075, min(
-                            distance(converted, fixed3(0.349, 0.388, 0.420)),
-                            distance(converted, fixed3(0.788, 0.537, 0.447)))));
-                    clip(roadMask - 0.5);
-                }
+                // Mask the complete visible road artwork, including sidewalks
+                // and antialiased material-zone edges. Restricting this pass to
+                // semantic asphalt left gaps where the museum's manual ground
+                // projection looked baked into an otherwise live-shadowed tile.
                 return 0;
             }
             ENDCG
@@ -107,6 +95,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             float _MaterialTiling;
             float _RoadMaterialTiling;
             float _SidewalkMaterialTiling;
+            float _ReceiveSunShadow;
 
             Varyings vert(AppData input)
             {
@@ -158,14 +147,12 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                 // Road art remains legible at night while still showing the
                 // silhouettes cast by fully 3D vehicles.
                 fixed illumination = lerp(0.42, 1.0, shadow);
-                // Leave a small amount of the already shadowed lot surface
-                // visible beneath the road. This is the same reason the
-                // translucent yellow selection tile shows vehicle shadows
-                // correctly; a fully opaque road hid the ground's shadow map.
-                // 0.90 preserves the authored material while exposing the
-                // vehicle silhouette consistently on selected and plain tiles.
+                illumination = lerp(1.0, illumination, _ReceiveSunShadow);
+                // The road now receives the native shadow map itself. The old
+                // 90% opacity workaround exposed the already-shadowed ground
+                // below it and doubled/dirtied shadows across road tiles.
                 return fixed4(artwork.rgb * illumination * _TimeTint.rgb,
-                    artwork.a * _TimeTint.a * 0.90);
+                    1.0);
             }
             ENDCG
         }

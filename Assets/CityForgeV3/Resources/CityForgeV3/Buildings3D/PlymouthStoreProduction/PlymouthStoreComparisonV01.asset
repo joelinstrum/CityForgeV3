@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: PlymouthStoreComparisonV01
+  m_EditorClassIdentifier: 
+  SchemaVersion: 1
+  AssetId: plymouth-store-v01
+  SourceProvenance: Single immutable Tripo LOD0; LOD1-3 generated in one Blender
+    scene at 60%, 30%, and 12.5%, with shared origin, transforms, materials, and
+    exporter.
+  AuthoredScale: {x: 100, y: 100, z: 100}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 5.513585, y: 9.255188}
+  BoundsTolerance: 0.01
+  UseCrossFade: 0
+  CrossFadeWidth: 0
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 0}
+  NightLightingMaterial: {fileID: 0}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 1, y: 1, z: 1}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.6
+    VisualPrefab: {fileID: 919132149155446097, guid: dd9c8f77189dd445c82e149e21fc0b2c, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 0fbda4dcf3f3e441c97d24be1d183178, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 87701
+    Provenance: Derived from the same centered canonical LOD0 by the comparison pipeline.
+  - Level: 1
+    ScreenRelativeHeight: 0.3
+    VisualPrefab: {fileID: 919132149155446097, guid: 10f80af440d4f4f6cb4fb8e251431bff, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 03d512f25993d44149e396e738a9bfa4, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 52619
+    Provenance: Derived from the same centered canonical LOD0 by the comparison pipeline.
+  - Level: 2
+    ScreenRelativeHeight: 0.12
+    VisualPrefab: {fileID: 919132149155446097, guid: 77093e08cc1784aa0980cde1e7bf4804, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: ddf2276a43eb746f5a9058826896a480, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 26309
+    Provenance: Derived from the same centered canonical LOD0 by the comparison pipeline.
+  - Level: 3
+    ScreenRelativeHeight: 0.035
+    VisualPrefab: {fileID: 919132149155446097, guid: fe73bb8e9153b4991ae259d52c8887ac, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: b467c4acd5ded4f51b3f5771c57c42d3, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 10962
+    Provenance: Derived from the same centered canonical LOD0 by the comparison pipeline.

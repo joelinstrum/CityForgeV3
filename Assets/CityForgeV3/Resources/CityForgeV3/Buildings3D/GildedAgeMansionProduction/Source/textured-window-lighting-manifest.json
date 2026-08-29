@@ -1,0 +1,35 @@
+{
+  "schema": "cityforge-texture-preserving-window-lighting-v1",
+  "acceptedCandidateIds": [
+    "W002",
+    "W003",
+    "W006",
+    "W009",
+    "W011",
+    "W017",
+    "W022",
+    "W041",
+    "W044",
+    "W046",
+    "W049"
+  ],
+  "windowCount": 11,
+  "extractedFaceCount": 150,
+  "facesPerWindow": {
+    "W002": 13,
+    "W003": 5,
+    "W006": 21,
+    "W009": 21,
+    "W011": 14,
+    "W017": 16,
+    "W022": 5,
+    "W041": 15,
+    "W044": 18,
+    "W046": 14,
+    "W049": 8
+  },
+  "preservesOriginalUvs": true,
+  "preservesBaseColorDetail": true,
+  "sharedAcrossLods": true,
+  "fbx": "GildedAgeMansion_TexturedWindowLighting.fbx"
+}

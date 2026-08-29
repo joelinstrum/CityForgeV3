@@ -11,6 +11,14 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         _GlossMapScale ("Smoothness", Range(0,1)) = 0.28
         _Contrast ("Tripo Contrast", Range(0.8,2)) = 1.42
         _Saturation ("Tripo Saturation", Range(0,2)) = 1.34
+        _AmbientFill ("Local Ambient Fill", Range(0,1)) = 0
+        _AlbedoBoost ("Local Albedo Lift", Range(0.5,3)) = 1
+        _EnvironmentDim ("Time Of Day Brightness", Range(0,1)) = 1
+        _DirectionalContrast ("Directional Light Contrast", Range(0,1)) = 0
+        _SunIntensityScale ("Sun Intensity Scale", Range(0,3)) = 1
+        [NoScaleOffset] _NightEmissionMask ("Night Emission Mask", 2D) = "black" {}
+        [HDR] _NightEmissionColor ("Night Emission Color", Color) = (1,0.55,0.22,1)
+        _NightEmissionIntensity ("Night Emission Intensity", Range(0,8)) = 0
     }
 
     SubShader
@@ -31,11 +39,21 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _GlossMapScale;
         half _Contrast;
         half _Saturation;
+        half _AmbientFill;
+        half _AlbedoBoost;
+        half _EnvironmentDim;
+        half _DirectionalContrast;
+        half _SunIntensityScale;
+        sampler2D _NightEmissionMask;
+        fixed4 _NightEmissionColor;
+        half _NightEmissionIntensity;
 
         struct Input
         {
             float2 uv_MainTex;
             float2 uv_BumpMap;
+            float3 worldNormal;
+            INTERNAL_DATA
         };
 
         fixed3 PreserveSourceColor(fixed3 source)
@@ -56,7 +74,36 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         void surf(Input input, inout SurfaceOutputStandard output)
         {
             fixed4 albedo = tex2D(_MainTex, input.uv_MainTex) * _Color;
-            output.Albedo = PreserveSourceColor(albedo.rgb);
+            fixed3 preserved = saturate(
+                PreserveSourceColor(albedo.rgb) * _AlbedoBoost);
+            // Render the authored atlas directly, then apply stable
+            // CityForge directional form in the emissive path. The standard
+            // surface-lighting path crushes these Tripo atlases nearly black
+            // in the project's gamma/exposure configuration.
+            half facingLight = saturate(dot(normalize(input.worldNormal),
+                normalize(_WorldSpaceLightPos0.xyz)));
+            // Afternoon uses a much wider neutral value range so façades
+            // facing away from the western sun read as genuinely shaded.
+            // This remains local to building materials: it neither tints nor
+            // changes the exposure of grass, roads, overlays, or props.
+            half shadowFloor = lerp(0.68h, 0.30h, _DirectionalContrast);
+            // Let the lighting-lab sun control lift the directly illuminated
+            // face without raising the shaded face or the environment.
+            half directSunBoost = 1.0h +
+                max(0.0h, _SunIntensityScale - 1.0h) * 0.38h;
+            half sunlightCeiling = lerp(1.20h,
+                1.36h * directSunBoost, _DirectionalContrast);
+            half directionalShape = lerp(facingLight,
+                smoothstep(0.08h, 0.58h, facingLight),
+                _DirectionalContrast);
+            half localLighting = lerp(
+                shadowFloor, sunlightCeiling, directionalShape);
+            output.Albedo = fixed3(0, 0, 0);
+            fixed mask = tex2D(_NightEmissionMask, input.uv_MainTex).r;
+            fixed3 nightEmission = albedo.rgb * _NightEmissionColor.rgb *
+                (mask * _NightEmissionIntensity);
+            output.Emission = albedo.rgb * localLighting * _EnvironmentDim +
+                nightEmission;
             output.Alpha = albedo.a;
             output.Normal = UnpackScaleNormal(
                 tex2D(_BumpMap, input.uv_BumpMap), _BumpScale);

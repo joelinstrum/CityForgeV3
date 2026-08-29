@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: IvyTownhouseWhiteProduction
+  m_EditorClassIdentifier: 
+  SchemaVersion: 1
+  AssetId: ivy-townhouse-white-production-v01
+  SourceProvenance: Four user-supplied IvyTownhouse LOD archives plus one 64-triangle
+    window-light overlay derived from the approved Blender proof of concept.
+  AuthoredScale: {x: 16.44, y: 16.44, z: 16.44}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 6.9, y: 16.1}
+  BoundsTolerance: 0.08
+  UseCrossFade: 1
+  CrossFadeWidth: 0.12
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 919132149155446097, guid: 69e2e676eb45c4b4e982874375b71cff, type: 3}
+  NightLightingMaterial: {fileID: 2100000, guid: c23560ed0593342a1908f1d246b7fcb5, type: 2}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 0.06, y: 0.06, z: 0.06}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.6
+    VisualPrefab: {fileID: 919132149155446097, guid: 80ac7d54f5e564819857ee7532f2887a, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: b827d5db56af44776aa7509ee4ea25c6, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 1478cd3561010402089990a54f87e5b9, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 250000
+    Provenance: User-supplied IvyTownhouse-LOD0.zip; imported unchanged.
+  - Level: 1
+    ScreenRelativeHeight: 0.3
+    VisualPrefab: {fileID: 919132149155446097, guid: 445474faf80044908a0bc1cef3ddc69e, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 137ca7c1b0ad64346a2da729fa64fad4, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 1478cd3561010402089990a54f87e5b9, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 80000
+    Provenance: User-supplied IvyTownhouse-LOD1.zip; imported unchanged.
+  - Level: 2
+    ScreenRelativeHeight: 0.12
+    VisualPrefab: {fileID: 919132149155446097, guid: 1478cd3561010402089990a54f87e5b9, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 1bd06a10d40914ce6b535177c77b787c, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 626842e252f934b63a5bb9d15f32677f, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 20000
+    Provenance: User-supplied IvyTownhouse-LOD2.zip; imported unchanged.
+  - Level: 3
+    ScreenRelativeHeight: 0.035
+    VisualPrefab: {fileID: 919132149155446097, guid: 626842e252f934b63a5bb9d15f32677f, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 61ee29bc20fce472496d5d38ec07f383, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 626842e252f934b63a5bb9d15f32677f, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 5000
+    Provenance: User-supplied IvyTownhouse-LOD3.zip; imported unchanged.

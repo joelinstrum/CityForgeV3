@@ -10,6 +10,10 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
     SubShader
     {
         Tags { "Queue" = "Geometry-1" "RenderType" = "Opaque" }
+        // This shader is also used by horizontal overlay quads. Unity's Quad
+        // primitive winding can face downward after its ground rotation, so
+        // back-face culling made painted brick/concrete tiles disappear.
+        Cull Off
 
         Pass
         {

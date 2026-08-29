@@ -305,7 +305,11 @@ namespace CityForgeV3.World
                 quad.transform.localScale = new Vector3(10f, 10f, 1f);
                 quad.GetComponent<Collider>().enabled = false;
                 var material = ShadowReceivingLotMaterial(LotTextureTint(TimeOfDay));
-                material.renderQueue = 1999;
+                // Experimental 3D lots promote their authored grass receiver
+                // to queue 2000. Painted surface layers must remain above that
+                // receiver (and below roads at 2430), otherwise the grass
+                // overwrites brick/concrete on Art Museum LOD lots.
+                material.renderQueue = 2001;
                 var option = ResolveOverlayTexture(placed.TextureId);
                 material.mainTexture = Resources.Load<Texture2D>(option.ResourcePath);
                 var renderer = quad.GetComponent<Renderer>();

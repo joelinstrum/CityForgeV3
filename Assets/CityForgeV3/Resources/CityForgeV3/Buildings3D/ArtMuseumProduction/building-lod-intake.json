@@ -1,0 +1,73 @@
+{
+  "schema": "cityforge.building-lod-intake.v1",
+  "buildingName": "ArtMuseum",
+  "generatedUtc": "2026-08-27T01:17:23.687193+00:00",
+  "sourceDirectory": "/Users/joelinstrum/Downloads/buildings/art-museum",
+  "sourceMutation": "none",
+  "automaticMeshReduction": false,
+  "lods": [
+    {
+      "level": 0,
+      "archive": "ArtMuseum-LOD0.zip",
+      "sha256": "47752fb7a41bc49b894376155a4d5b3caf56f535c4b601efa77388a9e45479b8",
+      "fbx": "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbx",
+      "textures": [
+        "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbm/historic_building_3d_model_normal.JPEG",
+        "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbm/historic_building_3d_model_basecolor.JPEG",
+        "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbm/historic_building_3d_model_roughness.JPEG",
+        "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbm/historic_building_3d_model_metallic.JPEG",
+        "tripo_convert_62faad61-a4c2-4b5d-8e98-6e37c2503d3c.fbm/historic_building_3d_model_rm.JPEG"
+      ]
+    },
+    {
+      "level": 1,
+      "archive": "ArtMuseum-LOD1.zip",
+      "sha256": "24b44f85912b27f21d61b752d4939f2256ff9ee8876be90595eeb49ff3e1cf84",
+      "fbx": "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbx",
+      "textures": [
+        "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbm/historic_building_3d_model_normal.JPEG",
+        "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbm/historic_building_3d_model_basecolor.JPEG",
+        "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbm/historic_building_3d_model_roughness.JPEG",
+        "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbm/historic_building_3d_model_metallic.JPEG",
+        "tripo_convert_329f9094-04e2-4822-a64b-684c00a2a566.fbm/historic_building_3d_model_rm.JPEG"
+      ]
+    },
+    {
+      "level": 2,
+      "archive": "ArtMuseum-LOD2.zip",
+      "sha256": "ee7a9bd4bdf1dea306fedc59b5f448ae1675d2e76c2b87cc74917bd330692294",
+      "fbx": "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbx",
+      "textures": [
+        "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbm/ornate_museum_building_3d_model_rm.JPEG",
+        "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbm/ornate_museum_building_3d_model_metallic.JPEG",
+        "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbm/ornate_museum_building_3d_model_normal.JPEG",
+        "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbm/ornate_museum_building_3d_model_basecolor.JPEG",
+        "tripo_convert_d916d3be-e4d5-4d8b-8960-a6b84cb68088.fbm/ornate_museum_building_3d_model_roughness.JPEG"
+      ]
+    },
+    {
+      "level": 3,
+      "archive": "ArtMuseum-LOD3.zip",
+      "sha256": "46c389b79c17ceb60a72eed397a05887679d3a070cab4ad1f5bcc2396b426046",
+      "fbx": "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbx",
+      "textures": [
+        "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbm/historic_museum_building_3d_model_basecolor.JPEG",
+        "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbm/historic_museum_building_3d_model_roughness.JPEG",
+        "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbm/historic_museum_building_3d_model_rm.JPEG",
+        "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbm/historic_museum_building_3d_model_metallic.JPEG",
+        "tripo_convert_97ec4b46-cb7c-406e-9521-06d153d423cb.fbm/historic_museum_building_3d_model_normal.JPEG"
+      ]
+    }
+  ],
+  "progress": {
+    "sourceIntake": "complete",
+    "unityImport": "complete",
+    "packagePrefab": "complete",
+    "boundsValidation": "complete",
+    "materialValidation": "in_progress",
+    "transitionQa": "in_progress",
+    "impostor": "pending",
+    "normalLotQa": "in_progress",
+    "performanceQa": "pending"
+  }
+}

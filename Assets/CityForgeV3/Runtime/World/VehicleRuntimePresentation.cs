@@ -57,6 +57,7 @@ namespace CityForgeV3.World
         public bool HasBlackRoof { get; private set; }
         public Transform ShadowProxyRoot { get; private set; }
         public Transform ContactShadow { get; private set; }
+        public StreetVehicleGroundShadow DirectionalShadow { get; private set; }
         public VehiclePaintVariant PaintVariant { get; private set; }
         public TestVehicleModel VehicleModel { get; private set; }
 
@@ -104,6 +105,9 @@ namespace CityForgeV3.World
                 presentation.ApplyPaintVariant(paintVariant);
             presentation.PromoteVehicleAboveRoadDecals();
             presentation.BuildShadowPresentation();
+            presentation.DirectionalShadow = traveler.AddComponent<
+                StreetVehicleGroundShadow>();
+            presentation.DirectionalShadow.Initialize(presentation.VisualRoot);
             if (vehicleModel == TestVehicleModel.FordModelT)
                 presentation.BuildHeadlights();
             presentation.SetTimeOfDay(TimeOfDayPreset.Noon);
@@ -169,6 +173,9 @@ namespace CityForgeV3.World
             foreach (var lens in _headlightLenses)
                 lens.gameObject.SetActive(enabled);
         }
+
+        public void SetShadowLighting(Vector3 sunRay, bool visible) =>
+            DirectionalShadow?.SetLighting(sunRay, visible);
 
         public void Place(Vector2 pointMeters, Vector2 direction, float steeringDegrees = 0f)
         {
@@ -362,11 +369,11 @@ namespace CityForgeV3.World
             contactRenderer.sharedMaterial = new Material(contactShader)
             {
                 name = "Model T Soft Contact Shadow",
-                // Road artwork owns Geometry+2. Draw immediately afterward,
-                // while the opaque vehicle depth can still occlude this decal.
-                // A late Transparent pass was being sorted behind ordinary road
-                // art and only became visible when the selection quad intervened.
-                renderQueue = 2454
+                // Road artwork is explicitly queued at 3002. The previous
+                // 2454 queue drew this decal first, so the opaque road pass
+                // simply painted over every vehicle contact shadow. Draw just
+                // after the road while the car itself remains the final cover.
+                renderQueue = 3100
             };
             contactRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             contactRenderer.receiveShadows = false;
