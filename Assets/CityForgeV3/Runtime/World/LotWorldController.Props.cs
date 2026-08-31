@@ -23,6 +23,9 @@ namespace CityForgeV3.World
         public const string HooliganCharacterId = "hooligan-animated-v01";
         public const string HistoricPolicemanCharacterId =
             "historic-policeman-animated-v01";
+        public const string KingKongCharacterId = "king-kong-static-v01";
+        public const string KingKongEnclosurePropId =
+            "king-kong-enclosure-v01";
         private const string FenceResourcePath =
             "CityForgeV3/Props/WroughtIronFenceV01/CF_WroughtIronFence_Straight_LOD0_v01";
         private const string FenceCornerResourcePath =
@@ -43,6 +46,17 @@ namespace CityForgeV3.World
             "CityForgeV3/Props/Characters/HooliganV01/HooliganAnimatedV01";
         private const string HistoricPolicemanResourcePath =
             "CityForgeV3/Props/Characters/HistoricPolicemanV01/HistoricPolicemanAnimatedV01";
+        private const string KingKongResourcePath =
+            "CityForgeV3/Props/Characters/KingKongV01/KingKongV01";
+        private const string KingKongEnclosureResourcePath =
+            "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/KingKongEnclosureV01";
+        private const float KingKongHeightMeters = 8.1125f;
+        private const float KingKongGroundOffsetMeters = 0.32f;
+        private const float KingKongFootprintMeters = 3f;
+        private const float KingKongEnclosureFootprintMeters = 16f;
+        // Keeps Kong's body and animation sway clear of the visible fence.
+        private const float KingKongEnclosureInteriorInsetMeters = 1.5f;
+        private const float KingKongWalkableAreaScale = 0.9f;
         private const string OrnateBenchResourcePath =
             "CityForgeV3/Props/OrnateBenchV01/OrnateBenchV01";
         // Blender FBX imports through Unity at 0.01; 336 restores the authored
@@ -109,6 +123,8 @@ namespace CityForgeV3.World
             string.Equals(propId, HooliganCharacterId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, HistoricPolicemanCharacterId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, KingKongCharacterId,
                 StringComparison.OrdinalIgnoreCase);
 
         public static bool IsHooligan(string propId) =>
@@ -119,7 +135,15 @@ namespace CityForgeV3.World
             string.Equals(propId, HistoricPolicemanCharacterId,
                 StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsKingKong(string propId) =>
+            string.Equals(propId, KingKongCharacterId,
+                StringComparison.OrdinalIgnoreCase);
+
+        private static float CharacterGroundY(string propId) =>
+            IsKingKong(propId) ? KingKongGroundOffsetMeters : 0.055f;
+
         private static string CharacterResourcePath(string propId) =>
+            IsKingKong(propId) ? KingKongResourcePath :
             IsHooligan(propId) ? HooliganResourcePath :
             IsHistoricPoliceman(propId) ? HistoricPolicemanResourcePath :
             VictorianGentlemanResourcePath;
@@ -211,7 +235,8 @@ namespace CityForgeV3.World
                 _propPreview == null ||
                 !TryLotPointFromPanel(panelPosition, panelSize, out var point)) return false;
             var position = ClampPropPosition(new Vector2(point.x, point.z), 0);
-            _propPreview.localPosition = new Vector3(position.x, 0.055f, position.y);
+            _propPreview.localPosition = new Vector3(position.x,
+                CharacterGroundY(_propPreviewId), position.y);
             SetPropOpacity(_propPreview, _propPreviewId,
                 CanPlacePropAt(position, 0, -1) ? 0.5f : 0.28f,
                 CanPlacePropAt(position, 0, -1));
@@ -349,7 +374,7 @@ namespace CityForgeV3.World
                 {
                     var presentation = _propPresentations[SelectedPropIndex];
                     presentation.localPosition = new Vector3(character.PositionX,
-                        0.055f, character.PositionZ);
+                        CharacterGroundY(character.PropId), character.PositionZ);
                     presentation.localRotation = Quaternion.Euler(
                         0f, benchTurns * 90f, 0f);
                     ApplyPropSelection();
@@ -465,10 +490,11 @@ namespace CityForgeV3.World
                 var proposed = new Vector2(
                     character.PositionX + direction.x * movementSpeed * Time.deltaTime,
                     character.PositionZ + direction.z * movementSpeed * Time.deltaTime);
-                var target = ClampCharacterPosition(proposed);
+                var target = ClampCharacterPosition(character, proposed);
                 character.PositionX = target.x;
                 character.PositionZ = target.y;
-                presentation.localPosition = new Vector3(target.x, 0.055f, target.y);
+                presentation.localPosition = new Vector3(target.x,
+                    CharacterGroundY(character.PropId), target.y);
                 presentation.localRotation = Quaternion.LookRotation(direction, Vector3.up);
                 if ((target - proposed).sqrMagnitude > 0.000001f)
                     CompleteCharacterWalkAtBoundary(index, character);
@@ -589,7 +615,8 @@ namespace CityForgeV3.World
             var position = new Vector2(character.PositionX, character.PositionZ);
             for (var attempt = 0; attempt < 4; attempt++)
             {
-                var probe = ClampCharacterPosition(position + direction * 0.5f);
+                var probe = ClampCharacterPosition(character,
+                    position + direction * 0.5f);
                 if ((probe - position).sqrMagnitude > 0.04f) return direction;
                 direction = new Vector2(direction.y, -direction.x);
             }
@@ -638,6 +665,187 @@ namespace CityForgeV3.World
             Mathf.Clamp(position.y, -LotDepthMeters * 0.5f + 0.3f,
                 LotDepthMeters * 0.5f - 0.3f));
 
+        private Vector2 ClampCharacterPosition(PlacedProp character,
+            Vector2 proposed)
+        {
+            var lotClamped = ClampCharacterPosition(proposed);
+            if (character == null || !IsKingKong(character.PropId))
+                return lotClamped;
+
+            Vector2 center;
+            int rotationEighthTurns;
+            Vector2 interiorHalfExtents;
+            List<Vector2> footprintContour = null;
+            if (TryContainingKingKongBuildingEnclosure(character,
+                    out center, out interiorHalfExtents,
+                    out footprintContour))
+                rotationEighthTurns = 0;
+            else if (TryContainingKingKongEnclosure(character,
+                         out var enclosure))
+            {
+                center = new Vector2(enclosure.PositionX, enclosure.PositionZ);
+                rotationEighthTurns = enclosure.RotationQuarterTurns * 2;
+                interiorHalfExtents = Vector2.one *
+                    (KingKongEnclosureFootprintMeters * 0.5f -
+                     KingKongEnclosureInteriorInsetMeters);
+            }
+            else return lotClamped;
+
+            if (footprintContour != null && footprintContour.Count >= 3)
+                return ClampPointInsideFootprint(lotClamped,
+                    footprintContour,
+                    KingKongEnclosureInteriorInsetMeters,
+                    KingKongWalkableAreaScale);
+
+            // Work in enclosure-local space so this remains correct if a
+            // rectangular version of the pen is introduced later.
+            var inverseRotation = Quaternion.Euler(0f,
+                -rotationEighthTurns * 45f, 0f);
+            var local3 = inverseRotation * new Vector3(
+                lotClamped.x - center.x, 0f, lotClamped.y - center.y);
+            local3.x = Mathf.Clamp(local3.x, -interiorHalfExtents.x,
+                interiorHalfExtents.x);
+            local3.z = Mathf.Clamp(local3.z, -interiorHalfExtents.y,
+                interiorHalfExtents.y);
+            var world3 = Quaternion.Euler(0f,
+                rotationEighthTurns * 45f, 0f) * local3;
+            return new Vector2(center.x + world3.x, center.y + world3.z);
+        }
+
+        private bool TryContainingKingKongBuildingEnclosure(
+            PlacedProp character, out Vector2 center,
+            out Vector2 interiorHalfExtents,
+            out List<Vector2> footprintContour)
+        {
+            center = default;
+            interiorHalfExtents = default;
+            footprintContour = null;
+            if (_session.Data.Buildings3D == null) return false;
+            var position = new Vector2(character.PositionX, character.PositionZ);
+            var nearestSquaredDistance = float.PositiveInfinity;
+            var found = false;
+            for (var index = 0; index < _session.Data.Buildings3D.Count; index++)
+            {
+                var candidate = _session.Data.Buildings3D[index];
+                if (candidate == null || candidate.AssetId !=
+                    KingKongEnclosureBuilding3DId) continue;
+                if (index >= _experimentalBuilding3DVisibleRoots.Count ||
+                    _experimentalBuilding3DVisibleRoots[index] == null) continue;
+                var bounds = CombinedRendererBounds(
+                    _experimentalBuilding3DVisibleRoots[index], out var hasBounds);
+                if (!hasBounds) continue;
+                var hasContour = TryGetProjectedMeshFootprint(
+                    _experimentalBuilding3DVisibleRoots[index],
+                    out var candidateContour);
+                bounds = KingKongEnclosureVisibleBounds(bounds);
+                if (hasContour ? !PointInsideFootprint(position,
+                        candidateContour) : position.x < bounds.min.x ||
+                    position.x > bounds.max.x || position.y < bounds.min.z ||
+                    position.y > bounds.max.z) continue;
+                var candidateCenter = hasContour
+                    ? FootprintCentroid(candidateContour)
+                    : new Vector2(bounds.center.x, bounds.center.z);
+                var squaredDistance = (position - candidateCenter).sqrMagnitude;
+                if (squaredDistance >= nearestSquaredDistance) continue;
+                nearestSquaredDistance = squaredDistance;
+                center = candidateCenter;
+                footprintContour = hasContour ? candidateContour : null;
+                interiorHalfExtents = new Vector2(
+                    Mathf.Max(0.5f, bounds.extents.x -
+                        KingKongEnclosureInteriorInsetMeters),
+                    Mathf.Max(0.5f, bounds.extents.z -
+                        KingKongEnclosureInteriorInsetMeters));
+                found = true;
+            }
+            return found;
+        }
+
+        private static bool PointInsideFootprint(Vector2 point,
+            IReadOnlyList<Vector2> contour)
+        {
+            var inside = false;
+            for (var index = 0; index < contour.Count; index++)
+            {
+                var next = (index + 1) % contour.Count;
+                var a = contour[index];
+                var b = contour[next];
+                if ((a.y > point.y) == (b.y > point.y)) continue;
+                var crossingX = (b.x - a.x) * (point.y - a.y) /
+                    (b.y - a.y) + a.x;
+                if (point.x < crossingX) inside = !inside;
+            }
+            return inside;
+        }
+
+        private static Vector2 FootprintCentroid(
+            IReadOnlyList<Vector2> contour)
+        {
+            var center = Vector2.zero;
+            foreach (var point in contour) center += point;
+            return center / Mathf.Max(1, contour.Count);
+        }
+
+        private static Vector2 ClampPointInsideFootprint(Vector2 proposed,
+            IReadOnlyList<Vector2> contour, float inset, float areaScale)
+        {
+            var center = FootprintCentroid(contour);
+            areaScale = Mathf.Clamp01(areaScale);
+            var closest = center + (contour[0] - center) * areaScale;
+            var closestSquared = float.PositiveInfinity;
+            var inside = false;
+            for (var index = 0; index < contour.Count; index++)
+            {
+                var a = center + (contour[index] - center) * areaScale;
+                var b = center + (contour[(index + 1) % contour.Count] - center) *
+                    areaScale;
+                if ((a.y > proposed.y) != (b.y > proposed.y))
+                {
+                    var crossingX = (b.x - a.x) * (proposed.y - a.y) /
+                        (b.y - a.y) + a.x;
+                    if (proposed.x < crossingX) inside = !inside;
+                }
+                var segment = b - a;
+                var t = segment.sqrMagnitude < 0.000001f ? 0f :
+                    Mathf.Clamp01(Vector2.Dot(proposed - a, segment) /
+                        segment.sqrMagnitude);
+                var candidate = a + segment * t;
+                var squared = (proposed - candidate).sqrMagnitude;
+                if (squared >= closestSquared) continue;
+                closestSquared = squared;
+                closest = candidate;
+            }
+            if (inside && closestSquared >= inset * inset) return proposed;
+            var inward = center - closest;
+            return closest + inward.normalized * inset;
+        }
+
+        private bool TryContainingKingKongEnclosure(PlacedProp character,
+            out PlacedProp enclosure)
+        {
+            enclosure = null;
+            if (_session.Data.Props == null) return false;
+            var position = new Vector2(character.PositionX, character.PositionZ);
+            var outerHalfExtent = KingKongEnclosureFootprintMeters * 0.5f;
+            var nearestSquaredDistance = float.PositiveInfinity;
+            foreach (var candidate in _session.Data.Props)
+            {
+                if (!string.Equals(candidate.PropId, KingKongEnclosurePropId,
+                        StringComparison.OrdinalIgnoreCase)) continue;
+                var center = new Vector2(candidate.PositionX, candidate.PositionZ);
+                var inverseRotation = Quaternion.Euler(0f,
+                    -candidate.RotationQuarterTurns * 90f, 0f);
+                var local = inverseRotation * new Vector3(
+                    position.x - center.x, 0f, position.y - center.y);
+                if (Mathf.Abs(local.x) > outerHalfExtent ||
+                    Mathf.Abs(local.z) > outerHalfExtent) continue;
+                var squaredDistance = (position - center).sqrMagnitude;
+                if (squaredDistance >= nearestSquaredDistance) continue;
+                nearestSquaredDistance = squaredDistance;
+                enclosure = candidate;
+            }
+            return enclosure != null;
+        }
+
         private void ApplyCharacterZoomVisibility()
         {
             var visible = ShowsThreeDimensionalCharacters(ZoomLevel);
@@ -663,7 +871,8 @@ namespace CityForgeV3.World
             prop.PositionZ = target.y;
             if (SelectedPropIndex < _propPresentations.Count)
                 _propPresentations[SelectedPropIndex].localPosition =
-                    new Vector3(target.x, 0.055f, target.y);
+                    new Vector3(target.x, CharacterGroundY(prop.PropId), target.y);
+            UpdateEffectAttachmentTransforms();
             UpdatePropProjectedShadows();
             UpdatePropWetStreetReflections();
             ApplyPropSelection();
@@ -694,6 +903,8 @@ namespace CityForgeV3.World
             prop.PositionX = position.x;
             prop.PositionZ = position.y;
             RebuildPropPresentations();
+            if (IsKingKong(prop.PropId))
+                ApplyCharacterAnimation(SelectedPropIndex, "turn");
             NotifyStateChanged();
             return true;
         }
@@ -740,7 +951,7 @@ namespace CityForgeV3.World
                 presentation.localRotation = Quaternion.Euler(
                     0f, prop.RotationQuarterTurns * 90f, 0f);
                 presentation.localPosition = new Vector3(
-                    prop.PositionX, 0.055f, prop.PositionZ);
+                    prop.PositionX, CharacterGroundY(prop.PropId), prop.PositionZ);
                 ApplyPropBuildingFrontRecovery(presentation, prop);
                 _propPresentations.Add(presentation);
                 // Selection changes rebuild every prop presentation. Restore a
@@ -757,6 +968,7 @@ namespace CityForgeV3.World
             UpdatePropWetStreetReflections();
             ApplyPropSelection();
             ApplyCharacterZoomVisibility();
+            UpdateEffectAttachmentTransforms();
         }
 
         private void ApplyPropBuildingFrontRecovery(
@@ -875,6 +1087,11 @@ namespace CityForgeV3.World
                         : string.Equals(propId, OrnateBenchPropId,
                             StringComparison.OrdinalIgnoreCase)
                             ? OrnateBenchResourcePath
+                        : IsKingKong(propId)
+                            ? KingKongResourcePath
+                        : string.Equals(propId, KingKongEnclosurePropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? KingKongEnclosureResourcePath
                         : IsThreeDimensionalCharacter(propId)
                             ? CharacterResourcePath(propId)
                             : "";
@@ -884,7 +1101,13 @@ namespace CityForgeV3.World
             if (prefab == null) return null;
             var root = new GameObject(name).transform;
             var model = Instantiate(prefab, root, false);
-            model.name = IsThreeDimensionalCharacter(propId)
+            var kingKongEnclosure = string.Equals(propId,
+                KingKongEnclosurePropId, StringComparison.OrdinalIgnoreCase);
+            model.name = IsKingKong(propId)
+                ? "King Kong Static Model"
+                : kingKongEnclosure
+                    ? "King Kong Enclosure Model"
+                : IsThreeDimensionalCharacter(propId)
                 ? IsHooligan(propId)
                     ? "Hooligan Animated Model"
                     : IsHistoricPoliceman(propId)
@@ -909,7 +1132,9 @@ namespace CityForgeV3.World
                     StringComparison.OrdinalIgnoreCase)
                     ? "Ornate Iron Corner Fence Model"
                 : "Wrought-Iron Fence Model";
-            model.transform.localScale = IsThreeDimensionalCharacter(propId)
+            model.transform.localScale = kingKongEnclosure ||
+                IsKingKong(propId) ||
+                IsThreeDimensionalCharacter(propId)
                 ? Vector3.one
                 : string.Equals(propId, PicketFencePropId,
                     StringComparison.OrdinalIgnoreCase)
@@ -932,10 +1157,17 @@ namespace CityForgeV3.World
                     : FenceScale);
             if (IsThreeDimensionalCharacter(propId))
             {
-                NormalizeCharacterToHumanScale(model.transform);
+                if (IsKingKong(propId))
+                    NormalizeStaticPropToHeight(model.transform,
+                        KingKongHeightMeters);
+                else
+                    NormalizeCharacterToHumanScale(model.transform);
                 ConfigureCharacterAnimation(root, model, propId, "idle");
                 root.gameObject.AddComponent<CharacterGroundShadow>().Initialize();
             }
+            else if (kingKongEnclosure)
+                NormalizeStaticPropToLength(model.transform,
+                    KingKongEnclosureFootprintMeters);
             else if (string.Equals(propId, OrnateBenchPropId,
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToLength(model.transform,
@@ -1175,6 +1407,9 @@ namespace CityForgeV3.World
             var lamppost = simpleLamppost || string.Equals(propId,
                 ThreeLanternLamppostPropId, StringComparison.OrdinalIgnoreCase);
             var character = IsThreeDimensionalCharacter(propId);
+            var kingKong = IsKingKong(propId);
+            var kingKongEnclosure = string.Equals(propId,
+                KingKongEnclosurePropId, StringComparison.OrdinalIgnoreCase);
             var bench = string.Equals(propId, OrnateBenchPropId,
                 StringComparison.OrdinalIgnoreCase);
             var corner = string.Equals(propId, FenceCornerPropId,
@@ -1191,7 +1426,11 @@ namespace CityForgeV3.World
                 // Meshy FBXs refer to model.fbm aliases that are not present in
                 // the supplied archive. Always bind the stable City Forge
                 // texture contract instead of inheriting that white fallback.
-                var material = new Material(Shader.Find("Standard"))
+                var materialShader = kingKongEnclosure
+                    ? Shader.Find("CityForgeV3/KingKongEnclosurePBR")
+                    : Shader.Find("Standard");
+                if (materialShader == null) materialShader = Shader.Find("Standard");
+                var material = new Material(materialShader)
                 {
                     name = lamppost
                         ? simpleLamppost
@@ -1199,10 +1438,18 @@ namespace CityForgeV3.World
                             : "CF Three-Lantern Lamppost Runtime Material"
                         : bench
                             ? "CF Ornate Bench Runtime Material"
+                        : kingKong
+                            ? "CF King Kong Runtime Material"
+                        : kingKongEnclosure
+                            ? "CF King Kong Enclosure Runtime Material"
                         : "CF Wrought-Iron Fence Runtime Material"
                 };
                 var baseColor = Resources.Load<Texture2D>(
-                    character
+                    kingKongEnclosure
+                        ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/base-color-cityforge"
+                    : kingKong
+                        ? "CityForgeV3/Props/Characters/KingKongV01/Textures/base-color"
+                    : character
                         ? IsHooligan(propId)
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/base-color-brown"
                             : IsHistoricPoliceman(propId)
@@ -1223,7 +1470,11 @@ namespace CityForgeV3.World
                         : $"CityForgeV3/Props/WroughtIronFenceV01/{texturePrefix}base-color");
                 if (baseColor != null) material.mainTexture = baseColor;
                 var normal = Resources.Load<Texture2D>(
-                    character
+                    kingKongEnclosure
+                        ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/normal"
+                    : kingKong
+                        ? "CityForgeV3/Props/Characters/KingKongV01/Textures/normal"
+                    : character
                         ? IsHooligan(propId)
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/normal"
                             : IsHistoricPoliceman(propId)
@@ -1245,11 +1496,28 @@ namespace CityForgeV3.World
                 if (normal != null)
                 {
                     material.SetTexture("_BumpMap", normal);
-                    material.SetFloat("_BumpScale", 0.75f);
+                    material.SetFloat("_BumpScale",
+                        kingKongEnclosure ? 0.85f : 0.75f);
                     material.EnableKeyword("_NORMALMAP");
                 }
+                if (kingKongEnclosure)
+                {
+                    var roughness = Resources.Load<Texture2D>(
+                        "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/roughness");
+                    if (roughness != null)
+                        material.SetTexture("_RoughnessMap", roughness);
+                    material.SetFloat("_Contrast", 1.24f);
+                    material.SetFloat("_Saturation", 1.25f);
+                    material.SetFloat("_Brightness", 0.82f);
+                    material.SetFloat("_SmoothnessScale", 0.16f);
+                    material.SetFloat("_CavityStrength", 0.38f);
+                }
                 var metallicSmoothness = Resources.Load<Texture2D>(
-                    character
+                    kingKongEnclosure
+                        ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/metallic"
+                    : kingKong
+                        ? "CityForgeV3/Props/Characters/KingKongV01/Textures/metallic"
+                    : character
                         ? IsHooligan(propId)
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/metallic-smoothness"
                             : IsHistoricPoliceman(propId)
@@ -1268,21 +1536,31 @@ namespace CityForgeV3.World
                         : ornateCorner
                         ? "CityForgeV3/Props/WroughtIronVariationsV01/gate-metallic-smoothness"
                         : $"CityForgeV3/Props/WroughtIronFenceV01/{texturePrefix}metallic-smoothness");
-                if (metallicSmoothness != null)
+                // This enclosure is predominantly rough timber, canvas and
+                // dirt. Its supplied metallic JPG has no smoothness alpha;
+                // enabling it as a Standard metallic/gloss map makes daylight
+                // reflections bleach the albedo toward silver-gray.
+                if (metallicSmoothness != null && !kingKongEnclosure)
                 {
                     material.SetTexture("_MetallicGlossMap", metallicSmoothness);
                     material.EnableKeyword("_METALLICGLOSSMAP");
                 }
-                material.SetFloat("_Metallic", character ? 0.05f : picket ? 0f : bench ? 0.55f : 1f);
+                if (!kingKongEnclosure)
+                    material.SetFloat("_Metallic", kingKong
+                        ? 0f : character ? 0.05f : picket ? 0f
+                        : bench ? 0.55f : 1f);
                 // The supplied roughness maps are now inverted into the alpha
                 // channel of the metallic/smoothness textures. Previously the
                 // opaque alpha of a metallic JPG made every surface uniformly
                 // glossy, lifting black cloth and iron toward ambient gray.
-                material.SetFloat("_GlossMapScale", character
-                    ? 0.72f
-                    : simpleLamppost
-                        ? 0.64f
-                        : picket ? 0.18f : bench ? 0.42f : 0.72f);
+                if (!kingKongEnclosure)
+                    material.SetFloat("_GlossMapScale", kingKong
+                        ? 0.16f
+                        : character
+                        ? 0.72f
+                        : simpleLamppost
+                            ? 0.64f
+                            : picket ? 0.18f : bench ? 0.42f : 0.72f);
                 if (lamppost)
                 {
                     var emission = Resources.Load<Texture2D>(
@@ -1306,6 +1584,8 @@ namespace CityForgeV3.World
                 var color = valid
                     ? simpleLamppost
                         ? new Color(0.3f, 0.32f, 0.34f)
+                        : kingKongEnclosure
+                            ? new Color(0.94f, 0.86f, 0.72f)
                         : Color.white
                     : new Color(1f, 0.2f, 0.15f);
                 color.a = alpha;
@@ -1463,10 +1743,23 @@ namespace CityForgeV3.World
                 depth = SimpleStreetLamppostFootprintMeters;
                 return;
             }
+            if (IsKingKong(propId))
+            {
+                width = KingKongFootprintMeters;
+                depth = KingKongFootprintMeters;
+                return;
+            }
             if (IsThreeDimensionalCharacter(propId))
             {
                 width = 0.65f;
                 depth = 0.65f;
+                return;
+            }
+            if (string.Equals(propId, KingKongEnclosurePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = KingKongEnclosureFootprintMeters;
+                depth = KingKongEnclosureFootprintMeters;
                 return;
             }
             if (string.Equals(propId, OrnateBenchPropId,

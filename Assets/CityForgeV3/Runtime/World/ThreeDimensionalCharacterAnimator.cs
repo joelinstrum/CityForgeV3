@@ -64,6 +64,8 @@ namespace CityForgeV3.World
                 _playable.GetTime() < clip.length) return;
             if (IsLoopingState(_state))
                 _playable.SetTime(0d);
+            else if (_state == "turn" && _clips.ContainsKey("idle"))
+                Play("idle");
             else
             {
                 _playable.SetTime(clip.length);
@@ -101,6 +103,7 @@ namespace CityForgeV3.World
             if (name.Contains("fall")) return "fall";
             if (name.Contains("laugh")) return "laugh";
             if (name.Contains("wait")) return "wait";
+            if (name.Contains("turn")) return "turn";
             if (name.Contains("walk")) return "walk";
             if (name.Contains("run")) return "run";
             if (name.Contains("idle")) return "idle";

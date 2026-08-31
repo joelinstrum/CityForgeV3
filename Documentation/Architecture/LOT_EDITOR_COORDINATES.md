@@ -35,7 +35,7 @@ appearance changes when the isometric camera rotates.
 | Time | Sun position | Light rays and cast shadows |
 | --- | --- | --- |
 | Morning | East (90°) | West (270°) |
-| Noon | Almost directly overhead | Minimal/contact shadow |
+| Noon | High in the south (180°) | Northward, compact but readable shadow |
 | Afternoon | West (270°) | East (90°) |
 
 `TimeOfDayLighting.SunRotation` is the runtime authority. Unity directional

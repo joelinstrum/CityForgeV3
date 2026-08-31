@@ -289,12 +289,22 @@
     position: absolute;
     left: 18px;
     top: 92px;
+    bottom: 18px;
     width: 82px;
     padding: 10px 8px 6px 8px;
     background-color: rgba(19, 28, 35, 0.94);
     border-width: 1px;
     border-color: rgba(193, 155, 72, 0.34);
     border-radius: var(--cf-radius-md);
+}
+
+.tool-rail-scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.tool-rail-scroll .unity-scroll-view__content-container {
+    align-items: center;
 }
 
 .tool-rail .cf-button {
@@ -342,6 +352,19 @@
 .tool-category-main {
     color: rgb(245, 236, 205);
     font-size: 28px;
+    -unity-text-align: middle-center;
+}
+
+.tool-category-effects {
+    color: rgb(134, 220, 236);
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
+.effects-card-icon {
+    height: 54px;
+    color: rgb(247, 214, 126);
+    font-size: 34px;
     -unity-text-align: middle-center;
 }
 
@@ -1207,6 +1230,13 @@
 .road-material-grid {
     flex-direction: row;
     flex-wrap: wrap;
+}
+
+.flora-modal-scroll {
+    height: 560px;
+    max-height: 560px;
+    flex-shrink: 1;
+    padding-right: 8px;
 }
 
 .road-material-card {

@@ -61,6 +61,7 @@ namespace CityForgeV3.World
         private readonly List<SpriteRenderer> _floraPresentations = new();
         private readonly List<SpriteRenderer> _floraCastShadows = new();
         private Material _floraLitShadowReceiverMaterial;
+        private Material _floraProjectedShadowMaterial;
         private readonly Dictionary<int, Material>
             _floraHostFrontRecoveryMaterials = new();
         private readonly List<(float distance, float lateral, int stencil)>
@@ -73,6 +74,10 @@ namespace CityForgeV3.World
         private Vector2 _floraDragOffset;
         private Transform _roadCursor;
         private Renderer _roadCursorFill;
+        private Transform _roadRoutePlannerRoot;
+        private LineRenderer _roadRouteGuide;
+        private Vector2Int _roadRouteStartCell;
+        public bool RoadRoutePlanningActive { get; private set; }
         private Transform _trafficVehicle;
         private Transform _circulationRoot;
         private Transform _circulationTravelerRoot;
@@ -563,10 +568,79 @@ namespace CityForgeV3.World
             if (SelectedFloraIndex < _floraPresentations.Count &&
                 _floraPresentations[SelectedFloraIndex] != null)
                 _floraPresentations[SelectedFloraIndex].transform.localPosition =
-                    new Vector3(placed.PositionX, 0.02f, placed.PositionZ);
+                    FloraPresentationPosition(placed);
             ApplyFloraSelection();
             UpdatePresentationDepthOrdering();
             return true;
+        }
+
+        public bool AdjustSelectedFloraSink(bool sink)
+        {
+            if (SelectedFloraIndex < 0 ||
+                SelectedFloraIndex >= (_session.Data.Flora?.Count ?? 0))
+                return false;
+            const float stepMeters = 0.25f;
+            const float maximumSinkMeters = 2f;
+            var placed = _session.Data.Flora[SelectedFloraIndex];
+            var next = Mathf.Clamp(placed.SinkDepthMeters +
+                (sink ? stepMeters : -stepMeters), 0f, maximumSinkMeters);
+            if (Mathf.Approximately(next, placed.SinkDepthMeters)) return false;
+            placed.SinkDepthMeters = next;
+            if (SelectedFloraIndex < _floraPresentations.Count &&
+                _floraPresentations[SelectedFloraIndex] != null)
+            {
+                var renderer = _floraPresentations[SelectedFloraIndex];
+                renderer.transform.localPosition = FloraPresentationPosition(placed);
+                ApplyFloraGroundFade(renderer, placed.SinkDepthMeters);
+            }
+            UpdateFloraShadows();
+            UpdatePresentationDepthOrdering();
+            NotifyStateChanged();
+            return true;
+        }
+
+        public float SelectedFloraSinkDepth =>
+            SelectedFloraIndex >= 0 &&
+            SelectedFloraIndex < (_session.Data.Flora?.Count ?? 0)
+                ? _session.Data.Flora[SelectedFloraIndex].SinkDepthMeters
+                : 0f;
+
+        public bool TrySelectedFloraPanelAnchor(Vector2 panelSize,
+            out Vector2 panelPosition)
+        {
+            panelPosition = default;
+            if (_camera == null || SelectedFloraIndex < 0 ||
+                SelectedFloraIndex >= _floraPresentations.Count ||
+                _floraPresentations[SelectedFloraIndex] == null)
+                return false;
+            var renderer = _floraPresentations[SelectedFloraIndex];
+            var spriteBounds = renderer.sprite.bounds;
+            var world = renderer.transform.TransformPoint(new Vector3(
+                spriteBounds.max.x + 0.45f, 0.35f, 0f));
+            var pixel = _camera.WorldToScreenPoint(world);
+            if (pixel.z <= 0f) return false;
+            panelPosition = new Vector2(
+                pixel.x / Mathf.Max(1f, _camera.pixelWidth) * panelSize.x,
+                panelSize.y - pixel.y / Mathf.Max(1f, _camera.pixelHeight) *
+                panelSize.y);
+            return true;
+        }
+
+        private static Vector3 FloraPresentationPosition(PlacedFlora placed) =>
+            new(placed.PositionX, 0.02f - Mathf.Max(0f,
+                placed.SinkDepthMeters), placed.PositionZ);
+
+        private static void ApplyFloraGroundFade(SpriteRenderer renderer,
+            float sinkDepthMeters)
+        {
+            if (renderer == null) return;
+            var properties = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(properties);
+            properties.SetFloat("_GroundFadeEnabled",
+                sinkDepthMeters > 0.001f ? 1f : 0f);
+            properties.SetFloat("_GroundY", 0.02f);
+            properties.SetFloat("_GroundFadeWidth", 0.42f);
+            renderer.SetPropertyBlock(properties);
         }
 
         public bool CanPlaceFloraAt(Vector2 position)
@@ -685,8 +759,7 @@ namespace CityForgeV3.World
                     $"Flora — {placed.FloraId} — Variant {variation + 1}");
                 root.layer = FloraShadowReceiverLayer;
                 root.transform.SetParent(_floraRoot, false);
-                root.transform.localPosition = new Vector3(
-                    placed.PositionX, 0.02f, placed.PositionZ);
+                root.transform.localPosition = FloraPresentationPosition(placed);
                 var scale = FloraVariationScale(placed.FloraId, variation);
                 root.transform.localScale = new Vector3(scale, scale, scale);
                 if (_camera != null) root.transform.rotation = _camera.transform.rotation;
@@ -696,6 +769,7 @@ namespace CityForgeV3.World
                     placed.FloraId, variation);
                 renderer.color = FloraColorForTime(1f);
                 renderer.sharedMaterial = FloraLitShadowReceiverMaterial();
+                ApplyFloraGroundFade(renderer, placed.SinkDepthMeters);
                 renderer.receiveShadows = true;
                 renderer.shadowCastingMode =
                     UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -715,6 +789,10 @@ namespace CityForgeV3.World
             var castRenderer = cast.AddComponent<SpriteRenderer>();
             castRenderer.sprite = treeSprite;
             castRenderer.flipX = flipX;
+            castRenderer.sharedMaterial = FloraProjectedShadowMaterial();
+            castRenderer.receiveShadows = false;
+            castRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
             _floraCastShadows.Add(castRenderer);
         }
 
@@ -731,10 +809,10 @@ namespace CityForgeV3.World
             if (!UsesLeaflessWinterFloraArt(sprite, season))
                 return 1f;
 
-            // Bare twigs need only restrained compensation. The former boost
-            // pushed winter oaks close to opaque black, especially in morning
-            // and afternoon, so keep them lighter than evergreen silhouettes.
-            return 0.72f;
+            // Bare twigs need only restrained compensation. Keep the boost
+            // just above the leafy baseline so individual branches remain
+            // legible without returning to the former opaque-black result.
+            return 1.08f;
         }
 
         private static bool UsesRegisteredWinterFloraArt(Sprite sprite,
@@ -811,38 +889,69 @@ namespace CityForgeV3.World
                 if (index < _floraCastShadows.Count && _floraCastShadows[index] != null)
                 {
                     var shadow = _floraCastShadows[index];
-                    shadow.enabled = !IsRaining;
-                    var castOffset = FloraCastOffset(shadow.sprite, Season,
-                        profile);
-                    shadow.transform.localPosition = new Vector3(
-                        castOffset.x, castOffset.y, 0.01f);
-                    shadow.transform.localRotation =
-                        Quaternion.Euler(0f, 0f, FloraCastRotation(
-                            shadow.sprite, Season, TimeOfDay, profile));
-                    // Legacy profile scales were authored as final screen-space
-                    // dimensions. A SpriteRenderer child interprets them as
-                    // multipliers, so normalize by the tree sprite's world size.
-                    var bounds = shadow.sprite.bounds.size;
-                    var registeredShadow = UsesSunRegisteredFloraShadow(
-                        shadow.sprite);
-                    // The registered winter sprite grows from the trunk along
-                    // local Y, so Y is shadow length and X is canopy width.
-                    // Legacy leafy art retains its approved scale convention.
-                    var castWidth = registeredShadow
-                        ? profile.CastScale.y
-                        : profile.CastScale.x;
-                    var castLength = registeredShadow
-                        ? profile.CastScale.x
-                        : profile.CastScale.y;
-                    shadow.transform.localScale = new Vector3(
-                        castWidth / Mathf.Max(0.01f, bounds.x),
-                        castLength / Mathf.Max(0.01f, bounds.y), 1f);
+                    var visible = !IsRaining &&
+                        TimeOfDay != TimeOfDayPreset.Night;
+                    shadow.enabled = visible;
+                    if (!visible) continue;
+                    // The shader projects the upright alpha silhouette into
+                    // world space. Keep this source copy coincident with the
+                    // billboard; transform squashing would distort the input
+                    // before projection and reintroduce the old screen-card
+                    // behavior.
+                    shadow.transform.localPosition = Vector3.zero;
+                    shadow.transform.localRotation = Quaternion.identity;
+                    shadow.transform.localScale = Vector3.one;
+                    var ray = ExperimentalBuilding3DSunRotation() *
+                        Vector3.forward;
+                    if (_buildingPackage != null)
+                        ray = Quaternion.Euler(0f,
+                            _buildingPackage.ShadowDirectionOffsetDegrees,
+                            0f) * ray;
+                    var sourceHeight = Mathf.Max(0.01f,
+                        shadow.sprite.bounds.size.y *
+                        shadow.transform.lossyScale.y);
+                    var horizontal = new Vector2(ray.x, ray.z).magnitude;
+                    var naturalLength = sourceHeight * horizontal /
+                        Mathf.Max(0.05f, -ray.y);
+                    var projectionScale = profile.CastScale.x /
+                        Mathf.Max(0.01f, naturalLength);
+                    var properties = new MaterialPropertyBlock();
+                    shadow.GetPropertyBlock(properties);
+                    properties.SetVector("_SunRay", ray.normalized);
+                    properties.SetFloat("_GroundY", 0.024f);
+                    properties.SetFloat("_ProjectionScale", projectionScale);
+                    properties.SetFloat("_ReferenceHeight", sourceHeight);
+                    var sinkDepth = index < (_session.Data.Flora?.Count ?? 0)
+                        ? Mathf.Max(0f,
+                            _session.Data.Flora[index].SinkDepthMeters)
+                        : 0f;
+                    properties.SetFloat("_SinkCompensation", sinkDepth);
+                    properties.SetColor("_Color", new Color(0.018f, 0.022f,
+                        0.026f, Mathf.Clamp01(profile.CastOpacity *
+                            FloraShadowOpacityMultiplier(
+                                shadow.sprite, Season, TimeOfDay))));
+                    shadow.SetPropertyBlock(properties);
                     shadow.color = new Color(0f, 0f, 0f, Mathf.Clamp01(
                         profile.CastOpacity *
                         FloraShadowOpacityMultiplier(
                             shadow.sprite, Season, TimeOfDay)));
                 }
             }
+        }
+
+        private Material FloraProjectedShadowMaterial()
+        {
+            if (_floraProjectedShadowMaterial != null)
+                return _floraProjectedShadowMaterial;
+            var shader = Shader.Find("CityForgeV3/ProjectedFloraShadow");
+            if (shader == null)
+                throw new MissingReferenceException(
+                    "CityForge V3 projected flora shadow shader is required.");
+            _floraProjectedShadowMaterial = new Material(shader)
+            {
+                name = "CF Projected Flora Shadow"
+            };
+            return _floraProjectedShadowMaterial;
         }
 
         private readonly struct FloraShadowProfile
@@ -866,7 +975,7 @@ namespace CityForgeV3.World
             TimeOfDayPreset.Morning => new(new(-0.06f, -0.12f), new(1.15f, 0.36f),
                 0.056f, new(-1.45f, -0.34f), new(5.375f, 1.675f), 22f, 0.14f),
             TimeOfDayPreset.Noon => new(new(0f, -0.10f), new(1f, 0.30f),
-                0.05f, new(0.08f, -0.22f), new(2f, 0.82f), 0f, 0.18f),
+                0.07f, new(0.08f, -0.22f), new(2f, 0.82f), 0f, 0.252f),
             TimeOfDayPreset.Afternoon => new(new(0f, -0.12f), new(1.55f, 0.46f),
                 0.077f, new(0.12f, -0.70f), new(8.1f, 2.43f), -26f, 0.315f),
             TimeOfDayPreset.Evening => new(new(0.04f, -0.16f), new(1.8f, 0.56f),
@@ -2928,8 +3037,16 @@ namespace CityForgeV3.World
 
         private void PlaceRoadPieceInternal()
         {
+            var placementTurns = SelectedRoadTopology == RoadPieceTopology.Diagonal
+                ? RoadPlacementModel.ResolveAlternatingDiagonalRotation(
+                    _session.Data.RoadPieces,
+                    RoadCursorCell.x,
+                    RoadCursorCell.y,
+                    _roadPackage,
+                    RoadRotationQuarterTurns)
+                : RoadRotationQuarterTurns;
             RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces, SelectedRoadTopology,
-                RoadCursorCell.x, RoadCursorCell.y, RoadRotationQuarterTurns,
+                RoadCursorCell.x, RoadCursorCell.y, placementTurns,
                 LotWidthMeters, LotDepthMeters, _roadPackage.Id);
             RoadPlacementModel.RepairConnectedTopologies(
                 _session.Data.RoadPieces, _roadPackage, LotWidthMeters, LotDepthMeters);
@@ -2991,6 +3108,250 @@ namespace CityForgeV3.World
             _roadStrokeStart ??= _session.Serialize();
             PlaceRoadPieceInternal();
             return true;
+        }
+
+        public bool BeginRoadRoutePlan()
+        {
+            if (_roadPackage?.Piece(RoadPieceTopology.Diagonal)?.HasArtwork != true ||
+                !RoadCursorSelected) return false;
+            _roadRouteStartCell = RoadCursorCell;
+            RoadRoutePlanningActive = true;
+            UpdateRoadRoutePlannerVisual(RoadCursorCell);
+            NotifyStateChanged();
+            return true;
+        }
+
+        public bool UpdateRoadRoutePlanPreviewFromPanel(
+            Vector2 panelPosition, Vector2 panelSize)
+        {
+            if (!RoadRoutePlanningActive ||
+                !SelectRoadCellFromPanel(panelPosition, panelSize, false)) return false;
+            UpdateRoadRoutePlannerVisual(RoadCursorCell);
+            return true;
+        }
+
+        public bool CommitRoadRoutePlanFromPanel(
+            Vector2 panelPosition, Vector2 panelSize)
+        {
+            if (!RoadRoutePlanningActive ||
+                !SelectRoadCellFromPanel(panelPosition, panelSize, false)) return false;
+            var route = RoadPlacementModel.BuildPlannedRoadRoute(
+                _roadRouteStartCell, RoadCursorCell);
+            if (route.Count < 2) return false;
+            var startExisting = RoadPlacementModel.FindAt(
+                _session.Data.RoadPieces, route[0].x, route[0].y);
+            var endExisting = RoadPlacementModel.FindAt(
+                _session.Data.RoadPieces, route[^1].x, route[^1].y);
+            PushRoadUndo(_session.Serialize());
+            for (var index = 0; index < route.Count; index++)
+            {
+                if (!RoadPlacementModel.TryResolvePlannedRoutePiece(
+                        route, index, _roadPackage, out var topology, out var turns))
+                    continue;
+                var cell = route[index];
+                RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces,
+                    topology, cell.x, cell.y, turns, LotWidthMeters,
+                    LotDepthMeters, _roadPackage.Id);
+                var placed = RoadPlacementModel.FindAt(
+                    _session.Data.RoadPieces, cell.x, cell.y);
+                if (placed == null) continue;
+                placed.RoadMaterialId = _selectedRoadMaterialId;
+                placed.SidewalkMaterialId = _selectedSidewalkMaterialId;
+                placed.MarkingStyle = _selectedRoadMarkingStyle;
+                placed.LaneMarkingStyle = _selectedRoadLaneMarkingStyle;
+                placed.CenterMarkingStyle = _selectedRoadCenterMarkingStyle;
+            }
+            // A constant-width 45-degree road crosses both orthogonal cells
+            // between each pair of diagonal cells. The route owns one corner;
+            // add its complementary corner so neither curb becomes a staircase.
+            for (var index = 0; index + 2 < route.Count; index += 2)
+            {
+                if (!RoadPlacementModel.TryResolveComplementaryDiagonalFiller(
+                        route, index, out var cell, out var turns)) continue;
+                RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces,
+                    RoadPieceTopology.StraightToDiagonal, cell.x, cell.y, turns,
+                    LotWidthMeters, LotDepthMeters, _roadPackage.Id);
+                var placed = RoadPlacementModel.FindAt(
+                    _session.Data.RoadPieces, cell.x, cell.y);
+                if (placed == null) continue;
+                placed.RoadMaterialId = _selectedRoadMaterialId;
+                placed.SidewalkMaterialId = _selectedSidewalkMaterialId;
+                placed.MarkingStyle = _selectedRoadMarkingStyle;
+                placed.LaneMarkingStyle = _selectedRoadLaneMarkingStyle;
+                placed.CenterMarkingStyle = _selectedRoadCenterMarkingStyle;
+            }
+            ApplyPlannedDiagonalTransition(route, 0, startExisting);
+            ApplyPlannedDiagonalTransition(route, route.Count - 1, endExisting);
+            RoadRoutePlanningActive = false;
+            _roadRoutePlannerRoot?.gameObject.SetActive(false);
+            RoadPlacementModel.RepairConnectedTopologies(
+                _session.Data.RoadPieces, _roadPackage,
+                LotWidthMeters, LotDepthMeters);
+            RebuildRoadArtwork();
+            RebuildRoadVehicleNetwork();
+            ApplyRoadCursor();
+            NotifyStateChanged();
+            return true;
+        }
+
+        private void ApplyPlannedDiagonalTransition(
+            IReadOnlyList<Vector2Int> route, int endpointIndex, PlacedRoadPiece existing)
+        {
+            if (route == null || route.Count < 3 ||
+                (endpointIndex != 0 && endpointIndex != route.Count - 1)) return;
+            var delta = route[^1] - route[0];
+            if (Mathf.Abs(delta.x) != Mathf.Abs(delta.y) || delta.x == 0) return;
+            var inwardSignX = Math.Sign(delta.x) * (endpointIndex == 0 ? 1 : -1);
+            var inwardSignZ = Math.Sign(delta.y) * (endpointIndex == 0 ? 1 : -1);
+            var diagonalPort = RoadPlacementModel.DiagonalPortForDirection(
+                inwardSignX, inwardSignZ);
+            var xApproach = RoadPlacementModel.CardinalApproachForDiagonal(
+                diagonalPort, true);
+            var zApproach = RoadPlacementModel.CardinalApproachForDiagonal(
+                diagonalPort, false);
+            var cardinalPort = xApproach;
+            PlacedRoadPiece adjacentThroughRoad = null;
+            if (existing != null)
+            {
+                var existingDefinition = _roadPackage.Piece(existing.Topology);
+                var existingPorts = existingDefinition?.RotatedPorts(
+                    existing.RotationQuarterTurns);
+                if (existingPorts != null &&
+                    RoadPlacementModel.TryResolveDiagonalTJunction(
+                        diagonalPort, existingPorts, _roadPackage,
+                        out var junctionTopology, out var junctionTurns))
+                {
+                    var endpointCell = route[endpointIndex];
+                    RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces,
+                        junctionTopology, endpointCell.x, endpointCell.y,
+                        junctionTurns, LotWidthMeters, LotDepthMeters,
+                        _roadPackage.Id);
+                    var junction = RoadPlacementModel.FindAt(
+                        _session.Data.RoadPieces, endpointCell.x, endpointCell.y);
+                    if (junction != null)
+                    {
+                        junction.RoadMaterialId = existing.RoadMaterialId;
+                        junction.SidewalkMaterialId = existing.SidewalkMaterialId;
+                        junction.MarkingStyle = existing.MarkingStyle;
+                        junction.LaneMarkingStyle = existing.LaneMarkingStyle;
+                        junction.CenterMarkingStyle = existing.CenterMarkingStyle;
+                    }
+                    return;
+                }
+                if (existingPorts != null)
+                {
+                    if (new List<RoadPiecePort>(existingPorts).Contains(zApproach))
+                        cardinalPort = zApproach;
+                    else if (new List<RoadPiecePort>(existingPorts).Contains(xApproach))
+                        cardinalPort = xApproach;
+                }
+            }
+            else if (TryFindAdjacentThroughRoad(route[endpointIndex], zApproach,
+                         out var zThroughRoad))
+            {
+                cardinalPort = zApproach;
+                adjacentThroughRoad = zThroughRoad;
+            }
+            else if (TryFindAdjacentThroughRoad(route[endpointIndex], xApproach,
+                         out var xThroughRoad))
+            {
+                cardinalPort = xApproach;
+                adjacentThroughRoad = xThroughRoad;
+            }
+            if (!RoadPlacementModel.TryResolveDiagonalTransition(
+                    diagonalPort, cardinalPort, _roadPackage,
+                    out var topology, out var turns)) return;
+            var cell = route[endpointIndex];
+            RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces,
+                topology, cell.x, cell.y, turns, LotWidthMeters,
+                LotDepthMeters, _roadPackage.Id);
+            var placed = RoadPlacementModel.FindAt(
+                _session.Data.RoadPieces, cell.x, cell.y);
+            if (placed == null) return;
+            placed.RoadMaterialId = _selectedRoadMaterialId;
+            placed.SidewalkMaterialId = _selectedSidewalkMaterialId;
+            placed.MarkingStyle = _selectedRoadMarkingStyle;
+            placed.LaneMarkingStyle = _selectedRoadLaneMarkingStyle;
+            placed.CenterMarkingStyle = _selectedRoadCenterMarkingStyle;
+            if (adjacentThroughRoad != null)
+                PromoteAdjacentRoadToTJunction(adjacentThroughRoad, cardinalPort);
+        }
+
+        private bool TryFindAdjacentThroughRoad(
+            Vector2Int endpointCell, RoadPiecePort approachPort,
+            out PlacedRoadPiece placed)
+        {
+            var offset = approachPort switch
+            {
+                RoadPiecePort.North => new Vector2Int(0, 1),
+                RoadPiecePort.East => new Vector2Int(1, 0),
+                RoadPiecePort.South => new Vector2Int(0, -1),
+                _ => new Vector2Int(-1, 0)
+            };
+            var cell = endpointCell + offset;
+            placed = RoadPlacementModel.FindAt(
+                _session.Data.RoadPieces, cell.x, cell.y);
+            if (placed == null) return false;
+            var definition = _roadPackage.Piece(placed.Topology);
+            var ports = definition?.RotatedPorts(placed.RotationQuarterTurns);
+            if (ports == null || ports.Count != 2) return false;
+            foreach (var port in ports)
+                if ((int)port >= 4) return false;
+            return true;
+        }
+
+        private void PromoteAdjacentRoadToTJunction(
+            PlacedRoadPiece throughRoad, RoadPiecePort approachFromEndpoint)
+        {
+            var definition = _roadPackage.Piece(throughRoad.Topology);
+            var throughPorts = definition?.RotatedPorts(
+                throughRoad.RotationQuarterTurns);
+            if (throughPorts == null) return;
+            var branchPort = RoadPlacementModel.OppositeCardinalPort(
+                approachFromEndpoint);
+            if (new List<RoadPiecePort>(throughPorts).Contains(branchPort)) return;
+            if (!RoadPlacementModel.TryResolveTJunction(
+                    throughPorts, branchPort, _roadPackage, out var turns)) return;
+            var roadMaterialId = throughRoad.RoadMaterialId;
+            var sidewalkMaterialId = throughRoad.SidewalkMaterialId;
+            var markingStyle = throughRoad.MarkingStyle;
+            var laneMarkingStyle = throughRoad.LaneMarkingStyle;
+            var centerMarkingStyle = throughRoad.CenterMarkingStyle;
+            var gridX = throughRoad.GridX;
+            var gridZ = throughRoad.GridZ;
+            RoadPlacementModel.PlaceOrReplace(_session.Data.RoadPieces,
+                RoadPieceTopology.TJunction, gridX, gridZ,
+                turns, LotWidthMeters, LotDepthMeters, _roadPackage.Id);
+            var promoted = RoadPlacementModel.FindAt(
+                _session.Data.RoadPieces, gridX, gridZ);
+            if (promoted == null) return;
+            promoted.RoadMaterialId = roadMaterialId;
+            promoted.SidewalkMaterialId = sidewalkMaterialId;
+            promoted.MarkingStyle = markingStyle;
+            promoted.LaneMarkingStyle = laneMarkingStyle;
+            promoted.CenterMarkingStyle = centerMarkingStyle;
+        }
+
+        public void CancelRoadRoutePlan()
+        {
+            RoadRoutePlanningActive = false;
+            _roadRoutePlannerRoot?.gameObject.SetActive(false);
+            NotifyStateChanged();
+        }
+
+        private void UpdateRoadRoutePlannerVisual(Vector2Int endCell)
+        {
+            if (_roadRoutePlannerRoot == null || _roadRouteGuide == null) return;
+            var start = RoadPlacementModel.CellCenterMeters(
+                _roadRouteStartCell.x, _roadRouteStartCell.y,
+                LotWidthMeters, LotDepthMeters);
+            var end = RoadPlacementModel.CellCenterMeters(
+                endCell.x, endCell.y, LotWidthMeters, LotDepthMeters);
+            _roadRoutePlannerRoot.gameObject.SetActive(true);
+            _roadRoutePlannerRoot.localPosition = new Vector3(start.x, 0.13f, start.y);
+            _roadRouteGuide.SetPosition(0, Vector3.zero);
+            _roadRouteGuide.SetPosition(1,
+                new Vector3(end.x - start.x, 0f, end.y - start.y));
         }
 
         public bool TryCreateOutsideConnectorFromPanelDrag(
@@ -3191,16 +3552,16 @@ namespace CityForgeV3.World
             // must render after both or they disappear beneath the grass, but
             // remain well below roads and placed objects (2430+).
             var minorMaterial =
-                GridLineMaterial(new Color(0.42f, 0.62f, 0.60f, 1f), 3100);
+                GridLineMaterial(new Color(0.48f, 0.68f, 0.66f, 0.26f), 3100);
             var majorMaterial =
-                GridLineMaterial(new Color(0.98f, 0.80f, 0.30f, 1f), 3101);
+                GridLineMaterial(new Color(1f, 0.84f, 0.38f, 0.30f), 3101);
 
             for (var index = -LotWidthMeters / 2; index <= LotWidthMeters / 2; index++)
             {
                 var major = IsMajorGridLine(index, LotWidthMeters);
                 var root = major ? _majorGrid : _minorGrid;
                 var material = major ? majorMaterial : minorMaterial;
-                var width = major ? 0.14f : 0.06f;
+                var width = major ? 0.085f : 0.035f;
                 AddGridStrip(root, new Vector3(index, 0.12f, -LotDepthMeters / 2f),
                     new Vector3(index, 0.12f, LotDepthMeters / 2f), material, width);
             }
@@ -3209,7 +3570,7 @@ namespace CityForgeV3.World
                 var major = IsMajorGridLine(index, LotDepthMeters);
                 var root = major ? _majorGrid : _minorGrid;
                 var material = major ? majorMaterial : minorMaterial;
-                var width = major ? 0.14f : 0.06f;
+                var width = major ? 0.085f : 0.035f;
                 AddGridStrip(root, new Vector3(-LotWidthMeters / 2f, 0.12f, index),
                     new Vector3(LotWidthMeters / 2f, 0.12f, index), material, width);
             }
@@ -3254,12 +3615,38 @@ namespace CityForgeV3.World
             _roadCursorFill = fill.GetComponent<Renderer>();
             _roadCursorFill.sharedMaterial = LotSurfaceMaterial(
                 new Color(1f, 0.67f, 0.08f, 0.12f), 2004);
+            BuildRoadRoutePlanner();
             SeedRoadVerticalSlice();
             RebuildRoadArtwork();
             BuildStreetcarTrackLayer();
             RebuildOutsideConnectorMarkers();
             ApplyRoadCursor();
             ApplyLotPlanningState();
+        }
+
+        private void BuildRoadRoutePlanner()
+        {
+            _roadRoutePlannerRoot = new GameObject("Road Route Planner").transform;
+            _roadRoutePlannerRoot.SetParent(transform, false);
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            marker.name = "Road Route Start Marker";
+            marker.transform.SetParent(_roadRoutePlannerRoot, false);
+            marker.transform.localScale = new Vector3(0.85f, 0.06f, 0.85f);
+            marker.GetComponent<Collider>().enabled = false;
+            marker.GetComponent<Renderer>().sharedMaterial = LotSurfaceMaterial(
+                new Color(1f, 0.68f, 0.08f, 0.95f), 2026);
+            var guideObject = new GameObject("Road Route Guide");
+            guideObject.transform.SetParent(_roadRoutePlannerRoot, false);
+            _roadRouteGuide = guideObject.AddComponent<LineRenderer>();
+            _roadRouteGuide.useWorldSpace = false;
+            _roadRouteGuide.positionCount = 2;
+            _roadRouteGuide.startWidth = 0.16f;
+            _roadRouteGuide.endWidth = 0.08f;
+            _roadRouteGuide.sharedMaterial = LotSurfaceMaterial(
+                new Color(1f, 0.72f, 0.12f, 0.95f), 2027);
+            _roadRouteGuide.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            _roadRoutePlannerRoot.gameObject.SetActive(false);
         }
 
         private void SeedRoadVerticalSlice()
@@ -3427,7 +3814,11 @@ namespace CityForgeV3.World
                 RoadPiecePort.North => Vector2.up,
                 RoadPiecePort.East => Vector2.right,
                 RoadPiecePort.South => Vector2.down,
-                _ => Vector2.left
+                RoadPiecePort.West => Vector2.left,
+                RoadPiecePort.NorthEast => new Vector2(1f, 1f).normalized,
+                RoadPiecePort.SouthEast => new Vector2(1f, -1f).normalized,
+                RoadPiecePort.SouthWest => new Vector2(-1f, -1f).normalized,
+                _ => new Vector2(-1f, 1f).normalized
             };
             var color = connector.Flow switch
             {
@@ -4114,7 +4505,7 @@ namespace CityForgeV3.World
             preset switch
             {
                 TimeOfDayPreset.Noon =>
-                    new Color(0.025f, 0.032f, 0.038f, 0.20f),
+                    new Color(0.025f, 0.032f, 0.038f, 0.28f),
                 TimeOfDayPreset.Evening =>
                     new Color(0.035f, 0.042f, 0.050f, 0.28f),
                 TimeOfDayPreset.Morning or TimeOfDayPreset.Afternoon =>
@@ -4126,7 +4517,7 @@ namespace CityForgeV3.World
             preset switch
             {
                 TimeOfDayPreset.Morning => 0.35f,
-                TimeOfDayPreset.Noon => 0.45f,
+                TimeOfDayPreset.Noon => 0.65f,
                 TimeOfDayPreset.Afternoon => 0.50f,
                 TimeOfDayPreset.Evening => 0.32f,
                 _ => 0.45f
@@ -4136,7 +4527,7 @@ namespace CityForgeV3.World
             preset switch
             {
                 TimeOfDayPreset.Morning => 0.90f,
-                TimeOfDayPreset.Noon => 0.45f,
+                TimeOfDayPreset.Noon => 0.65f,
                 TimeOfDayPreset.Afternoon => 1.15f,
                 TimeOfDayPreset.Evening => 0.40f,
                 _ => 0.45f
@@ -4621,6 +5012,7 @@ namespace CityForgeV3.World
             UpdateFloraShadows();
             UpdatePropProjectedShadows();
             UpdateThreeLanternLamppostLighting();
+            UpdateWindowEffectLighting();
             UpdateLotTextureLighting();
             if (_floraPreview != null)
                 _floraPreview.color = FloraColorForTime(1f);
@@ -5514,6 +5906,7 @@ namespace CityForgeV3.World
             RebuildExperimentalBuilding3DPresentations();
             RebuildFloraPresentations();
             RebuildPropPresentations();
+            RebuildEffectPresentations();
             RebuildOverlayTexturePresentations();
             UpdatePresentationDepthOrdering();
             // Selection swaps the primary presentation and reconstructs the
@@ -5725,7 +6118,7 @@ namespace CityForgeV3.World
             new Color(0.025f, 0.03f, 0.038f, preset switch
             {
                 TimeOfDayPreset.Morning => 0.34f,
-                TimeOfDayPreset.Noon => 0.20f,
+                TimeOfDayPreset.Noon => 0.28f,
                 TimeOfDayPreset.Afternoon => 0.30f,
                 TimeOfDayPreset.Evening => 0.24f,
                 _ => 0f
@@ -5995,11 +6388,11 @@ namespace CityForgeV3.World
 
         private static Material GridLineMaterial(Color color, int renderQueue)
         {
-            // Grid strips are opaque editor guides. Keeping them off the
-            // transparent lot-surface shader avoids queue/depth ambiguity with
-            // the textured 3D ground receiver.
-            var shader = Shader.Find("Unlit/Color") ??
-                         Shader.Find("CityForgeV3/WorldColor");
+            // WorldColor honors alpha while retaining depth writes, allowing
+            // the grid to remain legible over lot surfaces without dominating
+            // the artwork.
+            var shader = Shader.Find("CityForgeV3/WorldColor") ??
+                         Shader.Find("Unlit/Color");
             if (shader == null)
                 throw new MissingReferenceException(
                     "A grid-compatible color shader is required.");

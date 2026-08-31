@@ -118,6 +118,8 @@ namespace CityForgeV3.Buildings3D
             lodGroup.SetLODs(lods.ToArray());
             lodGroup.RecalculateBounds();
             buildingNightLighting = GetComponentsInChildren<BuildingNightLighting>(true);
+            foreach (var lighting in buildingNightLighting)
+                if (lighting != null) lighting.RefreshRuntimeBindings();
         }
 
         public void SetNightLighting(bool enabled)

@@ -346,7 +346,7 @@ namespace CityForgeV3.World
         {
             TimeOfDayPreset.Morning => new Color(0.92f, 0.88f, 0.80f, 1f),
             TimeOfDayPreset.Noon => Color.white,
-            TimeOfDayPreset.Afternoon => new Color(0.92f, 0.78f, 0.62f, 1f),
+            TimeOfDayPreset.Afternoon => Color.white,
             TimeOfDayPreset.Evening => new Color(0.56f, 0.48f, 0.55f, 1f),
             _ => new Color(0.22f, 0.26f, 0.38f, 1f)
         };
