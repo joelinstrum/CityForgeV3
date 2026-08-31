@@ -6,6 +6,9 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
+        [PerRendererData] _GroundFadeEnabled ("Ground Fade Enabled", Float) = 0
+        [PerRendererData] _GroundY ("Ground Height", Float) = 0.02
+        [PerRendererData] _GroundFadeWidth ("Ground Fade Width", Float) = 0.42
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
 
@@ -49,6 +52,9 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             fixed4 _Color;
             half _Cutoff;
             half _ShadowFloor;
+            half _GroundFadeEnabled;
+            float _GroundY;
+            float _GroundFadeWidth;
 
             struct appdata
             {
@@ -62,6 +68,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 fixed4 color : COLOR;
+                float3 worldPosition : TEXCOORD2;
                 SHADOW_COORDS(1)
             };
 
@@ -71,6 +78,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;
                 output.color = input.color;
+                output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 TRANSFER_SHADOW(output);
                 return output;
             }
@@ -78,6 +86,9 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             fixed4 frag(v2f input) : SV_Target
             {
                 fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
+                half groundFade = smoothstep(_GroundY - _GroundFadeWidth,
+                    _GroundY + _GroundFadeWidth, input.worldPosition.y);
+                artwork.a *= lerp(1.0h, groundFade, _GroundFadeEnabled);
                 clip(artwork.a - _Cutoff);
                 half shadowAttenuation = SHADOW_ATTENUATION(input);
                 half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);

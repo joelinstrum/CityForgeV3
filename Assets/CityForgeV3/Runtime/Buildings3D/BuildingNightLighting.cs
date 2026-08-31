@@ -62,8 +62,6 @@ namespace CityForgeV3.Buildings3D
         [SerializeField] private List<WindowLightPoint> windowLights = new();
         [Min(0f)] [SerializeField] private float windowSpillIntensity = 0.55f;
         [Min(0f)] [SerializeField] private float windowSpillRange = 2f;
-        [SerializeField] private LightType windowSpillType = LightType.Point;
-        [Range(1f, 179f)] [SerializeField] private float windowSpotAngle = 105f;
 
         [Header("Exterior lamps")]
         [SerializeField] private List<ExteriorLampPoint> exteriorLamps = new();
@@ -82,6 +80,21 @@ namespace CityForgeV3.Buildings3D
         private int nightCycle;
 
         public float NightAmount => nightAmount;
+        public int BoundRendererCount => cachedTargets.Count;
+        public int ActiveRuntimeLightCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var point in windowLights)
+                    if (point?.RuntimeLight != null && point.RuntimeLight.enabled)
+                        count++;
+                foreach (var point in exteriorLamps)
+                    if (point?.RuntimeLight != null && point.RuntimeLight.enabled)
+                        count++;
+                return count;
+            }
+        }
 
         public void ConfigureEmissionMask(Texture2D value)
         {
@@ -115,6 +128,26 @@ namespace CityForgeV3.Buildings3D
             exteriorLampIntensity = Mathf.Max(0f, lampIntensity);
             exteriorLampRange = Mathf.Max(0f, lampRangeMeters);
             initialized = false;
+        }
+
+        public void ConfigureOccupancy(float percentage, bool reroll)
+        {
+            litWindowPercentage = Mathf.Clamp01(percentage);
+            rerollEachNight = reroll;
+            randomSeed = 1;
+            initialized = false;
+        }
+
+        // Building3DPackageInstance creates its visual LODs after this
+        // component's Awake/OnEnable pass. Rebind once those renderers exist;
+        // otherwise the controller permanently caches an empty target list
+        // and the authored emission mask never reaches the visible building.
+        public void RefreshRuntimeBindings()
+        {
+            initialized = false;
+            Initialize();
+            ApplyEmission();
+            ApplyLights(nightAmount > 0.05f);
         }
 
         private void Awake()
@@ -194,7 +227,7 @@ namespace CityForgeV3.Buildings3D
             foreach (var point in windowLights)
                 if (point?.Anchor != null)
                     point.RuntimeLight = ConfigureLight(point.Anchor,
-                        "Window Spill", windowSpillType, false, windowSpotAngle);
+                        "Window Spill", LightType.Point, false, 120f);
             foreach (var point in exteriorLamps)
                 if (point?.Anchor != null)
                     point.RuntimeLight = ConfigureLight(point.Anchor,
@@ -313,6 +346,8 @@ namespace CityForgeV3.Buildings3D
             LightType type, bool shadows, float spotAngle)
         {
             var light = anchor.GetComponent<Light>();
+            if (light == null)
+                light = anchor.GetComponentInChildren<Light>(true);
             if (light == null)
             {
                 var child = new GameObject(childName);

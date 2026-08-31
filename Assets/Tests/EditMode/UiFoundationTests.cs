@@ -83,6 +83,40 @@ namespace CityForgeV3.Tests
                     expected);
         }
 
+        [Test]
+        public void KingKongExposesIdleWalkAndTurnAnimationLibrary()
+        {
+            const string path =
+                "CityForgeV3/Props/Characters/KingKongV01/KingKongV01";
+            var model = Resources.Load<GameObject>(path);
+            Assert.That(model, Is.Not.Null);
+            Assert.That(LotWorldController.IsKingKong(
+                LotWorldController.KingKongCharacterId), Is.True);
+            Assert.That(LotWorldController.IsThreeDimensionalCharacter(
+                LotWorldController.KingKongCharacterId), Is.True);
+            var names = Resources.LoadAll<AnimationClip>(path)
+                .Select(clip => clip.name.ToLowerInvariant()).ToArray();
+            foreach (var expected in new[] { "idle", "walk", "turn" })
+                Assert.That(names.Any(name => name.Contains(expected)), Is.True,
+                    expected);
+        }
+
+        [Test]
+        public void ThreeDimensionalEntertainmentLibraryIncludesKingKongEnclosure()
+        {
+            Assert.That(Resources.Load<GameObject>(
+                LotWorldController.KingKongEnclosureBuilding3DResource),
+                Is.Not.Null);
+            Assert.That(LotWorldController.KingKongEnclosureBuilding3DId,
+                Is.EqualTo("king-kong-enclosure-building-v01"));
+            Assert.That(LotWorldController.KingKongEnclosureBuildingSizeMeters,
+                Is.EqualTo(30f));
+            Assert.That(LotWorldController.KingKongEnclosureVisibleBoundsScale,
+                Is.EqualTo(0.58f));
+            Assert.That(System.Enum.IsDefined(typeof(BuildingUseCategory),
+                BuildingUseCategory.Entertainment), Is.True);
+        }
+
         [TestCase(0.00f, BusinessAsUsualAction.Walk)]
         [TestCase(0.14f, BusinessAsUsualAction.Walk)]
         [TestCase(0.15f, BusinessAsUsualAction.Idle)]
@@ -2008,7 +2042,7 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(TimeOfDayPreset.Morning, "MORNING", 24f, 90f)]
-        [TestCase(TimeOfDayPreset.Noon, "NOON", 89f, 174f)]
+        [TestCase(TimeOfDayPreset.Noon, "NOON", 70f, 180f)]
         [TestCase(TimeOfDayPreset.Afternoon, "AFTERNOON", 34f, 270f)]
         [TestCase(TimeOfDayPreset.Evening, "EVENING", 8f, 272f)]
         [TestCase(TimeOfDayPreset.Night, "NIGHT", -18f, 318f)]
@@ -2086,6 +2120,25 @@ namespace CityForgeV3.Tests
                 "A due-east morning sun must cast its shadow due west.");
             Assert.That(Mathf.Abs(horizontal.x), Is.LessThan(0.001f),
                 "Morning building shadows must not drift north or south.");
+        }
+
+        [Test]
+        public void NoonSunFromSouthCastsReadableShadowsNorthward()
+        {
+            var rotation = TimeOfDayLighting.SunRotation(
+                TimeOfDayPreset.Noon);
+            var rayDirection = rotation * Vector3.forward;
+            var horizontal = new Vector2(
+                rayDirection.x, rayDirection.z).normalized;
+
+            Assert.That(rayDirection.y, Is.LessThan(-0.9f),
+                "Noon sunlight must remain high and travel downward.");
+            Assert.That(horizontal.x, Is.LessThan(-0.999f),
+                "A southern noon sun must cast its shadows northward.");
+            Assert.That(Mathf.Abs(horizontal.y), Is.LessThan(0.001f),
+                "Due-south noon light must not drift east or west.");
+            Assert.That(Mathf.Abs(rayDirection.x), Is.GreaterThan(0.3f),
+                "Noon needs enough horizontal travel to produce a readable shadow.");
         }
 
         [Test]
@@ -2244,7 +2297,8 @@ namespace CityForgeV3.Tests
         {
             var noon = TimeOfDayLighting.For(TimeOfDayPreset.Noon);
 
-            Assert.That(noon.SunElevation, Is.EqualTo(89f));
+            Assert.That(noon.SunElevation, Is.EqualTo(70f));
+            Assert.That(noon.SunAzimuth, Is.EqualTo(180f));
             Assert.That(noon.SunIntensity, Is.EqualTo(0.92f));
             Assert.That(noon.AmbientColor.grayscale, Is.LessThan(0.36f));
             Assert.That(noon.ScreenTint.a, Is.EqualTo(0.008f));
@@ -2916,7 +2970,8 @@ namespace CityForgeV3.Tests
                 InstanceId = "tree-1",
                 FloraId = "maple",
                 PositionX = 3.5f,
-                PositionZ = -2.25f
+                PositionZ = -2.25f,
+                SinkDepthMeters = 0.75f
             });
             var restored = new LotEditorSession();
             restored.Restore(source.Serialize());
@@ -2924,6 +2979,46 @@ namespace CityForgeV3.Tests
             Assert.That(restored.Data.Flora[0].FloraId, Is.EqualTo("maple"));
             Assert.That(restored.Data.Flora[0].PositionX, Is.EqualTo(3.5f));
             Assert.That(restored.Data.Flora[0].PositionZ, Is.EqualTo(-2.25f));
+            Assert.That(restored.Data.Flora[0].SinkDepthMeters,
+                Is.EqualTo(0.75f));
+        }
+
+        [Test]
+        public void SelectedFloraCanSinkButCannotRiseAboveGroundLevel()
+        {
+            var root = new GameObject("Flora Sink Depth Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetFloraEditorContext(true);
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                var pixel = camera.WorldToScreenPoint(Vector3.zero);
+                var panelPoint = new Vector2(pixel.x, panelSize.y - pixel.y);
+
+                Assert.That(world.BeginFloraDragFromPanel("maple", panelPoint,
+                    panelSize), Is.True);
+                Assert.That(world.EndFloraDrag(), Is.True);
+                Assert.That(world.AdjustSelectedFloraSink(false), Is.False,
+                    "H must not raise a grounded tree into the air.");
+                Assert.That(world.AdjustSelectedFloraSink(true), Is.True);
+                Assert.That(world.SelectedFloraSinkDepth, Is.EqualTo(0.25f));
+                var shadow = root.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Single(renderer => renderer.name ==
+                        "Flora Shadow — Canopy");
+                var shadowProperties = new MaterialPropertyBlock();
+                shadow.GetPropertyBlock(shadowProperties);
+                Assert.That(shadowProperties.GetFloat("_SinkCompensation"),
+                    Is.EqualTo(0.25f),
+                    "Sinking the artwork must not lower its ground-shadow anchor.");
+                Assert.That(world.AdjustSelectedFloraSink(false), Is.True);
+                Assert.That(world.SelectedFloraSinkDepth, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
@@ -3236,26 +3331,33 @@ namespace CityForgeV3.Tests
 
                 var cast = Find(root.transform, "Flora Shadow — Canopy")
                     .GetComponent<SpriteRenderer>();
-                var tree = Find(root.transform, "Flora — maple")
-                    .GetComponent<SpriteRenderer>();
+                var tree = cast.transform.parent.GetComponent<SpriteRenderer>();
                 Assert.That(System.Array.FindAll(
                     root.GetComponentsInChildren<SpriteRenderer>(),
                     renderer => renderer.name.StartsWith("Flora Shadow")).Length,
                     Is.EqualTo(1));
-                Assert.That(cast.color.a, Is.EqualTo(0.315f).Within(0.001f));
-                Assert.That(cast.sprite.bounds.size.x * cast.transform.localScale.x,
-                    Is.EqualTo(8.1f).Within(0.01f));
+                Assert.That(cast.sharedMaterial.shader.name,
+                    Is.EqualTo("CityForgeV3/ProjectedFloraShadow"));
+                Assert.That(cast.transform.localScale, Is.EqualTo(Vector3.one));
+                Assert.That(cast.transform.localRotation,
+                    Is.EqualTo(Quaternion.identity));
                 Assert.That(cast.sortingOrder, Is.EqualTo(tree.sortingOrder - 1));
+                var properties = new MaterialPropertyBlock();
+                cast.GetPropertyBlock(properties);
+                Assert.That(properties.GetColor("_Color").a,
+                    Is.EqualTo(0.315f).Within(0.001f));
+                Assert.That(properties.GetVector("_SunRay").y, Is.LessThan(0f));
+                Assert.That(properties.GetFloat("_GroundY"),
+                    Is.EqualTo(0.024f).Within(0.001f));
 
                 world.SetTimeOfDay(TimeOfDayPreset.Morning);
-                Assert.That(cast.color.a, Is.EqualTo(0.14f).Within(0.001f));
-                Assert.That(cast.sprite.bounds.size.x * cast.transform.localScale.x,
-                    Is.EqualTo(5.375f).Within(0.01f));
+                cast.GetPropertyBlock(properties);
+                Assert.That(properties.GetColor("_Color").a,
+                    Is.EqualTo(0.14f).Within(0.001f));
 
                 world.SetTimeOfDay(TimeOfDayPreset.Night);
-                Assert.That(cast.color.a, Is.EqualTo(0.02f).Within(0.001f));
-                Assert.That(cast.sprite.bounds.size.x * cast.transform.localScale.x,
-                    Is.EqualTo(0.95f).Within(0.01f));
+                Assert.That(cast.enabled, Is.False,
+                    "Night must not retain a directional tree shadow.");
             }
             finally
             {
@@ -5188,16 +5290,25 @@ namespace CityForgeV3.Tests
             var package = RoadPiecePackage.Load();
             Assert.That(package.Id, Is.EqualTo("cityforge.base.road.brick.v1"));
             Assert.That(package.TileSizeMeters, Is.EqualTo(10f));
-            Assert.That(package.RoadWidthMeters, Is.EqualTo(3.8f));
-            Assert.That(package.Pieces.Count, Is.EqualTo(5));
+            Assert.That(package.RoadWidthMeters, Is.EqualTo(9.5f));
+            Assert.That(package.Pieces.Count, Is.EqualTo(7));
             Assert.That(package.Validate(), Is.Empty);
             Assert.That(package.Piece(RoadPieceTopology.Straight).HasArtwork, Is.True);
             Assert.That(package.Piece(RoadPieceTopology.TJunction).HasArtwork, Is.True);
+            Assert.That(package.Piece(RoadPieceTopology.TJunction).ArtworkStatus,
+                Is.EqualTo("authored-2026-08-30-classic-brick"));
             Assert.That(package.Piece(RoadPieceTopology.FourWay).HasArtwork, Is.True);
             Assert.That(package.Piece(RoadPieceTopology.Corner).HasArtwork, Is.True);
-            Assert.That(package.Piece(RoadPieceTopology.Endpoint).HasArtwork, Is.False);
+            Assert.That(package.Piece(RoadPieceTopology.Endpoint).HasArtwork, Is.True);
+            Assert.That(package.Piece(RoadPieceTopology.StraightToDiagonal).HasArtwork, Is.True);
+            Assert.That(package.Piece(RoadPieceTopology.Diagonal).HasArtwork, Is.True);
             Assert.That(package.Piece(RoadPieceTopology.Corner).ArtworkStatus, Is.EqualTo("authored-2026-07-28"));
-            Assert.That(package.Piece(RoadPieceTopology.Endpoint).ArtworkStatus, Is.EqualTo("pending"));
+            Assert.That(package.Piece(RoadPieceTopology.Endpoint).ArtworkStatus,
+                Is.EqualTo("authored-2026-07-28-straight-cap"));
+            Assert.That(package.Piece(RoadPieceTopology.StraightToDiagonal).ArtworkStatus,
+                Is.EqualTo("authored-2026-08-30-classic-brick-alternating"));
+            Assert.That(package.Piece(RoadPieceTopology.Diagonal).ArtworkStatus,
+                Is.EqualTo("authored-2026-08-30-classic-brick-alternating"));
         }
 
         [Test]
@@ -5216,7 +5327,7 @@ namespace CityForgeV3.Tests
                 Assert.That(package.Id, Is.EqualTo(id));
                 Assert.That(package.Pieces.Count, Is.EqualTo(5));
                 Assert.That(package.Validate(), Is.Empty, id);
-                foreach (RoadPieceTopology topology in System.Enum.GetValues(typeof(RoadPieceTopology)))
+                foreach (var topology in RoadPiecePackage.RequiredCoreTopologies)
                     Assert.That(package.Piece(topology)?.HasArtwork, Is.True,
                         $"{id} {topology}");
             }
@@ -5824,6 +5935,156 @@ namespace CityForgeV3.Tests
             var shader = Shader.Find("CityForgeV3/ShadowReceivingRoadOverlay");
             Assert.That(shader, Is.Not.Null);
             Assert.That(shader.passCount, Is.EqualTo(2));
+
+            var floraShadow = Shader.Find("CityForgeV3/ProjectedFloraShadow");
+            Assert.That(floraShadow, Is.Not.Null);
+            Assert.That(floraShadow.passCount, Is.EqualTo(2),
+                "Flora needs a normal ground pass and a road-stencil pass.");
+            Assert.That(floraShadow.renderQueue, Is.GreaterThan(3002),
+                "Projected flora must draw after opaque brick road artwork.");
+        }
+
+        [Test]
+        public void BuildingConstructionCreatesDirtAndAdvancesOneStoryAtATime()
+        {
+            var root = new GameObject("Construction Sequence Test");
+            var finished = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            finished.transform.SetParent(root.transform, false);
+            finished.name = "Finished Building";
+            finished.transform.localScale = new Vector3(8f, 9.6f, 6f);
+            try
+            {
+                var sequence = root.AddComponent<BuildingConstructionSequence>();
+                sequence.Begin(finished, 8f, 6f, 9.6f);
+                Assert.That(finished.GetComponent<Renderer>().enabled, Is.False);
+                Assert.That(Find(root.transform, "Excavated Dirt Footprint"),
+                    Is.Not.Null);
+                Assert.That(sequence.StoryCount, Is.EqualTo(3));
+                Assert.That(sequence.CompletedStories, Is.Zero);
+
+                sequence.AdvanceOneStageForQa();
+                Assert.That(sequence.CompletedStories, Is.EqualTo(1));
+                Assert.That(sequence.RevealedBuildingStories, Is.Zero,
+                    "The frame must lead the finished facade by one floor.");
+                Assert.That(Find(root.transform,
+                    "Front Diagonal 1"), Is.Not.Null,
+                    "Simulate Build should reveal the shared frame one story at a time.");
+
+                sequence.AdvanceOneStageForQa();
+                Assert.That(sequence.RevealedBuildingStories, Is.EqualTo(1));
+                Assert.That(Find(root.transform,
+                    "Front Panel Wall — Story 1 Bay 1 Sill"), Is.Not.Null,
+                    "The preceding story should gain panel walls with real window gaps.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void BuildingShaderSupportsFloorByFloorConstructionReveal()
+        {
+            var shader = Shader.Find("CityForgeV3/Experimental3DBuildingPBR");
+            Assert.That(shader, Is.Not.Null);
+            var material = new Material(shader);
+            try
+            {
+                Assert.That(material.HasProperty("_ConstructionRevealHeight"),
+                    Is.True,
+                    "A combined building mesh needs a world-height reveal mask.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void BuildingShaderExposesDaytimeColorGradeControls()
+        {
+            var shader = Shader.Find("CityForgeV3/Experimental3DBuildingPBR");
+            Assert.That(shader, Is.Not.Null);
+            var material = new Material(shader);
+            try
+            {
+                Assert.That(material.HasProperty("_Contrast"), Is.True);
+                Assert.That(material.HasProperty("_Saturation"), Is.True);
+                Assert.That(material.HasProperty("_Vibrance"), Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void ConstructionFrameMatchesFootprintAndFullBuildingHeight()
+        {
+            var root = new GameObject("Construction Frame Test");
+            try
+            {
+                var frame = root.AddComponent<BuildingConstructionFramePreview>();
+                frame.Build(8f, 6f, 9.6f);
+                var frontRail = Find(root.transform, "Front Story Rail 3");
+                Assert.That(frontRail, Is.Not.Null,
+                    "A three-story structure needs a full-height top rail.");
+                Assert.That(frontRail.localPosition.y,
+                    Is.EqualTo(9.64f).Within(0.01f));
+                Assert.That(frontRail.localScale.x,
+                    Is.EqualTo(6.4f).Within(0.01f),
+                    "Construction footprints should be 20% narrower than the mesh bounds.");
+                Assert.That(Find(root.transform, "Front Full-Height Post 1"),
+                    Is.Not.Null);
+                Assert.That(Find(root.transform, "Front Diagonal 3"),
+                    Is.Not.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void ConstructionPreviewCancelsPackageScaleAndUsesVisibleCentre()
+        {
+            var root = new GameObject("Scaled Building Root");
+            root.transform.position = new Vector3(5f, 0f, -4f);
+            root.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            root.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+            try
+            {
+                var originMethod = typeof(LotWorldController).GetMethod(
+                    "ConstructionLocalOrigin",
+                    BindingFlags.Static | BindingFlags.NonPublic);
+                var scaleMethod = typeof(LotWorldController).GetMethod(
+                    "ConstructionScaleCompensation",
+                    BindingFlags.Static | BindingFlags.NonPublic);
+                var bounds = new Bounds(new Vector3(7f, 6f, -1f),
+                    new Vector3(10f, 12f, 8f));
+                var origin = (Vector3)originMethod.Invoke(null,
+                    new object[] { root.transform, bounds });
+                var compensation = (Vector3)scaleMethod.Invoke(null,
+                    new object[] { root.transform });
+                var preview = new GameObject("Preview").transform;
+                preview.SetParent(root.transform, false);
+                preview.localPosition = origin;
+                preview.localScale = compensation;
+
+                Assert.That(preview.position.x,
+                    Is.EqualTo(bounds.center.x).Within(0.001f));
+                Assert.That(preview.position.y,
+                    Is.EqualTo(bounds.min.y).Within(0.001f));
+                Assert.That(preview.position.z,
+                    Is.EqualTo(bounds.center.z).Within(0.001f));
+                Assert.That(preview.lossyScale.x, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(preview.lossyScale.y, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(preview.lossyScale.z, Is.EqualTo(1f).Within(0.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [TestCase(20, 100f)]
@@ -6129,8 +6390,9 @@ namespace CityForgeV3.Tests
             var pieces = new System.Collections.Generic.List<PlacedRoadPiece>();
             RoadPlacementModel.PlaceOrReplace(pieces, RoadPieceTopology.Endpoint, -1, 0, 2);
             Assert.That(RoadPlacementModel.TrySuggest(pieces, -1, -1, package,
-                out var topology, out var turns), Is.False,
-                "A pending end cap must not be offered as a placeable invisible tile.");
+                out var topology, out var turns), Is.True);
+            Assert.That(topology, Is.EqualTo(RoadPieceTopology.Endpoint));
+            Assert.That(turns, Is.EqualTo(0));
 
             RoadPlacementModel.PlaceOrReplace(pieces, RoadPieceTopology.Endpoint, 0, -1, 3);
             Assert.That(RoadPlacementModel.TrySuggest(pieces, -1, -1, package,
@@ -6145,6 +6407,171 @@ namespace CityForgeV3.Tests
                 out topology, out turns), Is.True);
             Assert.That(topology, Is.EqualTo(RoadPieceTopology.Straight));
             Assert.That(turns, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void BrickRoadStraightTransitionAndDiagonalFormAValidChain()
+        {
+            var package = RoadPiecePackage.Load();
+            var transition = package.Piece(RoadPieceTopology.StraightToDiagonal);
+            var diagonal = package.Piece(RoadPieceTopology.Diagonal);
+            Assert.That(transition.RotatedPorts(1),
+                Is.EquivalentTo(new[] { RoadPiecePort.East, RoadPiecePort.South }));
+            Assert.That(diagonal.RotatedPorts(1),
+                Is.EquivalentTo(new[] { RoadPiecePort.North, RoadPiecePort.West }));
+
+            var pieces = new System.Collections.Generic.List<PlacedRoadPiece>
+            {
+                new PlacedRoadPiece
+                {
+                    Id = "straight",
+                    PackageId = package.Id,
+                    Topology = RoadPieceTopology.Straight,
+                    GridX = 0,
+                    GridZ = 1
+                },
+                new PlacedRoadPiece
+                {
+                    Id = "transition",
+                    PackageId = package.Id,
+                    Topology = RoadPieceTopology.StraightToDiagonal,
+                    GridX = 0,
+                    GridZ = 0
+                },
+                new PlacedRoadPiece
+                {
+                    Id = "diagonal",
+                    PackageId = package.Id,
+                    Topology = RoadPieceTopology.Diagonal,
+                    GridX = 1,
+                    GridZ = 0
+                },
+                new PlacedRoadPiece
+                {
+                    Id = "diagonal-alternate",
+                    PackageId = package.Id,
+                    Topology = RoadPieceTopology.Diagonal,
+                    GridX = 1,
+                    GridZ = -1,
+                    RotationQuarterTurns = 2
+                }
+            };
+
+            Assert.That(RoadPlacementModel.Validate(pieces, package, 40), Is.Empty);
+            Assert.That(RoadPlacementModel.ResolveAlternatingDiagonalRotation(
+                pieces, 1, 0, package, 0), Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.ResolveAlternatingDiagonalRotation(
+                pieces, 1, -1, package, 0), Is.EqualTo(2));
+            var network = RoadPlacementModel.BuildVehicleNetwork(pieces, package, 40);
+            Assert.That(network.Nodes.Count, Is.EqualTo(6));
+            Assert.That(network.Segments.Count, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void PlannedRoadRouteIsContinuousAndReachesItsEndpoint()
+        {
+            var route = RoadPlacementModel.BuildPlannedRoadRoute(
+                new Vector2Int(0, 0), new Vector2Int(3, 3));
+
+            Assert.That(route.Count, Is.EqualTo(7));
+            Assert.That(route[0], Is.EqualTo(new Vector2Int(0, 0)));
+            Assert.That(route[^1], Is.EqualTo(new Vector2Int(3, 3)));
+            for (var index = 1; index < route.Count; index++)
+            {
+                var delta = route[index] - route[index - 1];
+                Assert.That(Mathf.Abs(delta.x) + Mathf.Abs(delta.y), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void PlannedRoadRouteResolvesEndpointsTurnsAndStraightRuns()
+        {
+            var package = RoadPiecePackage.Load();
+            var staircase = RoadPlacementModel.BuildPlannedRoadRoute(
+                new Vector2Int(0, 0), new Vector2Int(2, 2));
+
+            Assert.That(RoadPlacementModel.TryResolvePlannedRoutePiece(
+                staircase, 0, package, out var startTopology, out _), Is.True);
+            Assert.That(startTopology, Is.EqualTo(RoadPieceTopology.Diagonal));
+            Assert.That(RoadPlacementModel.TryResolvePlannedRoutePiece(
+                staircase, 1, package, out var turnTopology, out var turnRotation), Is.True);
+            Assert.That(turnTopology,
+                Is.EqualTo(RoadPieceTopology.StraightToDiagonal));
+            Assert.That(turnRotation, Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.TryResolvePlannedRoutePiece(
+                staircase, 2, package, out var alternateTurnTopology, out _), Is.True);
+            Assert.That(alternateTurnTopology,
+                Is.EqualTo(RoadPieceTopology.Diagonal));
+            Assert.That(RoadPlacementModel.TryResolveComplementaryDiagonalFiller(
+                staircase, 0, out var complementaryCell, out var complementaryRotation), Is.True);
+            Assert.That(complementaryCell, Is.EqualTo(new Vector2Int(0, 1)));
+            Assert.That(complementaryRotation, Is.EqualTo(2));
+
+            var descending = RoadPlacementModel.BuildPlannedRoadRoute(
+                new Vector2Int(0, 2), new Vector2Int(2, 0));
+            Assert.That(RoadPlacementModel.TryResolvePlannedRoutePiece(
+                descending, 1, package, out _, out var descendingTurnRotation), Is.True);
+            Assert.That(descendingTurnRotation, Is.EqualTo(3));
+            Assert.That(RoadPlacementModel.TryResolveComplementaryDiagonalFiller(
+                descending, 0, out var descendingComplement, out var descendingComplementRotation),
+                Is.True);
+            Assert.That(descendingComplement, Is.EqualTo(new Vector2Int(0, 1)));
+            Assert.That(descendingComplementRotation, Is.EqualTo(1));
+
+            Assert.That(RoadPlacementModel.TryResolveDiagonalTransition(
+                RoadPiecePort.NorthEast, RoadPiecePort.South, package,
+                out var rightTransition, out var rightTransitionRotation), Is.True);
+            Assert.That(rightTransition, Is.EqualTo(RoadPieceTopology.DiagonalTransitionRight));
+            Assert.That(rightTransitionRotation, Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.TryResolveDiagonalTransition(
+                RoadPiecePort.NorthEast, RoadPiecePort.West, package,
+                out var leftTransition, out var leftTransitionRotation), Is.True);
+            Assert.That(leftTransition, Is.EqualTo(RoadPieceTopology.DiagonalTransitionLeft));
+            Assert.That(leftTransitionRotation, Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.CardinalApproachForDiagonal(
+                RoadPiecePort.SouthWest, true), Is.EqualTo(RoadPiecePort.East));
+            Assert.That(RoadPlacementModel.CardinalApproachForDiagonal(
+                RoadPiecePort.SouthWest, false), Is.EqualTo(RoadPiecePort.North));
+            Assert.That(RoadPlacementModel.TryResolveTJunction(
+                new[] { RoadPiecePort.East, RoadPiecePort.West },
+                RoadPiecePort.South, package, out var tTurns), Is.True);
+            Assert.That(tTurns, Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.TryResolveTJunction(
+                new[] { RoadPiecePort.North, RoadPiecePort.South },
+                RoadPiecePort.West, package, out var rotatedTTurns), Is.True);
+            Assert.That(rotatedTTurns, Is.EqualTo(1));
+            Assert.That(RoadPlacementModel.OppositeCardinalPort(
+                RoadPiecePort.North), Is.EqualTo(RoadPiecePort.South));
+            Assert.That(RoadPlacementModel.TryResolveDiagonalTJunction(
+                RoadPiecePort.NorthEast,
+                new[] { RoadPiecePort.North, RoadPiecePort.South }, package,
+                out var diagonalTJunction, out var diagonalTTurns), Is.True);
+            Assert.That(diagonalTJunction,
+                Is.EqualTo(RoadPieceTopology.DiagonalTJunctionRight));
+            Assert.That(diagonalTTurns, Is.EqualTo(0));
+            Assert.That(RoadPlacementModel.TryResolveDiagonalTJunction(
+                RoadPiecePort.SouthWest,
+                new[] { RoadPiecePort.East, RoadPiecePort.West }, package,
+                out _, out _), Is.True);
+
+            var straight = RoadPlacementModel.BuildPlannedRoadRoute(
+                new Vector2Int(0, 0), new Vector2Int(3, 0));
+            Assert.That(RoadPlacementModel.TryResolvePlannedRoutePiece(
+                straight, 1, package, out var straightTopology, out _), Is.True);
+            Assert.That(straightTopology, Is.EqualTo(RoadPieceTopology.Straight));
+        }
+
+        [Test]
+        public void RoadPlannerUsesRoadOnlySKeyStartPreviewAndClickCommit()
+        {
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+            StringAssert.Contains("evt.keyCode == KeyCode.S", source);
+            StringAssert.Contains("_lotEditorCategory == LotEditorCategory.Roads", source);
+            StringAssert.Contains("BeginRoadRoutePlan", source);
+            StringAssert.Contains("UpdateRoadRoutePlanPreviewFromPanel", source);
+            StringAssert.Contains("CommitRoadRoutePlanFromPanel", source);
+            StringAssert.DoesNotContain("KeyCode.Backslash", source);
         }
 
         [Test]
@@ -6307,55 +6734,35 @@ namespace CityForgeV3.Tests
                 var shadow = root.GetComponentsInChildren<SpriteRenderer>(true)
                     .Single(renderer => renderer.name == "Flora Shadow — Canopy");
                 Assert.That(shadow.sprite.texture.name, Does.EndWith("-winter"));
-                Assert.That(shadow.color.a, Is.GreaterThan(0.18f),
+                var properties = new MaterialPropertyBlock();
+                shadow.GetPropertyBlock(properties);
+                Assert.That(properties.GetColor("_Color").a,
+                    Is.GreaterThan(0.18f),
                     "Sparse winter branches need a legible projected shadow.");
 
                 world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
-                Assert.That(shadow.transform.localPosition.x,
-                    Is.EqualTo(0f).Within(0.001f));
-                Assert.That(shadow.transform.localPosition.y,
-                    Is.EqualTo(0f).Within(0.001f),
-                    "Winter shadows must originate at the bottom-centre trunk pivot.");
-                var camera = root.GetComponentInChildren<Camera>();
                 var afternoonRay = Quaternion.Euler(0f,
                     world.BuildingShadowDirectionOffsetDegrees, 0f) *
                     (TimeOfDayLighting.SunRotation(TimeOfDayPreset.Afternoon) *
                      Vector3.forward);
-                var afternoonExpected = new Vector2(
-                    Vector3.Dot(afternoonRay, camera.transform.right),
-                    Vector3.Dot(afternoonRay, camera.transform.up)).normalized;
-                var afternoonActual = new Vector2(
-                    -Mathf.Sin(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad),
-                    Mathf.Cos(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad));
-                Assert.That(Vector2.Dot(afternoonActual, afternoonExpected),
-                    Is.GreaterThan(0.999f),
+                shadow.GetPropertyBlock(properties);
+                Assert.That(Vector3.Angle(
+                        properties.GetVector("_SunRay"), afternoonRay),
+                    Is.LessThan(0.001f),
                     "Afternoon winter trees must share the building shadow ray.");
-                Assert.That(shadow.sprite.bounds.size.y *
-                    shadow.transform.localScale.y,
-                    Is.EqualTo(8.1f).Within(0.01f),
-                    "Winter shadow length must extend away from the trunk along local Y.");
+                Assert.That(properties.GetFloat("_ProjectionScale"),
+                    Is.GreaterThan(0f));
 
                 world.SetTimeOfDay(TimeOfDayPreset.Morning);
-                Assert.That(shadow.transform.localPosition.x,
-                    Is.EqualTo(0f).Within(0.001f));
-                Assert.That(shadow.transform.localPosition.y,
-                    Is.EqualTo(0f).Within(0.001f));
                 var morningRay = Quaternion.Euler(0f,
                     world.BuildingShadowDirectionOffsetDegrees, 0f) *
                     (TimeOfDayLighting.SunRotation(TimeOfDayPreset.Morning) *
                      Vector3.forward);
-                var morningExpected = new Vector2(
-                    Vector3.Dot(morningRay, camera.transform.right),
-                    Vector3.Dot(morningRay, camera.transform.up)).normalized;
-                var morningActual = new Vector2(
-                    -Mathf.Sin(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad),
-                    Mathf.Cos(shadow.transform.localEulerAngles.z * Mathf.Deg2Rad));
-                Assert.That(Vector2.Dot(morningActual, morningExpected),
-                    Is.GreaterThan(0.999f),
+                shadow.GetPropertyBlock(properties);
+                Assert.That(Vector3.Angle(
+                        properties.GetVector("_SunRay"), morningRay),
+                    Is.LessThan(0.001f),
                     "Morning winter trees must share the building shadow ray.");
-                Assert.That(shadow.sprite.bounds.size.y *
-                    shadow.transform.localScale.y,
-                    Is.EqualTo(5.375f).Within(0.01f));
             }
             finally
             {
@@ -6407,11 +6814,11 @@ namespace CityForgeV3.Tests
         public void RuntimePrimitiveShadowsUseTheCalibratedV39ProjectionContract()
         {
             Assert.That(LotWorldController.ShadowLengthScale(TimeOfDayPreset.Morning), Is.EqualTo(0.35f));
-            Assert.That(LotWorldController.ShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.45f));
+            Assert.That(LotWorldController.ShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.65f));
             Assert.That(LotWorldController.ShadowLengthScale(TimeOfDayPreset.Afternoon), Is.EqualTo(0.50f));
             Assert.That(LotWorldController.ShadowLengthScale(TimeOfDayPreset.Evening), Is.EqualTo(0.32f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Morning), Is.EqualTo(0.90f));
-            Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.45f));
+            Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Noon), Is.EqualTo(0.65f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Afternoon), Is.EqualTo(1.15f));
             Assert.That(LotWorldController.BuildingShadowLengthScale(TimeOfDayPreset.Evening), Is.EqualTo(0.40f));
             Assert.That(
@@ -6505,6 +6912,13 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(1.25f));
             Assert.That(LotWorldController.PropShadowOpacityMultiplier(TimeOfDayPreset.Noon),
                 Is.EqualTo(0.78f));
+
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.cs");
+            StringAssert.Contains("0.252f", source,
+                "Noon flora shadows should be 40% darker than the 0.18 baseline.");
+            Assert.That(LotWorldController.BuildingGapShadowColor(
+                TimeOfDayPreset.Noon).a, Is.EqualTo(0.28f));
         }
 
         [Test]

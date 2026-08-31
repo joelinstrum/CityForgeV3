@@ -177,7 +177,11 @@ namespace CityForgeV3.World
             RoadPiecePort.North => new Vector2Int(x, z + 1),
             RoadPiecePort.East => new Vector2Int(x + 1, z),
             RoadPiecePort.South => new Vector2Int(x, z - 1),
-            _ => new Vector2Int(x - 1, z)
+            RoadPiecePort.West => new Vector2Int(x - 1, z),
+            RoadPiecePort.NorthEast => new Vector2Int(x + 1, z + 1),
+            RoadPiecePort.SouthEast => new Vector2Int(x + 1, z - 1),
+            RoadPiecePort.SouthWest => new Vector2Int(x - 1, z - 1),
+            _ => new Vector2Int(x - 1, z + 1)
         };
     }
 }

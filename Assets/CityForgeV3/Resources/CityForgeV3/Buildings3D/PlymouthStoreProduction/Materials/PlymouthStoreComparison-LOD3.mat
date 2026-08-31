@@ -45,14 +45,16 @@ Material:
     - _AlbedoBoost: 1
     - _AmbientFill: 1
     - _BumpScale: 0.45
-    - _Contrast: 1.447
+    - _ConstructionRevealHeight: 100000
+    - _Contrast: 2
     - _DirectionalContrast: 1
     - _EnvironmentDim: 1
     - _GlossMapScale: 0.16
     - _Metallic: 0
     - _NightEmissionIntensity: 0
-    - _Saturation: 1.755
-    - _SunIntensityScale: 1
+    - _Saturation: 4
+    - _SunIntensityScale: 3
+    - _Vibrance: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _NightEmissionColor: {r: 1, g: 0.55, b: 0.22, a: 1}

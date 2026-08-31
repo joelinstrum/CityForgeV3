@@ -111,6 +111,7 @@ namespace CityForgeV3.World
         public string FloraId = "";
         public float PositionX;
         public float PositionZ;
+        public float SinkDepthMeters;
     }
 
     [Serializable]
@@ -138,6 +139,29 @@ namespace CityForgeV3.World
     }
 
     [Serializable]
+    public sealed class PlacedEffect
+    {
+        public string InstanceId = "";
+        public string EffectId = "";
+        public string HostKind = "";
+        public string HostInstanceId = "";
+        public bool HasHostAttachment;
+        public float HostLocalX;
+        public float HostLocalY;
+        public float HostLocalZ;
+        public float HostNormalX;
+        public float HostNormalY;
+        public float HostNormalZ = -1f;
+        public float Scale = 1f;
+        public float PositionX;
+        public float PositionY;
+        public float PositionZ;
+        public float NormalX;
+        public float NormalY;
+        public float NormalZ = -1f;
+    }
+
+    [Serializable]
     public sealed class LotSaveData
     {
         public string Schema = "cityforge-v3-lot-save-v7";
@@ -161,6 +185,7 @@ namespace CityForgeV3.World
         public List<PlacedBuilding> Buildings = new();
         public List<PlacedFlora> Flora = new();
         public List<PlacedProp> Props = new();
+        public List<PlacedEffect> Effects = new();
         public string DefaultGentlemanBehaviorScript = "business-as-usual";
         public string DefaultHooliganBehaviorScript = "business-as-usual";
         public string DefaultPolicemanBehaviorScript = "business-as-usual";
@@ -198,6 +223,7 @@ namespace CityForgeV3.World
                 Buildings = Buildings,
                 Flora = Flora,
                 Props = Props,
+                Effects = Effects,
                 DefaultGentlemanBehaviorScript = DefaultGentlemanBehaviorScript,
                 DefaultHooliganBehaviorScript = DefaultHooliganBehaviorScript,
                 DefaultPolicemanBehaviorScript = DefaultPolicemanBehaviorScript,
@@ -216,6 +242,7 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class PlacedBuilding3D
     {
+        public string InstanceId = "";
         public string AssetId = "brownstone-building-22k";
         public float X;
         public float Z;

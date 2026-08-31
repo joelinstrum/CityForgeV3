@@ -8,7 +8,8 @@ namespace CityForgeV3.World
         Commercial,
         Industrial,
         Mixed,
-        Civics
+        Civics,
+        Entertainment
     }
 
     public readonly struct BuildingCatalogEntry

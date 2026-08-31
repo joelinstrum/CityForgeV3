@@ -10,7 +10,13 @@ namespace CityForgeV3.World
         Corner,
         TJunction,
         FourWay,
-        Endpoint
+        Endpoint,
+        StraightToDiagonal,
+        DiagonalTransitionRight,
+        DiagonalTransitionLeft,
+        DiagonalTJunctionRight,
+        DiagonalTJunctionLeft,
+        Diagonal
     }
 
     public enum RoadPiecePort
@@ -18,7 +24,11 @@ namespace CityForgeV3.World
         North,
         East,
         South,
-        West
+        West,
+        NorthEast,
+        SouthEast,
+        SouthWest,
+        NorthWest
     }
 
     [Serializable]
@@ -89,7 +99,12 @@ namespace CityForgeV3.World
             var result = new List<RoadPiecePort>();
             var turns = ((quarterTurns % 4) + 4) % 4;
             foreach (var port in Ports)
-                result.Add((RoadPiecePort)(((int)port + turns) % 4));
+            {
+                var value = (int)port;
+                result.Add(value < 4
+                    ? (RoadPiecePort)((value + turns) % 4)
+                    : (RoadPiecePort)(4 + ((value - 4 + turns) % 4)));
+            }
             return result;
         }
     }
@@ -117,6 +132,14 @@ namespace CityForgeV3.World
         public float SpeedLimitMetersPerSecond { get; }
         public string MinorApproachControl { get; }
         public IReadOnlyList<RoadPieceDefinition> Pieces { get; }
+        public static readonly RoadPieceTopology[] RequiredCoreTopologies =
+        {
+            RoadPieceTopology.Straight,
+            RoadPieceTopology.Corner,
+            RoadPieceTopology.TJunction,
+            RoadPieceTopology.FourWay,
+            RoadPieceTopology.Endpoint
+        };
 
         private RoadPiecePackage(RoadPiecePackageManifest manifest)
         {
@@ -194,7 +217,7 @@ namespace CityForgeV3.World
             if (SpeedLimitMetersPerSecond <= 0f) issues.Add("traffic.speedLimitMetersPerSecond is invalid");
             if (MinorApproachControl != "yield" && MinorApproachControl != "stop")
                 issues.Add("traffic.minorApproachControl is invalid");
-            foreach (RoadPieceTopology topology in Enum.GetValues(typeof(RoadPieceTopology)))
+            foreach (var topology in RequiredCoreTopologies)
                 if (Piece(topology) == null) issues.Add($"{topology} definition is required");
             foreach (var piece in Pieces)
             {
@@ -345,6 +368,267 @@ namespace CityForgeV3.World
         public static PlacedRoadPiece FindAt(List<PlacedRoadPiece> pieces, int gridX, int gridZ) =>
             pieces?.Find(piece => piece != null && piece.GridX == gridX && piece.GridZ == gridZ);
 
+        public static List<Vector2Int> BuildPlannedRoadRoute(
+            Vector2Int start, Vector2Int end)
+        {
+            var cells = new List<Vector2Int> { start };
+            var deltaX = end.x - start.x;
+            var deltaZ = end.y - start.y;
+            var stepsX = Mathf.Abs(deltaX);
+            var stepsZ = Mathf.Abs(deltaZ);
+            var signX = Math.Sign(deltaX);
+            var signZ = Math.Sign(deltaZ);
+            var completedX = 0;
+            var completedZ = 0;
+            var current = start;
+            while (completedX < stepsX || completedZ < stepsZ)
+            {
+                var stepAlongX = completedZ >= stepsZ ||
+                    (completedX < stepsX &&
+                     (completedX + 1f) / Mathf.Max(1, stepsX) <=
+                     (completedZ + 1f) / Mathf.Max(1, stepsZ));
+                if (stepAlongX)
+                {
+                    current.x += signX;
+                    completedX++;
+                }
+                else
+                {
+                    current.y += signZ;
+                    completedZ++;
+                }
+                cells.Add(current);
+            }
+            return cells;
+        }
+
+        public static bool TryResolvePlannedRoutePiece(
+            IReadOnlyList<Vector2Int> route, int index, RoadPiecePackage package,
+            out RoadPieceTopology topology, out int quarterTurns)
+        {
+            topology = RoadPieceTopology.Endpoint;
+            quarterTurns = 0;
+            if (route == null || index < 0 || index >= route.Count || package == null)
+                return false;
+            var routeDelta = route[route.Count - 1] - route[0];
+            if (Mathf.Abs(routeDelta.x) == Mathf.Abs(routeDelta.y) &&
+                routeDelta.x != 0)
+            {
+                // A true 45-degree route occupies diagonal grid cells plus
+                // the alternating corner cells between them. The full-band
+                // cells carry diagonal traffic ports; the corner slices are
+                // visual fillers with no network ports.
+                topology = (index & 1) == 0
+                    ? RoadPieceTopology.Diagonal
+                    : RoadPieceTopology.StraightToDiagonal;
+                if (topology == RoadPieceTopology.Diagonal)
+                    quarterTurns = routeDelta.x * routeDelta.y > 0 ? 0 : 1;
+                else
+                    quarterTurns = DiagonalFillerQuarterTurns(
+                        Math.Sign(routeDelta.x), Math.Sign(routeDelta.y), true);
+                return package.Piece(topology)?.HasArtwork == true;
+            }
+            var desired = new List<RoadPiecePort>();
+            if (index > 0)
+                desired.Add(PortBetween(route[index], route[index - 1]));
+            if (index + 1 < route.Count)
+            {
+                var nextPort = PortBetween(route[index], route[index + 1]);
+                if (!desired.Contains(nextPort)) desired.Add(nextPort);
+            }
+            if (desired.Count == 0) desired.Add(RoadPiecePort.North);
+            if (desired.Count == 1)
+                topology = RoadPieceTopology.Endpoint;
+            else
+            {
+                var isStraight = Opposite(desired[0]) == desired[1];
+                if (isStraight)
+                {
+                    topology = RoadPieceTopology.Straight;
+                }
+                else
+                {
+                    // A one-cell diagonal is a staircase of two complementary
+                    // artworks. Horizontal-to-vertical bends use the filled
+                    // transition half; vertical-to-horizontal bends use the
+                    // diagonal half. Treating every bend as Diagonal produces
+                    // the visible zipper of disconnected arrowheads.
+                    var incoming = route[index] - route[index - 1];
+                    var outgoing = route[index + 1] - route[index];
+                    topology = incoming.x != 0 && outgoing.y != 0
+                        ? RoadPieceTopology.StraightToDiagonal
+                        : RoadPieceTopology.Diagonal;
+                }
+            }
+            var definition = package.Piece(topology);
+            if (definition?.HasArtwork != true) return false;
+            for (var turns = 0; turns < 4; turns++)
+            {
+                var ports = definition.RotatedPorts(turns);
+                if (ports.Count == desired.Count &&
+                    desired.TrueForAll(port => new List<RoadPiecePort>(ports).Contains(port)))
+                {
+                    quarterTurns = turns;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool TryResolveComplementaryDiagonalFiller(
+            IReadOnlyList<Vector2Int> route, int diagonalIndex,
+            out Vector2Int cell, out int quarterTurns)
+        {
+            cell = default;
+            quarterTurns = 0;
+            if (route == null || diagonalIndex < 0 || (diagonalIndex & 1) != 0 ||
+                diagonalIndex + 2 >= route.Count) return false;
+            var routeDelta = route[route.Count - 1] - route[0];
+            if (Mathf.Abs(routeDelta.x) != Mathf.Abs(routeDelta.y) || routeDelta.x == 0)
+                return false;
+            var signX = Math.Sign(routeDelta.x);
+            var signZ = Math.Sign(routeDelta.y);
+            cell = route[diagonalIndex] + new Vector2Int(0, signZ);
+            quarterTurns = DiagonalFillerQuarterTurns(signX, signZ, false);
+            return true;
+        }
+
+        public static bool TryResolveDiagonalTransition(
+            RoadPiecePort diagonalPort, RoadPiecePort cardinalPort,
+            RoadPiecePackage package, out RoadPieceTopology topology,
+            out int quarterTurns)
+        {
+            topology = RoadPieceTopology.DiagonalTransitionRight;
+            quarterTurns = 0;
+            if (package == null || (int)diagonalPort < 4 || (int)cardinalPort >= 4)
+                return false;
+            foreach (var candidate in new[]
+                     {
+                         RoadPieceTopology.DiagonalTransitionRight,
+                         RoadPieceTopology.DiagonalTransitionLeft
+                     })
+            {
+                var definition = package.Piece(candidate);
+                if (definition?.HasArtwork != true) continue;
+                for (var turns = 0; turns < 4; turns++)
+                {
+                    var ports = definition.RotatedPorts(turns);
+                    if (ports.Count != 2 || !new List<RoadPiecePort>(ports).Contains(diagonalPort) ||
+                        !new List<RoadPiecePort>(ports).Contains(cardinalPort)) continue;
+                    topology = candidate;
+                    quarterTurns = turns;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool TryResolveDiagonalTJunction(
+            RoadPiecePort diagonalPort,
+            IReadOnlyList<RoadPiecePort> throughPorts,
+            RoadPiecePackage package,
+            out RoadPieceTopology topology,
+            out int quarterTurns)
+        {
+            topology = RoadPieceTopology.DiagonalTJunctionRight;
+            quarterTurns = 0;
+            if (package == null || throughPorts == null || throughPorts.Count != 2 ||
+                (int)diagonalPort < 4 || (int)throughPorts[0] >= 4 ||
+                (int)throughPorts[1] >= 4 || Opposite(throughPorts[0]) != throughPorts[1])
+                return false;
+            foreach (var candidate in new[]
+                     {
+                         RoadPieceTopology.DiagonalTJunctionRight,
+                         RoadPieceTopology.DiagonalTJunctionLeft
+                     })
+            {
+                var definition = package.Piece(candidate);
+                if (definition?.HasArtwork != true) continue;
+                for (var turns = 0; turns < 4; turns++)
+                {
+                    var ports = definition.RotatedPorts(turns);
+                    if (ports.Count != 3 ||
+                        !new List<RoadPiecePort>(ports).Contains(diagonalPort) ||
+                        !new List<RoadPiecePort>(ports).Contains(throughPorts[0]) ||
+                        !new List<RoadPiecePort>(ports).Contains(throughPorts[1])) continue;
+                    topology = candidate;
+                    quarterTurns = turns;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static RoadPiecePort DiagonalPortForDirection(int signX, int signZ)
+        {
+            if (signX > 0) return signZ > 0
+                ? RoadPiecePort.NorthEast : RoadPiecePort.SouthEast;
+            return signZ > 0 ? RoadPiecePort.NorthWest : RoadPiecePort.SouthWest;
+        }
+
+        public static RoadPiecePort CardinalApproachForDiagonal(
+            RoadPiecePort diagonalPort, bool alongX)
+        {
+            return diagonalPort switch
+            {
+                RoadPiecePort.NorthEast => alongX ? RoadPiecePort.West : RoadPiecePort.South,
+                RoadPiecePort.SouthEast => alongX ? RoadPiecePort.West : RoadPiecePort.North,
+                RoadPiecePort.SouthWest => alongX ? RoadPiecePort.East : RoadPiecePort.North,
+                _ => alongX ? RoadPiecePort.East : RoadPiecePort.South
+            };
+        }
+
+        public static RoadPiecePort OppositeCardinalPort(RoadPiecePort port) => port switch
+        {
+            RoadPiecePort.North => RoadPiecePort.South,
+            RoadPiecePort.East => RoadPiecePort.West,
+            RoadPiecePort.South => RoadPiecePort.North,
+            _ => RoadPiecePort.East
+        };
+
+        public static bool TryResolveTJunction(
+            IReadOnlyList<RoadPiecePort> throughPorts, RoadPiecePort branchPort,
+            RoadPiecePackage package, out int quarterTurns)
+        {
+            quarterTurns = 0;
+            if (throughPorts == null || throughPorts.Count != 2 || package == null ||
+                (int)branchPort >= 4) return false;
+            var desired = new List<RoadPiecePort>(throughPorts);
+            if (!desired.Contains(branchPort)) desired.Add(branchPort);
+            if (desired.Count != 3) return false;
+            var definition = package.Piece(RoadPieceTopology.TJunction);
+            if (definition?.HasArtwork != true) return false;
+            for (var turns = 0; turns < 4; turns++)
+            {
+                var ports = definition.RotatedPorts(turns);
+                if (ports.Count != desired.Count) continue;
+                var rotated = new List<RoadPiecePort>(ports);
+                if (!desired.TrueForAll(rotated.Contains)) continue;
+                quarterTurns = turns;
+                return true;
+            }
+            return false;
+        }
+
+        private static int DiagonalFillerQuarterTurns(int signX, int signZ, bool xFirst)
+        {
+            if (xFirst)
+            {
+                if (signX > 0) return signZ > 0 ? 0 : 3;
+                return signZ > 0 ? 1 : 2;
+            }
+            if (signX > 0) return signZ > 0 ? 2 : 1;
+            return signZ > 0 ? 3 : 0;
+        }
+
+        private static RoadPiecePort PortBetween(Vector2Int from, Vector2Int to)
+        {
+            var delta = to - from;
+            if (delta.x > 0) return RoadPiecePort.East;
+            if (delta.x < 0) return RoadPiecePort.West;
+            return delta.y >= 0 ? RoadPiecePort.North : RoadPiecePort.South;
+        }
+
         public static IReadOnlyList<Vector2Int> OccupiedCells(
             PlacedRoadPiece piece, RoadPiecePackage package)
         {
@@ -418,9 +702,15 @@ namespace CityForgeV3.World
             foreach (var piece in pieces)
             {
                 if (piece == null) continue;
+                if (piece.Topology == RoadPieceTopology.StraightToDiagonal ||
+                    piece.Topology == RoadPieceTopology.DiagonalTransitionRight ||
+                    piece.Topology == RoadPieceTopology.DiagonalTransitionLeft ||
+                    piece.Topology == RoadPieceTopology.DiagonalTJunctionRight ||
+                    piece.Topology == RoadPieceTopology.DiagonalTJunctionLeft ||
+                    piece.Topology == RoadPieceTopology.Diagonal) continue;
                 var piecePackage = PackageFor(piece, package);
                 var desired = new List<RoadPiecePort>();
-                foreach (RoadPiecePort port in Enum.GetValues(typeof(RoadPiecePort)))
+                foreach (var port in CardinalPorts)
                 {
                     var neighbor = Neighbor(piece.GridX, piece.GridZ, port);
                     if (FindAt(pieces, neighbor.x, neighbor.y) != null) desired.Add(port);
@@ -472,7 +762,7 @@ namespace CityForgeV3.World
             RoadPiecePackage package, out RoadPieceTopology topology, out int quarterTurns)
         {
             var desired = new List<RoadPiecePort>();
-            foreach (RoadPiecePort port in Enum.GetValues(typeof(RoadPiecePort)))
+            foreach (var port in CardinalPorts)
             {
                 var neighborCell = Neighbor(gridX, gridZ, port);
                 var neighbor = FindAt(pieces, neighborCell.x, neighborCell.y);
@@ -509,11 +799,55 @@ namespace CityForgeV3.World
             else if (desired.Count == 3)
             {
                 topology = RoadPieceTopology.TJunction;
-                foreach (RoadPiecePort port in Enum.GetValues(typeof(RoadPiecePort)))
+                foreach (var port in CardinalPorts)
                     if (!desired.Contains(port)) { quarterTurns = (int)port; break; }
             }
             else topology = RoadPieceTopology.FourWay;
             return package.Piece(topology)?.HasArtwork == true;
+        }
+
+        public static int ResolveAlternatingDiagonalRotation(
+            List<PlacedRoadPiece> pieces,
+            int gridX,
+            int gridZ,
+            RoadPiecePackage package,
+            int requestedQuarterTurns)
+        {
+            var baseTurns = FiveBayHybridContract.WrapFacing(requestedQuarterTurns);
+            var alternateTurns = FiveBayHybridContract.WrapFacing(baseTurns + 2);
+            var baseMatches = CountMatchingNeighborPorts(
+                pieces, gridX, gridZ, package, RoadPieceTopology.Diagonal, baseTurns);
+            var alternateMatches = CountMatchingNeighborPorts(
+                pieces, gridX, gridZ, package, RoadPieceTopology.Diagonal, alternateTurns);
+            if (alternateMatches > baseMatches) return alternateTurns;
+            if (baseMatches > alternateMatches) return baseTurns;
+
+            // With no established neighbor, use the checkerboard only as a
+            // deterministic seed. Once one phase exists, neighbor matching
+            // controls every subsequent A/B choice.
+            return ((gridX + gridZ) & 1) == 0 ? baseTurns : alternateTurns;
+        }
+
+        private static int CountMatchingNeighborPorts(
+            List<PlacedRoadPiece> pieces,
+            int gridX,
+            int gridZ,
+            RoadPiecePackage package,
+            RoadPieceTopology topology,
+            int quarterTurns)
+        {
+            var definition = package?.Piece(topology);
+            if (definition == null) return 0;
+            var matches = 0;
+            foreach (var port in definition.RotatedPorts(quarterTurns))
+            {
+                var neighborCell = Neighbor(gridX, gridZ, port);
+                var neighbor = FindAt(pieces, neighborCell.x, neighborCell.y);
+                if (neighbor != null && HasPort(
+                        neighbor, Opposite(port), PackageFor(neighbor, package)))
+                    matches++;
+            }
+            return matches;
         }
 
         public static List<string> Validate(List<PlacedRoadPiece> pieces, RoadPiecePackage package,
@@ -628,7 +962,11 @@ namespace CityForgeV3.World
             RoadPiecePort.North => new Vector2Int(x, z + 1),
             RoadPiecePort.East => new Vector2Int(x + 1, z),
             RoadPiecePort.South => new Vector2Int(x, z - 1),
-            _ => new Vector2Int(x - 1, z)
+            RoadPiecePort.West => new Vector2Int(x - 1, z),
+            RoadPiecePort.NorthEast => new Vector2Int(x + 1, z + 1),
+            RoadPiecePort.SouthEast => new Vector2Int(x + 1, z - 1),
+            RoadPiecePort.SouthWest => new Vector2Int(x - 1, z - 1),
+            _ => new Vector2Int(x - 1, z + 1)
         };
 
         private static Vector2 PortDirection(RoadPiecePort port) => port switch
@@ -636,11 +974,28 @@ namespace CityForgeV3.World
             RoadPiecePort.North => Vector2.up,
             RoadPiecePort.East => Vector2.right,
             RoadPiecePort.South => Vector2.down,
-            _ => Vector2.left
+            RoadPiecePort.West => Vector2.left,
+            RoadPiecePort.NorthEast => new Vector2(1f, 1f).normalized,
+            RoadPiecePort.SouthEast => new Vector2(1f, -1f).normalized,
+            RoadPiecePort.SouthWest => new Vector2(-1f, -1f).normalized,
+            _ => new Vector2(-1f, 1f).normalized
         };
 
-        private static RoadPiecePort Opposite(RoadPiecePort port) =>
-            (RoadPiecePort)(((int)port + 2) % 4);
+        private static RoadPiecePort Opposite(RoadPiecePort port)
+        {
+            var value = (int)port;
+            return value < 4
+                ? (RoadPiecePort)((value + 2) % 4)
+                : (RoadPiecePort)(4 + ((value - 4 + 2) % 4));
+        }
+
+        private static readonly RoadPiecePort[] CardinalPorts =
+        {
+            RoadPiecePort.North,
+            RoadPiecePort.East,
+            RoadPiecePort.South,
+            RoadPiecePort.West
+        };
 
         private static bool IsInside(int x, int z, int lotSizeMeters = 20) =>
             IsInside(x, z, lotSizeMeters, lotSizeMeters);
