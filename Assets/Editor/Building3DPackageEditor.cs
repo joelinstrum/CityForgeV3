@@ -378,24 +378,46 @@ namespace CityForge.Editor
         public const string PrefabPath = Root + "/Prefabs/IvyTownhouseWhiteProduction.prefab";
         private const string LightingModel =
             Root + "/Lighting/IvyTownhouseWhite_WindowLighting.fbx";
+        private const string BillboardPrefab =
+            Root + "/LOD5/IvyTownhouseWhiteEightAngle.prefab";
         private static readonly string[] Models =
         {
             Root + "/LOD0/tripo_convert_2f4ab5a9-cd46-46da-a934-cc67c3d8554d.fbx",
             Root + "/LOD1/tripo_convert_4f48809e-b281-49d8-8d68-0622291ec34c.fbx",
             Root + "/LOD2/tripo_convert_ba319826-54ff-4db4-9f19-711a95fc2db7.fbx",
-            Root + "/LOD3/tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbx"
+            Root + "/LOD3/tripo_convert_0a55ac9a-ff6d-4f3d-81f1-a7339d41ef58.fbx",
+            Root + "/LOD4/CF_Building_IvyTownhouseWhite_01_LOD4_v01.fbx"
         };
+
+        [InitializeOnLoadMethod]
+        private static void QueueSixLevelEvaluationBuild()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                var current = AssetDatabase.LoadAssetAtPath<Building3DPackage>(
+                    PackagePath);
+                if (current != null && current.SchemaVersion >= 2 &&
+                    current.Representations?.Count >= 6) return;
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(Models[4]) == null)
+                    return;
+                CreatePackage();
+                Debug.Log("Ivy Townhouse six-level evaluation package rebuilt.");
+            };
+        }
 
         [MenuItem("City Forge/3D Buildings/Create Ivy Townhouse White Package")]
         public static void CreatePackage()
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            CreateOrUpdateEightAngleBillboard();
             var visualModels = Models.Select(AssetDatabase.LoadAssetAtPath<GameObject>)
                 .ToArray();
+            var billboard = AssetDatabase.LoadAssetAtPath<GameObject>(BillboardPrefab);
             var lightingModel = AssetDatabase.LoadAssetAtPath<GameObject>(LightingModel);
-            if (visualModels.Any(model => model == null) || lightingModel == null)
+            if (visualModels.Any(model => model == null) || billboard == null ||
+                lightingModel == null)
                 throw new FileNotFoundException(
-                    "The four townhouse LODs and shared window overlay must import first.");
+                    "The five townhouse mesh LODs, billboard, and shared window overlay must import first.");
 
             var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(PackagePath);
             if (package == null)
@@ -404,8 +426,9 @@ namespace CityForge.Editor
                 AssetDatabase.CreateAsset(package, PackagePath);
             }
             package.AssetId = "ivy-townhouse-white-production-v01";
+            package.SchemaVersion = Building3DPackage.CurrentSchemaVersion;
             package.SourceProvenance =
-                "Four user-supplied IvyTownhouse LOD archives plus one 64-triangle window-light overlay derived from the approved Blender proof of concept.";
+                "Four user-supplied IvyTownhouse LOD archives, a versioned 3,321-triangle LOD4 derivative, eight neutral 45-degree LOD5 views, and one 64-triangle window-light overlay.";
             // LOD0 imports at 0.73 m high. The reviewed Blender derivative is
             // calibrated to a 12 m townhouse, giving a uniform 16.44x runtime
             // scale. The proof panes were authored in that reviewed metre
@@ -425,8 +448,8 @@ namespace CityForge.Editor
             package.NightLightingLocalEulerAngles = Vector3.zero;
             package.NightLightingLocalScale = Vector3.one * 0.06f;
 
-            var thresholds = new[] { 0.60f, 0.30f, 0.12f, 0.035f };
-            var budgets = new[] { 250000, 80000, 20000, 5000 };
+            var thresholds = new[] { 0.60f, 0.30f, 0.12f, 0.035f, 0.012f };
+            var budgets = new[] { 250000, 80000, 20000, 5000, 3500 };
             package.Representations = new List<Building3DRepresentation>();
             for (var index = 0; index < visualModels.Length; index++)
                 package.Representations.Add(new Building3DRepresentation
@@ -434,12 +457,28 @@ namespace CityForge.Editor
                     Level = (Building3DLevel)index,
                     ScreenRelativeHeight = thresholds[index],
                     VisualPrefab = visualModels[index],
-                    OverrideMaterial = CreateOrUpdateBuildingMaterial(index),
-                    ShadowPrefab = visualModels[index < 2 ? 2 : 3],
-                    LocalScale = Vector3.one,
+                    OverrideMaterial = CreateOrUpdateBuildingMaterial(
+                        index < 4 ? index : 0),
+                    ShadowPrefab = visualModels[index < 2 ? 2 :
+                        index < 4 ? 3 : 4],
+                    LocalScale = index == 4 ? Vector3.one * 0.06f : Vector3.one,
                     TargetTriangleBudget = budgets[index],
-                    Provenance = $"User-supplied IvyTownhouse-LOD{index}.zip; imported unchanged."
+                    Provenance = index < 4
+                        ? $"User-supplied IvyTownhouse-LOD{index}.zip; imported unchanged."
+                        : "Versioned LOD0 derivative; 3,321 triangles with source UV and material identity preserved."
                 });
+            package.Representations.Add(new Building3DRepresentation
+            {
+                Level = Building3DLevel.LOD5Billboard,
+                ScreenRelativeHeight = 0.002f,
+                VisualPrefab = billboard,
+                ShadowPrefab = visualModels[4],
+                LocalScale = Vector3.one,
+                TargetTriangleBudget = 16,
+                BillboardAngleCount = 8,
+                BillboardYawOffset = 0f,
+                Provenance = "Eight transparent 512px evaluation views rendered every 45 degrees from the normalized LOD0 source."
+            });
             EditorUtility.SetDirty(package);
 
             var root = new GameObject("Ivy Townhouse White Production V01");
@@ -457,6 +496,59 @@ namespace CityForge.Editor
                     $"{metrics.Triangles:N0} triangles, bounds {metrics.Bounds.size}, " +
                     $"center {metrics.Bounds.center}.");
             }
+        }
+
+        private static void CreateOrUpdateEightAngleBillboard()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(BillboardPrefab);
+            if (existing != null) AssetDatabase.DeleteAsset(BillboardPrefab);
+            var root = new GameObject("Ivy Townhouse LOD5 Eight Angle");
+            try
+            {
+                const float canvasMeters = 18.5f;
+                const float packageScale = 16.44f;
+                // The render camera is centered on z=6m. Its 28m radius and
+                // 5m rise project the foundation origin 5.906m below center.
+                var localCanvas = canvasMeters / packageScale;
+                var localCenterHeight = 5.906f / packageScale;
+                for (var index = 0; index < 8; index++)
+                {
+                    var degrees = index * 45;
+                    var texturePath = $"{Root}/LOD5/ivy-townhouse-lod5-angle-" +
+                        $"{index}-{degrees:000}-v01.png";
+                    var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+                    if (texture == null)
+                        throw new FileNotFoundException(texturePath);
+                    var materialPath = $"{Root}/LOD5/IvyTownhouse-LOD5-" +
+                        $"{degrees:000}.mat";
+                    var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+                    if (material == null)
+                    {
+                        material = new Material(Shader.Find("Sprites/Default"))
+                        {
+                            name = $"Ivy Townhouse LOD5 {degrees:000}"
+                        };
+                        AssetDatabase.CreateAsset(material, materialPath);
+                    }
+                    material.mainTexture = texture;
+                    EditorUtility.SetDirty(material);
+
+                    var card = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    card.name = $"Angle {index} ({degrees:000})";
+                    Object.DestroyImmediate(card.GetComponent<Collider>());
+                    card.transform.SetParent(root.transform, false);
+                    card.transform.localPosition = new Vector3(0f,
+                        localCenterHeight, 0f);
+                    card.transform.localScale = Vector3.one * localCanvas;
+                    card.GetComponent<MeshRenderer>().sharedMaterial = material;
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, BillboardPrefab);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         private static Material CreateOrUpdateBuildingMaterial(int level)

@@ -44,6 +44,18 @@ namespace CityForgeV3.World
             "king-kong-enclosure-building-v01";
         public const string KingKongEnclosureBuilding3DResource =
             "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/KingKongEnclosureV01";
+        public const string NyBrownstoneLightEvaluationId =
+            "ny-brownstone-light-eval-v01";
+        public const string NyBrownstoneBayEvaluationId =
+            "ny-brownstone-bay-eval-v01";
+        public const string NyFancyTownhouseEvaluationId =
+            "ny-fancy-townhouse-eval-v01";
+        public const string NyBrownstoneEvaluationId =
+            "ny-brownstone-eval-v01";
+        public const string BrooklynTownhomeRowEvaluationId =
+            "brooklyn-townhome-row-eval-v01";
+        public const string NorwalkClockTowerEvaluationId =
+            "norwalk-clock-tower-eval-v01";
         public const float KingKongEnclosureBuildingSizeMeters = 30f;
         // Tripo's enclosure FBX contains outer geometry that inflates its
         // renderer bounds far beyond the structure visible to the player.
@@ -236,6 +248,24 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
+        private static string EvaluationBuilding3DResource(string assetId) =>
+            assetId switch
+            {
+                NyBrownstoneLightEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstoneLight/Prefabs/NYBrownstoneLightEvaluation",
+                NyBrownstoneBayEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstoneBay/Prefabs/NYBrownstoneBayEvaluation",
+                NyFancyTownhouseEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/NYFancyTownhouse/Prefabs/NYFancyTownhouseEvaluation",
+                NyBrownstoneEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstone/Prefabs/NYBrownstoneEvaluation",
+                BrooklynTownhomeRowEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/BrooklynTownhomeRow/Prefabs/BrooklynTownhomeRowEvaluation",
+                NorwalkClockTowerEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/NorwalkClockTower/Prefabs/NorwalkClockTowerEvaluation",
+                _ => null
+            };
+
         public bool AddExperimentalBuilding3D(string assetId,
             float? worldX = null, float? worldZ = null,
             int? rotationQuarterTurns = null)
@@ -247,7 +277,8 @@ namespace CityForgeV3.World
                 assetId != PlymouthStoreProductionId &&
                 assetId != GildedAgeMansionProductionId &&
                 assetId != GildedAgeMansionExperimentalId &&
-                assetId != KingKongEnclosureBuilding3DId) return false;
+                assetId != KingKongEnclosureBuilding3DId &&
+                EvaluationBuilding3DResource(assetId) == null) return false;
             _session.Data.Buildings3D ??= new List<PlacedBuilding3D>();
             var index = _session.Data.Buildings3D.Count;
             var offset = index * 2.5f;
@@ -479,7 +510,7 @@ namespace CityForgeV3.World
                         material.SetFloat("_EnvironmentDim", timeBrightness);
                     if (material.HasProperty("_DirectionalContrast"))
                         material.SetFloat("_DirectionalContrast",
-                            TimeOfDay == TimeOfDayPreset.Afternoon ? 1f : 0f);
+                            TimeOfDay == TimeOfDayPreset.Afternoon ? 0.32f : 0f);
                     if (material.HasProperty("_SunIntensityScale"))
                         material.SetFloat("_SunIntensityScale",
                             TimeOfDay == TimeOfDayPreset.Afternoon
@@ -554,9 +585,9 @@ namespace CityForgeV3.World
                 // the sun-facing facade read brightly against the shaded one.
                 if (preset == TimeOfDayPreset.Afternoon)
                 {
-                    _environmentSunIntensityScale = 3f;
-                    _environmentBuildingVibrance = 0.20f;
-                    _environmentBuildingSaturation = 1.60f;
+                    _environmentSunIntensityScale = 1.35f;
+                    _environmentBuildingVibrance = 0.08f;
+                    _environmentBuildingSaturation = 1.38f;
                 }
                 SaveEnvironmentLightingState(preset);
                 return;
@@ -590,9 +621,9 @@ namespace CityForgeV3.World
             _environmentBuildingVibrance = 0f;
             if (TimeOfDay == TimeOfDayPreset.Afternoon)
             {
-                _environmentSunIntensityScale = 3f;
-                _environmentBuildingVibrance = 0.20f;
-                _environmentBuildingSaturation = 1.60f;
+                _environmentSunIntensityScale = 1.35f;
+                _environmentBuildingVibrance = 0.08f;
+                _environmentBuildingSaturation = 1.38f;
             }
             SaveEnvironmentLightingState(TimeOfDay);
             if (apply)
@@ -714,8 +745,10 @@ namespace CityForgeV3.World
                     continue;
                 if (string.IsNullOrWhiteSpace(placed.InstanceId))
                     placed.InstanceId = System.Guid.NewGuid().ToString("N");
-                var source = Resources.Load<GameObject>(
-                    placed.AssetId == LowPolyBrownstoneV01Id
+                var evaluationResource = EvaluationBuilding3DResource(
+                    placed.AssetId);
+                var source = Resources.Load<GameObject>(evaluationResource ??
+                    (placed.AssetId == LowPolyBrownstoneV01Id
                         ? LowPolyBrownstoneV01Resource
                         : placed.AssetId == ArtMuseumProductionId
                             ? ArtMuseumProductionResource
@@ -729,7 +762,7 @@ namespace CityForgeV3.World
                             ? GildedAgeMansionExperimentalResource
                         : placed.AssetId == KingKongEnclosureBuilding3DId
                             ? KingKongEnclosureBuilding3DResource
-                        : BrownstoneProductionResource);
+                        : BrownstoneProductionResource));
                 if (source == null)
                 {
                     Debug.LogError($"Missing production 3D building: {BrownstoneProductionResource}");
@@ -752,6 +785,18 @@ namespace CityForgeV3.World
                         "3D Building — Exp. Gilded Age Mansion V01",
                     KingKongEnclosureBuilding3DId =>
                         "3D Building — King Kong Enclosure V01",
+                    NyBrownstoneLightEvaluationId =>
+                        "3D Building — NY Brownstone Light Evaluation",
+                    NyBrownstoneBayEvaluationId =>
+                        "3D Building — NY Brownstone Bay Evaluation",
+                    NyFancyTownhouseEvaluationId =>
+                        "3D Building — NY Fancy Townhouse Evaluation",
+                    NyBrownstoneEvaluationId =>
+                        "3D Building — NY Brownstone Evaluation",
+                    BrooklynTownhomeRowEvaluationId =>
+                        "3D Building — Brooklyn Townhome Row Evaluation",
+                    NorwalkClockTowerEvaluationId =>
+                        "3D Building — Norwalk Juvenile Courthouse, Ohio",
                     _ => "3D Building — Brownstone Production V01"
                 };
                 root.transform.localPosition = new Vector3(placed.X, 0f, placed.Z);
@@ -1616,7 +1661,7 @@ namespace CityForgeV3.World
                 var renderer = filter.GetComponent<Renderer>();
                 var mesh = filter.sharedMesh;
                 if (mesh == null || renderer == null || !renderer.enabled ||
-                    IsPackageShadowRenderer(renderer)) continue;
+                    !mesh.isReadable || IsPackageShadowRenderer(renderer)) continue;
                 var vertices = mesh.vertices;
                 var triangles = mesh.triangles;
                 for (var triangle = 0; triangle + 2 < triangles.Length;

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: NYBrownstoneBayEvaluation
+  m_EditorClassIdentifier: 
+  SchemaVersion: 2
+  AssetId: ny-brownstone-bay-eval-v01
+  SourceProvenance: User-supplied immutable Tripo archive; LOD0-only evaluation package.
+  AuthoredScale: {x: 15.33699, y: 15.33699, z: 15.33699}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 7.0715013, y: 11.605719}
+  BoundsTolerance: 0.1
+  UseCrossFade: 0
+  CrossFadeWidth: 0.1
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 0}
+  NightLightingMaterial: {fileID: 0}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 1, y: 1, z: 1}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.001
+    VisualPrefab: {fileID: 919132149155446097, guid: a1abbf45da94f4078a194e6bafb27e17, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 40e4b29d72b624e279df26ffe4736f01, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0.00061795115, y: 0.000000059604645, z: -0.0004272176}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 456657
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Supplied LOD0 imported unchanged; measured and ground-registered
+      for evaluation.

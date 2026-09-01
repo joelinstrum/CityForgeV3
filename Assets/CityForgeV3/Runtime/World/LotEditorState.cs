@@ -162,6 +162,32 @@ namespace CityForgeV3.World
     }
 
     [Serializable]
+    public sealed class WaterBoundaryPoint
+    {
+        public float X;
+        public float Z;
+
+        public WaterBoundaryPoint() { }
+
+        public WaterBoundaryPoint(float x, float z)
+        {
+            X = x;
+            Z = z;
+        }
+    }
+
+    [Serializable]
+    public sealed class PlacedWaterArea
+    {
+        public string InstanceId = "";
+        public string WaterId = "swamp-water";
+        public float HeightMeters = 0.035f;
+        public float TextureScale = 0.12f;
+        public float TextureRotationDegrees;
+        public List<WaterBoundaryPoint> Boundary = new();
+    }
+
+    [Serializable]
     public sealed class LotSaveData
     {
         public string Schema = "cityforge-v3-lot-save-v7";
@@ -186,6 +212,7 @@ namespace CityForgeV3.World
         public List<PlacedFlora> Flora = new();
         public List<PlacedProp> Props = new();
         public List<PlacedEffect> Effects = new();
+        public List<PlacedWaterArea> WaterAreas = new();
         public string DefaultGentlemanBehaviorScript = "business-as-usual";
         public string DefaultHooliganBehaviorScript = "business-as-usual";
         public string DefaultPolicemanBehaviorScript = "business-as-usual";
@@ -224,6 +251,7 @@ namespace CityForgeV3.World
                 Flora = Flora,
                 Props = Props,
                 Effects = Effects,
+                WaterAreas = WaterAreas,
                 DefaultGentlemanBehaviorScript = DefaultGentlemanBehaviorScript,
                 DefaultHooliganBehaviorScript = DefaultHooliganBehaviorScript,
                 DefaultPolicemanBehaviorScript = DefaultPolicemanBehaviorScript,
@@ -493,6 +521,12 @@ namespace CityForgeV3.World
             Data.OutsideRoadConnectors ??= new List<OutsideRoadConnector>();
             Data.RequiredPackageIds ??= new List<string>();
             Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
+            Data.WaterAreas ??= new List<PlacedWaterArea>();
+            foreach (var water in Data.WaterAreas)
+            {
+                water.InstanceId ??= Guid.NewGuid().ToString("N");
+                water.Boundary ??= new List<WaterBoundaryPoint>();
+            }
             SetEra(Data.EraId);
             Data.Schema = "cityforge-v3-lot-save-v7";
             if (string.IsNullOrWhiteSpace(Data.Name)) Data.Name = "Untitled Lot";

@@ -46,15 +46,15 @@ Material:
     - _AmbientFill: 1
     - _BumpScale: 0.45
     - _ConstructionRevealHeight: 100000
-    - _Contrast: 2
-    - _DirectionalContrast: 1
+    - _Contrast: 1.42
+    - _DirectionalContrast: 0
     - _EnvironmentDim: 1
     - _GlossMapScale: 0.16
     - _Metallic: 0
     - _NightEmissionIntensity: 0
-    - _Saturation: 4
-    - _SunIntensityScale: 3
-    - _Vibrance: 1
+    - _Saturation: 1.34
+    - _SunIntensityScale: 1
+    - _Vibrance: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _NightEmissionColor: {r: 1, g: 0.55, b: 0.22, a: 1}

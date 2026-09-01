@@ -1,6 +1,7 @@
 using CityForgeV3.UI;
 using CityForgeV3.World;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1548,6 +1549,165 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FloraLinePlacementUsesOverlapFriendlyHedgeSpacing()
+        {
+            Assert.That(LotWorldController.FloraLineSpacingMeters("small-hedge"),
+                Is.EqualTo(1.25f));
+            Assert.That(LotWorldController.FloraLineSpacingMeters("medium-hedge"),
+                Is.EqualTo(2.25f));
+            Assert.That(LotWorldController.FloraLineSpacingMeters("long-hedge"),
+                Is.EqualTo(4.35f));
+            Assert.That(LotWorldController.FloraLineSpacingMeters("maple"),
+                Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void SwampWaterPolygonTriangulatesConcaveEditableShape()
+        {
+            var boundary = new List<Vector2>
+            {
+                new(0f, 0f),
+                new(6f, 0f),
+                new(6f, 5f),
+                new(3f, 2f),
+                new(0f, 5f)
+            };
+
+            var triangles = LotWorldController.TriangulateWaterPolygon(boundary);
+
+            Assert.That(triangles.Count, Is.EqualTo(9));
+            Assert.That(triangles.All(index => index >= 0 &&
+                index < boundary.Count), Is.True);
+            Assert.That(Mathf.Abs(LotWorldController.SignedPolygonArea(boundary)),
+                Is.EqualTo(21f).Within(0.001f));
+            Assert.That(LotWorldController.PointInWaterPolygon(
+                new Vector2(1f, 1f), boundary), Is.True);
+            Assert.That(LotWorldController.PointInWaterPolygon(
+                new Vector2(3f, 4f), boundary), Is.False,
+                "The concave notch must remain outside the selectable swamp.");
+        }
+
+        [Test]
+        public void SwampWaterBoundarySurvivesLotSaveRoundTrip()
+        {
+            var source = new LotEditorSession();
+            source.Data.WaterAreas.Add(new PlacedWaterArea
+            {
+                InstanceId = "swamp-1",
+                WaterId = "swamp-water",
+                HeightMeters = 0.06f,
+                TextureScale = 0.2f,
+                Boundary = new List<WaterBoundaryPoint>
+                {
+                    new(-2f, -1f),
+                    new(3f, -1f),
+                    new(1f, 4f)
+                }
+            });
+
+            var restored = new LotEditorSession();
+            restored.Restore(source.Serialize());
+
+            Assert.That(restored.Data.WaterAreas.Count, Is.EqualTo(1));
+            Assert.That(restored.Data.WaterAreas[0].WaterId,
+                Is.EqualTo("swamp-water"));
+            Assert.That(restored.Data.WaterAreas[0].Boundary.Count,
+                Is.EqualTo(3));
+            Assert.That(restored.Data.WaterAreas[0].Boundary[2].Z,
+                Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void SelectedFloraRepeatUsesPressRAimAndClickFlow()
+        {
+            var root = new GameObject("Flora Two Click Repeat Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetFloraEditorContext(true);
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                Vector2 PanelPoint(Vector3 lotPoint)
+                {
+                    var pixel = camera.WorldToScreenPoint(lotPoint);
+                    return new Vector2(pixel.x, panelSize.y - pixel.y);
+                }
+
+                Assert.That(world.BeginFloraDragFromPanel("small-hedge",
+                    PanelPoint(Vector3.zero), panelSize), Is.True);
+                Assert.That(world.EndFloraDrag(), Is.True);
+                Assert.That(world.BeginSelectedFloraRepeatLine(), Is.True);
+                Assert.That(world.FloraRepeatLineActive, Is.True);
+                Assert.That(world.UpdateFloraRepeatLineFromPanel(
+                    PanelPoint(new Vector3(5f, 0f, 0f)), panelSize), Is.True);
+                Assert.That(world.CommitFloraRepeatLineFromPanel(
+                    PanelPoint(new Vector3(5f, 0f, 0f)), panelSize), Is.True);
+
+                Assert.That(world.FloraRepeatLineActive, Is.False);
+                Assert.That(world.LastFloraLinePlacementCount, Is.EqualTo(5));
+                Assert.That(world.FloraCount, Is.EqualTo(5));
+                Assert.That(world.Session.Data.Flora.All(
+                    flora => flora.FloraId == "small-hedge"), Is.True);
+                Assert.That(world.Session.Data.Flora[0].PositionX,
+                    Is.EqualTo(0f).Within(0.1f),
+                    "The selected source must stay in place.");
+
+                var middleRenderer = root
+                    .GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.gameObject.activeInHierarchy &&
+                        renderer.sprite != null &&
+                        renderer.sprite.texture.name.StartsWith("small-hedge-"))
+                    .OrderBy(renderer => renderer.transform.localPosition.x)
+                    .ElementAt(2);
+                var middlePixel = camera.WorldToScreenPoint(
+                    middleRenderer.bounds.center);
+                var middlePanelPoint = new Vector2(
+                    middlePixel.x, panelSize.y - middlePixel.y);
+                Assert.That(world.BeginExistingObjectManipulationFromPanel(
+                    middlePanelPoint, panelSize),
+                    Is.EqualTo(LotObjectSelectionKind.Flora));
+                Assert.That(world.Session.Data.Flora[world.SelectedFloraIndex]
+                    .PositionX, Is.EqualTo(2.5f).Within(0.1f),
+                    "Overlapping hedge pixels must select the hedge nearest " +
+                    "the cursor, not the hedge nearest the camera.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void TreePickingIsRestrictedToRootAndLowerTrunk()
+        {
+            var bounds = new Bounds(new Vector3(0f, 5f, 0f),
+                new Vector3(10f, 10f, 0f));
+
+            Assert.That(LotWorldController.TreeRootHitZoneContainsLocalPoint(
+                bounds, new Vector3(0.25f, 0.2f, 0f)), Is.True);
+            Assert.That(LotWorldController.TreeRootHitZoneContainsLocalPoint(
+                bounds, new Vector3(0.25f, 2f, 0f)), Is.True);
+            Assert.That(LotWorldController.TreeRootHitZoneContainsLocalPoint(
+                bounds, new Vector3(3f, 1f, 0f)), Is.False,
+                "Empty space beside the trunk must never select the tree.");
+            Assert.That(LotWorldController.TreeRootHitZoneContainsLocalPoint(
+                bounds, new Vector3(0f, 7f, 0f)), Is.False,
+                "The canopy must not act as the tree's selection collider.");
+        }
+
+        [Test]
+        public void OnlyCompactFloraUsesFoliageShapePicking()
+        {
+            Assert.That(LotWorldController.UsesFoliageShapePicking(
+                "small-hedge-summer"), Is.True);
+            Assert.That(LotWorldController.UsesFoliageShapePicking(
+                "male-fern-summer"), Is.True);
+            Assert.That(LotWorldController.UsesFoliageShapePicking(
+                "silver-maple-a-summer"), Is.False);
+        }
+
+        [Test]
         public void LotEditorTopBarExposesTopDownToggleInEveryCategory()
         {
             var source = File.ReadAllText(
@@ -2915,13 +3075,18 @@ namespace CityForgeV3.Tests
                      {
                          "maple", "ashe", "oak", "date-palm",
                          "narrow-street-tree", "street-tree-3d",
+                         "hart-tongue-fern", "japanese-painted-fern",
+                         "male-fern", "soft-shield-fern",
+                         "eucalyptus-robusta-a", "eucalyptus-robusta-b",
+                         "silver-maple-a", "silver-maple-b",
+                         "canyon-live-oak-a", "canyon-live-oak-b",
+                         "angel-oak-spanish-moss",
                          "vendor-red-maple", "vendor-red-maple-young",
                          "vendor-balsam-fir-broad", "vendor-balsam-fir-tall",
                          "vendor-balsam-fir-classic", "vendor-hickory",
                          "vendor-willow", "vendor-cypress-oak",
                          "vendor-cypress-oak-wide", "vendor-oregon-ash",
-                         "vendor-oregon-ash-wide", "vendor-spruce-narrow",
-                         "vendor-spruce-classic", "vendor-spruce-wide",
+                         "vendor-oregon-ash-wide",
                          "small-hedge", "medium-hedge",
                          "long-hedge"
                      })
@@ -2940,6 +3105,18 @@ namespace CityForgeV3.Tests
                 Assert.That(Resources.Load<Texture2D>(
                     $"CityForgeV3/Flora/LegacyTreesV01/street-tree-3d-{season}"),
                     Is.Not.Null, season);
+                foreach (var incomingId in new[]
+                         {
+                             "hart-tongue-fern", "japanese-painted-fern",
+                             "male-fern", "soft-shield-fern",
+                             "eucalyptus-robusta-a", "eucalyptus-robusta-b",
+                             "silver-maple-a", "silver-maple-b",
+                             "canyon-live-oak-a", "canyon-live-oak-b",
+                             "angel-oak-spanish-moss"
+                         })
+                    Assert.That(Resources.Load<Texture2D>(
+                        $"CityForgeV3/Flora/LegacyTreesV01/{incomingId}-{season}"),
+                        Is.Not.Null, $"{incomingId}-{season}");
                 foreach (var vendorId in new[]
                          {
                              "vendor-red-maple", "vendor-red-maple-young",
@@ -2947,8 +3124,7 @@ namespace CityForgeV3.Tests
                              "vendor-balsam-fir-classic", "vendor-hickory",
                              "vendor-willow", "vendor-cypress-oak",
                              "vendor-cypress-oak-wide", "vendor-oregon-ash",
-                             "vendor-oregon-ash-wide", "vendor-spruce-narrow",
-                             "vendor-spruce-classic", "vendor-spruce-wide"
+                             "vendor-oregon-ash-wide"
                          })
                     Assert.That(Resources.Load<Texture2D>(
                         $"CityForgeV3/Flora/LegacyTreesV01/{vendorId}-{season}"),
@@ -3142,12 +3318,13 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void ArmedAuthoringToolsTakePriorityOverGlobalObjectSelection()
+        public void ArmedAuthoringToolsPreserveDirectObjectSelectionWhereNeeded()
         {
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
                 LotEditorCategory.Roads, "", ""), Is.True);
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
-                LotEditorCategory.Flora, "maple", ""), Is.True);
+                LotEditorCategory.Flora, "maple", ""), Is.False,
+                "Visible flora must remain directly selectable while planting is armed.");
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
                 LotEditorCategory.Flora, "", ""), Is.False,
                 "Escape must disarm flora placement and restore object selection.");

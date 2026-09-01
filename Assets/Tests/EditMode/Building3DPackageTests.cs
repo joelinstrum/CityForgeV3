@@ -13,6 +13,69 @@ namespace CityForgeV3.Tests.EditMode
             "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/BrownstoneProduction/Prefabs/BrownstoneProduction.prefab";
 
         [Test]
+        public void SixLevelSchemaPreservesOldValuesAndAddsMeshAndBillboardLevels()
+        {
+            Assert.That((int)Building3DLevel.LOD0, Is.Zero);
+            Assert.That((int)Building3DLevel.LOD3, Is.EqualTo(3));
+            Assert.That((int)Building3DLevel.LOD4, Is.EqualTo(4));
+            Assert.That((int)Building3DLevel.LOD5Billboard, Is.EqualTo(5));
+            Assert.That(Building3DPackage.CurrentSchemaVersion, Is.EqualTo(2));
+        }
+
+        [TestCase(0f, 0)]
+        [TestCase(44f, 1)]
+        [TestCase(91f, 2)]
+        [TestCase(179f, 4)]
+        [TestCase(-91f, 6)]
+        [TestCase(-44f, 7)]
+        public void EightAngleBillboardSelectsNearestWrappedView(
+            float degrees, int expected)
+        {
+            var radians = degrees * Mathf.Deg2Rad;
+            var direction = new Vector3(Mathf.Sin(radians), 0f,
+                Mathf.Cos(radians));
+            Assert.That(EightAngleBuildingBillboard.CalculateAngleIndex(
+                direction), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void DownloadsEvaluationBuildingsAreGroundRegisteredLod0Packages()
+        {
+            foreach (var folder in new[]
+                     {
+                         "NYBrownstoneLight", "NYBrownstoneBay",
+                         "NYFancyTownhouse", "NYBrownstone",
+                         "BrooklynTownhomeRow", "NorwalkClockTower"
+                     })
+            {
+                var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(
+                    $"Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/" +
+                    $"Evaluation/{folder}/{folder}Evaluation.asset");
+                Assert.That(package, Is.Not.Null, folder);
+                Assert.That(package.SchemaVersion,
+                    Is.EqualTo(Building3DPackage.CurrentSchemaVersion), folder);
+                Assert.That(package.Representations, Has.Count.EqualTo(1), folder);
+                Assert.That(package.Representations[0].Level,
+                    Is.EqualTo(Building3DLevel.LOD0), folder);
+                Assert.That(package.Representations[0].VisualPrefab,
+                    Is.Not.Null, folder);
+                Assert.That(package.AuthoredScale.x, Is.GreaterThan(0f), folder);
+                Assert.That(package.FootprintMeters.x, Is.GreaterThan(0f), folder);
+                Assert.That(package.FootprintMeters.y, Is.GreaterThan(0f), folder);
+                if (folder.StartsWith("NY"))
+                {
+                    var material = package.Representations[0].OverrideMaterial;
+                    Assert.That(material, Is.Not.Null, folder);
+                    Assert.That(material.shader.name,
+                        Is.EqualTo("CityForgeV3/Experimental3DBuildingPBR"),
+                        folder);
+                    Assert.That(material.GetFloat("_Saturation"),
+                        Is.EqualTo(1.72f).Within(0.001f), folder);
+                }
+            }
+        }
+
+        [Test]
         public void BrownstonePilotPreservesSourceAndRegistersItOnlyAsLod2()
         {
             var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(

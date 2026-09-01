@@ -66,6 +66,27 @@ namespace CityForgeV3.Buildings3D
                             materials[index] = representation.OverrideMaterial;
                         renderer.sharedMaterials = materials;
                     }
+                if (representation.Level == Building3DLevel.LOD5Billboard)
+                {
+                    var angleCount = representation.BillboardAngleCount > 0
+                        ? representation.BillboardAngleCount : 8;
+                    if (renderers.Count == angleCount)
+                    {
+                        var selector = levelRoot.GetComponent<
+                            EightAngleBuildingBillboard>();
+                        if (selector == null)
+                            selector = levelRoot.AddComponent<
+                                EightAngleBuildingBillboard>();
+                        selector.Configure(renderers.ToArray(),
+                            representation.BillboardYawOffset);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"{package.AssetId} LOD5 requires " +
+                            $"{angleCount} billboard renderers; found " +
+                            $"{renderers.Count}.", this);
+                    }
+                }
                 if (representation.ShadowPrefab != null)
                 {
                     foreach (var renderer in renderers)
