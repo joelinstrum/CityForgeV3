@@ -75,6 +75,12 @@ namespace CityForge.Editor
                     issues.Add(Error($"{entry.Level} contains no renderers."));
                     continue;
                 }
+                // The billboard is an image-space representation with sprite
+                // materials and card bounds; comparing either against source
+                // geometry produces guaranteed false errors. Its view count
+                // and assignment are validated independently at runtime/tests.
+                if (entry.Level == Building3DLevel.LOD5Billboard)
+                    continue;
                 var normalizedBounds = ScaleBounds(metrics.Bounds,
                     entry.LocalPosition, entry.LocalScale);
                 if (reference == null)

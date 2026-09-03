@@ -18,6 +18,9 @@ namespace CityForgeV3.World
         public const string SimpleStreetLamppostPropId =
             "simple-street-lamppost-v01";
         public const string OrnateBenchPropId = "ornate-bench-v01";
+        public const string Hedge3DPropId = "hedge-3d-v01";
+        public const string PumpkinJackOLanternPropId =
+            "pumpkin-jack-o-lantern-v01";
         public const string VictorianGentlemanCharacterId =
             "victorian-gentleman-animated-v01";
         public const string HooliganCharacterId = "hooligan-animated-v01";
@@ -59,6 +62,10 @@ namespace CityForgeV3.World
         private const float KingKongWalkableAreaScale = 0.9f;
         private const string OrnateBenchResourcePath =
             "CityForgeV3/Props/OrnateBenchV01/OrnateBenchV01";
+        private const string Hedge3DResourcePath =
+            "CityForgeV3/Props/Flora/Hedge3DV01/Hedge3DV01";
+        private const string PumpkinJackOLanternResourcePath =
+            "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/tripo_convert_e24db562-efad-4eea-898c-23e1a123c182";
         // Blender FBX imports through Unity at 0.01; 336 restores the authored
         // 1.9-unit section to a 6.38 m City Forge prop.
         private const float FenceScale = 336f;
@@ -79,6 +86,10 @@ namespace CityForgeV3.World
         private const float SimpleStreetLamppostHeightMeters = 3.6f;
         private const float OrnateBenchLengthMeters = 1.8f;
         private const float OrnateBenchDepthMeters = 0.7f;
+        private const float Hedge3DLengthMeters = 2.4f;
+        private const float Hedge3DDepthMeters = 0.75f;
+        private const float PumpkinJackOLanternHeightMeters = 0.52f;
+        private const float PumpkinJackOLanternFootprintMeters = 0.55f;
         // Blender's FBX is authored in meters but Unity imports this exporter
         // contract at 0.01, so 100 restores the intended 4.5 m height.
         private const float ThreeLanternLamppostScale = 100f;
@@ -86,6 +97,7 @@ namespace CityForgeV3.World
         private Transform _propRoot;
         private Transform _propSelection;
         private Transform _propPreview;
+        private LineRenderer _propRepeatGuide;
         private Camera _propFrontRecoveryCamera;
         private readonly List<Transform> _propPresentations = new();
         private readonly List<Renderer> _propProjectedShadowRenderers = new();
@@ -94,14 +106,23 @@ namespace CityForgeV3.World
             new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, float> _characterManualOverrideUntil =
             new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, float> _characterInsideBuildingUntil =
+            new(StringComparer.OrdinalIgnoreCase);
         private bool _propEditorActive;
         private bool _propPlacementActive;
         private bool _propDragActive;
         private Vector2 _propDragOffset;
         private string _propPreviewId = "";
         private bool _propPreviewHasPoint;
+        private bool _propRepeatLineActive;
+        private Vector2 _propRepeatStart;
+        private Vector2 _propRepeatEndpoint;
+        private string _propRepeatId = "";
+        private int _propRepeatRotationQuarterTurns;
 
         public int PropCount => _session.Data.Props?.Count ?? 0;
+        public bool PropRepeatLineActive => _propRepeatLineActive;
+        public int LastPropRepeatPlacementCount { get; private set; }
         public int SelectedPropIndex { get; private set; } = -1;
         public bool SelectedPropIsThreeDimensionalCharacter =>
             SelectedPropIndex >= 0 && SelectedPropIndex < PropCount &&
@@ -200,6 +221,16 @@ namespace CityForgeV3.World
                 marker.GetComponent<Renderer>().sharedMaterial = material;
             }
             _propSelection.gameObject.SetActive(false);
+            var repeatGuide = new GameObject("Prop Repeat Placement Guide");
+            repeatGuide.transform.SetParent(transform, false);
+            _propRepeatGuide = repeatGuide.AddComponent<LineRenderer>();
+            _propRepeatGuide.useWorldSpace = false;
+            _propRepeatGuide.positionCount = 2;
+            _propRepeatGuide.startWidth = 0.24f;
+            _propRepeatGuide.endWidth = 0.24f;
+            _propRepeatGuide.sharedMaterial = LotSurfaceMaterial(
+                new Color(0.2f, 1f, 0.78f, 0.94f), 2016);
+            _propRepeatGuide.gameObject.SetActive(false);
         }
 
         public void SetPropEditorContext(bool active)
@@ -214,6 +245,8 @@ namespace CityForgeV3.World
 
         public void SetPropPlacementPreview(string propId)
         {
+            if (!PropSeasonCatalog.IsAvailable(propId, Season))
+                propId = "";
             _propPreviewId = propId ?? "";
             _propPreviewHasPoint = false;
             if (_propPreview != null)
@@ -227,6 +260,21 @@ namespace CityForgeV3.World
                 _propPreview.SetParent(transform, false);
                 _propPreview.gameObject.SetActive(false);
             }
+        }
+
+        private void ClearUnavailableSeasonalPropInteraction()
+        {
+            if (!string.IsNullOrWhiteSpace(_propPreviewId) &&
+                !PropSeasonCatalog.IsAvailable(_propPreviewId, Season))
+                SetPropPlacementPreview("");
+            if (SelectedPropIndex < 0 || SelectedPropIndex >= PropCount ||
+                PropSeasonCatalog.IsAvailable(
+                    _session.Data.Props[SelectedPropIndex].PropId, Season))
+                return;
+            SelectedPropIndex = -1;
+            _propDragActive = false;
+            if (ActiveObjectSelection == LotObjectSelectionKind.Prop)
+                ActiveObjectSelection = LotObjectSelectionKind.None;
         }
 
         public bool UpdatePropPreviewFromPanel(Vector2 panelPosition, Vector2 panelSize)
@@ -252,6 +300,8 @@ namespace CityForgeV3.World
             var placingNewProp = !string.IsNullOrWhiteSpace(propId);
             if (placingNewProp)
             {
+                if (!PropSeasonCatalog.IsAvailable(propId, Season))
+                    return false;
                 // An armed catalog choice means "place another", even when its
                 // camera-space bounds overlap an existing prop. This keeps
                 // placement continuous within a 10 m lot tile; physical
@@ -475,27 +525,90 @@ namespace CityForgeV3.World
                 if (!IsThreeDimensionalCharacter(character.PropId)) continue;
                 var presentation = _propPresentations[index];
                 if (presentation == null) continue;
+                var characterKey = string.IsNullOrWhiteSpace(character.InstanceId)
+                    ? $"character-{index}" : character.InstanceId;
+                if (_characterInsideBuildingUntil.TryGetValue(characterKey,
+                        out var insideUntil))
+                {
+                    if (Time.time < insideUntil)
+                    {
+                        presentation.gameObject.SetActive(false);
+                        continue;
+                    }
+                    _characterInsideBuildingUntil.Remove(characterKey);
+                }
                 presentation.gameObject.SetActive(visible);
                 if (!visible) continue;
                 presentation.GetComponent<CharacterGroundShadow>()?.SetLighting(
                     TimeOfDay, !IsRaining && TimeOfDay != TimeOfDayPreset.Night,
                     ExperimentalBuilding3DSunRotation() * Vector3.forward);
                 UpdateCharacterBusinessAsUsual(index, character);
+                var movement = new Vector2(character.MovementX,
+                    character.MovementZ);
+                if (movement.sqrMagnitude < 0.01f &&
+                    CharacterBehaviorScript.Normalize(character.BehaviorScript) ==
+                        CharacterBehaviorScript.BusinessAsUsual &&
+                    DistanceToNearestPedestrianPath(character) > 0.45f &&
+                    TryPedestrianNetworkDirection(character, 0.5f,
+                        out var approachDirection))
+                {
+                    // Placement is intentionally forgiving: a regular
+                    // pedestrian placed anywhere on the lot walks to the
+                    // closest authored route rather than waiting to cross it
+                    // by chance.
+                    SetCharacterMotion(index, character, approachDirection,
+                        "walk");
+                }
+                if (!BusinessAsUsualCharacterScript.AllowsTranslation(
+                        character.AnimationState))
+                {
+                    // Animation state is authoritative. In particular, old
+                    // saves and interrupted behaviors can contain a stale
+                    // direction even though the person is idle; retaining it
+                    // made the character skate across the lot.
+                    character.MovementX = 0f;
+                    character.MovementZ = 0f;
+                    continue;
+                }
                 if (new Vector2(character.MovementX,
                         character.MovementZ).sqrMagnitude < 0.01f) continue;
+                // Walking pedestrians continuously acquire and follow the
+                // nearest authored route. Choosing the route only when the
+                // walk animation began let them cross it once and continue
+                // straight through the lot forever.
+                if (TryPedestrianNetworkDirection(character, 0.5f,
+                        out var routedDirection))
+                {
+                    character.MovementX = routedDirection.x;
+                    character.MovementZ = routedDirection.y;
+                }
                 var direction = new Vector3(character.MovementX, 0f,
                     character.MovementZ).normalized;
                 var movementSpeed = string.Equals(character.AnimationState, "run",
                     StringComparison.OrdinalIgnoreCase) ? 2.6f : 1.35f;
+                if (TryPedestrianStairTraversal(
+                        new Vector2(character.PositionX, character.PositionZ),
+                        new Vector2(direction.x, direction.z),
+                        out var stairSpeed, out var ascendingStairs))
+                {
+                    movementSpeed = stairSpeed;
+                    SetCharacterMotion(index, character,
+                        new Vector2(direction.x, direction.z),
+                        ascendingStairs ? "run_upstairs" : "walk");
+                }
                 var proposed = new Vector2(
                     character.PositionX + direction.x * movementSpeed * Time.deltaTime,
                     character.PositionZ + direction.z * movementSpeed * Time.deltaTime);
                 var target = ClampCharacterPosition(character, proposed);
                 character.PositionX = target.x;
                 character.PositionZ = target.y;
+                var pedestrianElevation = PedestrianElevationAt(target);
                 presentation.localPosition = new Vector3(target.x,
-                    CharacterGroundY(character.PropId), target.y);
+                    CharacterGroundY(character.PropId) + pedestrianElevation,
+                    target.y);
                 presentation.localRotation = Quaternion.LookRotation(direction, Vector3.up);
+                if (TryEnterPedestrianDoorway(index, character, target))
+                    continue;
                 if ((target - proposed).sqrMagnitude > 0.000001f)
                     CompleteCharacterWalkAtBoundary(index, character);
                 if (index == SelectedPropIndex) ApplyPropSelection();
@@ -600,8 +713,10 @@ namespace CityForgeV3.World
         private void SetCharacterMotion(int index, PlacedProp character,
             Vector2 direction, string state)
         {
-            character.MovementX = direction.x;
-            character.MovementZ = direction.y;
+            var allowsTranslation =
+                BusinessAsUsualCharacterScript.AllowsTranslation(state);
+            character.MovementX = allowsTranslation ? direction.x : 0f;
+            character.MovementZ = allowsTranslation ? direction.y : 0f;
             if (string.Equals(character.AnimationState, state,
                     StringComparison.OrdinalIgnoreCase)) return;
             character.AnimationState = state;
@@ -611,6 +726,9 @@ namespace CityForgeV3.World
         private Vector2 FeasibleCharacterWalkingDirection(PlacedProp character,
             float roll)
         {
+            if (TryPedestrianNetworkDirection(character, roll,
+                    out var networkDirection))
+                return networkDirection;
             var direction = BusinessAsUsualCharacterScript.WalkingDirection(roll);
             var position = new Vector2(character.PositionX, character.PositionZ);
             for (var attempt = 0; attempt < 4; attempt++)
@@ -621,6 +739,247 @@ namespace CityForgeV3.World
                 direction = new Vector2(direction.y, -direction.x);
             }
             return Vector2.zero;
+        }
+
+        private bool TryPedestrianNetworkDirection(PlacedProp character,
+            float roll, out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            var network = _session.Data.PedestrianNetwork;
+            if (network?.Segments == null || network.Segments.Count == 0)
+                return false;
+            var position = new Vector2(character.PositionX, character.PositionZ);
+            if (TryEnterNearbyPedestrianStair(network, position,
+                    out direction))
+                return true;
+            var preferManual = HasManualPedestrianSegments(network);
+            CirculationNode bestStart = null;
+            CirculationNode bestEnd = null;
+            var bestProjection = Vector2.zero;
+            var bestDistance = float.PositiveInfinity;
+            foreach (var segment in network.Segments)
+            {
+                var start = network.FindNode(segment.StartNodeId);
+                var end = network.FindNode(segment.EndNodeId);
+                if (start == null || end == null) continue;
+                if (preferManual && !IsManualPedestrianSegment(start, end))
+                    continue;
+                var edge = end.PositionMeters - start.PositionMeters;
+                var lengthSquared = edge.sqrMagnitude;
+                if (lengthSquared < 0.001f) continue;
+                var amount = Mathf.Clamp01(Vector2.Dot(
+                    position - start.PositionMeters, edge) / lengthSquared);
+                var projection = start.PositionMeters + edge * amount;
+                var distance = Vector2.Distance(position, projection);
+                if (distance >= bestDistance) continue;
+                bestDistance = distance;
+                bestProjection = projection;
+                bestStart = start;
+                bestEnd = end;
+            }
+            if (bestStart == null || bestEnd == null) return false;
+            if (bestDistance > 0.45f)
+                direction = (bestProjection - position).normalized;
+            else
+            {
+                var edge = (bestEnd.PositionMeters -
+                    bestStart.PositionMeters).normalized;
+                var currentMotion = new Vector2(character.MovementX,
+                    character.MovementZ);
+                var towardEnd = currentMotion.sqrMagnitude > 0.01f
+                    ? Vector2.Dot(currentMotion.normalized, edge) >= 0f
+                    : roll >= 0.5f;
+                var destination = towardEnd ? bestEnd.PositionMeters :
+                    bestStart.PositionMeters;
+                direction = (destination - position).normalized;
+                if (direction.sqrMagnitude < 0.01f)
+                    direction = (bestEnd.PositionMeters -
+                        bestStart.PositionMeters).normalized *
+                        (towardEnd ? -1f : 1f);
+            }
+            return direction.sqrMagnitude > 0.01f;
+        }
+
+        private static bool TryEnterNearbyPedestrianStair(
+            CirculationNetwork network, Vector2 position,
+            out Vector2 direction)
+        {
+            direction = Vector2.zero;
+            foreach (var segment in network?.Segments ??
+                     new List<CirculationSegment>())
+            {
+                if (segment.PedestrianPathKind != PedestrianPathKind.Stairs)
+                    continue;
+                var first = network.FindNode(segment.StartNodeId);
+                var second = network.FindNode(segment.EndNodeId);
+                if (first == null || second == null) continue;
+                var ground = first.ElevationMeters <= second.ElevationMeters
+                    ? first : second;
+                var doorway = ground == first ? second : first;
+                // At a sidewalk/stair junction both segments have zero
+                // distance. Explicitly favor the stair close to its ground
+                // landing so pedestrians do not always continue straight.
+                if (Vector2.Distance(position, ground.PositionMeters) > 0.72f)
+                    continue;
+                direction = (doorway.PositionMeters - position).normalized;
+                if (direction.sqrMagnitude > 0.01f) return true;
+            }
+            return false;
+        }
+
+        private bool TryPedestrianStairTraversal(Vector2 position,
+            Vector2 movementDirection, out float speed,
+            out bool ascending)
+        {
+            speed = 1.35f;
+            ascending = false;
+            var network = _session.Data.PedestrianNetwork;
+            var bestDistance = float.PositiveInfinity;
+            foreach (var segment in network?.Segments ??
+                     new List<CirculationSegment>())
+            {
+                if (segment.PedestrianPathKind != PedestrianPathKind.Stairs)
+                    continue;
+                var start = network.FindNode(segment.StartNodeId);
+                var end = network.FindNode(segment.EndNodeId);
+                if (start == null || end == null) continue;
+                var edge = end.PositionMeters - start.PositionMeters;
+                var lengthSquared = edge.sqrMagnitude;
+                if (lengthSquared < 0.001f) continue;
+                var amount = Mathf.Clamp01(Vector2.Dot(
+                    position - start.PositionMeters, edge) / lengthSquared);
+                var projection = start.PositionMeters + edge * amount;
+                var distance = Vector2.Distance(position, projection);
+                if (distance > Mathf.Max(0.72f,
+                        segment.WidthMeters * 0.5f) ||
+                    distance >= bestDistance) continue;
+                bestDistance = distance;
+                speed = Mathf.Max(0.35f, segment.SpeedMetersPerSecond);
+                var uphill = end.ElevationMeters >= start.ElevationMeters
+                    ? edge.normalized : -edge.normalized;
+                ascending = Vector2.Dot(movementDirection, uphill) > 0.1f;
+            }
+            return bestDistance < float.PositiveInfinity;
+        }
+
+        private float DistanceToNearestPedestrianPath(PlacedProp character)
+        {
+            var network = _session.Data.PedestrianNetwork;
+            if (network?.Segments == null || network.Segments.Count == 0)
+                return float.PositiveInfinity;
+            var position = new Vector2(character.PositionX,
+                character.PositionZ);
+            var preferManual = HasManualPedestrianSegments(network);
+            var bestDistance = float.PositiveInfinity;
+            foreach (var segment in network.Segments)
+            {
+                var start = network.FindNode(segment.StartNodeId);
+                var end = network.FindNode(segment.EndNodeId);
+                if (start == null || end == null) continue;
+                if (preferManual && !IsManualPedestrianSegment(start, end))
+                    continue;
+                var edge = end.PositionMeters - start.PositionMeters;
+                var lengthSquared = edge.sqrMagnitude;
+                if (lengthSquared < 0.001f) continue;
+                var amount = Mathf.Clamp01(Vector2.Dot(
+                    position - start.PositionMeters, edge) / lengthSquared);
+                var projection = start.PositionMeters + edge * amount;
+                bestDistance = Mathf.Min(bestDistance,
+                    Vector2.Distance(position, projection));
+            }
+            return bestDistance;
+        }
+
+        private static bool HasManualPedestrianSegments(
+            CirculationNetwork network)
+        {
+            if (network?.Segments == null) return false;
+            foreach (var segment in network.Segments)
+            {
+                var start = network.FindNode(segment.StartNodeId);
+                var end = network.FindNode(segment.EndNodeId);
+                if (IsManualPedestrianSegment(start, end)) return true;
+            }
+            return false;
+        }
+
+        private static bool IsManualPedestrianSegment(CirculationNode start,
+            CirculationNode end) => start != null && end != null &&
+            (start.PortId ?? "").StartsWith("manual-",
+                StringComparison.Ordinal) &&
+            (end.PortId ?? "").StartsWith("manual-",
+                StringComparison.Ordinal);
+
+        private float PedestrianElevationAt(Vector2 position)
+        {
+            var network = _session.Data.PedestrianNetwork;
+            var bestDistance = float.PositiveInfinity;
+            var elevation = 0f;
+            foreach (var segment in network?.Segments ??
+                     new List<CirculationSegment>())
+            {
+                if (segment.PedestrianPathKind != PedestrianPathKind.Stairs)
+                    continue;
+                var start = network.FindNode(segment.StartNodeId);
+                var end = network.FindNode(segment.EndNodeId);
+                if (start == null || end == null) continue;
+                var edge = end.PositionMeters - start.PositionMeters;
+                var lengthSquared = edge.sqrMagnitude;
+                if (lengthSquared < 0.001f) continue;
+                var amount = Mathf.Clamp01(Vector2.Dot(
+                    position - start.PositionMeters, edge) / lengthSquared);
+                var projection = start.PositionMeters + edge * amount;
+                var distance = Vector2.Distance(position, projection);
+                if (distance > Mathf.Max(0.8f, segment.WidthMeters * 0.5f) ||
+                    distance >= bestDistance) continue;
+                bestDistance = distance;
+                elevation = Mathf.Lerp(start.ElevationMeters,
+                    end.ElevationMeters, amount);
+            }
+            return elevation;
+        }
+
+        private bool TryEnterPedestrianDoorway(int index,
+            PlacedProp character, Vector2 position)
+        {
+            var network = _session.Data.PedestrianNetwork;
+            var doorway = network?.Nodes?.Find(node => node != null &&
+                node.Kind == CirculationNodeKind.BuildingEntrance &&
+                node.ElevationMeters > 0f &&
+                Vector2.Distance(node.PositionMeters, position) < 0.38f);
+            if (doorway == null) return false;
+            var key = string.IsNullOrWhiteSpace(character.InstanceId)
+                ? $"character-{index}" : character.InstanceId;
+            _characterInsideBuildingUntil[key] = Time.time +
+                UnityEngine.Random.Range(4f, 9f);
+            CirculationNode exit = null;
+            var doorwayStair = network.Segments?.Find(segment =>
+                segment != null &&
+                segment.PedestrianPathKind == PedestrianPathKind.Stairs &&
+                (segment.StartNodeId == doorway.Id ||
+                 segment.EndNodeId == doorway.Id));
+            if (doorwayStair != null)
+            {
+                var oppositeId = doorwayStair.StartNodeId == doorway.Id
+                    ? doorwayStair.EndNodeId : doorwayStair.StartNodeId;
+                var opposite = network.FindNode(oppositeId);
+                if (opposite != null && opposite.ElevationMeters <= 0.01f)
+                    exit = opposite;
+            }
+            exit ??= network.Nodes.Find(node => node != null &&
+                node.ElevationMeters <= 0.01f &&
+                (node.PortId ?? "").StartsWith("overlay-",
+                    StringComparison.Ordinal));
+            if (exit != null)
+            {
+                character.PositionX = exit.PositionMeters.x;
+                character.PositionZ = exit.PositionMeters.y;
+            }
+            SetCharacterMotion(index, character, Vector2.zero, "idle");
+            if (index < _propPresentations.Count &&
+                _propPresentations[index] != null)
+                _propPresentations[index].gameObject.SetActive(false);
+            return true;
         }
 
         private void CompleteCharacterWalkAtBoundary(int index,
@@ -892,6 +1251,130 @@ namespace CityForgeV3.World
             return true;
         }
 
+        public bool BeginSelectedPropRepeatLine()
+        {
+            if (_propRepeatLineActive) return true;
+            if (ActiveObjectSelection != LotObjectSelectionKind.Prop ||
+                SelectedPropIndex < 0 || SelectedPropIndex >= PropCount)
+                return false;
+            var selected = _session.Data.Props[SelectedPropIndex];
+            _propDragActive = false;
+            _propRepeatLineActive = true;
+            _propRepeatId = selected.PropId;
+            _propRepeatRotationQuarterTurns = selected.RotationQuarterTurns;
+            _propRepeatStart = new Vector2(selected.PositionX, selected.PositionZ);
+            PropDimensions(_propRepeatId, _propRepeatRotationQuarterTurns,
+                out var width, out var depth);
+            var initialDistance = Mathf.Max(0.5f, Mathf.Max(width, depth));
+            var direction = _propRepeatStart.x + initialDistance <=
+                LotWidthMeters * 0.5f ? 1f : -1f;
+            _propRepeatEndpoint = _propRepeatStart +
+                new Vector2(direction * initialDistance, 0f);
+            LastPropRepeatPlacementCount = 0;
+            if (_propRepeatGuide != null)
+            {
+                _propRepeatGuide.SetPosition(0, new Vector3(
+                    _propRepeatStart.x, 0.1f, _propRepeatStart.y));
+                _propRepeatGuide.SetPosition(1, new Vector3(
+                    _propRepeatEndpoint.x, 0.1f, _propRepeatEndpoint.y));
+                _propRepeatGuide.gameObject.SetActive(true);
+            }
+            return true;
+        }
+
+        public bool UpdatePropRepeatLineFromPanel(Vector2 panelPosition,
+            Vector2 panelSize)
+        {
+            if (!_propRepeatLineActive ||
+                !TryLotPointFromPanel(panelPosition, panelSize, out var point))
+                return false;
+            _propRepeatEndpoint = new Vector2(
+                Mathf.Clamp(point.x, -LotWidthMeters * 0.5f,
+                    LotWidthMeters * 0.5f),
+                Mathf.Clamp(point.z, -LotDepthMeters * 0.5f,
+                    LotDepthMeters * 0.5f));
+            if (_propRepeatGuide != null)
+                _propRepeatGuide.SetPosition(1, new Vector3(
+                    _propRepeatEndpoint.x, 0.1f, _propRepeatEndpoint.y));
+            return true;
+        }
+
+        public bool CommitPropRepeatLineFromPanel(Vector2 panelPosition,
+            Vector2 panelSize)
+        {
+            if (!UpdatePropRepeatLineFromPanel(panelPosition, panelSize))
+                return false;
+            CompletePropRepeatLine();
+            NotifyStateChanged();
+            return LastPropRepeatPlacementCount > 0;
+        }
+
+        public void CancelPropRepeatLine()
+        {
+            _propRepeatLineActive = false;
+            _propRepeatId = "";
+            LastPropRepeatPlacementCount = 0;
+            if (_propRepeatGuide != null)
+                _propRepeatGuide.gameObject.SetActive(false);
+        }
+
+        private void CompletePropRepeatLine()
+        {
+            LastPropRepeatPlacementCount = 0;
+            if (_propRepeatLineActive && !string.IsNullOrWhiteSpace(_propRepeatId))
+            {
+                var offset = _propRepeatEndpoint - _propRepeatStart;
+                var distance = offset.magnitude;
+                if (distance > 0.001f)
+                {
+                    var direction = offset / distance;
+                    PropDimensions(_propRepeatId,
+                        _propRepeatRotationQuarterTurns,
+                        out var width, out var depth);
+                    // Project the rotated rectangular footprint onto the repeat
+                    // direction. Adjacent centers separated by this distance
+                    // touch end-to-end without overlapping, even on a diagonal.
+                    var spacing = Mathf.Max(0.15f,
+                        Mathf.Abs(direction.x) * width +
+                        Mathf.Abs(direction.y) * depth);
+                    var copyCount = Mathf.FloorToInt(
+                        (distance + spacing * 0.02f) / spacing);
+                    _session.Data.Props ??= new List<PlacedProp>();
+                    for (var step = 1; step <= copyCount; step++)
+                    {
+                        var desired = _propRepeatStart + direction *
+                            (spacing * step);
+                        var position = ClampPropPosition(desired,
+                            _propRepeatRotationQuarterTurns);
+                        // Clamping at the lot edge would stack later copies on
+                        // top of the final valid section, so stop at the edge.
+                        if ((position - desired).sqrMagnitude > 0.0004f) break;
+                        _session.Data.Props.Add(new PlacedProp
+                        {
+                            InstanceId = Guid.NewGuid().ToString("N"),
+                            PropId = _propRepeatId,
+                            PositionX = position.x,
+                            PositionZ = position.y,
+                            RotationQuarterTurns =
+                                _propRepeatRotationQuarterTurns,
+                            BehaviorScript = DefaultCharacterBehaviorScript(
+                                _propRepeatId)
+                        });
+                        LastPropRepeatPlacementCount++;
+                    }
+                    if (LastPropRepeatPlacementCount > 0)
+                    {
+                        SelectedPropIndex = _session.Data.Props.Count - 1;
+                        RebuildPropPresentations();
+                    }
+                }
+            }
+            _propRepeatLineActive = false;
+            _propRepeatId = "";
+            if (_propRepeatGuide != null)
+                _propRepeatGuide.gameObject.SetActive(false);
+        }
+
         public bool RotateSelectedProp(int direction)
         {
             if (SelectedPropIndex < 0 || SelectedPropIndex >= PropCount) return false;
@@ -928,6 +1411,7 @@ namespace CityForgeV3.World
             _propPreviewId = "";
             _propPreviewHasPoint = false;
             if (_propPreview != null) _propPreview.gameObject.SetActive(false);
+            CancelPropRepeatLine();
             ApplyPropSelection();
         }
 
@@ -954,6 +1438,8 @@ namespace CityForgeV3.World
                     prop.PositionX, CharacterGroundY(prop.PropId), prop.PositionZ);
                 ApplyPropBuildingFrontRecovery(presentation, prop);
                 _propPresentations.Add(presentation);
+                presentation.gameObject.SetActive(
+                    PropSeasonCatalog.IsAvailable(prop.PropId, Season));
                 // Selection changes rebuild every prop presentation. Restore a
                 // character's persisted state so a seated gentleman does not
                 // revert to the FBX bind/idle state (or vanish below the seat)
@@ -1087,6 +1573,12 @@ namespace CityForgeV3.World
                         : string.Equals(propId, OrnateBenchPropId,
                             StringComparison.OrdinalIgnoreCase)
                             ? OrnateBenchResourcePath
+                        : string.Equals(propId, Hedge3DPropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? Hedge3DResourcePath
+                        : string.Equals(propId, PumpkinJackOLanternPropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? PumpkinJackOLanternResourcePath
                         : IsKingKong(propId)
                             ? KingKongResourcePath
                         : string.Equals(propId, KingKongEnclosurePropId,
@@ -1116,6 +1608,12 @@ namespace CityForgeV3.World
                 : string.Equals(propId, OrnateBenchPropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? "Ornate Bench Model"
+                : string.Equals(propId, Hedge3DPropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "3D Hedge Model"
+                : string.Equals(propId, PumpkinJackOLanternPropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Pumpkin Jack-o'-Lantern Model"
                 : string.Equals(propId, ThreeLanternLamppostPropId,
                 StringComparison.OrdinalIgnoreCase)
                 ? "Three-Lantern Lamppost Model"
@@ -1172,6 +1670,14 @@ namespace CityForgeV3.World
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToLength(model.transform,
                     OrnateBenchLengthMeters);
+            else if (string.Equals(propId, Hedge3DPropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToLength(model.transform,
+                    Hedge3DLengthMeters);
+            else if (string.Equals(propId, PumpkinJackOLanternPropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToHeight(model.transform,
+                    PumpkinJackOLanternHeightMeters);
             else if (string.Equals(propId, PicketFencePropId,
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToLength(model.transform,
@@ -1412,6 +1918,10 @@ namespace CityForgeV3.World
                 KingKongEnclosurePropId, StringComparison.OrdinalIgnoreCase);
             var bench = string.Equals(propId, OrnateBenchPropId,
                 StringComparison.OrdinalIgnoreCase);
+            var hedge3D = string.Equals(propId, Hedge3DPropId,
+                StringComparison.OrdinalIgnoreCase);
+            var pumpkin = string.Equals(propId, PumpkinJackOLanternPropId,
+                StringComparison.OrdinalIgnoreCase);
             var corner = string.Equals(propId, FenceCornerPropId,
                 StringComparison.OrdinalIgnoreCase);
             var picket = string.Equals(propId, PicketFencePropId,
@@ -1438,6 +1948,10 @@ namespace CityForgeV3.World
                             : "CF Three-Lantern Lamppost Runtime Material"
                         : bench
                             ? "CF Ornate Bench Runtime Material"
+                        : hedge3D
+                            ? "CF 3D Hedge Runtime Material"
+                        : pumpkin
+                            ? "CF Autumn Pumpkin Runtime Material"
                         : kingKong
                             ? "CF King Kong Runtime Material"
                         : kingKongEnclosure
@@ -1459,6 +1973,10 @@ namespace CityForgeV3.World
                         ? "CityForgeV3/Props/PicketFenceV01/base-color"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/base-color"
+                        : hedge3D
+                        ? "CityForgeV3/Props/Flora/Hedge3DV01/Textures/base-color"
+                        : pumpkin
+                        ? "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_basecolor"
                         : lamppost
                         ? simpleLamppost
                             ? "CityForgeV3/Props/SimpleStreetLamppostV01/Textures/base-color-dark"
@@ -1484,6 +2002,10 @@ namespace CityForgeV3.World
                         ? "CityForgeV3/Props/PicketFenceV01/normal"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/normal"
+                        : hedge3D
+                        ? "CityForgeV3/Props/Flora/Hedge3DV01/Textures/normal"
+                        : pumpkin
+                        ? "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_normal"
                         : lamppost
                         ? simpleLamppost
                             ? "CityForgeV3/Props/SimpleStreetLamppostV01/Textures/normal"
@@ -1527,6 +2049,8 @@ namespace CityForgeV3.World
                         ? "CityForgeV3/Props/PicketFenceV01/metallic-smoothness"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/metallic"
+                        : hedge3D
+                        ? ""
                         : lamppost
                         ? simpleLamppost
                             ? "CityForgeV3/Props/SimpleStreetLamppostV01/Textures/metallic-smoothness"
@@ -1548,7 +2072,7 @@ namespace CityForgeV3.World
                 if (!kingKongEnclosure)
                     material.SetFloat("_Metallic", kingKong
                         ? 0f : character ? 0.05f : picket ? 0f
-                        : bench ? 0.55f : 1f);
+                        : hedge3D || pumpkin ? 0f : bench ? 0.55f : 1f);
                 // The supplied roughness maps are now inverted into the alpha
                 // channel of the metallic/smoothness textures. Previously the
                 // opaque alpha of a metallic JPG made every surface uniformly
@@ -1560,7 +2084,8 @@ namespace CityForgeV3.World
                         ? 0.72f
                         : simpleLamppost
                             ? 0.64f
-                            : picket ? 0.18f : bench ? 0.42f : 0.72f);
+                        : hedge3D ? 0.08f : pumpkin ? 0.14f
+                        : picket ? 0.18f : bench ? 0.42f : 0.72f);
                 if (lamppost)
                 {
                     var emission = Resources.Load<Texture2D>(
@@ -1584,6 +2109,11 @@ namespace CityForgeV3.World
                 var color = valid
                     ? simpleLamppost
                         ? new Color(0.3f, 0.32f, 0.34f)
+                        : hedge3D
+                            // Multiply the supplied yellow-green albedo toward
+                            // a restrained forest green without changing the
+                            // lot or billboard flora palettes.
+                            ? new Color(0.36f, 0.58f, 0.32f)
                         : kingKongEnclosure
                             ? new Color(0.94f, 0.86f, 0.72f)
                         : Color.white
@@ -1770,6 +2300,21 @@ namespace CityForgeV3.World
                 depth = oddBench ? OrnateBenchLengthMeters : OrnateBenchDepthMeters;
                 return;
             }
+            if (string.Equals(propId, Hedge3DPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddHedge = Mathf.Abs(turns) % 2 == 1;
+                width = oddHedge ? Hedge3DDepthMeters : Hedge3DLengthMeters;
+                depth = oddHedge ? Hedge3DLengthMeters : Hedge3DDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, PumpkinJackOLanternPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = PumpkinJackOLanternFootprintMeters;
+                depth = PumpkinJackOLanternFootprintMeters;
+                return;
+            }
             if (string.Equals(propId, FenceCornerPropId,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -1817,7 +2362,7 @@ namespace CityForgeV3.World
             for (var index = 0; index < _propPresentations.Count; index++)
             {
                 var root = _propPresentations[index];
-                if (root == null) continue;
+                if (root == null || !root.gameObject.activeInHierarchy) continue;
                 var spriteRenderers = root.GetComponentsInChildren<SpriteRenderer>();
                 if (spriteRenderers.Length > 0)
                 {

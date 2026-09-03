@@ -25,11 +25,18 @@ namespace CityForgeV3.World
         Crossing
     }
 
+    public enum PedestrianPathKind
+    {
+        Flat,
+        Stairs
+    }
+
     [Serializable]
     public sealed class CirculationNode
     {
         public string Id = "";
         public Vector2 PositionMeters;
+        public float ElevationMeters;
         public CirculationNodeKind Kind;
         public string PortId = "";
 
@@ -49,6 +56,7 @@ namespace CityForgeV3.World
         public CirculationDirection Direction = CirculationDirection.TwoWay;
         public float WidthMeters = 1.5f;
         public float SpeedMetersPerSecond = 1.4f;
+        public PedestrianPathKind PedestrianPathKind;
     }
 
     [Serializable]
@@ -64,12 +72,17 @@ namespace CityForgeV3.World
         public CirculationNode AddNode(
             Vector2 positionMeters,
             CirculationNodeKind kind = CirculationNodeKind.Waypoint,
-            string portId = "")
+            string portId = "", float elevationMeters = 0f)
         {
+            var prefix = $"{Mode.ToString().ToLowerInvariant()}-node-";
+            var suffix = Nodes.Count + 1;
+            while (Nodes.Exists(existing => existing != null &&
+                   existing.Id == prefix + suffix)) suffix++;
             var node = new CirculationNode
             {
-                Id = $"{Mode.ToString().ToLowerInvariant()}-node-{Nodes.Count + 1}",
+                Id = prefix + suffix,
                 PositionMeters = positionMeters,
+                ElevationMeters = Mathf.Max(0f, elevationMeters),
                 Kind = kind,
                 PortId = portId ?? ""
             };
@@ -80,7 +93,8 @@ namespace CityForgeV3.World
         public CirculationSegment Connect(
             string startNodeId,
             string endNodeId,
-            CirculationDirection direction = CirculationDirection.TwoWay)
+            CirculationDirection direction = CirculationDirection.TwoWay,
+            PedestrianPathKind pedestrianPathKind = PedestrianPathKind.Flat)
         {
             if (startNodeId == endNodeId || FindNode(startNodeId) == null ||
                 FindNode(endNodeId) == null)
@@ -89,15 +103,22 @@ namespace CityForgeV3.World
                 ((segment.StartNodeId == startNodeId && segment.EndNodeId == endNodeId) ||
                  (segment.StartNodeId == endNodeId && segment.EndNodeId == startNodeId)));
             if (existing != null) return existing;
+            var segmentPrefix =
+                $"{Mode.ToString().ToLowerInvariant()}-segment-";
+            var segmentSuffix = Segments.Count + 1;
+            while (Segments.Exists(existingSegment => existingSegment != null &&
+                   existingSegment.Id == segmentPrefix + segmentSuffix))
+                segmentSuffix++;
             var segment = new CirculationSegment
             {
-                Id = $"{Mode.ToString().ToLowerInvariant()}-segment-{Segments.Count + 1}",
+                Id = segmentPrefix + segmentSuffix,
                 StartNodeId = startNodeId,
                 EndNodeId = endNodeId,
                 Direction = direction,
                 WidthMeters = Mode == CirculationMode.Vehicle ? 3f : 1.5f,
                 SpeedMetersPerSecond = Mode == CirculationMode.Vehicle ? 5.5f : 1.4f
             };
+            segment.PedestrianPathKind = pedestrianPathKind;
             Segments.Add(segment);
             return segment;
         }
@@ -142,6 +163,26 @@ namespace CityForgeV3.World
             return start == null || end == null
                 ? Vector2.zero
                 : Vector2.Lerp(start.PositionMeters, end.PositionMeters, Mathf.Clamp01(progress));
+        }
+
+        public Vector3 SampleFirstSegment3D(float progress)
+        {
+            if (Segments.Count == 0)
+            {
+                if (Nodes.Count == 0) return Vector3.zero;
+                var only = Nodes[0];
+                return new Vector3(only.PositionMeters.x, only.ElevationMeters,
+                    only.PositionMeters.y);
+            }
+            var segment = Segments[0];
+            var start = FindNode(segment.StartNodeId);
+            var end = FindNode(segment.EndNodeId);
+            if (start == null || end == null) return Vector3.zero;
+            var amount = Mathf.Clamp01(progress);
+            var point = Vector2.Lerp(start.PositionMeters, end.PositionMeters, amount);
+            return new Vector3(point.x,
+                Mathf.Lerp(start.ElevationMeters, end.ElevationMeters, amount),
+                point.y);
         }
     }
 

@@ -113,7 +113,7 @@ namespace CityForgeV3.World
         }
 
         private static bool IsLoopingState(string state) =>
-            state is "walk" or "run" or "wait" or "idle" or "look_around" or
+            state is "walk" or "run" or "run_upstairs" or "wait" or "idle" or "look_around" or
                 "fold_arms" or "angry";
     }
 }

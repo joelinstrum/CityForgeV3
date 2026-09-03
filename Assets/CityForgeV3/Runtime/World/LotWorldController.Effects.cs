@@ -121,6 +121,20 @@ namespace CityForgeV3.World
             {
                 var root = surface.Root;
                 if (root == null) continue;
+                if (string.Equals(surface.Kind, EffectHostBuilding3D,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!TryRaycastBuildingBeautyMesh(root, ray,
+                            bestDistance, out var buildingHit)) continue;
+                    bestDistance = buildingHit.distance;
+                    point = buildingHit.point;
+                    normal = buildingHit.normal.normalized;
+                    host = root.transform;
+                    hostKind = surface.Kind;
+                    hostInstanceId = surface.InstanceId;
+                    found = true;
+                    continue;
+                }
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
                 {
                     var renderer = filter.GetComponent<Renderer>();

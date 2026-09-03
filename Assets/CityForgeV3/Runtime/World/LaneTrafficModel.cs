@@ -70,6 +70,16 @@ namespace CityForgeV3.World
                     state.SpeedMetersPerSecond + acceleration * deltaTime,
                     0f, Mathf.Min(state.DesiredSpeedMetersPerSecond,
                         graph.SpeedMetersPerSecond));
+                // Never allow a long or slow frame to carry the follower into
+                // the vehicle ahead. GapAheadMeters is already bumper-to-bumper,
+                // so preserve the authored stopped gap before integrating.
+                if (!float.IsPositiveInfinity(state.GapAheadMeters))
+                {
+                    var availableTravel = Mathf.Max(0f,
+                        state.GapAheadMeters - vehicleType.MinimumStoppedGapMeters);
+                    state.SpeedMetersPerSecond = Mathf.Min(
+                        state.SpeedMetersPerSecond, availableTravel / deltaTime);
+                }
                 var routeLength = graph.Routes[state.LaneIndex].TotalLengthMeters;
                 state.DistanceMeters = Mathf.Repeat(
                     state.DistanceMeters + state.SpeedMetersPerSecond * deltaTime,

@@ -53,6 +53,24 @@ namespace CityForgeV3.Tests
                 BusinessAsUsualAction.Walk, 1f), Is.EqualTo(60f));
         }
 
+        [TestCase("walk", true)]
+        [TestCase("WALK", true)]
+        [TestCase("run", true)]
+        [TestCase("run_upstairs", true)]
+        [TestCase("idle", false)]
+        [TestCase("wait", false)]
+        [TestCase("fold_arms", false)]
+        [TestCase("look_around", false)]
+        [TestCase("sit", false)]
+        [TestCase("turn", false)]
+        [TestCase(null, false)]
+        public void CharacterTranslationRequiresVisibleLocomotion(
+            string animationState, bool expected)
+        {
+            Assert.That(BusinessAsUsualCharacterScript.AllowsTranslation(
+                animationState), Is.EqualTo(expected));
+        }
+
         [Test]
         public void VictorianGentleman10KExposesCompleteAnimationLibrary()
         {
@@ -225,6 +243,73 @@ namespace CityForgeV3.Tests
             Assert.That(System.Array.Exists(
                 model.GetComponentsInChildren<Transform>(true),
                 transform => transform.name == item.SwingTransformName), Is.True);
+        }
+
+        [Test]
+        public void BuildingPropCatalog_ProvidesTeaShopStorefrontContract()
+        {
+            var item = BuildingPropCatalog.Find(
+                BuildingPropCatalog.TeaShopStorefrontId);
+
+            Assert.That(item, Is.Not.Null);
+            Assert.That(item.Revision, Is.EqualTo("v01"));
+            Assert.That(item.Family, Is.EqualTo("Storefronts"));
+            Assert.That(item.NightLighting, Is.True);
+            Assert.That(item.DoorTransformName, Is.Empty);
+            Assert.That(Resources.Load<Texture2D>(item.PreviewResourcePath),
+                Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(item.BaseColorResourcePath),
+                Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(item.NormalResourcePath),
+                Is.Not.Null);
+            var model = Resources.Load<GameObject>(item.ModelResourcePath);
+            Assert.That(model, Is.Not.Null);
+            Assert.That(model.GetComponentsInChildren<Renderer>(true).Length,
+                Is.GreaterThanOrEqualTo(1));
+            Assert.That(model.GetComponentsInChildren<Camera>(true), Is.Empty);
+            Assert.That(model.GetComponentsInChildren<Light>(true), Is.Empty);
+        }
+
+        [Test]
+        public void BuildingPropInput_PrioritizesAttachedPropBeforeBuilding()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            var attachmentSelection = source.IndexOf(
+                "_lotEditorCategory == LotEditorCategory.BuildingProps &&",
+                System.StringComparison.Ordinal);
+            var building3DSelection = source.IndexOf(
+                "_lotWorld.BeginBuilding3DDragFromPanel(",
+                System.StringComparison.Ordinal);
+
+            Assert.That(attachmentSelection, Is.GreaterThanOrEqualTo(0));
+            Assert.That(building3DSelection, Is.GreaterThan(attachmentSelection));
+        }
+
+        [Test]
+        public void TeaShopDoorMotion_UsesTheAuthoredHinge()
+        {
+            var item = BuildingPropCatalog.Find(
+                BuildingPropCatalog.TeaShopStorefrontId);
+            var model = Object.Instantiate(
+                Resources.Load<GameObject>(item.ModelResourcePath));
+            try
+            {
+                var hinge = model.GetComponentsInChildren<Transform>(true)
+                    .First(transform =>
+                        transform.name == item.DoorTransformName);
+                var closed = hinge.localRotation;
+                var motion = model.AddComponent<BuildingPropDoorMotion>();
+                motion.Configure(item.DoorTransformName,
+                    item.DoorOpenAngleDegrees, true);
+
+                Assert.That(Quaternion.Angle(closed, hinge.localRotation),
+                    Is.EqualTo(item.DoorOpenAngleDegrees).Within(0.1f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(model);
+            }
         }
 
         [TestCase(0, 186f)]
@@ -408,7 +493,95 @@ namespace CityForgeV3.Tests
                 "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
             StringAssert.Contains("if (placed)", source);
             StringAssert.Contains("_placementBuildingPropId = \"\";", source);
-            StringAssert.Contains("Ale House sign attached • drag it to reposition", source);
+            StringAssert.Contains("Building prop attached • click it again to move or rotate", source);
+        }
+
+        [Test]
+        public void BuildingPropPlacement_DragsPreviewAndCommitsOnRelease()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+
+            StringAssert.Contains("_buildingPropPlacementPointerDown = true;", source);
+            StringAssert.Contains("UpdateBuildingPropPreviewFromPanel(", source);
+            StringAssert.Contains("evt.button == 0 && _buildingPropPlacementPointerDown", source);
+            StringAssert.Contains("CommitBuildingPropPlacementPreview(", source);
+            var worldSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+            StringAssert.Contains("_buildingPropPreviewHostIndex", worldSource);
+            StringAssert.Contains("PlaceBuildingPropOnHost(componentId,\n                _buildingPropPreviewHostIndex", worldSource);
+            StringAssert.Contains(
+                "!string.IsNullOrWhiteSpace(_placementBuildingPropId)", source);
+            var placementGuard = source.IndexOf(
+                "!string.IsNullOrWhiteSpace(_placementBuildingPropId)",
+                System.StringComparison.Ordinal);
+            var deselectBuilding3D = source.IndexOf(
+                "_lotWorld.DeselectBuilding3D();",
+                System.StringComparison.Ordinal);
+            Assert.That(placementGuard, Is.LessThan(deselectBuilding3D),
+                "An armed prop must prevent the 3D host from being deselected and rebuilding the viewport during pointer-down.");
+        }
+
+        [Test]
+        public void BuildingProps_RecognizeAndPersistGenuine3DBuildingHosts()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.BuildingProps.cs");
+            StringAssert.Contains("FindBuilding3DHitIndex(pixel)", source);
+            StringAssert.Contains("Building3DHostKey(building3DIndex)", source);
+            StringAssert.Contains("TryBuilding3DScreenBounds", source);
+            StringAssert.Contains("_experimentalBuilding3DVisibleRoots", source);
+            StringAssert.DoesNotContain(
+                "index < _experimentalBuilding3DRoots.Count", source);
+
+            var session = new LotEditorSession();
+            session.Data.Buildings3D.Add(new PlacedBuilding3D
+            {
+                InstanceId = "mixed-use-host",
+                AssetId = LotWorldController.MixedUseBrickEvaluationId,
+                Attachments = new List<PlacedBuildingProp>
+                {
+                    new()
+                    {
+                        InstanceId = "storefront-on-3d-host",
+                        ComponentId = BuildingPropCatalog.TeaShopStorefrontId,
+                        HostElevation = "Front",
+                        HasHostLocalPosition = true,
+                        HostLocalY = 2f
+                    }
+                }
+            });
+
+            var json = JsonUtility.ToJson(session.Data);
+            var restored = JsonUtility.FromJson<LotSaveData>(json);
+            Assert.That(restored.Buildings3D, Has.Count.EqualTo(1));
+            Assert.That(restored.Buildings3D[0].Attachments,
+                Has.Count.EqualTo(1));
+            Assert.That(restored.Buildings3D[0].Attachments[0].ComponentId,
+                Is.EqualTo(BuildingPropCatalog.TeaShopStorefrontId));
+        }
+
+        [Test]
+        public void Hedge3D_UsesRestrainedForestGreenRuntimeTint()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/LotWorldController.Props.cs");
+            StringAssert.Contains("new Color(0.36f, 0.58f, 0.32f)", source);
+        }
+
+        [Test]
+        public void LotInspector_HasDragCloseAndReopenControls()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            var style = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+
+            StringAssert.Contains("inspector-drag-handle", source);
+            StringAssert.Contains("close-lot-inspector", source);
+            StringAssert.Contains("show-lot-inspector", source);
+            StringAssert.Contains("_lotInspectorPosition = position", source);
+            StringAssert.Contains(".inspector-reopen", style);
         }
 
         private static void InvokeBuildingPropMaterialMethod(string name,
@@ -446,6 +619,41 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(BuildingPropCatalog.AleHouseSignId));
             Assert.That(attachment.NormalizedX, Is.EqualTo(0.72f).Within(0.001f));
             Assert.That(attachment.NormalizedY, Is.EqualTo(0.44f).Within(0.001f));
+        }
+
+        [Test]
+        public void LotEditorSessionRoundTripsRandomizedPlacedDecal()
+        {
+            var session = new LotEditorSession();
+            session.Data.Decals.Add(new PlacedDecal
+            {
+                InstanceId = "decal-pilot",
+                CategoryId = "grass",
+                TextureId = "leaves-02",
+                PositionX = 3.25f,
+                PositionZ = -1.5f,
+                RotationQuarterTurns = 3,
+                SizeMeters = 6f,
+                EraseMarks = new System.Collections.Generic.List<DecalEraseMark>
+                {
+                    new() { U = 0.25f, V = 0.7f, RadiusU = 0.1f, RadiusV = 0.14f }
+                }
+            });
+
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+
+            Assert.That(restored.Data.Decals.Count, Is.EqualTo(1));
+            var decal = restored.Data.Decals[0];
+            Assert.That(decal.CategoryId, Is.EqualTo("grass"));
+            Assert.That(decal.TextureId, Is.EqualTo("leaves-02"));
+            Assert.That(decal.PositionX, Is.EqualTo(3.25f).Within(0.001f));
+            Assert.That(decal.PositionZ, Is.EqualTo(-1.5f).Within(0.001f));
+            Assert.That(decal.RotationQuarterTurns, Is.EqualTo(3));
+            Assert.That(decal.SizeMeters, Is.EqualTo(6f).Within(0.001f));
+            Assert.That(decal.EraseMarks.Count, Is.EqualTo(1));
+            Assert.That(decal.EraseMarks[0].U, Is.EqualTo(0.25f).Within(0.001f));
+            Assert.That(decal.EraseMarks[0].V, Is.EqualTo(0.7f).Within(0.001f));
         }
 
         [Test]
@@ -1679,6 +1887,50 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void SelectedPropRepeatJoinsRotatedFenceSectionsEndToEnd()
+        {
+            var root = new GameObject("Prop Repeat Spacing Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Prop Repeat", LotType.Residential, 6, 6);
+                world.SetPropEditorContext(true);
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                Vector2 PanelPoint(Vector3 lotPoint)
+                {
+                    var pixel = camera.WorldToScreenPoint(lotPoint);
+                    return new Vector2(pixel.x, panelSize.y - pixel.y);
+                }
+
+                Assert.That(world.BeginPropDragFromPanel(
+                    "wrought-iron-fence-straight-v01",
+                    PanelPoint(Vector3.zero), panelSize), Is.True);
+                Assert.That(world.EndPropDrag(), Is.True);
+                Assert.That(world.RotateSelectedProp(1), Is.True);
+                Assert.That(world.BeginSelectedPropRepeatLine(), Is.True);
+                Assert.That(world.CommitPropRepeatLineFromPanel(
+                    PanelPoint(new Vector3(0f, 0f, 20f)), panelSize), Is.True);
+
+                Assert.That(world.PropRepeatLineActive, Is.False);
+                Assert.That(world.LastPropRepeatPlacementCount, Is.EqualTo(3));
+                Assert.That(world.PropCount, Is.EqualTo(4));
+                Assert.That(world.Session.Data.Props.All(prop =>
+                    prop.RotationQuarterTurns == 1), Is.True);
+                for (var index = 1; index < world.PropCount; index++)
+                    Assert.That(world.Session.Data.Props[index].PositionZ -
+                        world.Session.Data.Props[index - 1].PositionZ,
+                        Is.EqualTo(6.4f).Within(0.03f),
+                        "Repeated fence centers must be separated by one full section length.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void TreePickingIsRestrictedToRootAndLowerTrunk()
         {
             var bounds = new Bounds(new Vector3(0f, 5f, 0f),
@@ -2843,6 +3095,60 @@ namespace CityForgeV3.Tests
                     "The first placement click must restore authored materials.");
                 Assert.That(world.SelectedBuilding3DIndex, Is.EqualTo(0),
                     "Committed placement remains selected for normal editing.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void EmptyBuildings3DWorkspacePreviewsPlacementCameraWithoutFirstBuildingRotation()
+        {
+            var root = new GameObject("Empty 3D Building Camera Preview Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Empty Building Camera", LotType.Mixed, 6, 6);
+                world.SetBuilding3DEditorContext(true);
+                var beforePlacement = world.CaptureCameraFraming();
+
+                Assert.That(world.BeginExperimentalBuilding3DPlacement(
+                    LotWorldController.PlymouthStoreProductionId), Is.True);
+                var afterPlacement = world.CaptureCameraFraming();
+
+                Assert.That(Quaternion.Angle(beforePlacement.Rotation,
+                    afterPlacement.Rotation), Is.LessThan(0.001f),
+                    "The first 3D building must use the camera already previewed by its workspace.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void AddingFirst3DBuildingNeverChangesCurrentCameraRotation()
+        {
+            var root = new GameObject("First 3D Building Camera Stability Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Stable Building Camera", LotType.Mixed, 6, 6);
+                var camera = root.GetComponentInChildren<Camera>();
+                Assert.That(camera, Is.Not.Null);
+                camera.transform.rotation = Quaternion.Euler(27f, 123f, 0f);
+                var beforePlacement = world.CaptureCameraFraming();
+
+                Assert.That(world.BeginExperimentalBuilding3DPlacement(
+                    LotWorldController.PlymouthStoreProductionId), Is.True);
+                var afterPlacement = world.CaptureCameraFraming();
+
+                Assert.That(Quaternion.Angle(beforePlacement.Rotation,
+                    afterPlacement.Rotation), Is.LessThan(0.001f),
+                    "Adding the first 3D building must not orbit the lot camera.");
             }
             finally
             {
@@ -5070,7 +5376,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void CirculationCursorIsVisibleOnlyInPathsWorkspace()
+        public void CirculationCursorAppearsOnlyAfterFirstPathClick()
         {
             var root = new GameObject("Circulation Context Test");
             try
@@ -5082,6 +5388,11 @@ namespace CityForgeV3.Tests
                 Assert.That(cursor, Is.Not.Null);
 
                 world.SetCirculationEditorContext(true);
+                Assert.That(cursor.gameObject.activeSelf, Is.False,
+                    "Opening Pathways must not create a marker.");
+
+                world.NudgeCirculationCursor(1, 0);
+                world.AddCirculationNode();
                 Assert.That(cursor.gameObject.activeSelf, Is.True);
 
                 world.SetCirculationEditorContext(false);
@@ -5091,6 +5402,134 @@ namespace CityForgeV3.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        [Test]
+        public void CirculationPathCompletesAndDeselectsAfterTwoClicks()
+        {
+            var root = new GameObject("Circulation Click Chain Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetCirculationMode(CirculationMode.Pedestrian);
+                world.NudgeCirculationCursor(2, 0);
+                world.AddCirculationNode();
+                Assert.That(world.CirculationPathDrawingActive, Is.True);
+                var first = world.PedestrianNodeCount;
+
+                world.NudgeCirculationCursor(3, 1);
+                world.AddCirculationNode();
+                Assert.That(world.PedestrianNodeCount, Is.EqualTo(first + 1));
+                Assert.That(world.Session.Data.PedestrianNetwork.Segments[^1]
+                    .StartNodeId, Is.Not.Empty);
+                Assert.That(world.CirculationPathDrawingActive, Is.False,
+                    "The endpoint completes exactly one path.");
+                Assert.That(Find(root.transform, "Circulation Cursor")
+                    .gameObject.activeSelf, Is.False,
+                    "Completing the path clears its marker.");
+                Assert.That(world.Session.Data.PedestrianNetwork.Nodes[^1].PortId,
+                    Is.EqualTo("manual-path"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void PedestrianStairsConnectTwoClicksAndFinishThePath()
+        {
+            var host = new GameObject("Pedestrian Stairs Test Host");
+            try
+            {
+                var world = host.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetCirculationMode(CirculationMode.Pedestrian);
+                world.SetPedestrianPathKind(PedestrianPathKind.Stairs);
+                var initialSegmentCount =
+                    world.Session.Data.PedestrianNetwork.Segments.Count;
+                world.NudgeCirculationCursor(-2, 0);
+                world.AddCirculationNode();
+                world.NudgeCirculationCursor(4, 0);
+                world.AddCirculationNode();
+
+                var network = world.Session.Data.PedestrianNetwork;
+                Assert.That(network.Segments.Count,
+                    Is.EqualTo(initialSegmentCount + 1));
+                Assert.That(network.Segments[^1].PedestrianPathKind,
+                    Is.EqualTo(PedestrianPathKind.Stairs));
+                Assert.That(network.Nodes[^1].ElevationMeters,
+                    Is.EqualTo(3.2f).Within(0.001f));
+                Assert.That(world.CirculationPathDrawingActive, Is.False);
+                Assert.That(host.transform.Find("User Pedestrian Stairs/User Stair 12"),
+                    Is.Not.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void PedestrianAtSidewalkJunctionTurnsOntoStairs()
+        {
+            var network = new CirculationNetwork
+            {
+                Mode = CirculationMode.Pedestrian
+            };
+            var sidewalkStart = network.AddNode(new Vector2(-4f, 0f));
+            var landing = network.AddNode(Vector2.zero);
+            var sidewalkEnd = network.AddNode(new Vector2(4f, 0f));
+            var doorway = network.AddNode(new Vector2(0f, 3f),
+                CirculationNodeKind.BuildingEntrance,
+                "manual-stair-doorway", 3.2f);
+            network.Connect(sidewalkStart.Id, landing.Id);
+            network.Connect(landing.Id, sidewalkEnd.Id);
+            network.Connect(landing.Id, doorway.Id,
+                CirculationDirection.TwoWay, PedestrianPathKind.Stairs);
+
+            var method = typeof(LotWorldController).GetMethod(
+                "TryEnterNearbyPedestrianStair",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Static);
+            Assert.That(method, Is.Not.Null);
+            var arguments = new object[]
+            {
+                network,
+                new Vector2(-0.25f, 0f),
+                Vector2.zero
+            };
+            Assert.That((bool)method.Invoke(null, arguments), Is.True);
+            var direction = (Vector2)arguments[2];
+            Assert.That(direction.y, Is.GreaterThan(0.9f),
+                "A pedestrian reaching the landing must turn toward the doorway, not continue along the flat sidewalk.");
+        }
+
+        [Test]
+        public void CirculationNodeIdsRemainUniqueAfterPreservingHighNumberedNodes()
+        {
+            var network = new CirculationNetwork
+            {
+                Mode = CirculationMode.Pedestrian
+            };
+            network.Nodes.Add(new CirculationNode
+            {
+                Id = "pedestrian-node-3",
+                PortId = "manual-path"
+            });
+            network.Nodes.Add(new CirculationNode
+            {
+                Id = "pedestrian-node-4",
+                PortId = "manual-path"
+            });
+
+            var first = network.AddNode(Vector2.zero);
+            var second = network.AddNode(Vector2.one);
+
+            Assert.That(first.Id, Is.EqualTo("pedestrian-node-5"));
+            Assert.That(second.Id, Is.EqualTo("pedestrian-node-6"));
+            Assert.That(network.Validate(), Is.Empty);
         }
 
         [Test]
@@ -5295,10 +5734,25 @@ namespace CityForgeV3.Tests
             Assert.That(graph.LaneCount, Is.EqualTo(2));
             Assert.That(graph.DirectedSegmentCount, Is.EqualTo(32));
             Assert.That(graph.SpeedMetersPerSecond, Is.EqualTo(5.5f));
+            Assert.That(RoadPiecePackage.Load().LaneOffsetMeters, Is.EqualTo(2.35f),
+                "The 9.5 m brick road should center traffic in each right-hand half.");
             Assert.That(graph.Routes[0].Clockwise, Is.True);
             Assert.That(graph.Routes[1].Clockwise, Is.False);
             Assert.That(Vector2.Distance(graph.Routes[0].Points[0],
                 graph.Routes[1].Points[0]), Is.GreaterThan(1.5f));
+            foreach (var route in graph.Routes)
+            {
+                var centerRoute = VehicleRoute.FromNetwork(network, 0f, 2,
+                    route.Clockwise);
+                var progress = 0.25f;
+                var distance = route.TotalLengthMeters * progress;
+                var centerDistance = centerRoute.TotalLengthMeters * progress;
+                centerRoute.Sample(centerDistance, out var centerPoint, out _);
+                route.Sample(distance, out var lanePoint, out var laneDirection);
+                var right = new Vector2(laneDirection.y, -laneDirection.x);
+                Assert.That(Vector2.Dot(lanePoint - centerPoint, right), Is.GreaterThan(0f),
+                    "Each directed route should lie on the driver's right side.");
+            }
         }
 
         [Test]
@@ -5380,6 +5834,34 @@ namespace CityForgeV3.Tests
             Assert.That(states[0].SpeedMetersPerSecond, Is.LessThan(5f));
             Assert.That(states[0].GapAheadMeters, Is.GreaterThanOrEqualTo(0f));
             Assert.That(states[1].Braking, Is.False);
+        }
+
+        [Test]
+        public void LaneTrafficCannotCrossItsStoppedGapDuringALongFrame()
+        {
+            var network = new CirculationNetwork { Mode = CirculationMode.Vehicle };
+            var southwest = network.AddNode(new Vector2(-10f, -10f));
+            var northwest = network.AddNode(new Vector2(-10f, 10f));
+            var northeast = network.AddNode(new Vector2(10f, 10f));
+            var southeast = network.AddNode(new Vector2(10f, -10f));
+            network.Connect(southwest.Id, northwest.Id);
+            network.Connect(northwest.Id, northeast.Id);
+            network.Connect(northeast.Id, southeast.Id);
+            network.Connect(southeast.Id, southwest.Id);
+            var graph = RoadTrafficGraph.FromRoadNetwork(network, RoadPiecePackage.Load());
+            var vehicleType = VehicleTypePackage.LoadModelT();
+            var states = LaneTrafficModel.Seed(2, graph, vehicleType);
+            states[0].LaneIndex = states[1].LaneIndex = 0;
+            states[0].DistanceMeters = 10f;
+            states[0].SpeedMetersPerSecond = 8f;
+            states[1].DistanceMeters = 16f;
+            states[1].SpeedMetersPerSecond = 0f;
+            states[1].DesiredSpeedMetersPerSecond = 0f;
+
+            LaneTrafficModel.Step(states, graph, vehicleType, 1f);
+
+            Assert.That(states[0].GapAheadMeters,
+                Is.GreaterThanOrEqualTo(vehicleType.MinimumStoppedGapMeters - 0.001f));
         }
 
         [Test]
@@ -5666,6 +6148,20 @@ namespace CityForgeV3.Tests
                 Assert.That(System.Array.Exists(travelers,
                     vehicle => vehicle.gameObject.name.Contains("Rolls-Royce") &&
                                vehicle.VehicleModel == TestVehicleModel.RollsRoyce1926), Is.True);
+
+                // Editing either circulation network rebuilds its diagnostics,
+                // but must not destroy independently spawned road-test cars.
+                world.SetCirculationMode(CirculationMode.Pedestrian);
+                world.AddCirculationNode();
+                world.NudgeCirculationCursor(2, 0);
+                world.AddCirculationNode();
+                Assert.That(world.TestVehicleCount, Is.EqualTo(13));
+                travelers = root.GetComponentsInChildren<
+                    VehicleRuntimePresentation>();
+                Assert.That(System.Array.FindAll(travelers,
+                    vehicle => vehicle.gameObject.name.StartsWith(
+                        "Test Vehicle —", System.StringComparison.Ordinal)).Length,
+                    Is.EqualTo(13));
 
                 world.RemoveTestVehicles();
                 Assert.That(world.TestVehicleCount, Is.Zero);
@@ -6776,7 +7272,10 @@ namespace CityForgeV3.Tests
         public void LotEditorNavigationExposesTextureToolCategoriesWithCompactControls()
         {
             CollectionAssert.AreEqual(
-                new[] { "Main", "Buildings", "Roads", "Paths", "Flora", "Props", "BaseTextures", "OverlayTextures", "Environment", "View" },
+                new[] { "Main", "Buildings", "Buildings3D", "BuildingProps",
+                    "Roads", "Railroad", "Paths", "Water", "Flora", "Props",
+                    "Characters", "Entertainment", "Effects", "BaseTextures",
+                    "OverlayTextures", "Decals", "Environment", "View" },
                 System.Enum.GetNames(typeof(LotEditorCategory)));
 
             // Main and Environment intentionally use the owned gear and sun glyphs.
@@ -6803,13 +7302,23 @@ namespace CityForgeV3.Tests
                     $"Missing legacy grass texture {option.Id}");
             Assert.That(Resources.Load<Texture2D>(
                 LotWorldController.BrickWalkwayOverlay.ResourcePath), Is.Not.Null);
-            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(3));
+            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(6));
             var sidewalk = LotWorldController.ResolveOverlayTexture("concrete-sidewalk");
             Assert.That(sidewalk.DisplayName, Is.EqualTo("Concrete Sidewalk"));
             Assert.That(Resources.Load<Texture2D>(sidewalk.ResourcePath), Is.Not.Null);
             var fancySidewalk = LotWorldController.ResolveOverlayTexture("fancy-sidewalk");
             Assert.That(fancySidewalk.DisplayName, Is.EqualTo("Fancy Sidewalk"));
             Assert.That(Resources.Load<Texture2D>(fancySidewalk.ResourcePath), Is.Not.Null);
+            var wornSidewalk = LotWorldController.ResolveOverlayTexture("worn-sidewalk");
+            Assert.That(wornSidewalk.DisplayName, Is.EqualTo("Worn Sidewalk"));
+            Assert.That(Resources.Load<Texture2D>(wornSidewalk.ResourcePath), Is.Not.Null);
+            var sidewalkFlanks = LotWorldController.ResolveOverlayTexture("sidewalk-flanks");
+            Assert.That(sidewalkFlanks.DisplayName, Is.EqualTo("Sidewalk Flanks"));
+            Assert.That(Resources.Load<Texture2D>(sidewalkFlanks.ResourcePath), Is.Not.Null);
+            var stairs = LotWorldController.ResolveOverlayTexture("pedestrian-stairs");
+            Assert.That(stairs.PedestrianLayout,
+                Is.EqualTo(LotWorldController.PedestrianOverlayLayout.Stairs));
+            Assert.That(stairs.StairRiseMeters, Is.EqualTo(3.2f));
 
             var root = new GameObject("Lot Texture Persistence Test");
             try
@@ -6973,6 +7482,12 @@ namespace CityForgeV3.Tests
                     "Clicking an existing tile should select it without an armed texture.");
                 world.EndOverlayPaint();
                 Assert.That(world.SelectedOverlayTextureIndex, Is.EqualTo(0));
+                Assert.That(world.RotateSelectedOverlayTexture(1), Is.True);
+                Assert.That(world.Session.Data.OverlayTextures[0].RotationQuarterTurns,
+                    Is.EqualTo(1));
+                Assert.That(world.RotateSelectedOverlayTexture(-1), Is.True);
+                Assert.That(world.Session.Data.OverlayTextures[0].RotationQuarterTurns,
+                    Is.EqualTo(0));
                 Assert.That(world.DeleteSelectedOverlayTexture(), Is.True);
                 Assert.That(world.OverlayTextureCount, Is.EqualTo(1));
                 Assert.That(world.Session.Data.OverlayTextures[0].CellX, Is.EqualTo(2));
@@ -6980,6 +7495,96 @@ namespace CityForgeV3.Tests
                 world.SetOverlayEditorContext(false);
                 Assert.That(world.DeleteSelectedOverlayTexture(), Is.False,
                     "Delete must not edit overlays outside the Overlay menu.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void OverlayDragInheritsRotationFromItsSourceTile()
+        {
+            var root = new GameObject("Rotated Overlay Drag Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Rotated Overlay Drag", LotType.Residential, 3, 3);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell("sidewalk-flanks", 1, 1),
+                    Is.True);
+                world.EndOverlayPaint();
+                Assert.That(world.RotateSelectedOverlayTexture(1), Is.True);
+
+                Assert.That(world.BeginOverlayPaintAtCell("", 1, 1), Is.True);
+                Assert.That(world.PaintOverlayStrokeCell(2, 1), Is.True);
+                world.EndOverlayPaint();
+
+                Assert.That(world.Session.Data.OverlayTextures[1].TextureId,
+                    Is.EqualTo("sidewalk-flanks"));
+                Assert.That(world.Session.Data.OverlayTextures[1].RotationQuarterTurns,
+                    Is.EqualTo(1));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void SidewalkOverlaysBuildAConnectedPedestrianNetwork()
+        {
+            var root = new GameObject("Semantic Sidewalk Network Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Semantic Sidewalk", LotType.Residential, 3, 3);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell(
+                    "concrete-sidewalk", 1, 0), Is.True);
+                world.EndOverlayPaint();
+                Assert.That(world.BeginOverlayPaintAtCell(
+                    "concrete-sidewalk", 1, 1), Is.True);
+                world.EndOverlayPaint();
+
+                var network = world.Session.Data.PedestrianNetwork;
+                Assert.That(network.Segments.Count, Is.EqualTo(2));
+                Assert.That(network.Nodes.Count, Is.EqualTo(3),
+                    "Touching sidewalk endpoints should become one junction.");
+                Assert.That(network.Validate(), Is.Empty);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void StairOverlayCreatesAnElevatedDoorwayRouteAndSteps()
+        {
+            var root = new GameObject("Pedestrian Stair Overlay Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Pedestrian Stairs", LotType.Mixed, 3, 3);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell(
+                    "pedestrian-stairs", 1, 1), Is.True);
+                world.EndOverlayPaint();
+
+                var network = world.Session.Data.PedestrianNetwork;
+                Assert.That(network.Segments.Count, Is.EqualTo(1));
+                Assert.That(network.Segments[0].PedestrianPathKind,
+                    Is.EqualTo(PedestrianPathKind.Stairs));
+                var doorway = network.Nodes.Single(node =>
+                    node.Kind == CirculationNodeKind.BuildingEntrance);
+                Assert.That(doorway.ElevationMeters, Is.EqualTo(3.2f));
+                Assert.That(Find(root.transform, "Pedestrian Stair 12"), Is.Not.Null);
+                Assert.That(network.SampleFirstSegment3D(1f).y,
+                    Is.EqualTo(3.2f));
             }
             finally
             {

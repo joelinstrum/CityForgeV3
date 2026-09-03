@@ -23,6 +23,7 @@ namespace CityForgeV3.UI
         Effects,
         BaseTextures,
         OverlayTextures,
+        Decals,
         Environment,
         View
     }
@@ -60,6 +61,7 @@ namespace CityForgeV3.UI
         private bool _propDragStarted;
         private bool _buildingPropPointerDown;
         private bool _buildingPropDragStarted;
+        private bool _buildingPropPlacementPointerDown;
         private bool _overlayPointerDown;
         private bool _overlayDragPainted;
         private bool _cameraPanToolActive;
@@ -86,6 +88,8 @@ namespace CityForgeV3.UI
         private string _placementEffectId = "";
         private string _placementBuildingPropId = "";
         private string _placementOverlayTextureId = "";
+        private string _placementDecalCategory = "";
+        private Label _decalCursor;
         private Action _pendingDocumentAction;
         private Action _refreshBuildingFocusOverlay;
         private bool _lotEditorRefreshScheduled;
@@ -95,6 +99,8 @@ namespace CityForgeV3.UI
         private Vector2Int _lotContextCell;
         private int _hoveredLotStripDeleteAction;
         private Vector2Int _lastPhysicalCharacterDirection;
+        private bool _lotInspectorVisible = true;
+        private Vector2 _lotInspectorPosition = new(-1f, -1f);
 
         public LotEditorCategory ActiveLotEditorCategory => _lotEditorCategory;
         public bool IsLotEditorCategoryExpanded => _lotEditorCategoryExpanded;
@@ -429,12 +435,15 @@ namespace CityForgeV3.UI
 
         private void Update()
         {
+            RefreshDecalCursorForControl(
+                Input.GetKey(KeyCode.LeftControl) ||
+                Input.GetKey(KeyCode.RightControl));
             if (_currentScreen == AppScreen.LotEditor &&
                 _lotWorld != null &&
-                _lotWorld.ActiveObjectSelection ==
-                    LotObjectSelectionKind.Flora &&
+                _lotWorld.ActiveObjectSelection is
+                    LotObjectSelectionKind.Flora or LotObjectSelectionKind.Prop &&
                 !TextInputHasFocus() && Input.GetKeyDown(KeyCode.R))
-                BeginSelectedFloraRepeat();
+                BeginSelectedObjectRepeat();
             PollPhysicalCharacterArrowKeys();
             if (_currentScreen != AppScreen.LotEditor ||
                 _lotContextMenu == null ||
@@ -473,6 +482,7 @@ namespace CityForgeV3.UI
                 : default;
             _currentScreen = screen;
             _refreshBuildingFocusOverlay = null;
+            _decalCursor = null;
             _root.Clear();
             _lotWorld?.SetVisible(screen == AppScreen.LotEditor && _hasOpenLot);
 
@@ -490,6 +500,16 @@ namespace CityForgeV3.UI
             }
             if (preserveLotCamera)
                 _lotWorld.RestoreCameraFraming(preservedCamera);
+            if (screen == AppScreen.LotEditor && _lotWorld != null)
+            {
+                // Apply the empty Buildings workspace preview after the
+                // ordinary editor camera restoration. Doing this during
+                // ComposeLotEditor caused the preserved pre-workspace view
+                // to overwrite it, so the first placed building appeared to
+                // rotate the lot and change the camera.
+                _lotWorld.SetBuilding3DEditorContext(
+                    _lotEditorCategory == LotEditorCategory.Buildings3D);
+            }
         }
 
         private void OnKeyDown(KeyDownEvent evt)
@@ -500,16 +520,27 @@ namespace CityForgeV3.UI
                 return;
             }
 
+            if (evt.keyCode is KeyCode.LeftControl or KeyCode.RightControl)
+                RefreshDecalCursorForControl(true);
+
             if (TextInputHasFocus())
             {
                 return;
             }
 
-            if (evt.keyCode == KeyCode.R &&
-                _lotWorld.ActiveObjectSelection ==
-                    LotObjectSelectionKind.Flora)
+            if (evt.keyCode == KeyCode.Z && (evt.ctrlKey || evt.commandKey))
             {
-                BeginSelectedFloraRepeat();
+                _lotStatus = _lotWorld.UndoLastDecal()
+                    ? "Last decal removed"
+                    : "No placed decal to undo";
+                Show(AppScreen.LotEditor);
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.R &&
+                _lotWorld.ActiveObjectSelection is
+                    LotObjectSelectionKind.Flora or LotObjectSelectionKind.Prop)
+            {
+                BeginSelectedObjectRepeat();
                 evt.StopPropagation();
             }
             else if (evt.keyCode == KeyCode.Escape)
@@ -528,11 +559,25 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
+                if (_lotWorld.PropRepeatLineActive)
+                {
+                    _lotWorld.CancelPropRepeatLine();
+                    _lotStatus = "Prop repeat cancelled";
+                    evt.StopPropagation();
+                    return;
+                }
                 if (_lotWorld.RoadRoutePlanningActive)
                 {
                     _lotWorld.CancelRoadRoutePlan();
                     _lotStatus = "Road route planning cancelled";
                     Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_lotWorld.CirculationPathDrawingActive)
+                {
+                    _lotWorld.EndCirculationPathDrawing();
+                    _lotStatus = "Path finished • click to start another";
                     evt.StopPropagation();
                     return;
                 }
@@ -578,6 +623,32 @@ namespace CityForgeV3.UI
             else if (evt.keyCode is KeyCode.LeftArrow or KeyCode.RightArrow or
                      KeyCode.UpArrow or KeyCode.DownArrow)
             {
+                if (_lotWorld.ActiveObjectSelection ==
+                        LotObjectSelectionKind.BuildingProp &&
+                    evt.keyCode is KeyCode.LeftArrow or KeyCode.RightArrow)
+                {
+                    var clockwise = evt.keyCode == KeyCode.LeftArrow;
+                    _lotStatus = _lotWorld.RotateSelectedBuildingProp45Degrees(
+                            clockwise ? 1 : -1)
+                        ? $"Building prop rotated {(clockwise ? "clockwise" : "counter-clockwise")}"
+                        : "Select a building prop before rotating";
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_lotEditorCategory == LotEditorCategory.OverlayTextures &&
+                    _lotWorld.SelectedOverlayTextureIndex >= 0 &&
+                    evt.keyCode is KeyCode.LeftArrow or KeyCode.RightArrow)
+                {
+                    var clockwise = evt.keyCode == KeyCode.LeftArrow;
+                    _lotStatus = _lotWorld.RotateSelectedOverlayTexture(
+                            clockwise ? 1 : -1)
+                        ? $"Overlay rotated {(clockwise ? "clockwise" : "counter-clockwise")}"
+                        : "Select an overlay tile before rotating";
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
                 if (_lotWorld.SelectedBuilding3DIndex >= 0)
                 {
                     if (evt.keyCode == KeyCode.LeftArrow)
@@ -678,9 +749,19 @@ namespace CityForgeV3.UI
                      _lotWorld.ActiveObjectSelection ==
                      LotObjectSelectionKind.BuildingProp)
             {
-                _lotStatus = _lotWorld.RotateSelectedBuildingProp45Degrees()
+                _lotStatus = _lotWorld.RotateSelectedBuildingProp45Degrees(1)
                     ? "Building prop rotated 45°"
                     : "Select a building prop before rotating";
+                Show(AppScreen.LotEditor);
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.O &&
+                     _lotWorld.ActiveObjectSelection ==
+                     LotObjectSelectionKind.BuildingProp)
+            {
+                _lotStatus = _lotWorld.ToggleSelectedBuildingPropDoor()
+                    ? "Storefront door toggled"
+                    : "This building prop does not have an operable door";
                 Show(AppScreen.LotEditor);
                 evt.StopPropagation();
             }
@@ -727,20 +808,40 @@ namespace CityForgeV3.UI
 
         private void OnKeyUp(KeyUpEvent evt)
         {
+            if (evt.keyCode is KeyCode.LeftControl or KeyCode.RightControl)
+                RefreshDecalCursorForControl(false);
             // Repeat remains active after R is released. The next click sets
             // the endpoint; Escape cancels it.
         }
 
-        private void BeginSelectedFloraRepeat()
+        private void RefreshDecalCursorForControl(bool controlHeld)
         {
-            if (_lotWorld == null || _lotWorld.FloraRepeatLineActive) return;
-            if (_lotWorld.BeginSelectedFloraRepeatLine())
+            if (_decalCursor == null ||
+                _currentScreen != AppScreen.LotEditor ||
+                _lotEditorCategory != LotEditorCategory.Decals ||
+                string.IsNullOrWhiteSpace(_placementDecalCategory)) return;
+            _decalCursor.text = controlHeld ? "▱" : "✎";
+            _decalCursor.tooltip = controlHeld
+                ? "Partial decal eraser — click while holding Control"
+                : "Decal paintbrush — hold Control to erase";
+        }
+
+        private void BeginSelectedObjectRepeat()
+        {
+            if (_lotWorld == null || _lotWorld.FloraRepeatLineActive ||
+                _lotWorld.PropRepeatLineActive) return;
+            if (_lotWorld.ActiveObjectSelection == LotObjectSelectionKind.Prop &&
+                _lotWorld.BeginSelectedPropRepeatLine())
+            {
+                _lotStatus = "PROP REPEAT string active • move the mouse • click once to place joined copies";
+            }
+            else if (_lotWorld.BeginSelectedFloraRepeatLine())
             {
                 _lotStatus = "REPEAT string active • move the mouse • click once to plant the row";
             }
             else
             {
-                _lotStatus = "Select a placed flora item before pressing R";
+                _lotStatus = "Select a placed flora item or prop before pressing R";
             }
         }
 
@@ -906,13 +1007,15 @@ namespace CityForgeV3.UI
                     LotEditorCategory.Props or LotEditorCategory.Characters or
                     LotEditorCategory.Entertainment or
                     LotEditorCategory.BaseTextures or
-                    LotEditorCategory.OverlayTextures);
+                    LotEditorCategory.OverlayTextures or
+                    LotEditorCategory.Decals);
 
             var screen = Screen("lot-editor-screen");
             screen.focusable = true;
             screen.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (!_cameraPanToolActive || evt.button != 0 ||
+                    !string.IsNullOrWhiteSpace(_placementBuildingPropId) ||
                     evt.position.y <= 70f || evt.position.x <= 100f ||
                     evt.position.x >= screen.resolvedStyle.width - 330f) return;
                 _cameraPanPointerDown = true;
@@ -1081,6 +1184,20 @@ namespace CityForgeV3.UI
             _refreshBuildingFocusOverlay = RefreshBuildingFocusOverlay;
             viewportInput.Add(focusDimOverlay);
             viewportInput.Add(effectCursor);
+            var decalCursor = new Label("✎")
+            {
+                name = "decal-paintbrush-cursor",
+                pickingMode = PickingMode.Ignore
+            };
+            _decalCursor = decalCursor;
+            decalCursor.style.position = Position.Absolute;
+            decalCursor.style.fontSize = 26f;
+            decalCursor.style.color = new Color(0.2f, 1f, 0.78f, 1f);
+            decalCursor.style.display =
+                _lotEditorCategory == LotEditorCategory.Decals &&
+                !string.IsNullOrWhiteSpace(_placementDecalCategory)
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+            viewportInput.Add(decalCursor);
             viewportInput.RegisterCallback<GeometryChangedEvent>(_
                 => RefreshBuildingFocusOverlay());
             viewportInput.RegisterCallback<PointerDownEvent>(evt =>
@@ -1131,6 +1248,17 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
+                if (evt.button == 0 && _lotWorld.PropRepeatLineActive)
+                {
+                    var placed = _lotWorld.CommitPropRepeatLineFromPanel(
+                        evt.position, panelSize);
+                    _lotStatus = placed
+                        ? $"{_lotWorld.LastPropRepeatPlacementCount} joined prop sections added"
+                        : "Repeat endpoint is shorter than one prop section";
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
                 if (evt.button == 0 && _building3DPlacementPending)
                 {
                     _lotWorld.DragBuilding3DFromPanel(evt.position, panelSize);
@@ -1140,13 +1268,89 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
+                if ((evt.button == 0 || evt.button == 1) &&
+                    _lotEditorCategory == LotEditorCategory.Decals &&
+                    evt.ctrlKey)
+                {
+                    _lotStatus = _lotWorld.EraseDecalFromPanel(
+                            evt.position, panelSize)
+                        ? "Decal partially erased • Ctrl+Z restores the stroke"
+                        : "Move the eraser onto a placed decal";
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (evt.button == 0 &&
+                    _lotEditorCategory == LotEditorCategory.Decals &&
+                    !string.IsNullOrWhiteSpace(_placementDecalCategory))
+                {
+                    var placed = _lotWorld.PlaceRandomDecalFromPanel(
+                        _placementDecalCategory, evt.position, panelSize);
+                    _lotStatus = placed
+                        ? "Random grass decal painted • Ctrl+Z removes it"
+                        : _lotWorld.LastDecalPlacementBlockedByBuilding
+                            ? "Decals cannot be painted on top of buildings"
+                            : _lotWorld.LastDecalPlacementRequiresStreet
+                                ? "Street decals can only be painted on placed roads"
+                            : "Keep the paintbrush inside the lot";
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
                 // A placed 3D building is directly selectable in every Lot
                 // Editor tool, including while the camera hand is active.
                 // An armed catalog item must win first so an enclosure's mesh
                 // cannot consume a click intended to drop Kong inside it.
+                if (evt.button == 0 &&
+                    string.IsNullOrWhiteSpace(_placementBuildingPropId) &&
+                    (_lotWorld.ActiveObjectSelection ==
+                         LotObjectSelectionKind.None ||
+                     _lotWorld.ActiveObjectSelection ==
+                         LotObjectSelectionKind.BuildingProp) &&
+                    !ShouldPrioritizeToolPlacement(_lotEditorCategory,
+                        _placementFloraId, _placementPropId) &&
+                    !(_lotEditorCategory == LotEditorCategory.Effects &&
+                      !string.IsNullOrWhiteSpace(_placementEffectId)) &&
+                    !(_lotEditorCategory == LotEditorCategory.Decals &&
+                      !string.IsNullOrWhiteSpace(_placementDecalCategory)) &&
+                    _lotWorld.BeginExistingObjectManipulationFromPanel(
+                        evt.position, panelSize) ==
+                        LotObjectSelectionKind.BuildingProp)
+                {
+                    _buildingPropPointerDown = true;
+                    _buildingPropDragStarted = false;
+                    viewportInput.CapturePointer(evt.pointerId);
+                    _lotStatus = "Building prop selected • drag to move • Left/Right rotates";
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_lotEditorCategory == LotEditorCategory.Paths &&
+                    evt.button == 0)
+                {
+                    var continuing = _lotWorld.CirculationPathDrawingActive;
+                    if (!_lotWorld.AddCirculationStopFromPanel(
+                            evt.position, panelSize)) return;
+                    _lotStatus = continuing &&
+                        !_lotWorld.CirculationPathDrawingActive
+                        ? _lotWorld.SelectedPedestrianPathKind ==
+                            PedestrianPathKind.Stairs
+                            ? "Stairs created • elevated end is the doorway • click to start another"
+                            : "Path created • click to start another"
+                        : continuing
+                        ? "Path created • click to start another"
+                        : "Path started • move the mouse and click the next stop • Esc finishes";
+                    evt.StopPropagation();
+                    return;
+                }
                 if (evt.button == 0 && !ShouldPrioritizeToolPlacement(
                         _lotEditorCategory, _placementFloraId,
                         _placementPropId) &&
+                    (_lotWorld.ActiveObjectSelection ==
+                         LotObjectSelectionKind.None ||
+                     _lotWorld.ActiveObjectSelection ==
+                         LotObjectSelectionKind.Building) &&
+                    !(_lotEditorCategory == LotEditorCategory.BuildingProps &&
+                      !string.IsNullOrWhiteSpace(_placementBuildingPropId)) &&
                     !(_lotEditorCategory == LotEditorCategory.Effects &&
                       !string.IsNullOrWhiteSpace(_placementEffectId)) &&
                     _lotWorld.BeginBuilding3DDragFromPanel(
@@ -1158,9 +1362,12 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
-                if (evt.button == 0)
+                if (evt.button == 0 &&
+                    !(_lotEditorCategory == LotEditorCategory.BuildingProps &&
+                      !string.IsNullOrWhiteSpace(_placementBuildingPropId)))
                     _lotWorld.DeselectBuilding3D();
-                if (_cameraPanToolActive && evt.button == 0)
+                if (_cameraPanToolActive && evt.button == 0 &&
+                    string.IsNullOrWhiteSpace(_placementBuildingPropId))
                 {
                     _cameraPanPointerDown = true;
                     _cameraPanLastPosition = new Vector2(
@@ -1189,7 +1396,9 @@ namespace CityForgeV3.UI
                     (_lotEditorCategory == LotEditorCategory.BuildingProps &&
                      !string.IsNullOrWhiteSpace(_placementBuildingPropId)) ||
                     (_lotEditorCategory == LotEditorCategory.Effects &&
-                     !string.IsNullOrWhiteSpace(_placementEffectId));
+                     !string.IsNullOrWhiteSpace(_placementEffectId)) ||
+                    (_lotEditorCategory == LotEditorCategory.Decals &&
+                     !string.IsNullOrWhiteSpace(_placementDecalCategory));
                 if (_lotEditorCategory == LotEditorCategory.Buildings &&
                     evt.button == 0 && _buildingPlacementPending)
                 {
@@ -1278,17 +1487,22 @@ namespace CityForgeV3.UI
                 if (_lotEditorCategory == LotEditorCategory.BuildingProps &&
                     evt.button == 0)
                 {
-                    var placed = _lotWorld.PlaceBuildingPropFromPanel(
-                        _placementBuildingPropId, evt.position, panelSize);
+                    _buildingPropPlacementPointerDown = false;
+                    var previewOnFacade =
+                        _lotWorld.UpdateBuildingPropPreviewFromPanel(
+                            evt.position, panelSize);
+                    var placed = previewOnFacade &&
+                        _lotWorld.CommitBuildingPropPlacementPreview(
+                            _placementBuildingPropId);
                     _lotStatus = placed
-                        ? "Ale House sign attached • drag it to reposition"
-                        : "Move the translucent sign over a building facade";
+                        ? "Building prop attached • click it again to move or rotate"
+                        : "Move the translucent prop over a building facade and click to attach";
                     if (placed)
                     {
                         _placementBuildingPropId = "";
                         _lotWorld.SetBuildingPropPlacementPreview("");
+                        Show(AppScreen.LotEditor);
                     }
-                    Show(AppScreen.LotEditor);
                     evt.StopPropagation();
                     return;
                 }
@@ -1417,12 +1631,35 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
+                if (_lotWorld.PropRepeatLineActive)
+                {
+                    _lotWorld.UpdatePropRepeatLineFromPanel(
+                        evt.position, panelSize);
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_lotEditorCategory == LotEditorCategory.Paths)
+                {
+                    _lotWorld.UpdateCirculationPathPreviewFromPanel(
+                        evt.position, panelSize);
+                    evt.StopPropagation();
+                    return;
+                }
                 if (_lotEditorCategory == LotEditorCategory.Effects &&
                     !string.IsNullOrWhiteSpace(_placementEffectId))
                 {
                     effectCursor.style.left = evt.localPosition.x - 9f;
                     effectCursor.style.top = evt.localPosition.y - 9f;
                     effectCursor.style.display = DisplayStyle.Flex;
+                }
+                if (_lotEditorCategory == LotEditorCategory.Decals &&
+                    !string.IsNullOrWhiteSpace(_placementDecalCategory))
+                {
+                    decalCursor.text = evt.ctrlKey ? "▱" : "✎";
+                    decalCursor.style.left = evt.localPosition.x + 5f;
+                    decalCursor.style.top = evt.localPosition.y - 25f;
+                    decalCursor.style.display = DisplayStyle.Flex;
+                    _lotWorld.UpdateDecalPreviewFromPanel(evt.position, panelSize);
                 }
                 if (_cameraPanPointerDown)
                 {
@@ -1443,6 +1680,8 @@ namespace CityForgeV3.UI
                      !string.IsNullOrWhiteSpace(_placementBuildingPropId)) ||
                     (_lotEditorCategory == LotEditorCategory.Effects &&
                      !string.IsNullOrWhiteSpace(_placementEffectId)) ||
+                    (_lotEditorCategory == LotEditorCategory.Decals &&
+                     !string.IsNullOrWhiteSpace(_placementDecalCategory)) ||
                     _lotEditorCategory == LotEditorCategory.OverlayTextures;
                 _lotWorld.UpdateObjectHoverFromPanel(
                     evt.position, panelSize, hoverSuppressed);
@@ -1502,6 +1741,13 @@ namespace CityForgeV3.UI
                 {
                     if (_lotWorld.DragBuildingPropFromPanel(evt.position, panelSize))
                         _buildingPropDragStarted = true;
+                    evt.StopPropagation();
+                    return;
+                }
+                if (_buildingPropPlacementPointerDown)
+                {
+                    _lotWorld.UpdateBuildingPropPreviewFromPanel(
+                        evt.position, panelSize);
                     evt.StopPropagation();
                     return;
                 }
@@ -1705,6 +1951,28 @@ namespace CityForgeV3.UI
                     evt.StopPropagation();
                     return;
                 }
+                if (evt.button == 0 && _buildingPropPlacementPointerDown)
+                {
+                    _buildingPropPlacementPointerDown = false;
+                    var panelSize = new Vector2(
+                        viewportInput.resolvedStyle.width,
+                        viewportInput.resolvedStyle.height);
+                    var placed = _lotWorld.CommitBuildingPropPlacementPreview(
+                        _placementBuildingPropId);
+                    if (viewportInput.HasPointerCapture(evt.pointerId))
+                        viewportInput.ReleasePointer(evt.pointerId);
+                    _lotStatus = placed
+                        ? "Building prop attached • click it again to move or rotate"
+                        : "Move the translucent prop over a building facade and release";
+                    if (placed)
+                    {
+                        _placementBuildingPropId = "";
+                        _lotWorld.SetBuildingPropPlacementPreview("");
+                    }
+                    Show(AppScreen.LotEditor);
+                    evt.StopPropagation();
+                    return;
+                }
                 if (evt.button == 0 && _overlayPointerDown)
                 {
                     _overlayPointerDown = false;
@@ -1848,6 +2116,7 @@ namespace CityForgeV3.UI
                 "effects", "Effects"));
             toolRailScroll.Add(CategoryButton(LotEditorCategory.BaseTextures, "base-textures", "Base"));
             toolRailScroll.Add(CategoryButton(LotEditorCategory.OverlayTextures, "overlay-textures", "Overlays"));
+            toolRailScroll.Add(CategoryButton(LotEditorCategory.Decals, "decals", "Decals"));
             toolRailScroll.Add(CategoryButton(LotEditorCategory.Environment, "environment", "Environment"));
             toolRailScroll.Add(CategoryButton(LotEditorCategory.View, "view", "View"));
             toolRail.Add(toolRailScroll);
@@ -2139,6 +2408,11 @@ namespace CityForgeV3.UI
                     "CityForgeV3/Buildings3D/IvyTownhouseWhiteProduction/Source/NY Townhouse White with ivy",
                     "LOD0–LOD4 + 8-ANGLE LOD5");
                 AddEvaluationBuildingCard(BuildingUseCategory.Residential,
+                    LotWorldController.HitchcockMansionProductionId,
+                    "Hitchcock Mansion",
+                    "CityForgeV3/Buildings3D/HitchcockMansionProduction/LOD5/hitchcock-mansion-angle-1-045-v01",
+                    "LOD0–LOD4 + 8-ANGLE LOD5");
+                AddEvaluationBuildingCard(BuildingUseCategory.Residential,
                     LotWorldController.NyBrownstoneLightEvaluationId,
                     "NY Brownstone Light",
                     "CityForgeV3/Buildings3D/Evaluation/NYBrownstoneLight/thumbnail",
@@ -2163,6 +2437,11 @@ namespace CityForgeV3.UI
                     "Brooklyn Townhome Row",
                     "CityForgeV3/Buildings3D/Evaluation/BrooklynTownhomeRow/thumbnail",
                     "SUPPLIED MODEL");
+                AddEvaluationBuildingCard(BuildingUseCategory.Mixed,
+                    LotWorldController.MixedUseBrickEvaluationId,
+                    "Mixed-Use Brick Building",
+                    "CityForgeV3/Buildings3D/Evaluation/MixedUseBrick/LOD5/mixed-use-brick-angle-1-045-v01",
+                    "LOD0–LOD4 + 8-ANGLE LOD5");
                 AddEvaluationBuildingCard(BuildingUseCategory.Civics,
                     LotWorldController.NorwalkClockTowerEvaluationId,
                     "Norwalk Juvenile Courthouse",
@@ -2370,6 +2649,25 @@ namespace CityForgeV3.UI
                     OpenWaterModal, true, "mode-selected"));
                 screen.Add(waterPanel);
             }
+            if (_lotEditorCategoryExpanded &&
+                _lotEditorCategory == LotEditorCategory.Decals)
+            {
+                var decalsPanel = new VisualElement { name = "decals-category-panel" };
+                decalsPanel.AddToClassList("context-panel");
+                decalsPanel.Add(StyledLabel("DECALS", "section-label"));
+                decalsPanel.Add(StyledLabel("SURFACE DETAILS", "catalog-title"));
+                decalsPanel.Add(StyledLabel(
+                    string.IsNullOrWhiteSpace(_placementDecalCategory)
+                        ? "Choose a category to arm the paintbrush"
+                        : $"{_placementDecalCategory.ToUpperInvariant()} armed • click repeatedly for randomized details",
+                    "catalog-meta"));
+                decalsPanel.Add(CfButton.Create("CHOOSE DECAL CATEGORY…",
+                    OpenDecalsModal, true, "mode-selected"));
+                decalsPanel.Add(StyledLabel(
+                    "HOLD CONTROL  ▱  PARTIAL ERASER",
+                    "catalog-meta"));
+                screen.Add(decalsPanel);
+            }
 
             if (_lotEditorCategoryExpanded && _lotEditorCategory == LotEditorCategory.Environment)
             {
@@ -2551,8 +2849,72 @@ namespace CityForgeV3.UI
 
             var inspector = new VisualElement();
             inspector.AddToClassList("inspector");
-            var selectedBuilding3D = _lotWorld.SelectedBuilding3DIndex >= 0;
-            inspector.Add(StyledLabel(selectedBuilding3D
+            if (_lotInspectorPosition.x >= 0f)
+            {
+                inspector.style.left = _lotInspectorPosition.x;
+                inspector.style.top = _lotInspectorPosition.y;
+                inspector.style.right = StyleKeyword.Auto;
+            }
+            var inspectorHeader = new VisualElement();
+            inspectorHeader.AddToClassList("inspector-header");
+            var inspectorDragHandle = StyledLabel("⠿  DRAG PANEL",
+                "inspector-drag-handle");
+            inspectorDragHandle.tooltip = "Drag to reposition this panel";
+            var closeInspector = CfButton.Create("×", () =>
+            {
+                _lotInspectorVisible = false;
+                ComposeLotEditor();
+            }, true, "icon");
+            closeInspector.name = "close-lot-inspector";
+            closeInspector.tooltip = "Close panel";
+            inspectorHeader.Add(inspectorDragHandle);
+            inspectorHeader.Add(closeInspector);
+            inspector.Add(inspectorHeader);
+            var inspectorDragging = false;
+            var inspectorDragOffset = Vector2.zero;
+            inspectorDragHandle.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0) return;
+                inspectorDragging = true;
+                inspectorDragOffset = new Vector2(
+                    inspector.worldBound.position.x,
+                    inspector.worldBound.position.y) - new Vector2(
+                    evt.position.x, evt.position.y);
+                inspectorDragHandle.CapturePointer(evt.pointerId);
+                evt.StopPropagation();
+            });
+            inspectorDragHandle.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                if (!inspectorDragging) return;
+                var width = Mathf.Max(1f, screen.resolvedStyle.width);
+                var height = Mathf.Max(1f, screen.resolvedStyle.height);
+                var position = new Vector2(evt.position.x, evt.position.y) +
+                    inspectorDragOffset;
+                position.x = Mathf.Clamp(position.x, 0f,
+                    Mathf.Max(0f, width - inspector.resolvedStyle.width));
+                position.y = Mathf.Clamp(position.y, 70f,
+                    Mathf.Max(70f, height - 52f));
+                _lotInspectorPosition = position;
+                inspector.style.left = position.x;
+                inspector.style.top = position.y;
+                inspector.style.right = StyleKeyword.Auto;
+                evt.StopPropagation();
+            });
+            inspectorDragHandle.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (!inspectorDragging || evt.button != 0) return;
+                inspectorDragging = false;
+                if (inspectorDragHandle.HasPointerCapture(evt.pointerId))
+                    inspectorDragHandle.ReleasePointer(evt.pointerId);
+                evt.StopPropagation();
+            });
+            var selectedBuildingProp = _lotWorld.ActiveObjectSelection ==
+                LotObjectSelectionKind.BuildingProp;
+            var selectedBuilding3D = _lotWorld.SelectedBuilding3DIndex >= 0 &&
+                !selectedBuildingProp;
+            inspector.Add(StyledLabel(selectedBuildingProp
+                ? "BUILDING PROP"
+                : selectedBuilding3D
                 ? "BUILDING"
                 : _lotEditorCategory.ToString().ToUpperInvariant(),
                 "section-label"));
@@ -2569,7 +2931,101 @@ namespace CityForgeV3.UI
             // Object selection takes precedence over the currently open tool
             // category. A selected 3D building must expose its actions even
             // when MAIN (Lot Contract) was the last tool the player opened.
-            if (selectedBuilding3D ||
+            if (selectedBuildingProp)
+            {
+                inspector.Add(StyledLabel(
+                    _lotWorld.SelectedBuildingPropDisplayName,
+                    "inspector-title"));
+                inspector.Add(StyledLabel(
+                    "ATTACHED TO BUILDING • SIZE IS UNIFORM",
+                    "inspector-note"));
+
+                var rotationRow = new VisualElement();
+                rotationRow.AddToClassList("inspector-actions");
+                rotationRow.Add(CfButton.Create("↻ 45°", () =>
+                {
+                    _lotWorld.RotateSelectedBuildingProp45Degrees(1);
+                    _lotStatus = "Building prop rotated clockwise";
+                }, true, "quiet"));
+                rotationRow.Add(CfButton.Create("↺ 45°", () =>
+                {
+                    _lotWorld.RotateSelectedBuildingProp45Degrees(-1);
+                    _lotStatus = "Building prop rotated counter-clockwise";
+                }, true, "quiet"));
+                inspector.Add(rotationRow);
+
+                var scaleValue = StyledLabel(
+                    $"SIZE  {_lotWorld.SelectedBuildingPropScale:0.00}×",
+                    "inspector-note");
+                inspector.Add(scaleValue);
+                var scaleSlider = new Slider(0.25f, 3f)
+                {
+                    value = _lotWorld.SelectedBuildingPropScale,
+                    showInputField = false,
+                    name = "building-prop-scale"
+                };
+                scaleSlider.AddToClassList("environment-lighting-slider");
+                // The inspector is layered over the interactive viewport.
+                // Keep its drag gesture from bubbling into object selection,
+                // which otherwise captures the pointer before Slider can
+                // update its value.
+                scaleSlider.RegisterCallback<PointerDownEvent>(evt =>
+                    evt.StopPropagation());
+                scaleSlider.RegisterCallback<PointerMoveEvent>(evt =>
+                    evt.StopPropagation());
+                scaleSlider.RegisterCallback<PointerUpEvent>(evt =>
+                    evt.StopPropagation());
+                scaleSlider.RegisterValueChangedCallback(evt =>
+                {
+                    if (!_lotWorld.SetSelectedBuildingPropScale(evt.newValue))
+                        return;
+                    scaleValue.text = $"SIZE  {evt.newValue:0.00}×";
+                    _lotStatus = "Building prop resized uniformly";
+                });
+                inspector.Add(scaleSlider);
+
+                var scaleStops = new VisualElement();
+                scaleStops.AddToClassList("building-prop-scale-stops");
+                foreach (var preset in new[] { 0.5f, 1f, 1.5f, 2f, 3f })
+                {
+                    var capturedScale = preset;
+                    var stop = new Button(() =>
+                    {
+                        // Assign through the Slider so its thumb, label, model,
+                        // and persisted attachment value update together.
+                        scaleSlider.value = capturedScale;
+                    })
+                    {
+                        text = $"{capturedScale:0.#}×",
+                        name = $"building-prop-scale-{capturedScale:0.#}"
+                    };
+                    stop.AddToClassList("building-prop-scale-stop");
+                    scaleStops.Add(stop);
+                }
+                scaleStops.RegisterCallback<PointerDownEvent>(evt =>
+                    evt.StopPropagation());
+                scaleStops.RegisterCallback<PointerUpEvent>(evt =>
+                    evt.StopPropagation());
+                inspector.Add(scaleStops);
+
+                var propActions = new VisualElement();
+                propActions.AddToClassList("inspector-actions");
+                propActions.Add(CfButton.Create("OPEN / CLOSE", () =>
+                {
+                    _lotStatus = _lotWorld.ToggleSelectedBuildingPropDoor()
+                        ? "Storefront door toggled"
+                        : "This building prop has no operable door";
+                }, true, "quiet"));
+                propActions.Add(CfButton.Create("DELETE", () =>
+                {
+                    _lotStatus = _lotWorld.DeleteSelectedBuildingProp()
+                        ? "Building prop deleted"
+                        : "Select a building prop before deleting";
+                    Show(AppScreen.LotEditor);
+                }, true, "danger"));
+                inspector.Add(propActions);
+            }
+            else if (selectedBuilding3D ||
                 _lotEditorCategory == LotEditorCategory.Buildings3D)
             {
                 if (_lotWorld.SelectedBuilding3DIndex >= 0)
@@ -3043,6 +3499,24 @@ namespace CityForgeV3.UI
                 true,
                 _lotWorld.CirculationMode == CirculationMode.Vehicle ? "mode-selected" : "quiet"));
             inspector.Add(networkRow);
+            if (_lotWorld.CirculationMode == CirculationMode.Pedestrian)
+            {
+                var pathTypeRow = new VisualElement();
+                pathTypeRow.AddToClassList("inspector-actions");
+                pathTypeRow.Add(CfButton.Create(
+                    "FLAT PATH",
+                    () => SetPedestrianPathKind(PedestrianPathKind.Flat),
+                    true,
+                    _lotWorld.SelectedPedestrianPathKind ==
+                        PedestrianPathKind.Flat ? "mode-selected" : "quiet"));
+                pathTypeRow.Add(CfButton.Create(
+                    "STAIRS ↗",
+                    () => SetPedestrianPathKind(PedestrianPathKind.Stairs),
+                    true,
+                    _lotWorld.SelectedPedestrianPathKind ==
+                        PedestrianPathKind.Stairs ? "mode-selected" : "quiet"));
+                inspector.Add(pathTypeRow);
+            }
             var cursorRow = new VisualElement();
             cursorRow.AddToClassList("inspector-actions");
             cursorRow.Add(CfButton.Create("←", () => MoveCategorySelectionOrPan(-1, 0), true, "icon"));
@@ -3149,10 +3623,14 @@ namespace CityForgeV3.UI
                     inspector.Add(Property("ACTIVE",
                         string.IsNullOrWhiteSpace(_placementPropId)
                             ? "NONE"
+                            : _placementPropId == LotWorldController.Hedge3DPropId
+                                ? "3D HEDGE"
                             : _placementPropId == "wrought-iron-fence-corner-v01"
                                 ? "WROUGHT-IRON CORNER"
                                 : "WROUGHT-IRON FENCE"));
-                    inspector.Add(Property("FAMILY", "FENCES & GATES"));
+                    inspector.Add(Property("FAMILY",
+                        _placementPropId == LotWorldController.Hedge3DPropId
+                            ? "FLORA PROPS" : "FENCES & GATES"));
                     inspector.Add(Property("POSITIONING", "1 PIXEL • ARROW KEYS"));
                     inspector.Add(CfButton.Create("CHOOSE PROP…",
                         OpenPropsModal, true, "primary"));
@@ -3239,13 +3717,35 @@ namespace CityForgeV3.UI
                 inspector.Add(StyledLabel("OVERLAY TEXTURES", "inspector-title"));
                 inspector.Add(Property("PLACED", $"{_lotWorld.OverlayTextureCount} TILES"));
                 inspector.Add(Property("ACTIVE", string.IsNullOrWhiteSpace(_placementOverlayTextureId)
-                    ? "NONE" : "BRICK WALKWAY"));
+                    ? "NONE"
+                    : LotWorldController.ResolveOverlayTexture(
+                        _placementOverlayTextureId).DisplayName.ToUpperInvariant()));
                 inspector.Add(Property("SELECTED", _lotWorld.SelectedOverlayTextureIndex >= 0
-                    ? "BRICK WALKWAY TILE" : "NONE"));
+                    ? "OVERLAY TILE" : "NONE"));
                 inspector.Add(CfButton.Create("CHOOSE OVERLAY…", OpenOverlayTextureModal, true, "primary"));
                 inspector.Add(CfButton.Create("DELETE SELECTED [DELETE]",
                     DeleteSelectedOverlayTexture,
                     _lotWorld.SelectedOverlayTextureIndex >= 0, "danger"));
+                inspector.Add(Property("ROTATE",
+                    "LEFT = CLOCKWISE • RIGHT = COUNTER-CLOCKWISE"));
+            }
+            if (_lotEditorCategory == LotEditorCategory.Decals)
+            {
+                inspector.Add(StyledLabel("DECALS", "inspector-title"));
+                inspector.Add(Property("PLACED", _lotWorld.DecalCount.ToString()));
+                inspector.Add(Property("ACTIVE",
+                    string.IsNullOrWhiteSpace(_placementDecalCategory)
+                        ? "NONE" : _placementDecalCategory.ToUpperInvariant()));
+                inspector.Add(Property("VARIATION", "RANDOM TEXTURE • ROTATION"));
+                inspector.Add(CfButton.Create("CHOOSE CATEGORY…",
+                    OpenDecalsModal, true, "primary"));
+                inspector.Add(Property("ERASER", "HOLD CONTROL + CLICK"));
+                inspector.Add(CfButton.Create("UNDO LAST [CTRL+Z]", () =>
+                {
+                    _lotStatus = _lotWorld.UndoLastDecal()
+                        ? "Last decal removed" : "No placed decal to undo";
+                    Show(AppScreen.LotEditor);
+                }, _lotWorld.DecalCount > 0, "quiet"));
             }
             if (_hasOpenLot && _lotEditorCategory == LotEditorCategory.Main &&
                 !selectedBuilding3D)
@@ -3261,7 +3761,19 @@ namespace CityForgeV3.UI
             }
             if (!string.IsNullOrWhiteSpace(_lotStatus))
                 inspector.Add(StyledLabel(_lotStatus, "status-note"));
-            screen.Add(inspector);
+            if (_lotInspectorVisible)
+                screen.Add(inspector);
+            else
+            {
+                var showInspector = CfButton.Create("SHOW PANEL", () =>
+                {
+                    _lotInspectorVisible = true;
+                    ComposeLotEditor();
+                }, true, "quiet");
+                showInspector.name = "show-lot-inspector";
+                showInspector.AddToClassList("inspector-reopen");
+                screen.Add(showInspector);
+            }
 
             var hintText = _lotWorld.ToolMode switch
             {
@@ -3482,6 +3994,26 @@ namespace CityForgeV3.UI
                 water.Add(waterCaption);
                 return water;
             }
+            if (category == LotEditorCategory.Decals)
+            {
+                var decals = new Button(() => SetLotEditorCategory(category))
+                {
+                    name = "Decals",
+                    text = "✎",
+                    tooltip = "Paint randomized surface-detail decals"
+                };
+                decals.AddToClassList("cf-image-button");
+                decals.AddToClassList(selected
+                    ? "cf-image-button--tool-category-selected"
+                    : "cf-image-button--tool-category");
+                var decalsCaption = new Label("DECALS")
+                {
+                    pickingMode = PickingMode.Ignore
+                };
+                decalsCaption.AddToClassList("tool-category-caption");
+                decals.Add(decalsCaption);
+                return decals;
+            }
             if (category == LotEditorCategory.Buildings ||
                 category == LotEditorCategory.Buildings3D)
             {
@@ -3530,6 +4062,11 @@ namespace CityForgeV3.UI
                 _placementEffectId = "";
                 _lotWorld.SetEffectPlacementPreview("");
             }
+            if (category != LotEditorCategory.Decals)
+            {
+                _placementDecalCategory = "";
+                _lotWorld.SetDecalPlacementPreview(false);
+            }
             if (_building3DPlacementPending)
             {
                 _lotWorld.EndBuilding3DDrag();
@@ -3543,6 +4080,11 @@ namespace CityForgeV3.UI
                 {
                     _placementEffectId = "";
                     _lotWorld.SetEffectPlacementPreview("");
+                }
+                if (category == LotEditorCategory.Decals)
+                {
+                    _placementDecalCategory = "";
+                    _lotWorld.SetDecalPlacementPreview(false);
                 }
                 _lotEditorCategoryExpanded = false;
                 _lotStatus = $"{category} tools collapsed";
@@ -3573,12 +4115,69 @@ namespace CityForgeV3.UI
                 OpenEffectsModal();
             else if (category == LotEditorCategory.Water)
                 OpenWaterModal();
+            else if (category == LotEditorCategory.Decals)
+                OpenDecalsModal();
             else if (category == LotEditorCategory.BuildingProps)
                 OpenBuildingPropsModal();
             else if (category == LotEditorCategory.BaseTextures)
                 OpenBaseTextureModal();
             else if (category == LotEditorCategory.OverlayTextures)
                 OpenOverlayTextureModal();
+        }
+
+        private void OpenDecalsModal()
+        {
+            var panel = CreateDocumentModal(
+                "DECAL LIBRARY",
+                "Choose a surface category. Each click chooses a texture and quarter-turn at random; Ctrl+Z removes the most recent decal.");
+            panel.AddToClassList("road-material-modal-panel");
+            panel.Add(StyledLabel("SURFACE CATEGORIES", "road-material-role"));
+            var grid = new VisualElement();
+            grid.AddToClassList("road-material-grid");
+
+            var grass = new VisualElement();
+            grass.AddToClassList("road-material-card");
+            var grassSwatch = new VisualElement();
+            grassSwatch.AddToClassList("road-material-swatch");
+            var leaves = Resources.Load<Texture2D>("CityForgeV3/Decals/Grass/leaves-01");
+            if (leaves != null)
+                grassSwatch.style.backgroundImage = new StyleBackground(leaves);
+            grass.Add(grassSwatch);
+            grass.Add(CfButton.Create("GRASS • 3 VARIANTS", () =>
+            {
+                _placementDecalCategory = "grass";
+                _lotWorld.SetDecalPlacementPreview(true);
+                _lotStatus = "Grass decal paintbrush armed • click the lot • Ctrl+Z undoes";
+                RemoveDocumentModal();
+                Show(AppScreen.LotEditor);
+            }, true, _placementDecalCategory == "grass"
+                ? "mode-selected" : "quiet"));
+            grid.Add(grass);
+
+            var street = new VisualElement();
+            street.AddToClassList("road-material-card");
+            var streetSwatch = new VisualElement();
+            streetSwatch.AddToClassList("road-material-swatch");
+            var brickStreet = Resources.Load<Texture2D>(
+                "CityForgeV3/Decals/Street/brick-street-01");
+            if (brickStreet != null)
+                streetSwatch.style.backgroundImage = new StyleBackground(brickStreet);
+            street.Add(streetSwatch);
+            street.Add(CfButton.Create("STREET • 3 VARIANTS", () =>
+            {
+                _placementDecalCategory = "street";
+                _lotWorld.SetDecalPlacementPreview(true);
+                _lotStatus = "Street decal paintbrush armed • placement is restricted to roads";
+                RemoveDocumentModal();
+                Show(AppScreen.LotEditor);
+            }, true, _placementDecalCategory == "street"
+                ? "mode-selected" : "quiet"));
+            grid.Add(street);
+            panel.Add(grid);
+
+            var actions = DocumentModalActions();
+            actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet"));
+            panel.Add(actions);
         }
 
         private void OpenWaterModal()
@@ -3827,6 +4426,10 @@ namespace CityForgeV3.UI
                 true, "mode-selected"));
             families.Add(CfButton.Create("STREET LIGHTING", null,
                 true, "quiet"));
+            families.Add(CfButton.Create("FLORA PROPS", null,
+                true, "quiet"));
+            families.Add(CfButton.Create("SEASONAL PROPS", OpenSeasonalPropsModal,
+                true, "quiet"));
             families.Add(CfButton.Create("STORE SIGNS", null,
                 false, "quiet"));
             panel.Add(families);
@@ -3835,7 +4438,8 @@ namespace CityForgeV3.UI
             grid.AddToClassList("road-material-grid");
             void AddPropCard(VisualElement targetGrid, string label, string propId,
                 string previewResource,
-                string status)
+                string status, bool available = true,
+                string availabilityLabel = "")
             {
                 var card = new VisualElement();
                 card.AddToClassList("road-material-card");
@@ -3844,14 +4448,19 @@ namespace CityForgeV3.UI
                 preview.style.backgroundImage = new StyleBackground(
                     Resources.Load<Texture2D>(previewResource));
                 card.Add(preview);
-                card.Add(CfButton.Create(label, () =>
+                card.Add(CfButton.Create(label, available ? () =>
                 {
                     _placementPropId = propId;
                     _lotWorld.SetPropPlacementPreview(_placementPropId);
                     _lotStatus = status;
                     RemoveDocumentModal();
                     ComposeLotEditor();
-                }, true, _placementPropId == propId ? "mode-selected" : "quiet"));
+                } : null, available,
+                    available && _placementPropId == propId
+                        ? "mode-selected"
+                        : "quiet"));
+                if (!string.IsNullOrWhiteSpace(availabilityLabel))
+                    card.Add(StyledLabel(availabilityLabel, "catalog-meta"));
                 targetGrid.Add(card);
             }
             AddPropCard(grid, "STRAIGHT FENCE", "wrought-iron-fence-straight-v01",
@@ -3902,10 +4511,83 @@ namespace CityForgeV3.UI
             panel.Add(StyledLabel(
                 "1.8 M ORNATE PERIOD BENCH • ROTATABLE 3D STREET FURNITURE",
                 "catalog-meta"));
+            panel.Add(StyledLabel("FLORA PROPS", "road-material-role"));
+            var floraPropsGrid = new VisualElement();
+            floraPropsGrid.AddToClassList("road-material-grid");
+            AddPropCard(floraPropsGrid, "3D HEDGE",
+                LotWorldController.Hedge3DPropId,
+                "CityForgeV3/Props/Flora/Hedge3DV01/Textures/base-color",
+                "3D hedge selected • click the lot to place • rotate like any prop");
+            panel.Add(floraPropsGrid);
+            panel.Add(StyledLabel(
+                "2.4 M FULLY 3D HEDGE • ROTATABLE • CASTS AND RECEIVES SHADOWS",
+                "catalog-meta"));
+            panel.Add(StyledLabel("SEASONAL PROPS", "road-material-role"));
+            var seasonalGrid = new VisualElement();
+            seasonalGrid.AddToClassList("road-material-grid");
+            var pumpkinAvailable = PropSeasonCatalog.IsAvailable(
+                LotWorldController.PumpkinJackOLanternPropId,
+                _lotWorld.Season);
+            AddPropCard(seasonalGrid, "JACK-O'-LANTERN",
+                LotWorldController.PumpkinJackOLanternPropId,
+                "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_basecolor",
+                "Autumn jack-o'-lantern selected • click the lot to place",
+                pumpkinAvailable,
+                pumpkinAvailable ? "AUTUMN • AVAILABLE NOW" : "AUTUMN ONLY");
+            panel.Add(seasonalGrid);
+            panel.Add(StyledLabel(
+                "SEASONAL PROPS REMAIN SAVED YEAR-ROUND AND APPEAR ON THE LOT DURING THEIR ASSIGNED SEASON.",
+                "catalog-meta"));
             panel.Add(StyledLabel(
                 "STORE SIGNS WILL SUPPORT NIGHT EMISSION AND OPTIONAL ANIMATION STATES.",
                 "catalog-meta"));
             var actions = DocumentModalActions();
+            actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
+            panel.Add(actions);
+        }
+
+        private void OpenSeasonalPropsModal()
+        {
+            RemoveDocumentModal();
+            var panel = CreateDocumentModal(
+                "SEASONAL PROPS",
+                "Seasonal decorations remain saved on the lot year-round, but are visible and placeable only during their assigned seasons.");
+            panel.AddToClassList("road-material-modal-panel");
+            panel.Add(StyledLabel("AUTUMN", "road-material-role"));
+            var grid = new VisualElement();
+            grid.AddToClassList("road-material-grid");
+            var card = new VisualElement();
+            card.AddToClassList("road-material-card");
+            var preview = new VisualElement();
+            preview.AddToClassList("road-material-swatch");
+            preview.style.backgroundImage = new StyleBackground(
+                Resources.Load<Texture2D>(
+                    "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_basecolor"));
+            card.Add(preview);
+            var available = PropSeasonCatalog.IsAvailable(
+                LotWorldController.PumpkinJackOLanternPropId,
+                _lotWorld.Season);
+            card.Add(CfButton.Create("JACK-O'-LANTERN", available ? () =>
+            {
+                _placementPropId = LotWorldController.PumpkinJackOLanternPropId;
+                _lotWorld.SetPropPlacementPreview(_placementPropId);
+                _lotStatus =
+                    "Autumn jack-o'-lantern selected • click the lot to place";
+                RemoveDocumentModal();
+                ComposeLotEditor();
+            } : null, available, "quiet"));
+            card.Add(StyledLabel(available
+                ? "SEASON: AUTUMN • AVAILABLE NOW"
+                : "SEASON: AUTUMN • CHANGE THE ENVIRONMENT SEASON TO PLACE",
+                "catalog-meta"));
+            grid.Add(card);
+            panel.Add(grid);
+            var actions = DocumentModalActions();
+            actions.Add(CfButton.Create("BACK TO ALL PROPS", () =>
+            {
+                RemoveDocumentModal();
+                OpenPropsModal();
+            }, true, "quiet"));
             actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
             panel.Add(actions);
         }
@@ -4034,7 +4716,7 @@ namespace CityForgeV3.UI
                 "BUILDING PROPS",
                 "Choose an attachment, then move its translucent preview over a building facade and click to attach it. Attachments move and rotate with their host building.");
             panel.AddToClassList("building-prop-modal-panel");
-            panel.Add(StyledLabel("WOODEN SIGNS", "road-material-role"));
+            panel.Add(StyledLabel("SIGNS & STOREFRONTS", "road-material-role"));
             var grid = new VisualElement();
             grid.AddToClassList("building-prop-grid");
             foreach (var item in BuildingPropCatalog.Items)
@@ -4044,6 +4726,7 @@ namespace CityForgeV3.UI
                 card.AddToClassList("building-prop-card");
                 var previewButton = new Button(() =>
                 {
+                    ReleaseCameraPanForPlacement();
                     _placementBuildingPropId = captured.Id;
                     _lotWorld.SetBuildingPropPlacementPreview(captured.Id);
                     _lotStatus = $"{captured.DisplayName} selected • hover over a building facade and click to attach";
@@ -4061,8 +4744,11 @@ namespace CityForgeV3.UI
                 card.Add(StyledLabel(captured.DisplayName.ToUpperInvariant(),
                     "building-prop-name"));
                 card.Add(StyledLabel(
-                    $"{captured.Revision.ToUpperInvariant()} • FRONT ELEVATION • BUILDING-OWNED",
+                    $"{captured.Revision.ToUpperInvariant()} • {captured.Family.ToUpperInvariant()} • BUILDING-OWNED",
                     "catalog-meta"));
+                if (!string.IsNullOrWhiteSpace(captured.DoorTransformName))
+                    card.Add(StyledLabel("SELECT + O TO OPEN/CLOSE",
+                        "catalog-meta"));
                 grid.Add(card);
             }
             panel.Add(grid);
@@ -4070,6 +4756,25 @@ namespace CityForgeV3.UI
             actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
             panel.Add(actions);
         }
+
+#if UNITY_EDITOR
+        // Keeps live QA on the real runtime input path while avoiding brittle
+        // automation coordinates inside the dynamically composed catalog.
+        public bool ArmBuildingPropForLiveQa(string componentId)
+        {
+            if (_lotWorld == null || !_hasOpenLot ||
+                BuildingPropCatalog.Find(componentId) == null) return false;
+            ReleaseCameraPanForPlacement();
+            _lotEditorCategory = LotEditorCategory.BuildingProps;
+            _lotEditorCategoryExpanded = true;
+            _placementBuildingPropId = componentId;
+            _lotWorld.SetBuildingPropPlacementPreview(componentId);
+            _lotStatus = "Live QA storefront armed • drag onto a facade and release";
+            RemoveDocumentModal();
+            ComposeLotEditor();
+            return true;
+        }
+#endif
 
         public static bool CategoryExpandedAfterClick(
             LotEditorCategory current,
@@ -4157,6 +4862,15 @@ namespace CityForgeV3.UI
         {
             _lotWorld.SetCirculationMode(mode);
             _lotStatus = $"{mode} circulation network selected";
+            Show(AppScreen.LotEditor);
+        }
+
+        private void SetPedestrianPathKind(PedestrianPathKind kind)
+        {
+            _lotWorld.SetPedestrianPathKind(kind);
+            _lotStatus = kind == PedestrianPathKind.Stairs
+                ? "Stairs selected • click the ground start, then click the doorway end"
+                : "Flat pedestrian path selected • click stops to draw • Esc finishes";
             Show(AppScreen.LotEditor);
         }
 
@@ -4349,6 +5063,15 @@ namespace CityForgeV3.UI
                 ? "Camera hand active • drag anywhere on the lot to pan"
                 : "Camera hand released";
             Show(AppScreen.LotEditor);
+        }
+
+        private void ReleaseCameraPanForPlacement()
+        {
+            if (!_cameraPanToolActive) return;
+            _cameraPanToolActive = false;
+            _cameraPanPointerDown = false;
+            _lotWorld?.SetCameraPanInteraction(false);
+            UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }
 
         private static Texture2D CameraPanCursorTexture()
@@ -4577,6 +5300,7 @@ namespace CityForgeV3.UI
             _placementPropId = "";
             _placementBuildingPropId = "";
             _placementOverlayTextureId = "";
+            _lotWorld.EndCirculationPathDrawing();
             _lotWorld.SetBuildingPropPlacementPreview("");
             _lotWorld.DeselectAll();
             _lotStatus = "Selection cleared — arrows pan the lot";
@@ -4585,6 +5309,18 @@ namespace CityForgeV3.UI
 
         private bool DeleteActiveSelection()
         {
+            // An attachment can be selected while its 3D host still has a
+            // valid package index. The explicit active object must win or
+            // Delete removes the entire host building.
+            if (_lotWorld.ActiveObjectSelection ==
+                LotObjectSelectionKind.BuildingProp)
+            {
+                _lotStatus = _lotWorld.DeleteSelectedBuildingProp()
+                    ? "Building prop deleted"
+                    : "Select a building prop before deleting";
+                Show(AppScreen.LotEditor);
+                return true;
+            }
             // 3D packages intentionally use their own selection index rather
             // than the legacy billboard selection enum. Honor it before the
             // category switch so Delete/Backspace works for either system.
@@ -4599,12 +5335,6 @@ namespace CityForgeV3.UI
             }
             switch (_lotWorld.ActiveObjectSelection)
             {
-                case LotObjectSelectionKind.BuildingProp:
-                    _lotStatus = _lotWorld.DeleteSelectedBuildingProp()
-                        ? "Building prop deleted"
-                        : "Select a building prop before deleting";
-                    Show(AppScreen.LotEditor);
-                    return true;
                 case LotObjectSelectionKind.Prop:
                     DeleteSelectedProp();
                     return true;

@@ -37,7 +37,7 @@ namespace CityForgeV3.Editor
             new("BrooklynTownhomeRow", "brooklyn-townhome-row-eval-v01",
                 "tripo_convert_66614bbe-e6a7-4205-8a19-931eef4fd955.fbx", 15f),
             new("NorwalkClockTower", "norwalk-clock-tower-eval-v01",
-                "tripo_convert_36826576-a2ca-44a4-a1bd-3d9754105385.fbx", 24f),
+                "tripo_convert_36826576-a2ca-44a4-a1bd-3d9754105385.fbx", 48f),
         };
 
         [InitializeOnLoadMethod]
@@ -54,12 +54,18 @@ namespace CityForgeV3.Editor
                 return;
             EditorApplication.update -= TryBuildWhenReady;
             foreach (var spec in Specs)
+            {
+                var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(
+                    spec.PackagePath());
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(
                         spec.PrefabPath()) == null ||
                     spec.UsesLocalBrownstoneMaterial() &&
                     AssetDatabase.LoadAssetAtPath<Material>(
-                        spec.MaterialPath()) == null)
+                        spec.MaterialPath()) == null ||
+                    spec.Folder == "NorwalkClockTower" &&
+                    (package?.Representations?.Count ?? 0) < 5)
                     Build(spec);
+            }
         }
 
         [MenuItem("City Forge/3D Buildings/Rebuild Evaluation Building Packages")]
@@ -91,7 +97,7 @@ namespace CityForgeV3.Editor
             package.SchemaVersion = Building3DPackage.CurrentSchemaVersion;
             package.AssetId = spec.Id;
             package.SourceProvenance = spec.Folder == "NorwalkClockTower"
-                ? "Norwalk Juvenile Courthouse, Norwalk, Ohio; user-supplied immutable Tripo archive; LOD0-only evaluation package."
+                ? "Norwalk Juvenile Courthouse, Norwalk, Ohio; user-supplied immutable Tripo archive. Original FBX preserved unchanged as LOD0; lower levels are derived separately."
                 : "User-supplied immutable Tripo archive; LOD0-only evaluation package.";
             package.AuthoredScale = Vector3.one * scale;
             package.PivotOffset = Vector3.zero;
@@ -105,7 +111,8 @@ namespace CityForgeV3.Editor
                 new()
                 {
                     Level = Building3DLevel.LOD0,
-                    ScreenRelativeHeight = 0.001f,
+                    ScreenRelativeHeight = spec.Folder == "NorwalkClockTower"
+                        ? 0.32f : 0.001f,
                     VisualPrefab = model,
                     OverrideMaterial = material,
                     LocalPosition = new Vector3(-metrics.Bounds.center.x,
@@ -115,6 +122,36 @@ namespace CityForgeV3.Editor
                     Provenance = "Supplied LOD0 imported unchanged; measured and ground-registered for evaluation."
                 }
             };
+            if (spec.Folder == "NorwalkClockTower")
+            {
+                var thresholds = new[] { 0.18f, 0.09f, 0.035f, 0.001f };
+                var ratios = new[] { 0.50f, 0.25f, 0.10f, 0.04f };
+                for (var index = 0; index < 4; index++)
+                {
+                    var level = index + 1;
+                    var lodPath = $"{spec.RootPath()}/LOD{level}/" +
+                        $"NorwalkCourthouse_LOD{level}.fbx";
+                    var lodModel = AssetDatabase.LoadAssetAtPath<GameObject>(lodPath);
+                    if (lodModel == null)
+                        throw new FileNotFoundException(lodPath);
+                    var lodMetrics = CityForge.Editor.Building3DPackageValidator
+                        .Measure(lodModel);
+                    package.Representations.Add(new Building3DRepresentation
+                    {
+                        Level = (Building3DLevel)level,
+                        ScreenRelativeHeight = thresholds[index],
+                        VisualPrefab = lodModel,
+                        OverrideMaterial = material,
+                        LocalPosition = new Vector3(-lodMetrics.Bounds.center.x,
+                            -lodMetrics.Bounds.min.y, -lodMetrics.Bounds.center.z),
+                        LocalScale = Vector3.one,
+                        TargetTriangleBudget = Mathf.RoundToInt(
+                            metrics.Triangles * ratios[index]),
+                        Provenance = $"Derived from immutable supplied LOD0 at " +
+                            $"{ratios[index]:P0} triangle ratio; LOD0 unchanged."
+                    });
+                }
+            }
             EditorUtility.SetDirty(package);
 
             var root = new GameObject(spec.Id);
@@ -159,18 +196,19 @@ namespace CityForgeV3.Editor
             material.SetTexture("_BumpMap",
                 AssetDatabase.LoadAssetAtPath<Texture2D>(normalPath));
             material.EnableKeyword("_NORMALMAP");
-            material.SetFloat("_BumpScale", 0.5f);
+            var isNorwalk = spec.Folder == "NorwalkClockTower";
+            material.SetFloat("_BumpScale", isNorwalk ? 0.85f : 0.5f);
             material.SetFloat("_Metallic", 0f);
-            material.SetFloat("_GlossMapScale", 0.14f);
+            material.SetFloat("_GlossMapScale", isNorwalk ? 0.18f : 0.14f);
             material.SetColor("_Color", Color.white);
             // Recover restrained authored brick chroma locally. The source
             // atlases average only 17-20% saturation, so this remains a
             // historic brownstone grade rather than a scene-wide color push.
-            material.SetFloat("_Contrast", 1.18f);
-            material.SetFloat("_Saturation", 1.72f);
-            material.SetFloat("_Vibrance", 0.18f);
+            material.SetFloat("_Contrast", isNorwalk ? 1.04f : 1.18f);
+            material.SetFloat("_Saturation", isNorwalk ? 1.08f : 1.72f);
+            material.SetFloat("_Vibrance", isNorwalk ? 0.06f : 0.18f);
             material.SetFloat("_AmbientFill", 1f);
-            material.SetFloat("_AlbedoBoost", 0.96f);
+            material.SetFloat("_AlbedoBoost", isNorwalk ? 1f : 0.96f);
             material.SetFloat("_EnvironmentDim", 1f);
             EditorUtility.SetDirty(material);
             return material;
@@ -196,6 +234,7 @@ namespace CityForgeV3.Editor
         private static string MaterialPath(this Spec spec) =>
             $"{spec.RootPath()}/Materials/{spec.Folder}LocalBrownstone.mat";
         private static bool UsesLocalBrownstoneMaterial(this Spec spec) =>
-            spec.Folder.StartsWith("NY", StringComparison.Ordinal);
+            spec.Folder.StartsWith("NY", StringComparison.Ordinal) ||
+            spec.Folder == "NorwalkClockTower";
     }
 }

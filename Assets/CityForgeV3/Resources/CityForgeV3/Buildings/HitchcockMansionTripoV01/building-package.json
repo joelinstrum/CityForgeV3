@@ -1,0 +1,106 @@
+{
+  "id": "cityforge.v3.residential.hitchcock_mansion_tripo_01",
+  "displayName": "Hitchcock Mansion",
+  "shortDisplayName": "Hitchcock Mansion",
+  "category": "Residential",
+  "subcategory": "Historic Mansion",
+  "sizeClass": "large",
+  "libraryShortcut": "H",
+  "reviewStatus": "V01 SOURCE-DERIVED FOUR-FACING NEUTRAL - REVIEW",
+  "schema": "cityforge-v3-hybrid-building-package-v2",
+  "occupancyWidth": 2,
+  "occupancyDepth": 2,
+  "spatial": {
+    "coordinateSystem": "blender-metric-origin-centered",
+    "originPolicy": "foundation-center-ground",
+    "widthMeters": 17.710129,
+    "depthMeters": 18.542833,
+    "heightMeters": 17.0,
+    "placementScale": 1.0,
+    "artworkRotationDirection": "against-building",
+    "artworkRegistrationMode": "persisted-pivot",
+    "frontFacingQuarterTurns": 0,
+    "rotationAnchor": [0, 0, 0]
+  },
+  "camera": {
+    "elevationDegrees": 28.0,
+    "radiusMeters": 44.0,
+    "targetHeightMeters": 7.31
+  },
+  "primitive": {
+    "resourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/semantic-primitive-v01",
+    "sourceVersion": "V01 source-derived voxel-remesh silhouette; 17 m historic residential scale review",
+    "roofRidgeAxis": "none",
+    "entranceFacingDegrees": 180.0,
+    "requiredObjects": [
+      "CF_PROXY_FOUNDATION",
+      "CF_PROXY_WALLS",
+      "CF_PROXY_BUILDING_GENERATED",
+      "CF_ANCHOR_ENTRANCE"
+    ]
+  },
+  "render": {
+    "pixelsPerMeter": 40.0,
+    "canvasWidth": 1280,
+    "canvasHeight": 1280,
+    "nightOverlayOpacity": 0.62
+  },
+  "plan": {
+    "resourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/plan-neutral",
+    "pivot": [0.5, 0.5]
+  },
+  "night": {
+    "source": "pending individually traced window masks",
+    "policy": "four intentional transparent review placeholders"
+  },
+  "shadow": {
+    "projectionMode": "projected-mesh",
+    "footprintScale": 1.0,
+    "maximumProjectionMeters": 17.0,
+    "morningLengthScale": 0.7,
+    "noonLengthScale": 0.42,
+    "afternoonLengthScale": 1.0,
+    "eveningLengthScale": 0.65,
+    "opacityMultiplier": 0.82,
+    "semanticVertices": [
+      -8.855065, 0, -9.271417, 8.855065, 0, -9.271417,
+      8.855065, 0, 9.271417, -8.855065, 0, 9.271417,
+      -8.855065, 17.0, -9.271417, 8.855065, 17.0, -9.271417,
+      8.855065, 17.0, 9.271417, -8.855065, 17.0, 9.271417
+    ]
+  },
+  "facings": [
+    {
+      "id": "front-right",
+      "cameraAzimuthDegrees": -55.5,
+      "pivotTopOrigin": [0.499999911, 0.701698422],
+      "approvedResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-right-night"
+    },
+    {
+      "id": "rear-right",
+      "cameraAzimuthDegrees": 34.5,
+      "pivotTopOrigin": [0.49999997, 0.701698184],
+      "approvedResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-right-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-right-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-right-night"
+    },
+    {
+      "id": "rear-left",
+      "cameraAzimuthDegrees": 124.5,
+      "pivotTopOrigin": [0.500000119, 0.701698065],
+      "approvedResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/rear-left-night"
+    },
+    {
+      "id": "front-left",
+      "cameraAzimuthDegrees": -145.5,
+      "pivotTopOrigin": [0.499999881, 0.701698244],
+      "approvedResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-left-neutral",
+      "neutralResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-left-neutral",
+      "nightOverlayResourcePath": "CityForgeV3/Buildings/HitchcockMansionTripoV01/front-left-night"
+    }
+  ]
+}

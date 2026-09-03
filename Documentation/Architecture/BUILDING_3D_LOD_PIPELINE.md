@@ -41,7 +41,8 @@ These are starting points for fixed-camera comparison, not art approval:
 | LOD1 | 0.30 | ~80,000 | close gameplay |
 | LOD2 | 0.12 | ~20,000 | typical city view |
 | LOD3 | 0.035 | 3,000–5,000 | distant geometry |
-| LOD4 | 0.01 | billboard/impostor | very distant |
+| LOD4 | 0.012 | ~1,500–3,000 | very distant geometry |
+| LOD5 | 0.002 | eight-angle billboard/impostor | extreme distance |
 
 The current partial pilot contains only the 0.12 LOD2 entry. Add levels in
 descending threshold order. Validate each boundary at fixed camera position and
@@ -58,7 +59,7 @@ heading before accepting it; do not tune global lighting to conceal a mismatch.
 4. Supply a simple collision proxy; never use a beauty mesh as collision.
 5. Supply near and far shadow meshes that preserve stairs, chimneys, rooflines,
    setbacks, and major façade depth. Assign them separately from visual meshes.
-6. Render the impostor from CityForge's approved isometric headings, pivot,
+6. Render the LOD5 impostor from CityForge's eight approved 45-degree headings, pivot,
    color treatment, and lighting. Keep a low-cost shadow mesh active beneath it
    when `KeepShadowMeshWithImpostor` is enabled.
 7. Run inspector validation, edit-mode tests, and the normal Unity Game workflow.

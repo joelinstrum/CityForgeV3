@@ -48,7 +48,7 @@ Material:
     - _ConstructionRevealHeight: 100000
     - _Contrast: 1.42
     - _DirectionalContrast: 0
-    - _EnvironmentDim: 1
+    - _EnvironmentDim: 0.08
     - _GlossMapScale: 0.16
     - _Metallic: 0
     - _NightEmissionIntensity: 0

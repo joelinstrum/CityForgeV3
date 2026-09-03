@@ -45,7 +45,7 @@ namespace CityForgeV3.Tests.EditMode
                      {
                          "NYBrownstoneLight", "NYBrownstoneBay",
                          "NYFancyTownhouse", "NYBrownstone",
-                         "BrooklynTownhomeRow", "NorwalkClockTower"
+                         "BrooklynTownhomeRow"
                      })
             {
                 var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(
@@ -73,6 +73,52 @@ namespace CityForgeV3.Tests.EditMode
                         Is.EqualTo(1.72f).Within(0.001f), folder);
                 }
             }
+        }
+
+        [Test]
+        public void MixedUseBrickEvaluationPreservesLod0AndSuppliesFullLodChain()
+        {
+            const string packagePath =
+                "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/Evaluation/MixedUseBrick/MixedUseBrickEvaluation.asset";
+            const string prefabPath =
+                "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/Evaluation/MixedUseBrick/Prefabs/MixedUseBrickEvaluation.prefab";
+            var package = AssetDatabase.LoadAssetAtPath<Building3DPackage>(
+                packagePath);
+
+            Assert.That(package, Is.Not.Null);
+            Assert.That(package.AssetId, Is.EqualTo("mixed-use-brick-eval-v01"));
+            Assert.That(package.Representations, Has.Count.EqualTo(6));
+            Assert.That(package.AuthoredScale.y, Is.GreaterThan(0f));
+            Assert.That(package.FootprintMeters.x, Is.GreaterThan(0f));
+            Assert.That(package.FootprintMeters.y, Is.GreaterThan(0f));
+
+            var previousTriangles = int.MaxValue;
+            for (var index = 0; index < 5; index++)
+            {
+                var representation = package.Representations[index];
+                Assert.That(representation.Level,
+                    Is.EqualTo((Building3DLevel)index));
+                Assert.That(representation.VisualPrefab, Is.Not.Null);
+                Assert.That(representation.OverrideMaterial, Is.Not.Null);
+                Assert.That(representation.TargetTriangleBudget,
+                    Is.LessThan(previousTriangles));
+                previousTriangles = representation.TargetTriangleBudget;
+            }
+
+            Assert.That(AssetDatabase.GetAssetPath(
+                    package.Representations[0].VisualPrefab),
+                Does.Contain("/MixedUseBrick/Source/"),
+                "LOD0 must remain the supplied source FBX, not a decimated derivative.");
+            Assert.That(package.Representations[0].TargetTriangleBudget,
+                Is.EqualTo(30588));
+
+            var billboard = package.Representations[5];
+            Assert.That(billboard.Level,
+                Is.EqualTo(Building3DLevel.LOD5Billboard));
+            Assert.That(billboard.VisualPrefab, Is.Not.Null);
+            Assert.That(billboard.BillboardAngleCount, Is.EqualTo(8));
+            Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath),
+                Is.Not.Null);
         }
 
         [Test]

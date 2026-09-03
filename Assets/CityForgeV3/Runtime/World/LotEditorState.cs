@@ -98,6 +98,7 @@ namespace CityForgeV3.World
         public float ProjectionDepthMeters = 0.18f;
         public float Scale = 1f;
         public float RotationDegrees;
+        public bool DoorOpen;
         public bool HasHostLocalPosition;
         public float HostLocalX;
         public float HostLocalY;
@@ -136,6 +137,29 @@ namespace CityForgeV3.World
         public int CellX;
         public int CellZ;
         public int RotationQuarterTurns;
+    }
+
+    [Serializable]
+    public sealed class PlacedDecal
+    {
+        public string InstanceId = "";
+        public string CategoryId = "grass";
+        public string TextureId = "leaves-01";
+        public float PositionX;
+        public float PositionZ;
+        public int RotationQuarterTurns;
+        public float SizeMeters = 6f;
+        public float AspectRatio = 1f;
+        public List<DecalEraseMark> EraseMarks = new();
+    }
+
+    [Serializable]
+    public sealed class DecalEraseMark
+    {
+        public float U;
+        public float V;
+        public float RadiusU = 0.12f;
+        public float RadiusV = 0.12f;
     }
 
     [Serializable]
@@ -213,6 +237,7 @@ namespace CityForgeV3.World
         public List<PlacedProp> Props = new();
         public List<PlacedEffect> Effects = new();
         public List<PlacedWaterArea> WaterAreas = new();
+        public List<PlacedDecal> Decals = new();
         public string DefaultGentlemanBehaviorScript = "business-as-usual";
         public string DefaultHooliganBehaviorScript = "business-as-usual";
         public string DefaultPolicemanBehaviorScript = "business-as-usual";
@@ -252,6 +277,7 @@ namespace CityForgeV3.World
                 Props = Props,
                 Effects = Effects,
                 WaterAreas = WaterAreas,
+                Decals = Decals,
                 DefaultGentlemanBehaviorScript = DefaultGentlemanBehaviorScript,
                 DefaultHooliganBehaviorScript = DefaultHooliganBehaviorScript,
                 DefaultPolicemanBehaviorScript = DefaultPolicemanBehaviorScript,
@@ -276,6 +302,7 @@ namespace CityForgeV3.World
         public float Z;
         public int RotationQuarterTurns;
         public int RotationEighthTurns = -1;
+        public List<PlacedBuildingProp> Attachments = new();
     }
 
     public sealed class LotEditorSession
@@ -515,6 +542,9 @@ namespace CityForgeV3.World
             Data.StreetcarTracks ??= new List<PlacedStreetcarTrack>();
             Data.StreetcarStops ??= new List<PlacedStreetcarStop>();
             Data.Buildings3D ??= new List<PlacedBuilding3D>();
+            foreach (var building in Data.Buildings3D)
+                if (building != null)
+                    building.Attachments ??= new List<PlacedBuildingProp>();
             foreach (var road in Data.RoadPieces)
                 if (road != null && string.IsNullOrWhiteSpace(road.PackageId))
                     road.PackageId = RoadPiecePackage.LegacyPackageId;
@@ -522,6 +552,16 @@ namespace CityForgeV3.World
             Data.RequiredPackageIds ??= new List<string>();
             Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
             Data.WaterAreas ??= new List<PlacedWaterArea>();
+            Data.Decals ??= new List<PlacedDecal>();
+            foreach (var decal in Data.Decals)
+            {
+                if (decal == null) continue;
+                // Early decal pilots covered 3 × 3 m. The approved footprint
+                // is four times that area: 6 × 6 m.
+                if (decal.SizeMeters <= 3.01f) decal.SizeMeters = 6f;
+                if (decal.AspectRatio <= 0f) decal.AspectRatio = 1f;
+                decal.EraseMarks ??= new List<DecalEraseMark>();
+            }
             foreach (var water in Data.WaterAreas)
             {
                 water.InstanceId ??= Guid.NewGuid().ToString("N");

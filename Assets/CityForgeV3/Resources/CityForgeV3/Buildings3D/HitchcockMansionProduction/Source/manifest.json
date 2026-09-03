@@ -1,0 +1,196 @@
+{
+  "schema": "cityforge-building-lod-package-v2",
+  "assetId": "hitchcock-mansion-v01",
+  "source": "Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/HitchcockMansionProduction/Source/tripo_convert_2d190be9-ee5d-4766-b295-7a6beeb3eb9d.fbx",
+  "sourceSha256": "613a0e3b924add484ae3a61719b1df959d4b81f057d4392b64d8cc6b7b193ec3",
+  "sourceArchivePreserved": true,
+  "canonicalSourceModified": false,
+  "coordinateSystem": "source-space-with-uniform-runtime-meter-scale",
+  "originPolicy": "source-pivot-with-package-centering-offset",
+  "targetHeightMeters": 17.0,
+  "runtimeScale": 19.310708219,
+  "lods": [
+    {
+      "level": 0,
+      "role": "immutable supplied source",
+      "triangles": 44044,
+      "reductionRatio": 1.0,
+      "sourceSpaceBoundsDimensions": [
+        0.917114,
+        0.960236,
+        0.880341
+      ],
+      "sourceSpaceBoundsCenter": [
+        0.000244,
+        -0.0103,
+        0.44017
+      ],
+      "runtimeScale": 19.310708219,
+      "fbx": "Source/tripo_convert_2d190be9-ee5d-4766-b295-7a6beeb3eb9d.fbx"
+    },
+    {
+      "level": 1,
+      "role": "UV-preserving review derivative",
+      "triangles": 40000,
+      "targetTriangles": 40000,
+      "reductionRatio": 0.908183,
+      "sourceSpaceBoundsDimensions": [
+        0.916961,
+        0.960236,
+        0.880346
+      ],
+      "sourceSpaceBoundsCenter": [
+        0.000167,
+        -0.0103,
+        0.440168
+      ],
+      "runtimeScale": 19.310708219,
+      "fbx": "LOD1/HitchcockMansion_LOD1.fbx"
+    },
+    {
+      "level": 2,
+      "role": "UV-preserving review derivative",
+      "triangles": 20000,
+      "targetTriangles": 20000,
+      "reductionRatio": 0.454091,
+      "sourceSpaceBoundsDimensions": [
+        0.916718,
+        0.958491,
+        0.870436
+      ],
+      "sourceSpaceBoundsCenter": [
+        0.001144,
+        -0.010619,
+        0.435056
+      ],
+      "runtimeScale": 19.310708219,
+      "fbx": "LOD2/HitchcockMansion_LOD2.fbx"
+    },
+    {
+      "level": 3,
+      "role": "UV-preserving review derivative",
+      "triangles": 15999,
+      "targetTriangles": 16000,
+      "reductionRatio": 0.363273,
+      "sourceSpaceBoundsDimensions": [
+        0.915696,
+        0.958491,
+        0.868545
+      ],
+      "sourceSpaceBoundsCenter": [
+        0.001154,
+        -0.010619,
+        0.434365
+      ],
+      "runtimeScale": 19.310708219,
+      "fbx": "LOD3/HitchcockMansion_LOD3.fbx"
+    },
+    {
+      "level": 4,
+      "role": "UV-preserving review derivative",
+      "triangles": 12000,
+      "targetTriangles": 12000,
+      "reductionRatio": 0.272455,
+      "sourceSpaceBoundsDimensions": [
+        0.914852,
+        0.956318,
+        0.868808
+      ],
+      "sourceSpaceBoundsCenter": [
+        0.001538,
+        -0.010576,
+        0.434531
+      ],
+      "runtimeScale": 19.310708219,
+      "fbx": "LOD4/HitchcockMansion_LOD4.fbx"
+    }
+  ],
+  "billboardLevel": 5,
+  "billboards": [
+    {
+      "index": 0,
+      "yawDegrees": 0,
+      "file": "LOD5/hitchcock-mansion-angle-0-000-v01.png",
+      "pivotTopOrigin": [
+        0.5,
+        0.775364712
+      ]
+    },
+    {
+      "index": 1,
+      "yawDegrees": 45,
+      "file": "LOD5/hitchcock-mansion-angle-1-045-v01.png",
+      "pivotTopOrigin": [
+        0.500000179,
+        0.775364742
+      ]
+    },
+    {
+      "index": 2,
+      "yawDegrees": 90,
+      "file": "LOD5/hitchcock-mansion-angle-2-090-v01.png",
+      "pivotTopOrigin": [
+        0.500000298,
+        0.775364727
+      ]
+    },
+    {
+      "index": 3,
+      "yawDegrees": 135,
+      "file": "LOD5/hitchcock-mansion-angle-3-135-v01.png",
+      "pivotTopOrigin": [
+        0.500000536,
+        0.775364786
+      ]
+    },
+    {
+      "index": 4,
+      "yawDegrees": 180,
+      "file": "LOD5/hitchcock-mansion-angle-4-180-v01.png",
+      "pivotTopOrigin": [
+        0.500000119,
+        0.775364503
+      ]
+    },
+    {
+      "index": 5,
+      "yawDegrees": 225,
+      "file": "LOD5/hitchcock-mansion-angle-5-225-v01.png",
+      "pivotTopOrigin": [
+        0.499999434,
+        0.775364786
+      ]
+    },
+    {
+      "index": 6,
+      "yawDegrees": 270,
+      "file": "LOD5/hitchcock-mansion-angle-6-270-v01.png",
+      "pivotTopOrigin": [
+        0.499999702,
+        0.775364712
+      ]
+    },
+    {
+      "index": 7,
+      "yawDegrees": 315,
+      "file": "LOD5/hitchcock-mansion-angle-7-315-v01.png",
+      "pivotTopOrigin": [
+        0.499999791,
+        0.775364771
+      ]
+    }
+  ],
+  "qa": {
+    "status": "generated-review-candidates",
+    "cameraElevationDegrees": 22,
+    "transparentBackground": true,
+    "bakedGroundShadow": false,
+    "geometryComparisonFrames": [
+      "QA/lod0-front-three-quarter.png",
+      "QA/lod1-front-three-quarter.png",
+      "QA/lod2-front-three-quarter.png",
+      "QA/lod3-front-three-quarter.png",
+      "QA/lod4-front-three-quarter.png"
+    ]
+  }
+}

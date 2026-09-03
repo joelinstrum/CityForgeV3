@@ -58,6 +58,19 @@ namespace CityForgeV3.World
                 _ => "idle"
             };
 
+        /// <summary>
+        /// World-space translation is permitted only while the character is
+        /// visibly performing a locomotion animation. Saved or scripted
+        /// direction values must never make an idle character slide.
+        /// </summary>
+        public static bool AllowsTranslation(string animationState) =>
+            string.Equals(animationState, "walk",
+                System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(animationState, "run",
+                System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(animationState, "run_upstairs",
+                System.StringComparison.OrdinalIgnoreCase);
+
         public static Vector2 WalkingDirection(float roll)
         {
             // Match Documentation/Architecture/LOT_EDITOR_COORDINATES.md:

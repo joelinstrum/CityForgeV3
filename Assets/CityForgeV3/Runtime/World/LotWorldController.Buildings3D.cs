@@ -40,6 +40,10 @@ namespace CityForgeV3.World
             "gilded-age-mansion-exp-v01";
         public const string GildedAgeMansionExperimentalResource =
             "CityForgeV3/Buildings3D/GildedAgeMansionExperimental/Prefabs/GildedAgeMansionExpV01";
+        public const string HitchcockMansionProductionId =
+            "hitchcock-mansion-v01";
+        public const string HitchcockMansionProductionResource =
+            "CityForgeV3/Buildings3D/HitchcockMansionProduction/Prefabs/HitchcockMansionV01";
         public const string KingKongEnclosureBuilding3DId =
             "king-kong-enclosure-building-v01";
         public const string KingKongEnclosureBuilding3DResource =
@@ -56,6 +60,8 @@ namespace CityForgeV3.World
             "brooklyn-townhome-row-eval-v01";
         public const string NorwalkClockTowerEvaluationId =
             "norwalk-clock-tower-eval-v01";
+        public const string MixedUseBrickEvaluationId =
+            "mixed-use-brick-eval-v01";
         public const float KingKongEnclosureBuildingSizeMeters = 30f;
         // Tripo's enclosure FBX contains outer geometry that inflates its
         // renderer bounds far beyond the structure visible to the player.
@@ -113,6 +119,7 @@ namespace CityForgeV3.World
             _building3DPlacementPreviewActive;
         private GameObject _building3DSelectionOutline;
         private Material _building3DSelectionOutlineMaterial;
+        private Material _building3DMeshSelectionMaterial;
 
         public int SelectedBuilding3DIndex => _selectedBuilding3DIndex;
         public BuildingConstructionSequence SelectedBuildingConstruction =>
@@ -263,6 +270,8 @@ namespace CityForgeV3.World
                     "CityForgeV3/Buildings3D/Evaluation/BrooklynTownhomeRow/Prefabs/BrooklynTownhomeRowEvaluation",
                 NorwalkClockTowerEvaluationId =>
                     "CityForgeV3/Buildings3D/Evaluation/NorwalkClockTower/Prefabs/NorwalkClockTowerEvaluation",
+                MixedUseBrickEvaluationId =>
+                    "CityForgeV3/Buildings3D/Evaluation/MixedUseBrick/Prefabs/MixedUseBrickEvaluation",
                 _ => null
             };
 
@@ -277,6 +286,7 @@ namespace CityForgeV3.World
                 assetId != PlymouthStoreProductionId &&
                 assetId != GildedAgeMansionProductionId &&
                 assetId != GildedAgeMansionExperimentalId &&
+                assetId != HitchcockMansionProductionId &&
                 assetId != KingKongEnclosureBuilding3DId &&
                 EvaluationBuilding3DResource(assetId) == null) return false;
             _session.Data.Buildings3D ??= new List<PlacedBuilding3D>();
@@ -301,7 +311,10 @@ namespace CityForgeV3.World
             _building3DDragActive = false;
             RefreshBuilding3DSelectionOutline();
             ApplyTimeOfDay();
-            ApplyCameraFacing(false);
+            // Adding an object must not also orbit the editor camera. The
+            // previous refit forced the native-3D 45-degree azimuth here,
+            // making the entire lot appear to rotate as soon as the first
+            // building was placed.
             NotifyStateChanged();
             return true;
         }
@@ -760,6 +773,8 @@ namespace CityForgeV3.World
                             ? GildedAgeMansionProductionResource
                         : placed.AssetId == GildedAgeMansionExperimentalId
                             ? GildedAgeMansionExperimentalResource
+                        : placed.AssetId == HitchcockMansionProductionId
+                            ? HitchcockMansionProductionResource
                         : placed.AssetId == KingKongEnclosureBuilding3DId
                             ? KingKongEnclosureBuilding3DResource
                         : BrownstoneProductionResource));
@@ -783,6 +798,8 @@ namespace CityForgeV3.World
                         "3D Building — Gilded Age Mansion V01",
                     GildedAgeMansionExperimentalId =>
                         "3D Building — Exp. Gilded Age Mansion V01",
+                    HitchcockMansionProductionId =>
+                        "3D Building — Hitchcock Mansion V01",
                     KingKongEnclosureBuilding3DId =>
                         "3D Building — King Kong Enclosure V01",
                     NyBrownstoneLightEvaluationId =>
@@ -797,6 +814,8 @@ namespace CityForgeV3.World
                         "3D Building — Brooklyn Townhome Row Evaluation",
                     NorwalkClockTowerEvaluationId =>
                         "3D Building — Norwalk Juvenile Courthouse, Ohio",
+                    MixedUseBrickEvaluationId =>
+                        "3D Building — Mixed-Use Brick Evaluation",
                     _ => "3D Building — Brownstone Production V01"
                 };
                 root.transform.localPosition = new Vector3(placed.X, 0f, placed.Z);
@@ -1209,41 +1228,12 @@ namespace CityForgeV3.World
             {
                 var root = _experimentalBuilding3DVisibleRoots[index];
                 if (root == null) continue;
-                var hasMeshSelectionSurface = false;
-                foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
+                if (TryRaycastBuildingBeautyMesh(root, ray,
+                        _camera.farClipPlane, out var hit) &&
+                    hit.distance < bestDistance)
                 {
-                    var renderer = filter.GetComponent<Renderer>();
-                    if (filter.sharedMesh == null || renderer == null ||
-                        !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
-                        IsPackageShadowRenderer(renderer)) continue;
-                    hasMeshSelectionSurface = true;
-                    var collider = filter.GetComponent<MeshCollider>();
-                    if (collider == null)
-                        collider = filter.gameObject.AddComponent<MeshCollider>();
-                    collider.sharedMesh = filter.sharedMesh;
-                    collider.convex = false;
-                    collider.enabled = true;
-                    if (collider.Raycast(ray, out var hit,
-                            _camera.farClipPlane) && hit.distance < bestDistance)
-                    {
-                        bestDistance = hit.distance;
-                        bestIndex = index;
-                    }
-                }
-
-                // Primitive-only pilot assets may have no MeshFilter. Preserve
-                // a bounds fallback for those assets, but never let a complex
-                // museum's broad rectangular bounds steal clicks from props in
-                // empty screen space beside its real silhouette.
-                if (!hasMeshSelectionSurface)
-                {
-                    var bounds = CombinedRendererBounds(root, out var hasBounds);
-                    if (hasBounds && bounds.IntersectRay(ray, out var distance) &&
-                        distance < bestDistance)
-                    {
-                        bestDistance = distance;
-                        bestIndex = index;
-                    }
+                    bestDistance = hit.distance;
+                    bestIndex = index;
                 }
             }
             if (bestIndex < 0 || bestIndex >= _session.Data.Buildings3D.Count)
@@ -1503,81 +1493,120 @@ namespace CityForgeV3.World
                 "3D Building Selection Outline");
             _building3DSelectionOutline.transform.SetParent(transform, true);
             _building3DSelectionOutline.name = "3D Building Selection Outline";
-            if (_session?.Data?.Buildings3D != null &&
-                _selectedBuilding3DIndex < _session.Data.Buildings3D.Count &&
-                _session.Data.Buildings3D[_selectedBuilding3DIndex]?.AssetId ==
-                    KingKongEnclosureBuilding3DId &&
-                TryGetProjectedMeshFootprint(source, out var contour))
+            if (BuildMeshSelectionSilhouette(
+                    stableLod == null ? source : stableLod.gameObject))
             {
-                BuildFootprintSelectionOutline(contour, bounds.min.y,
-                    bounds.max.y);
                 _experimentalBuilding3DRoots.Add(_building3DSelectionOutline);
                 return;
             }
-            var min = bounds.min;
-            var max = bounds.max;
-            var corners = new Vector3[8];
-            var package = source.GetComponent<Building3DPackageInstance>()?.Package;
-            if (package != null && package.FootprintMeters.x > 0f &&
-                package.FootprintMeters.y > 0f && _session?.Data?.Buildings3D != null)
+            // A building without selectable mesh geometry has no approximate
+            // selection surface. Bounds and catalog footprints are explicitly
+            // not selection truth.
+            DestroyForCurrentMode(_building3DSelectionOutline);
+            _building3DSelectionOutline = null;
+        }
+
+        private bool BuildMeshSelectionSilhouette(GameObject geometryRoot)
+        {
+            var shader = Shader.Find("CityForgeV3/MeshSelectionOutline");
+            if (shader == null || geometryRoot == null) return false;
+            if (_building3DMeshSelectionMaterial == null)
             {
-                var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
-                var eighthTurns = placed.RotationEighthTurns >= 0
-                    ? placed.RotationEighthTurns
-                    : placed.RotationQuarterTurns * 2;
-                var yaw = Quaternion.Euler(0f,
-                    BrownstoneDefaultFacingDegrees + eighthTurns * 45f, 0f);
-                var halfWidth = package.FootprintMeters.x * 0.5f + 0.08f;
-                var halfDepth = package.FootprintMeters.y * 0.5f + 0.08f;
-                var center = new Vector3(placed.X, 0f, placed.Z);
-                var footprint = new[]
+                _building3DMeshSelectionMaterial = new Material(shader)
                 {
-                    new Vector3(-halfWidth, 0f, -halfDepth),
-                    new Vector3(halfWidth, 0f, -halfDepth),
-                    new Vector3(halfWidth, 0f, halfDepth),
-                    new Vector3(-halfWidth, 0f, halfDepth)
+                    name = "CF 3D Building Mesh Selection Silhouette"
                 };
-                for (var index = 0; index < 4; index++)
-                {
-                    var groundPoint = center + yaw * footprint[index];
-                    corners[index] = new Vector3(
-                        groundPoint.x, Mathf.Max(0.02f, min.y), groundPoint.z);
-                    corners[index + 4] = new Vector3(
-                        groundPoint.x, max.y + 0.08f, groundPoint.z);
-                }
+                _building3DMeshSelectionMaterial.SetColor("_Color",
+                    new Color(0.3f, 0.82f, 1f, 0.95f));
+                _building3DMeshSelectionMaterial.SetFloat("_OutlineWidth", 0.035f);
             }
-            else
+            var built = false;
+            foreach (var sourceFilter in geometryRoot.GetComponentsInChildren<
+                         MeshFilter>(true))
             {
-                corners = new[]
-                {
-                    new Vector3(min.x, min.y, min.z), new Vector3(max.x, min.y, min.z),
-                    new Vector3(max.x, min.y, max.z), new Vector3(min.x, min.y, max.z),
-                    new Vector3(min.x, max.y, min.z), new Vector3(max.x, max.y, min.z),
-                    new Vector3(max.x, max.y, max.z), new Vector3(min.x, max.y, max.z)
-                };
+                var sourceRenderer = sourceFilter.GetComponent<MeshRenderer>();
+                if (sourceFilter.sharedMesh == null || sourceRenderer == null ||
+                    !sourceRenderer.enabled ||
+                    !IsBuildingSelectionBeautyRenderer(sourceRenderer,
+                        geometryRoot.transform)) continue;
+                var outlinePart = new GameObject(
+                    $"Mesh Edge — {sourceFilter.gameObject.name}");
+                outlinePart.transform.SetParent(
+                    _building3DSelectionOutline.transform, true);
+                outlinePart.transform.SetPositionAndRotation(
+                    sourceFilter.transform.position,
+                    sourceFilter.transform.rotation);
+                outlinePart.transform.localScale = sourceFilter.transform.lossyScale;
+                outlinePart.AddComponent<MeshFilter>().sharedMesh =
+                    sourceFilter.sharedMesh;
+                var outlineRenderer = outlinePart.AddComponent<MeshRenderer>();
+                outlineRenderer.sharedMaterial = _building3DMeshSelectionMaterial;
+                outlineRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                outlineRenderer.receiveShadows = false;
+                built = true;
             }
-            var edges = new[]
+            return built;
+        }
+
+        private static GameObject BuildingSelectionGeometryRoot(GameObject root)
+        {
+            if (root == null) return null;
+            var lod0 = root.transform.Find("Representations/LOD0");
+            return lod0 == null ? root : lod0.gameObject;
+        }
+
+        private static bool TryRaycastBuildingBeautyMesh(GameObject root,
+            Ray ray, float maximumDistance, out RaycastHit closestHit)
+        {
+            closestHit = default;
+            var geometryRoot = BuildingSelectionGeometryRoot(root);
+            if (geometryRoot == null) return false;
+            var found = false;
+            var closestDistance = maximumDistance;
+            foreach (var filter in geometryRoot.GetComponentsInChildren<
+                         MeshFilter>(true))
             {
-                0,1, 1,2, 2,3, 3,0, 4,5, 5,6, 6,7, 7,4,
-                0,4, 1,5, 2,6, 3,7
-            };
-            for (var edge = 0; edge < edges.Length; edge += 2)
-            {
-                var lineObject = new GameObject($"Outer Edge {edge / 2 + 1}");
-                lineObject.transform.SetParent(_building3DSelectionOutline.transform,
-                    true);
-                var line = lineObject.AddComponent<LineRenderer>();
-                line.sharedMaterial = _building3DSelectionOutlineMaterial;
-                line.useWorldSpace = true;
-                line.positionCount = 2;
-                line.startWidth = line.endWidth = 0.08f;
-                line.numCapVertices = 2;
-                line.shadowCastingMode = ShadowCastingMode.Off;
-                line.receiveShadows = false;
-                line.SetPosition(0, corners[edges[edge]]);
-                line.SetPosition(1, corners[edges[edge + 1]]);
+                var renderer = filter.GetComponent<Renderer>();
+                if (filter.sharedMesh == null || renderer == null ||
+                    !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
+                    !IsBuildingSelectionBeautyRenderer(renderer,
+                        geometryRoot.transform)) continue;
+                var collider = filter.GetComponent<MeshCollider>();
+                if (collider == null)
+                    collider = filter.gameObject.AddComponent<MeshCollider>();
+                collider.sharedMesh = filter.sharedMesh;
+                collider.convex = false;
+                collider.enabled = true;
+                if (!collider.Raycast(ray, out var hit, closestDistance))
+                    continue;
+                closestDistance = hit.distance;
+                closestHit = hit;
+                found = true;
             }
-            _experimentalBuilding3DRoots.Add(_building3DSelectionOutline);
+            return found;
+        }
+
+        private static bool IsBuildingSelectionBeautyRenderer(
+            Renderer renderer, Transform geometryRoot)
+        {
+            if (renderer == null || IsPackageShadowRenderer(renderer))
+                return false;
+            for (var current = renderer.transform; current != null;
+                 current = current.parent)
+            {
+                var name = current.name;
+                if (name.IndexOf("Collision",
+                        System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("Receiver",
+                        System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("Projected",
+                        System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("Selection Outline",
+                        System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return false;
+                if (current == geometryRoot) break;
+            }
+            return true;
         }
 
         private void BuildFootprintSelectionOutline(IReadOnlyList<Vector2> contour,

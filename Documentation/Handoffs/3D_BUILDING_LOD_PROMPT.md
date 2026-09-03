@@ -18,7 +18,8 @@ Continue CityForge V3's experiment replacing or supplementing building billboard
 - **LOD1:** approximately 80,000 triangles — normal close gameplay.
 - **LOD2:** approximately 20,000 triangles — typical city view.
 - **LOD3:** approximately 3,000–5,000 triangles — distant geometry.
-- **LOD4:** billboard/impostor — very distant.
+- **LOD4:** approximately 1,500–3,000 triangles — very distant geometry.
+- **LOD5:** eight-angle billboard/impostor — extreme distance.
 
 The original high-resolution model must remain untouched. Do not automatically decimate production meshes and assume the result is acceptable. Lower LOD geometry must be supplied or explicitly approved by the user after visual review. Past automatic reductions lost important architectural quality.
 
@@ -31,7 +32,7 @@ The original high-resolution model must remain untouched. Do not automatically d
 5. Keep draw calls and material slots visible in diagnostics. Prefer shared materials and texture atlases for related building families.
 6. Use simple collision primitives. Do not use the beauty mesh for collision.
 7. Create separate near and far shadow LOD slots. They should preserve stairs, rooflines, chimneys, and major setbacks without requiring the full LOD0 mesh.
-8. Generate the LOD4 billboard from CityForge's exact approved camera headings, scale, pivot, color treatment, and lighting.
+8. Generate the eight-angle LOD5 billboard from CityForge's exact approved camera headings, scale, pivot, color treatment, and lighting.
 9. Support a hybrid mode where the billboard is visible but hidden 3D geometry still supplies spatial relationships, occlusion, and shadows.
 10. Add a dense performance lot and diagnostics for visible triangles, shadow triangles, draw calls, material count, texture memory, CPU frame time, and GPU frame time.
 
