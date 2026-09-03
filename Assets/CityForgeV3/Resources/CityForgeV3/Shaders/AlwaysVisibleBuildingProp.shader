@@ -8,6 +8,7 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
         _MetallicGlossMap ("Metallic", 2D) = "black" {}
         _Metallic ("Metallic", Range(0,1)) = 0.35
         _Glossiness ("Smoothness", Range(0,1)) = 0.32
+        _UseWoodBackface ("Use Wood Backface", Range(0,1)) = 0
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
     SubShader
@@ -38,6 +39,7 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             fixed4 _Color;
+            float _UseWoodBackface;
 
             v2f vert(appdata input)
             {
@@ -52,7 +54,7 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
                 // Imported sign lettering is authored on the front surface.
                 // If that surface is viewed from behind, show opaque stained
                 // wood rather than the mirrored front texture.
-                if (facing < 0)
+                if (facing < 0 && _UseWoodBackface > 0.5)
                     return fixed4(0.24, 0.13, 0.07, 1.0) * _Color;
                 return tex2D(_MainTex, input.uv) * _Color;
             }

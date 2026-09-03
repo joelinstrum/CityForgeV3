@@ -8,6 +8,57 @@ using UnityEngine.UIElements;
 
 public static class LiveLotPlacementQaShortcut
 {
+    [MenuItem("City Forge/QA/Arm Tea Storefront for Live Placement")]
+    private static void ArmTeaStorefrontForLivePlacement()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app != null && app.ArmBuildingPropForLiveQa(
+                BuildingPropCatalog.TeaShopStorefrontId))
+            Debug.Log("CF_QA_TEA_STOREFRONT_ARMED");
+        else
+            Debug.LogError("Open a live lot before arming the Tea storefront QA.");
+    }
+
+    [MenuItem("City Forge/QA/Open Street Lot With Storefront")]
+    private static void OpenStreetLotWithStorefront()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            _requestedSavedLotId = "street-lot";
+            _requestedTime = TimeOfDayPreset.Noon;
+            File.WriteAllText(PendingTriggerPath,
+                $"LOT:{_requestedSavedLotId}|{_requestedTime}");
+            EditorApplication.isPlaying = true;
+            EditorApplication.delayCall += PlaceStreetLotStorefrontWhenReady;
+            return;
+        }
+        PlaceStreetLotStorefrontWhenReady();
+    }
+
+    private static void PlaceStreetLotStorefrontWhenReady()
+    {
+        if (!EditorApplication.isPlaying) return;
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app == null || !app.OpenSavedLotSelectionQa("street-lot"))
+        {
+            EditorApplication.delayCall += PlaceStreetLotStorefrontWhenReady;
+            return;
+        }
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null || !world.CommitBuildingProp3DForQa(
+                BuildingPropCatalog.TeaShopStorefrontId, 1,
+                "Front", 0f, 1.84f))
+        {
+            Debug.LogError("Street Lot storefront could not be attached.");
+            return;
+        }
+        var path = world.SaveLot();
+        world.SetZoomLevel(LotZoomLevel.Close);
+        world.SetQaOrthographicSize(9f);
+        world.SetQaCameraPan(-24.16f, 15.09f);
+        Debug.Log($"CF_QA_STREET_LOT_STOREFRONT_SAVED {path}");
+    }
+
     private const string BuildingId =
         "cityforge.base.building.commercial.art_deco_corner_building_01";
     private const string BeauxArtsBuildingId =

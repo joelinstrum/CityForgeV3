@@ -6,6 +6,14 @@ namespace CityForgeV3.World
 {
     public sealed partial class LotWorldController
     {
+        public enum PedestrianOverlayLayout
+        {
+            None,
+            Centerline,
+            ParallelFlanks,
+            Stairs
+        }
+
         public sealed class LotTextureOption
         {
             public readonly string Id;
@@ -15,16 +23,26 @@ namespace CityForgeV3.World
             public readonly string SummerResourcePath;
             public readonly string AutumnResourcePath;
             public readonly string WinterResourcePath;
+            public readonly PedestrianOverlayLayout PedestrianLayout;
+            public readonly float PedestrianWidthMeters;
+            public readonly float StairRiseMeters;
 
             public LotTextureOption(string id, string displayName, string resourcePath,
                 string springResourcePath = null, string summerResourcePath = null,
-                string autumnResourcePath = null, string winterResourcePath = null)
+                string autumnResourcePath = null, string winterResourcePath = null,
+                PedestrianOverlayLayout pedestrianLayout =
+                    PedestrianOverlayLayout.None,
+                float pedestrianWidthMeters = 1.8f,
+                float stairRiseMeters = 0f)
             {
                 Id = id; DisplayName = displayName; ResourcePath = resourcePath;
                 SpringResourcePath = springResourcePath;
                 SummerResourcePath = summerResourcePath;
                 AutumnResourcePath = autumnResourcePath;
                 WinterResourcePath = winterResourcePath;
+                PedestrianLayout = pedestrianLayout;
+                PedestrianWidthMeters = pedestrianWidthMeters;
+                StairRiseMeters = stairRiseMeters;
             }
 
             public bool HasResourceForSeason(SeasonPreset season) =>
@@ -72,11 +90,24 @@ namespace CityForgeV3.World
         public static readonly IReadOnlyList<LotTextureOption> OverlayTextures = new[]
         {
             new LotTextureOption("brick-walkway", "Brick Walkway",
-                "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway"),
+                "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway",
+                pedestrianLayout: PedestrianOverlayLayout.Centerline),
             new LotTextureOption("concrete-sidewalk", "Concrete Sidewalk",
-                "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk"),
+                "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk",
+                pedestrianLayout: PedestrianOverlayLayout.Centerline),
             new LotTextureOption("fancy-sidewalk", "Fancy Sidewalk",
-                "CityForgeV3/LotTextures/UrbanOverlaysV01/fancy-sidewalk-overlay"),
+                "CityForgeV3/LotTextures/UrbanOverlaysV01/fancy-sidewalk-overlay",
+                pedestrianLayout: PedestrianOverlayLayout.Centerline),
+            new LotTextureOption("worn-sidewalk", "Worn Sidewalk",
+                "CityForgeV3/LotTextures/UrbanOverlaysV01/worn-sidewalk-overlay",
+                pedestrianLayout: PedestrianOverlayLayout.Centerline),
+            new LotTextureOption("sidewalk-flanks", "Sidewalk Flanks",
+                "CityForgeV3/LotTextures/UrbanOverlaysV01/sidewalk-flanks",
+                pedestrianLayout: PedestrianOverlayLayout.ParallelFlanks),
+            new LotTextureOption("pedestrian-stairs", "Pedestrian Stairs",
+                "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk",
+                pedestrianLayout: PedestrianOverlayLayout.Stairs,
+                pedestrianWidthMeters: 2.2f, stairRiseMeters: 3.2f),
         };
         public static LotTextureOption BrickWalkwayOverlay => OverlayTextures[0];
 
@@ -101,6 +132,7 @@ namespace CityForgeV3.World
         private bool _overlayEditorActive;
         private bool _overlayPaintStrokeActive;
         private string _overlayPaintTextureId = "";
+        private int _overlayPaintRotationQuarterTurns;
         private Vector2Int _lastOverlayPaintCell = new(-1, -1);
         public string BaseTextureId => _session.Data.BaseTextureId ?? "";
         public int OverlayTextureCount => _session.Data.OverlayTextures?.Count ?? 0;
@@ -162,11 +194,14 @@ namespace CityForgeV3.World
             {
                 SelectedOverlayTextureIndex = existing;
                 _overlayPaintTextureId = _session.Data.OverlayTextures[existing].TextureId;
+                _overlayPaintRotationQuarterTurns =
+                    _session.Data.OverlayTextures[existing].RotationQuarterTurns;
             }
             else
             {
                 if (string.IsNullOrWhiteSpace(armedTextureId)) return false;
-                AddOverlayTextureAtCell(armedTextureId, cell);
+                AddOverlayTextureAtCell(armedTextureId, cell,
+                    _overlayPaintRotationQuarterTurns);
                 _overlayPaintTextureId = armedTextureId;
             }
             _lastOverlayPaintCell = cell;
@@ -195,7 +230,8 @@ namespace CityForgeV3.World
                 ApplyOverlayTextureSelection();
                 return false;
             }
-            return AddOverlayTextureAtCell(_overlayPaintTextureId, cell);
+            return AddOverlayTextureAtCell(_overlayPaintTextureId, cell,
+                _overlayPaintRotationQuarterTurns);
         }
 
         public void EndOverlayPaint()
@@ -213,6 +249,22 @@ namespace CityForgeV3.World
             _session.Data.OverlayTextures.RemoveAt(SelectedOverlayTextureIndex);
             SelectedOverlayTextureIndex = -1;
             RebuildOverlayTexturePresentations();
+            RebuildPedestrianNetworkFromOverlays();
+            NotifyStateChanged();
+            return true;
+        }
+
+        public bool RotateSelectedOverlayTexture(int quarterTurnDelta)
+        {
+            if (!_overlayEditorActive || SelectedOverlayTextureIndex < 0 ||
+                SelectedOverlayTextureIndex >= OverlayTextureCount ||
+                quarterTurnDelta == 0) return false;
+            var placed = _session.Data.OverlayTextures[SelectedOverlayTextureIndex];
+            placed.RotationQuarterTurns =
+                ((placed.RotationQuarterTurns + quarterTurnDelta) % 4 + 4) % 4;
+            _overlayPaintRotationQuarterTurns = placed.RotationQuarterTurns;
+            RebuildOverlayTexturePresentations();
+            RebuildPedestrianNetworkFromOverlays();
             NotifyStateChanged();
             return true;
         }
@@ -221,11 +273,13 @@ namespace CityForgeV3.World
         {
             SelectedOverlayTextureIndex = -1;
             _overlayPaintStrokeActive = false;
+            _overlayPaintRotationQuarterTurns = 0;
             _lastOverlayPaintCell = new Vector2Int(-1, -1);
             ApplyOverlayTextureSelection();
         }
 
-        private bool AddOverlayTextureAtCell(string textureId, Vector2Int cell)
+        private bool AddOverlayTextureAtCell(string textureId, Vector2Int cell,
+            int rotationQuarterTurns = 0)
         {
             _session.Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
             var existing = OverlayTextureIndexAtCell(cell);
@@ -238,10 +292,13 @@ namespace CityForgeV3.World
             _session.Data.OverlayTextures.Add(new PlacedOverlayTexture
             {
                 InstanceId = Guid.NewGuid().ToString("N"), TextureId = textureId,
-                CellX = cell.x, CellZ = cell.y
+                CellX = cell.x, CellZ = cell.y,
+                RotationQuarterTurns =
+                    ((rotationQuarterTurns % 4) + 4) % 4
             });
             SelectedOverlayTextureIndex = _session.Data.OverlayTextures.Count - 1;
             RebuildOverlayTexturePresentations();
+            RebuildPedestrianNetworkFromOverlays();
             return true;
         }
 
@@ -266,6 +323,124 @@ namespace CityForgeV3.World
                 if (placed.CellX == cell.x && placed.CellZ == cell.y) return index;
             }
             return -1;
+        }
+
+        private void RebuildPedestrianNetworkFromOverlays()
+        {
+            var overlays = _session.Data.OverlayTextures ??
+                new List<PlacedOverlayTexture>();
+            var semantic = overlays.FindAll(placed => placed != null &&
+                ResolveOverlayTexture(placed.TextureId).PedestrianLayout !=
+                PedestrianOverlayLayout.None);
+            var previous = _session.Data.PedestrianNetwork;
+            var hadGeneratedNetwork = previous?.Nodes?.Exists(node => node != null &&
+                (node.PortId ?? "").StartsWith("overlay-",
+                    StringComparison.Ordinal)) == true;
+            if (semantic.Count == 0 && !hadGeneratedNetwork) return;
+
+            var network = new CirculationNetwork
+            {
+                Mode = CirculationMode.Pedestrian
+            };
+            // User-drawn paths remain authoritative additions. Regenerating
+            // semantic sidewalk routes must never erase the familiar
+            // click-to-click path chains.
+            foreach (var node in previous?.Nodes ?? new List<CirculationNode>())
+                if (node != null && (node.PortId ?? "").StartsWith("manual-",
+                        StringComparison.Ordinal))
+                    network.Nodes.Add(new CirculationNode
+                    {
+                        Id = node.Id,
+                        PositionMeters = node.PositionMeters,
+                        ElevationMeters = node.ElevationMeters,
+                        Kind = node.Kind,
+                        PortId = node.PortId
+                    });
+            foreach (var segment in previous?.Segments ??
+                     new List<CirculationSegment>())
+                if (segment != null &&
+                    network.FindNode(segment.StartNodeId) != null &&
+                    network.FindNode(segment.EndNodeId) != null)
+                    network.Segments.Add(new CirculationSegment
+                    {
+                        Id = segment.Id,
+                        StartNodeId = segment.StartNodeId,
+                        EndNodeId = segment.EndNodeId,
+                        Direction = segment.Direction,
+                        WidthMeters = segment.WidthMeters,
+                        SpeedMetersPerSecond = segment.SpeedMetersPerSecond,
+                        PedestrianPathKind = segment.PedestrianPathKind
+                    });
+            CirculationNode FindOrAdd(Vector2 position, float elevation,
+                CirculationNodeKind kind, string portId)
+            {
+                var existing = network.Nodes.Find(node => node != null &&
+                    Vector2.Distance(node.PositionMeters, position) < 0.05f &&
+                    Mathf.Abs(node.ElevationMeters - elevation) < 0.05f);
+                if (existing != null)
+                {
+                    if (kind == CirculationNodeKind.BuildingEntrance)
+                    {
+                        existing.Kind = kind;
+                        existing.PortId = portId;
+                    }
+                    return existing;
+                }
+                return network.AddNode(position, kind, portId, elevation);
+            }
+
+            foreach (var placed in semantic)
+            {
+                var option = ResolveOverlayTexture(placed.TextureId);
+                var center = new Vector2(
+                    -LotWidthMeters * 0.5f + placed.CellX * 10f + 5f,
+                    -LotDepthMeters * 0.5f + placed.CellZ * 10f + 5f);
+                var rotation = Quaternion.Euler(0f,
+                    placed.RotationQuarterTurns * 90f, 0f);
+                Vector2 Rotate(Vector2 local)
+                {
+                    var point = rotation * new Vector3(local.x, 0f, local.y);
+                    return center + new Vector2(point.x, point.z);
+                }
+                void AddRoute(float offset, bool stairs)
+                {
+                    var startPosition = Rotate(new Vector2(offset, -5f));
+                    var endPosition = Rotate(new Vector2(offset, 5f));
+                    var prefix = $"overlay-{placed.InstanceId}";
+                    var start = FindOrAdd(startPosition, 0f,
+                        CirculationNodeKind.Waypoint, prefix + "-start");
+                    var end = FindOrAdd(endPosition,
+                        stairs ? option.StairRiseMeters : 0f,
+                        stairs ? CirculationNodeKind.BuildingEntrance :
+                            CirculationNodeKind.Waypoint,
+                        stairs ? prefix + "-doorway" : prefix + "-end");
+                    var segment = network.Connect(start.Id, end.Id,
+                        CirculationDirection.TwoWay,
+                        stairs ? PedestrianPathKind.Stairs :
+                            PedestrianPathKind.Flat);
+                    if (segment != null)
+                    {
+                        segment.WidthMeters = option.PedestrianWidthMeters;
+                        segment.SpeedMetersPerSecond = stairs ? 0.85f : 1.4f;
+                    }
+                }
+
+                switch (option.PedestrianLayout)
+                {
+                    case PedestrianOverlayLayout.Centerline:
+                        AddRoute(0f, false);
+                        break;
+                    case PedestrianOverlayLayout.ParallelFlanks:
+                        AddRoute(-3.25f, false);
+                        AddRoute(3.25f, false);
+                        break;
+                    case PedestrianOverlayLayout.Stairs:
+                        AddRoute(0f, true);
+                        break;
+                }
+            }
+            _session.Data.PedestrianNetwork = network;
+            RebuildCirculationVisualization();
         }
 
         private void ApplyBaseTexturePresentation()
@@ -315,10 +490,35 @@ namespace CityForgeV3.World
                 var renderer = quad.GetComponent<Renderer>();
                 renderer.sharedMaterial = material;
                 _overlayTextureRenderers.Add(renderer);
+                if (option.PedestrianLayout == PedestrianOverlayLayout.Stairs)
+                    BuildPedestrianStairPresentation(quad.transform, option);
             }
             if (SelectedOverlayTextureIndex >= OverlayTextureCount)
                 SelectedOverlayTextureIndex = -1;
             ApplyOverlayTextureSelection();
+        }
+
+        private void BuildPedestrianStairPresentation(Transform overlay,
+            LotTextureOption option)
+        {
+            const int stepCount = 12;
+            var material = ShadowReceivingLotMaterial(LotTextureTint(TimeOfDay));
+            material.mainTexture = Resources.Load<Texture2D>(option.ResourcePath);
+            material.renderQueue = 2002;
+            for (var step = 0; step < stepCount; step++)
+            {
+                var progress = (step + 0.5f) / stepCount;
+                var tread = Cube($"Pedestrian Stair {step + 1}", overlay,
+                    new Vector3(0f, -5f + progress * 10f,
+                        -progress * option.StairRiseMeters - 0.03f),
+                    new Vector3(option.PedestrianWidthMeters,
+                        10f / stepCount + 0.03f,
+                        option.StairRiseMeters / stepCount + 0.08f),
+                    Color.white);
+                tread.GetComponent<Renderer>().sharedMaterial = material;
+                var collider = tread.GetComponent<Collider>();
+                if (collider != null) collider.enabled = false;
+            }
         }
 
         private void ApplyOverlayTextureSelection()

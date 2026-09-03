@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
   m_Name: IvyTownhouseWhiteProduction
   m_EditorClassIdentifier: 
-  SchemaVersion: 1
+  SchemaVersion: 2
   AssetId: ivy-townhouse-white-production-v01
-  SourceProvenance: Four user-supplied IvyTownhouse LOD archives plus one 64-triangle
-    window-light overlay derived from the approved Blender proof of concept.
+  SourceProvenance: Four user-supplied IvyTownhouse LOD archives, a versioned 3,321-triangle
+    LOD4 derivative, eight neutral 45-degree LOD5 views, and one 64-triangle window-light
+    overlay.
   AuthoredScale: {x: 16.44, y: 16.44, z: 16.44}
   PivotOffset: {x: 0, y: 0, z: 0}
   FrontYawDegrees: 90
@@ -40,6 +41,8 @@ MonoBehaviour:
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
     TargetTriangleBudget: 250000
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
     Provenance: User-supplied IvyTownhouse-LOD0.zip; imported unchanged.
   - Level: 1
     ScreenRelativeHeight: 0.3
@@ -50,6 +53,8 @@ MonoBehaviour:
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
     TargetTriangleBudget: 80000
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
     Provenance: User-supplied IvyTownhouse-LOD1.zip; imported unchanged.
   - Level: 2
     ScreenRelativeHeight: 0.12
@@ -60,6 +65,8 @@ MonoBehaviour:
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
     TargetTriangleBudget: 20000
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
     Provenance: User-supplied IvyTownhouse-LOD2.zip; imported unchanged.
   - Level: 3
     ScreenRelativeHeight: 0.035
@@ -70,4 +77,32 @@ MonoBehaviour:
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
     TargetTriangleBudget: 5000
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
     Provenance: User-supplied IvyTownhouse-LOD3.zip; imported unchanged.
+  - Level: 4
+    ScreenRelativeHeight: 0.012
+    VisualPrefab: {fileID: 919132149155446097, guid: e1cbf15b2b40a4abc99513e4dfa9eddc, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: b827d5db56af44776aa7509ee4ea25c6, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: e1cbf15b2b40a4abc99513e4dfa9eddc, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 0.06, y: 0.06, z: 0.06}
+    TargetTriangleBudget: 3500
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Versioned LOD0 derivative; 3,321 triangles with source UV and material
+      identity preserved.
+  - Level: 5
+    ScreenRelativeHeight: 0.002
+    VisualPrefab: {fileID: 3773726038472991790, guid: c02888fe23bae4d5fa85af3301b37a1c, type: 3}
+    OverrideMaterial: {fileID: 0}
+    ShadowPrefab: {fileID: 919132149155446097, guid: e1cbf15b2b40a4abc99513e4dfa9eddc, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 16
+    BillboardAngleCount: 8
+    BillboardYawOffset: 0
+    Provenance: Eight transparent 512px evaluation views rendered every 45 degrees
+      from the normalized LOD0 source.

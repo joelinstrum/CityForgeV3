@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: MixedUseBrickEvaluation
+  m_EditorClassIdentifier: 
+  SchemaVersion: 2
+  AssetId: mixed-use-brick-eval-v01
+  SourceProvenance: User-supplied Tripo mixed-use brick FBX preserved unchanged as
+    LOD0; LOD1-LOD4 are UV-preserving derivatives; LOD5 contains eight neutral 45-degree
+    renders.
+  AuthoredScale: {x: 24.3407, y: 24.3407, z: 24.3407}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 13.326921, y: 23.88833}
+  BoundsTolerance: 0.1
+  UseCrossFade: 1
+  CrossFadeWidth: 0.12
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 0}
+  NightLightingMaterial: {fileID: 0}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 1, y: 1, z: 1}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.6
+    VisualPrefab: {fileID: 919132149155446097, guid: cdb0c3d0c6037486387d2b8ba0d3cedf, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 80a5db7af897a46748380917a36e255e, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: c35f9917fa5414e88ad8ade3f4a9364f, type: 3}
+    LocalPosition: {x: 0.00007623434, y: 0.000000059604645, z: -0.0009917921}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 30588
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Supplied textured FBX imported unchanged as the closest-range model.
+  - Level: 1
+    ScreenRelativeHeight: 0.3
+    VisualPrefab: {fileID: 919132149155446097, guid: d2f9407713aac4ef6b7f71d338fa48ad, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 80a5db7af897a46748380917a36e255e, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: c35f9917fa5414e88ad8ade3f4a9364f, type: 3}
+    LocalPosition: {x: 0.00007623434, y: -0.000041276217, z: -0.0010066234}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 16822
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: UV-preserving derivative of immutable LOD0 at 55 % ratio.
+  - Level: 2
+    ScreenRelativeHeight: 0.12
+    VisualPrefab: {fileID: 919132149155446097, guid: c35f9917fa5414e88ad8ade3f4a9364f, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 80a5db7af897a46748380917a36e255e, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: c35f9917fa5414e88ad8ade3f4a9364f, type: 3}
+    LocalPosition: {x: 0.0005409294, y: -0.000042527914, z: -0.0009437126}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 9175
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: UV-preserving derivative of immutable LOD0 at 30 % ratio.
+  - Level: 3
+    ScreenRelativeHeight: 0.035
+    VisualPrefab: {fileID: 919132149155446097, guid: 1abd97a577e014e8e891697ea50ffaac, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 80a5db7af897a46748380917a36e255e, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 1abd97a577e014e8e891697ea50ffaac, type: 3}
+    LocalPosition: {x: -0.00018833112, y: -0.00009277463, z: -0.00025281106}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 4587
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: UV-preserving derivative of immutable LOD0 at 15 % ratio.
+  - Level: 4
+    ScreenRelativeHeight: 0.012
+    VisualPrefab: {fileID: 919132149155446097, guid: 9a2f048749d334340b98980b84d7c07a, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: 80a5db7af897a46748380917a36e255e, type: 2}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 9a2f048749d334340b98980b84d7c07a, type: 3}
+    LocalPosition: {x: 0.0011817142, y: -0.046728134, z: 0.0009635221}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 3389
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: UV-preserving derivative of immutable LOD0 at 7 % ratio.
+  - Level: 5
+    ScreenRelativeHeight: 0.002
+    VisualPrefab: {fileID: 5091897491856765132, guid: e0ebd76e16eff4940b055aeee956cd48, type: 3}
+    OverrideMaterial: {fileID: 0}
+    ShadowPrefab: {fileID: 919132149155446097, guid: 9a2f048749d334340b98980b84d7c07a, type: 3}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 16
+    BillboardAngleCount: 8
+    BillboardYawOffset: 0
+    Provenance: Eight transparent 1024px neutral views rendered every 45 degrees
+      from immutable LOD0.

@@ -613,6 +613,39 @@
     border-radius: var(--cf-radius-md);
 }
 
+.inspector-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin: -10px -10px 10px -10px;
+}
+
+.inspector-drag-handle {
+    flex-grow: 1;
+    height: 28px;
+    padding-left: 8px;
+    color: var(--cf-paper-300);
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-left;
+}
+
+.inspector-header .cf-button {
+    width: 30px;
+    min-width: 30px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+}
+
+.inspector-reopen {
+    position: absolute;
+    right: 18px;
+    top: 92px;
+    width: 112px;
+}
+
 .inspector .section-label {
     -unity-text-align: upper-left;
 }
@@ -1163,6 +1196,12 @@
     max-height: 760px;
 }
 
+.document-modal-panel.road-material-modal-panel.flora-modal-panel {
+    height: 760px;
+    max-height: 88%;
+    overflow: hidden;
+}
+
 .building-prop-modal-panel {
     width: 820px;
     max-height: 780px;
@@ -1233,8 +1272,8 @@
 }
 
 .flora-modal-scroll {
-    height: 560px;
-    max-height: 560px;
+    min-height: 0;
+    flex-grow: 1;
     flex-shrink: 1;
     padding-right: 8px;
 }
@@ -1392,4 +1431,31 @@
     background-color: rgb(221, 177, 67);
     border-width: 2px;
     border-color: rgb(245, 225, 153);
+}
+
+.building-prop-scale-stops {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
+
+.building-prop-scale-stop {
+    width: 34px;
+    min-width: 34px;
+    height: 27px;
+    min-height: 27px;
+    margin: 0;
+    padding: 0;
+    color: rgb(238, 231, 207);
+    background-color: rgb(29, 48, 58);
+    border-width: 1px;
+    border-color: rgb(95, 116, 124);
+    font-size: 10px;
+}
+
+.building-prop-scale-stop:hover {
+    color: rgb(255, 244, 196);
+    background-color: rgb(67, 82, 64);
+    border-color: rgb(221, 177, 67);
 }

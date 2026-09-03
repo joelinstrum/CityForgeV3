@@ -6,11 +6,12 @@ namespace CityForgeV3.Buildings3D
 {
     public enum Building3DLevel
     {
-        LOD0,
-        LOD1,
-        LOD2,
-        LOD3,
-        LOD4Impostor
+        LOD0 = 0,
+        LOD1 = 1,
+        LOD2 = 2,
+        LOD3 = 3,
+        LOD4 = 4,
+        LOD5Billboard = 5
     }
 
     [Serializable]
@@ -25,6 +26,10 @@ namespace CityForgeV3.Buildings3D
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale = Vector3.one;
         [Min(0)] public int TargetTriangleBudget;
+        [Tooltip("For LOD5, the number of equally spaced billboard views in the prefab.")]
+        [Range(0, 8)] public int BillboardAngleCount;
+        [Tooltip("Rotates the billboard view lookup without changing the building transform.")]
+        public float BillboardYawOffset;
         [TextArea] public string Provenance;
     }
 
@@ -32,7 +37,7 @@ namespace CityForgeV3.Buildings3D
         menuName = "City Forge/3D Building Package")]
     public sealed class Building3DPackage : ScriptableObject
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
 
         [Min(1)] public int SchemaVersion = CurrentSchemaVersion;
         public string AssetId;

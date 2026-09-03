@@ -8,7 +8,7 @@
   "artworkLengthMeters": 10.0,
   "traffic": {
     "driveSide": "right",
-    "laneOffsetMeters": 1.05,
+    "laneOffsetMeters": 2.35,
     "speedLimitMetersPerSecond": 5.5,
     "minorApproachControl": "yield"
   },

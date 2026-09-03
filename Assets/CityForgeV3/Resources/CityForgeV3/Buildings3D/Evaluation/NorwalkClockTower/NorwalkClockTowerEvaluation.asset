@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: NorwalkClockTowerEvaluation
+  m_EditorClassIdentifier: 
+  SchemaVersion: 2
+  AssetId: norwalk-clock-tower-eval-v01
+  SourceProvenance: Norwalk Juvenile Courthouse, Norwalk, Ohio; user-supplied immutable
+    Tripo archive. Original FBX preserved unchanged as LOD0; lower levels are derived
+    separately.
+  AuthoredScale: {x: 49.030945, y: 49.030945, z: 49.030945}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 90
+  FootprintMeters: {x: 36.65201, y: 36.538303}
+  BoundsTolerance: 0.1
+  UseCrossFade: 0
+  CrossFadeWidth: 0.1
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 0}
+  NightLightingMaterial: {fileID: 0}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 1, y: 1, z: 1}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.32
+    VisualPrefab: {fileID: 919132149155446097, guid: 876b434549298480d89ca4bfa3a91cbd, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: aa400569aae3c4591bc2669192d8471c, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: -0.0009612888, y: 0.000000029802322, z: 0.00022894019}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 440850
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Supplied LOD0 imported unchanged; measured and ground-registered
+      for evaluation.
+  - Level: 1
+    ScreenRelativeHeight: 0.18
+    VisualPrefab: {fileID: 919132149155446097, guid: 23a178e5c36ec4d0fa0d68ec5579fd53, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: aa400569aae3c4591bc2669192d8471c, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: -0.0009594378, y: -0.000019907951, z: 0.00023845132}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 220425
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Derived from immutable supplied LOD0 at 50 % triangle ratio; LOD0
+      unchanged.
+  - Level: 2
+    ScreenRelativeHeight: 0.09
+    VisualPrefab: {fileID: 919132149155446097, guid: e69139f9ec77049c984a671689a403f7, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: aa400569aae3c4591bc2669192d8471c, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: -0.0009290534, y: -0.000035345554, z: 0.00021646047}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 110212
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Derived from immutable supplied LOD0 at 25 % triangle ratio; LOD0
+      unchanged.
+  - Level: 3
+    ScreenRelativeHeight: 0.035
+    VisualPrefab: {fileID: 919132149155446097, guid: 7c7331a7510544fda847fe6a52850c38, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: aa400569aae3c4591bc2669192d8471c, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: -0.0007663397, y: -0.00006151199, z: 0.00020372464}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 44085
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Derived from immutable supplied LOD0 at 10 % triangle ratio; LOD0
+      unchanged.
+  - Level: 4
+    ScreenRelativeHeight: 0.001
+    VisualPrefab: {fileID: 919132149155446097, guid: cfdaa73e5875e4b4c962ba211947ca90, type: 3}
+    OverrideMaterial: {fileID: 2100000, guid: aa400569aae3c4591bc2669192d8471c, type: 2}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: -0.00072167115, y: -0.00006151199, z: 0.00042168907}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 17634
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance: Derived from immutable supplied LOD0 at 4 % triangle ratio; LOD0
+      unchanged.
