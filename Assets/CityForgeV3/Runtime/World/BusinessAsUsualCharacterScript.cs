@@ -8,7 +8,8 @@ namespace CityForgeV3.World
         Wait,
         FoldArms,
         Idle,
-        LookAround
+        LookAround,
+        Hoe
     }
 
     /// <summary>
@@ -21,6 +22,8 @@ namespace CityForgeV3.World
         public static BusinessAsUsualAction SelectForCharacter(string propId,
             float roll)
         {
+            if (LotWorldController.IsFarmer(propId))
+                return Mathf.Clamp01(roll) < .25f ? BusinessAsUsualAction.Walk : BusinessAsUsualAction.Hoe;
             if (string.Equals(propId, LotWorldController.HooliganCharacterId,
                     System.StringComparison.OrdinalIgnoreCase))
                 return Mathf.Clamp01(roll) < 0.15f
@@ -52,6 +55,7 @@ namespace CityForgeV3.World
             action switch
             {
                 BusinessAsUsualAction.Walk => "walk",
+                BusinessAsUsualAction.Hoe => "hoe",
                 BusinessAsUsualAction.Wait => "wait",
                 BusinessAsUsualAction.FoldArms => "fold_arms",
                 BusinessAsUsualAction.LookAround => "look_around",
@@ -95,6 +99,7 @@ namespace CityForgeV3.World
                 // A walk is destination-driven by the controller and ends at
                 // the lot boundary; this duration is only a defensive fallback.
                 BusinessAsUsualAction.Walk => 60f,
+                BusinessAsUsualAction.Hoe => Mathf.Lerp(10f, 20f, roll),
                 BusinessAsUsualAction.Wait => Mathf.Lerp(1.5f, 3.5f, roll),
                 BusinessAsUsualAction.FoldArms => Mathf.Lerp(3f, 7f, roll),
                 BusinessAsUsualAction.LookAround => Mathf.Lerp(2.5f, 5.5f, roll),

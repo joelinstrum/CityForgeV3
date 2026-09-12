@@ -62,6 +62,18 @@ namespace CityForgeV3.World
             "norwalk-clock-tower-eval-v01";
         public const string MixedUseBrickEvaluationId =
             "mixed-use-brick-eval-v01";
+        public const string FortWatchtowerEvaluationId =
+            "fort-watchtower-eval-v01";
+        public const string FoundersCabinLargeEvaluationId =
+            "founders-cabin-large-eval-v01";
+        public const string FoundersCabinSmallEvaluationId =
+            "founders-cabin-small-eval-v01";
+        public const string NewEnglandFarmhouse1780EvaluationId =
+            "new-england-farmhouse-1780-eval-v01";
+        public const string NewEnglandRedBarnEvaluationId =
+            "new-england-red-barn-eval-v01";
+        public const string OldChurchEvaluationId =
+            "old-church-eval-v01";
         public const float KingKongEnclosureBuildingSizeMeters = 30f;
         // Tripo's enclosure FBX contains outer geometry that inflates its
         // renderer bounds far beyond the structure visible to the player.
@@ -255,40 +267,18 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
-        private static string EvaluationBuilding3DResource(string assetId) =>
-            assetId switch
-            {
-                NyBrownstoneLightEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstoneLight/Prefabs/NYBrownstoneLightEvaluation",
-                NyBrownstoneBayEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstoneBay/Prefabs/NYBrownstoneBayEvaluation",
-                NyFancyTownhouseEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/NYFancyTownhouse/Prefabs/NYFancyTownhouseEvaluation",
-                NyBrownstoneEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/NYBrownstone/Prefabs/NYBrownstoneEvaluation",
-                BrooklynTownhomeRowEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/BrooklynTownhomeRow/Prefabs/BrooklynTownhomeRowEvaluation",
-                NorwalkClockTowerEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/NorwalkClockTower/Prefabs/NorwalkClockTowerEvaluation",
-                MixedUseBrickEvaluationId =>
-                    "CityForgeV3/Buildings3D/Evaluation/MixedUseBrick/Prefabs/MixedUseBrickEvaluation",
-                _ => null
-            };
-
         public bool AddExperimentalBuilding3D(string assetId,
             float? worldX = null, float? worldZ = null,
             int? rotationQuarterTurns = null)
         {
-            if (assetId != BrownstoneBuilding22kId &&
+            // Legacy QA-only models remain accepted until their fixtures move
+            // into the catalog. Player-facing content must resolve through a
+            // manifest entry rather than an asset-id allow-list.
+            if (BuildingContentCatalog.Find(assetId) == null &&
+                assetId != BrownstoneBuilding22kId &&
                 assetId != LowPolyBrownstoneV01Id &&
-                assetId != ArtMuseumProductionId &&
-                assetId != IvyTownhouseWhiteProductionId &&
-                assetId != PlymouthStoreProductionId &&
-                assetId != GildedAgeMansionProductionId &&
-                assetId != GildedAgeMansionExperimentalId &&
-                assetId != HitchcockMansionProductionId &&
-                assetId != KingKongEnclosureBuilding3DId &&
-                EvaluationBuilding3DResource(assetId) == null) return false;
+                assetId != GildedAgeMansionProductionId) return false;
+            var preservedCamera = CaptureCameraFraming();
             _session.Data.Buildings3D ??= new List<PlacedBuilding3D>();
             var index = _session.Data.Buildings3D.Count;
             var offset = index * 2.5f;
@@ -315,6 +305,7 @@ namespace CityForgeV3.World
             // previous refit forced the native-3D 45-degree azimuth here,
             // making the entire lot appear to rotate as soon as the first
             // building was placed.
+            RestoreCameraFraming(preservedCamera);
             NotifyStateChanged();
             return true;
         }
@@ -412,14 +403,7 @@ namespace CityForgeV3.World
             // where the sun is, while a Unity directional light points along
             // the rays. Morning sun is east, therefore its rays and shadows
             // travel west. Afternoon uses the exact opposite bearing.
-            // Bias the native-3D afternoon sun toward one principal facade.
-            // With the 45-degree lot camera, a due-west light grazes both
-            // visible faces and makes the whole building read uniformly dim.
-            // This quarter-turn creates the intended bright-face/shaded-face
-            // separation without changing the camera or environment colors.
-            var native3DAzimuthBias = TimeOfDay == TimeOfDayPreset.Afternoon
-                ? -45f
-                : 0f;
+            var canonicalRotation = TimeOfDayLighting.SunRotation(TimeOfDay);
             return Quaternion.Euler(
                 (TimeOfDay switch
                 {
@@ -428,22 +412,18 @@ namespace CityForgeV3.World
                     _ => spec.SunElevation
                 }) +
                 _environmentSunElevationOffset,
-                spec.SunAzimuth + 90f + native3DAzimuthBias +
+                canonicalRotation.eulerAngles.y +
                 _environmentSunAzimuthOffset,
                 0f);
         }
 
-        private Color ExperimentalBuilding3DGroundColor(Color fallback)
+        private Vector3 ProjectedObjectShadowRay()
         {
-            if (ExperimentalBuilding3DCount <= 0) return fallback;
-            return TimeOfDay switch
-            {
-                TimeOfDayPreset.Morning => new Color(0.085f, 0.125f, 0.095f),
-                TimeOfDayPreset.Noon => new Color(0.095f, 0.145f, 0.095f),
-                TimeOfDayPreset.Afternoon => new Color(0.09f, 0.125f, 0.08f),
-                TimeOfDayPreset.Evening => new Color(0.045f, 0.065f, 0.055f),
-                _ => new Color(0.025f, 0.04f, 0.035f)
-            };
+            var ray = ExperimentalBuilding3DSunRotation() * Vector3.forward;
+            if (_buildingPackage != null)
+                ray = Quaternion.Euler(0f,
+                    _buildingPackage.ShadowDirectionOffsetDegrees, 0f) * ray;
+            return ray;
         }
 
         private void ApplyExperimentalBuilding3DStudioEnvironment()
@@ -523,7 +503,18 @@ namespace CityForgeV3.World
                         material.SetFloat("_EnvironmentDim", timeBrightness);
                     if (material.HasProperty("_DirectionalContrast"))
                         material.SetFloat("_DirectionalContrast",
-                            TimeOfDay == TimeOfDayPreset.Afternoon ? 0.32f : 0f);
+                            TimeOfDay == TimeOfDayPreset.Afternoon ? 0.72f : 0f);
+                    if (material.HasProperty("_DirectionalLightDirection"))
+                    {
+                        // The projected ray points along the accepted shadow
+                        // travel direction. Facade lighting needs the inverse:
+                        // toward the western afternoon sun. This does not alter
+                        // the ground/prop shadow vector itself.
+                        var directionalRay = -ProjectedObjectShadowRay();
+                        material.SetVector("_DirectionalLightDirection",
+                            new Vector4(directionalRay.x, directionalRay.y,
+                                directionalRay.z, 0f));
+                    }
                     if (material.HasProperty("_SunIntensityScale"))
                         material.SetFloat("_SunIntensityScale",
                             TimeOfDay == TimeOfDayPreset.Afternoon
@@ -681,6 +672,16 @@ namespace CityForgeV3.World
                 material.mainTextureScale = textureScale;
                 material.mainTextureOffset = textureOffset;
             }
+            if (_terrainShadowCasterRenderer != null)
+                _terrainShadowCasterRenderer.sharedMaterial = material;
+
+            // The display-match tint calibrates authored ground textures only.
+            // A blank lot already has its time/season color in _Color; applying
+            // this multiplier would darken it when the first 3D building arrives.
+            if (material.HasProperty("_DisplayMatch"))
+                material.SetColor("_DisplayMatch",
+                    string.IsNullOrWhiteSpace(BaseTextureId)
+                        ? Color.white : new Color(0.75f, 0.80f, 0.75f, 1f));
 
             // A shader transition can occur after the base-texture pass while a
             // saved lot is rebuilding. Do not rely on the previous shader's
@@ -758,83 +759,32 @@ namespace CityForgeV3.World
                     continue;
                 if (string.IsNullOrWhiteSpace(placed.InstanceId))
                     placed.InstanceId = System.Guid.NewGuid().ToString("N");
-                var evaluationResource = EvaluationBuilding3DResource(
-                    placed.AssetId);
-                var source = Resources.Load<GameObject>(evaluationResource ??
-                    (placed.AssetId == LowPolyBrownstoneV01Id
+                var content = BuildingContentCatalog.Find(placed.AssetId);
+                var source = content != null
+                    ? BuildingContentCatalog.LoadModel(content)
+                    : Resources.Load<GameObject>(
+                    placed.AssetId == LowPolyBrownstoneV01Id
                         ? LowPolyBrownstoneV01Resource
-                        : placed.AssetId == ArtMuseumProductionId
-                            ? ArtMuseumProductionResource
-                        : placed.AssetId == IvyTownhouseWhiteProductionId
-                            ? IvyTownhouseWhiteProductionResource
-                        : placed.AssetId == PlymouthStoreProductionId
-                            ? PlymouthStoreProductionResource
                         : placed.AssetId == GildedAgeMansionProductionId
                             ? GildedAgeMansionProductionResource
-                        : placed.AssetId == GildedAgeMansionExperimentalId
-                            ? GildedAgeMansionExperimentalResource
-                        : placed.AssetId == HitchcockMansionProductionId
-                            ? HitchcockMansionProductionResource
-                        : placed.AssetId == KingKongEnclosureBuilding3DId
-                            ? KingKongEnclosureBuilding3DResource
-                        : BrownstoneProductionResource));
+                        : BrownstoneProductionResource);
                 if (source == null)
                 {
-                    Debug.LogError($"Missing production 3D building: {BrownstoneProductionResource}");
+                    Debug.LogError($"Missing 3D building '{placed.AssetId}' from " +
+                                   $"'{content?.sourceId ?? "legacy QA"}'.");
                     continue;
                 }
                 var root = Instantiate(source, transform);
-                root.name = placed.AssetId switch
-                {
-                    LowPolyBrownstoneV01Id =>
-                        "3D Building — Low-Poly Brownstone V01",
-                    ArtMuseumProductionId =>
-                        "3D Building — Art Museum Production V01",
-                    IvyTownhouseWhiteProductionId =>
-                        "3D Building — Ivy Townhouse White Production V01",
-                    PlymouthStoreProductionId =>
-                        "3D Building — Plymouth Store V01",
-                    GildedAgeMansionProductionId =>
-                        "3D Building — Gilded Age Mansion V01",
-                    GildedAgeMansionExperimentalId =>
-                        "3D Building — Exp. Gilded Age Mansion V01",
-                    HitchcockMansionProductionId =>
-                        "3D Building — Hitchcock Mansion V01",
-                    KingKongEnclosureBuilding3DId =>
-                        "3D Building — King Kong Enclosure V01",
-                    NyBrownstoneLightEvaluationId =>
-                        "3D Building — NY Brownstone Light Evaluation",
-                    NyBrownstoneBayEvaluationId =>
-                        "3D Building — NY Brownstone Bay Evaluation",
-                    NyFancyTownhouseEvaluationId =>
-                        "3D Building — NY Fancy Townhouse Evaluation",
-                    NyBrownstoneEvaluationId =>
-                        "3D Building — NY Brownstone Evaluation",
-                    BrooklynTownhomeRowEvaluationId =>
-                        "3D Building — Brooklyn Townhome Row Evaluation",
-                    NorwalkClockTowerEvaluationId =>
-                        "3D Building — Norwalk Juvenile Courthouse, Ohio",
-                    MixedUseBrickEvaluationId =>
-                        "3D Building — Mixed-Use Brick Evaluation",
-                    _ => "3D Building — Brownstone Production V01"
-                };
+                root.name = $"3D Building — {content?.displayName ?? placed.AssetId}";
                 root.transform.localPosition = new Vector3(placed.X, 0f, placed.Z);
-                root.transform.localRotation =
-                    placed.AssetId == KingKongEnclosureBuilding3DId
-                        // The supplied FBX is Z-up. Convert it to Unity's
-                        // Y-up world before applying the user's lot rotation.
-                        ? Quaternion.Euler(-90f,
-                            placed.RotationEighthTurns >= 0
-                                ? placed.RotationEighthTurns * 45f
-                                : placed.RotationQuarterTurns * 90f, 0f)
-                        : ExperimentalBuildingRotation(placed);
-                if (placed.AssetId == KingKongEnclosureBuilding3DId)
-                {
-                    NormalizeStaticPropToLength(root.transform,
-                        KingKongEnclosureBuildingSizeMeters);
-                    SetPropOpacity(root.transform, KingKongEnclosurePropId,
-                        1f, true);
-                }
+                var turns = placed.RotationEighthTurns >= 0
+                    ? placed.RotationEighthTurns * 45f
+                    : placed.RotationQuarterTurns * 90f;
+                root.transform.localRotation = content == null
+                    ? ExperimentalBuildingRotation(placed)
+                    : Quaternion.Euler(content.pitchDegrees,
+                        content.baseYawDegrees + turns, 0f);
+                ApplyBuildingContentContract(root.transform, content);
                 var material = placed.AssetId == BrownstoneBuilding22kId
                     ? CreateBrownstoneBuilding22kMaterial()
                     : null;
@@ -855,11 +805,13 @@ namespace CityForgeV3.World
                                     materials[index] = material;
                         renderer.sharedMaterials = materials;
                     }
-                    renderer.shadowCastingMode = hasPackageShadowLod
-                        ? (IsPackageShadowRenderer(renderer)
-                            ? ShadowCastingMode.ShadowsOnly
-                            : ShadowCastingMode.Off)
-                        : ShadowCastingMode.On;
+                    renderer.shadowCastingMode = _districtHosted
+                        ? ShadowCastingMode.Off
+                        : hasPackageShadowLod
+                            ? (IsPackageShadowRenderer(renderer)
+                                ? ShadowCastingMode.ShadowsOnly
+                                : ShadowCastingMode.Off)
+                            : ShadowCastingMode.On;
                     // A separately authored lower-detail caster occupies the
                     // same volume. Letting the beauty mesh receive that
                     // mismatched topology self-shadows the entire museum to
@@ -957,7 +909,10 @@ namespace CityForgeV3.World
         private void UpdateExperimentalBuilding3DProjectedGroundShadows()
         {
             if (ExperimentalBuilding3DCount <= 0 || _sun == null) return;
-            var ray = _sun.transform.forward;
+            // The Lot Editor's exact-color receiver uses this projected copy.
+            // Hosted district buildings use the shared sun's native mesh
+            // shadows instead, avoiding two competing building projections.
+            var ray = ProjectedObjectShadowRay();
             // The exact-color grass receiver is intentionally unlit, so the
             // mesh projection supplies the directional silhouettes. Noon now
             // uses a high southern sun rather than a nearly vertical one, so
@@ -966,12 +921,14 @@ namespace CityForgeV3.World
             var visible = !IsRaining &&
                 TimeOfDay != TimeOfDayPreset.Night &&
                 ray.y < -0.01f;
-            var lengthScale = BuildingShadowLengthScale(TimeOfDay);
+            var lengthScale = BuildingShadowLengthScale(TimeOfDay) *
+                (_districtHosted && TimeOfDay == TimeOfDayPreset.Afternoon
+                    ? 0.54f : 1f);
             var opacity = TimeOfDay switch
             {
                 TimeOfDayPreset.Morning => 0.26f,
-                TimeOfDayPreset.Noon => 0.364f,
-                TimeOfDayPreset.Afternoon => 0.26f,
+                TimeOfDayPreset.Noon => 0.50f,
+                TimeOfDayPreset.Afternoon => _districtHosted ? 0.48f : 0.26f,
                 _ => 0.22f
             };
             opacity *= Mathf.Clamp01(_environmentShadowStrength);
@@ -995,6 +952,12 @@ namespace CityForgeV3.World
                 var referenceHeight = Mathf.Max(0.01f, bounds.max.y - 0.018f);
                 var displacement = new Vector3(ray.x, 0f, ray.z) *
                     (referenceHeight / -ray.y) * lengthScale;
+                if (_districtHosted)
+                {
+                    UpdateDistrictBuildingShadowHull(shadow, bounds,
+                        displacement, opacity);
+                    continue;
+                }
                 foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
                 {
                     if (!renderer.enabled) continue;
@@ -1009,12 +972,75 @@ namespace CityForgeV3.World
                         material.SetVector("_ShadowDisplacement", displacement);
                         material.SetFloat("_GroundY", 0.018f);
                         material.SetFloat("_ReferenceHeight", referenceHeight);
+                        var clipHalfWidth = _districtHosted
+                            ? 100000f : LotWidthMeters * 0.5f + 2f;
+                        var clipHalfDepth = _districtHosted
+                            ? 100000f : LotDepthMeters * 0.5f + 2f;
                         material.SetVector("_LotHalfExtents", new Vector4(
-                            LotWidthMeters * 0.5f + 2f,
-                            LotDepthMeters * 0.5f + 2f, 0f, 0f));
+                            clipHalfWidth, clipHalfDepth, 0f, 0f));
                     }
                 }
             }
+        }
+
+        private void UpdateDistrictBuildingShadowHull(GameObject shadow,
+            Bounds bounds, Vector3 displacement, float opacity)
+        {
+            const string hullName = "District Building Shadow Hull";
+            var hullTransform = shadow.transform.Find(hullName);
+            if (hullTransform == null)
+            {
+                var hullObject = new GameObject(hullName);
+                hullObject.transform.SetParent(shadow.transform, false);
+                hullObject.AddComponent<MeshFilter>();
+                var renderer = hullObject.AddComponent<MeshRenderer>();
+                var material = new Material(Shader.Find("Sprites/Default"))
+                {
+                    name = "CF District Building Shadow",
+                    renderQueue = 3001
+                };
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                _experimentalBuilding3DMaterials.Add(material);
+                hullTransform = hullObject.transform;
+            }
+
+            foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
+                renderer.enabled = renderer.transform == hullTransform;
+
+            var worldPoints = new List<Vector2>(8);
+            foreach (var x in new[] { bounds.min.x, bounds.max.x })
+            foreach (var z in new[] { bounds.min.z, bounds.max.z })
+            {
+                worldPoints.Add(new Vector2(x, z));
+                worldPoints.Add(new Vector2(
+                    x + displacement.x, z + displacement.z));
+            }
+            var hull = ConvexHull(worldPoints);
+            var vertices = new List<Vector3>(hull.Count);
+            foreach (var point in hull)
+                vertices.Add(hullTransform.InverseTransformPoint(
+                    new Vector3(point.x, 0.065f, point.y)));
+            var triangles = new List<int>();
+            for (var index = 1; index < hull.Count - 1; index++)
+            {
+                triangles.Add(0);
+                triangles.Add(index);
+                triangles.Add(index + 1);
+            }
+            var mesh = hullTransform.GetComponent<MeshFilter>().sharedMesh;
+            if (mesh == null)
+            {
+                mesh = new Mesh { name = hullName };
+                hullTransform.GetComponent<MeshFilter>().sharedMesh = mesh;
+            }
+            mesh.Clear();
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            hullTransform.GetComponent<MeshRenderer>().sharedMaterial.color =
+                new Color(0f, 0f, 0f, opacity);
         }
 
         private static Quaternion ExperimentalBuildingRotation(
@@ -1025,6 +1051,87 @@ namespace CityForgeV3.World
                 ? placed.RotationEighthTurns * 45f
                 : placed.RotationQuarterTurns * 90f),
             0f);
+
+        private void ApplyBuildingContentContract(Transform root,
+            BuildingContentEntry content)
+        {
+            if (root == null || content == null) return;
+            if (content.normalizeMeters > 0f)
+            {
+                if (string.Equals(content.normalizeAxis, "height",
+                        System.StringComparison.OrdinalIgnoreCase))
+                    NormalizeStaticPropToHeight(root, content.normalizeMeters);
+                else if (string.Equals(content.normalizeAxis, "length",
+                             System.StringComparison.OrdinalIgnoreCase))
+                    NormalizeStaticPropToLength(root, content.normalizeMeters);
+            }
+
+            // Native building imports use the shared, source-color-preserving
+            // matte contract automatically on placement and saved-lot reload.
+            // Authored packages and explicitly authored materials own their look.
+            if (string.Equals(content.materialMode, "embedded",
+                    System.StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(content.runtimeProfile, "authored-materials",
+                    System.StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(content.runtimeProfile, "opaque-prop",
+                    System.StringComparison.OrdinalIgnoreCase) &&
+                root.GetComponent<Building3DPackageInstance>() == null)
+                ImportedBuildingMaterials.Prepare(root, _experimentalBuilding3DMaterials);
+
+            if (string.Equals(content.materialMode, "pbr",
+                    System.StringComparison.OrdinalIgnoreCase))
+                ApplyManifestPbrMaterial(root, content);
+            else if (string.Equals(content.runtimeProfile, "opaque-prop",
+                         System.StringComparison.OrdinalIgnoreCase))
+                SetPropOpacity(root, KingKongEnclosurePropId, 1f, true);
+        }
+
+        private void ApplyManifestPbrMaterial(Transform root,
+            BuildingContentEntry content)
+        {
+            if (string.IsNullOrWhiteSpace(content.textureRoot)) return;
+            var albedo = Resources.Load<Texture2D>(content.textureRoot + "_basecolor");
+            var normal = Resources.Load<Texture2D>(content.textureRoot + "_normal");
+            var metallic = Resources.Load<Texture2D>(content.textureRoot + "_metallic");
+            var shader = Shader.Find("CityForgeV3/Experimental3DBuildingPBR") ??
+                         Shader.Find("Standard");
+            if (shader == null) return;
+            var tint = Color.white;
+            if (!string.IsNullOrWhiteSpace(content.tintHex))
+                ColorUtility.TryParseHtmlString(content.tintHex, out tint);
+            foreach (var sourceRenderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                var count = Mathf.Max(1, sourceRenderer.sharedMaterials.Length);
+                var materials = new Material[count];
+                for (var index = 0; index < count; index++)
+                {
+                    var material = new Material(shader)
+                    {
+                        name = $"{content.displayName} — Manifest PBR",
+                        color = tint,
+                        mainTexture = albedo
+                    };
+                    if (normal != null)
+                    {
+                        material.EnableKeyword("_NORMALMAP");
+                        material.SetTexture("_BumpMap", normal);
+                        material.SetFloat("_BumpScale", content.bumpScale);
+                    }
+                    if (metallic != null)
+                    {
+                        material.EnableKeyword("_METALLICGLOSSMAP");
+                        material.SetTexture("_MetallicGlossMap", metallic);
+                    }
+                    material.SetFloat("_Metallic", content.metallic);
+                    material.SetFloat("_Glossiness", content.smoothness);
+                    materials[index] = material;
+                    _experimentalBuilding3DMaterials.Add(material);
+                }
+                sourceRenderer.sharedMaterials = materials;
+                sourceRenderer.shadowCastingMode = ShadowCastingMode.On;
+                sourceRenderer.receiveShadows = true;
+            }
+        }
 
         private static void GroundExperimentalBuilding(GameObject root)
         {
@@ -1042,6 +1149,17 @@ namespace CityForgeV3.World
         private void BuildExperimentalBuilding3DReceiverShadowCaster(
             GameObject visibleRoot)
         {
+            // District-hosted buildings use the same explicit projected ray
+            // as props. Do not also create the Lot Editor's native ground
+            // caster, whose shared-light compass produces a second shadow in
+            // the opposite screen direction.
+            if (_districtHosted)
+            {
+                foreach (var renderer in visibleRoot
+                    .GetComponentsInChildren<Renderer>(true))
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                return;
+            }
             var packageInstance =
                 visibleRoot.GetComponent<Building3DPackageInstance>();
             if (packageInstance != null && HasPackageShadowRenderers(visibleRoot))
@@ -1365,6 +1483,39 @@ namespace CityForgeV3.World
             return true;
         }
 
+        public int BeginAllBuildingConstruction()
+        {
+            var started = 0;
+            var roots = new HashSet<GameObject>();
+            foreach (var root in _experimentalBuilding3DVisibleRoots)
+                if (root != null) roots.Add(root);
+            if (_presentation != null) roots.Add(_presentation.gameObject);
+            foreach (var presentation in _otherBuildingPresentations)
+                if (presentation != null) roots.Add(presentation.gameObject);
+            foreach (var root in roots)
+            {
+                if (root.GetComponent<BuildingConstructionSequence>() != null)
+                    continue;
+                var bounds = CombinedRendererBounds(root, out var hasBounds);
+                if (!hasBounds) continue;
+                var sequence = root.AddComponent<BuildingConstructionSequence>();
+                _experimentalBuilding3DGroundShadows.TryGetValue(root,
+                    out var shadow);
+                if (shadow != null) shadow.SetActive(false);
+                sequence.Begin(root, bounds.size.x, bounds.size.z,
+                    bounds.size.y, () =>
+                    {
+                        if (sequence.IsComplete && shadow != null)
+                            shadow.SetActive(true);
+                        NotifyStateChanged();
+                    }, new Vector3(bounds.center.x, bounds.min.y,
+                        bounds.center.z), Vector3.one, true);
+                started++;
+            }
+            if (started > 0) NotifyStateChanged();
+            return started;
+        }
+
         public bool ToggleSelectedBuildingConstructionFrame()
         {
             if (_selectedBuilding3DIndex < 0 ||
@@ -1445,6 +1596,7 @@ namespace CityForgeV3.World
             if (_selectedBuilding3DIndex < 0 ||
                 _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
                 return false;
+            var preservedCamera = CaptureCameraFraming();
             _session.Data.Buildings3D.RemoveAt(_selectedBuilding3DIndex);
             _selectedBuilding3DIndex = -1;
             _building3DDragActive = false;
@@ -1453,7 +1605,7 @@ namespace CityForgeV3.World
             ClearObjectHover();
             RebuildExperimentalBuilding3DPresentations();
             ApplyTimeOfDay();
-            ApplyCameraFacing(false);
+            RestoreCameraFraming(preservedCamera);
             RefreshBuilding3DSelectionOutline();
             NotifyStateChanged();
             return true;

@@ -30,7 +30,7 @@
   "primitive": {
     "resourcePath": "CityForgeV3/Buildings/ArtMuseumTripoV01/semantic-primitive-v01",
     "sourceVersion": "V01 church-derived voxel-remesh silhouette; 3.0 m ceremonial-door scale review",
-    "roofRidgeAxis": "depth",
+    "roofRidgeAxis": "none",
     "entranceFacingDegrees": 180.0,
     "requiredObjects": ["CF_PROXY_FOUNDATION", "CF_PROXY_WALLS", "CF_PROXY_BUILDING_GENERATED", "CF_ANCHOR_ENTRANCE"]
   },

@@ -2,6 +2,7 @@
   "schema": "cityforge-v3-lot-texture-catalog-v2",
   "sourceProject": "City Forge - Foundations Next",
   "baseTextures": [
+    { "id": "default-grass", "name": "Default Grass", "resource": "CityForgeV3/Art/Regions/default-grass-texture" },
     { "id": "grass-poor", "name": "Natural Grass — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2" },
     { "id": "grass-middle", "name": "Natural Grass — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2" },
     {
@@ -21,11 +22,11 @@
   ],
   "overlayTextures": [
     {
-      "id": "brick-walkway",
-      "name": "Brick Walkway",
-      "resource": "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway",
+      "id": "wild-grass-lawn",
+      "name": "Wild Grass Lawn",
+      "resource": "CityForgeV3/LotTextures/RuralOverlaysV01/wild-grass-lawn",
       "footprintMeters": [10, 10],
-      "transparent": true
+      "transparent": false
     },
     {
       "id": "concrete-sidewalk",
@@ -40,6 +41,27 @@
       "resource": "CityForgeV3/LotTextures/UrbanOverlaysV01/fancy-sidewalk-overlay",
       "footprintMeters": [10, 10],
       "transparent": false
+    },
+    {
+      "id": "brick-sidewalk-straight",
+      "name": "Brick Sidewalk — Straight",
+      "resource": "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-straight",
+      "footprintMeters": [10, 10],
+      "transparent": true
+    },
+    {
+      "id": "brick-sidewalk-corner",
+      "name": "Brick Sidewalk — Corner",
+      "resource": "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-corner",
+      "footprintMeters": [10, 10],
+      "transparent": true
+    },
+    {
+      "id": "brick-sidewalk-t-junction",
+      "name": "Brick Sidewalk — T-Junction",
+      "resource": "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-t-junction",
+      "footprintMeters": [10, 10],
+      "transparent": true
     }
   ]
 }

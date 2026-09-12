@@ -3,6 +3,9 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData] _FloraOpacity ("Tree Opacity", Float) = 1
+        [PerRendererData] _FloraSaturation ("Tree Saturation", Float) = 1
+        [PerRendererData] _FloraBaseEllipse ("Trunk Base Ellipse", Vector) = (0,0,0,0)
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
@@ -50,11 +53,16 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
 
             sampler2D _MainTex;
             fixed4 _Color;
+            half _FloraSaturation;
+            float4 _FloraBaseEllipse;
+            half _FloraOpacity;
             half _Cutoff;
             half _ShadowFloor;
             half _GroundFadeEnabled;
             float _GroundY;
             float _GroundFadeWidth;
+            float4 _CFCloudShadowCenter;
+            float4 _CFCloudShadowParams;
 
             struct appdata
             {
@@ -86,12 +94,29 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             fixed4 frag(v2f input) : SV_Target
             {
                 fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
+                half luminance = dot(artwork.rgb, half3(0.2126h,0.7152h,0.0722h));
+                artwork.rgb = max(0, lerp(luminance.xxx, artwork.rgb, _FloraSaturation));
+                if (_FloraBaseEllipse.w > 0 && input.uv.y < _FloraBaseEllipse.y + _FloraBaseEllipse.w)
+                {
+                    float x = (input.uv.x - _FloraBaseEllipse.x) / _FloraBaseEllipse.z;
+                    float edge = _FloraBaseEllipse.y + _FloraBaseEllipse.w *
+                        (1 - sqrt(saturate(1 - x*x)));
+                    artwork.a *= smoothstep(edge - 0.00065, edge + 0.00065, input.uv.y);
+                }
+                artwork.a = saturate(artwork.a * _FloraOpacity);
                 half groundFade = smoothstep(_GroundY - _GroundFadeWidth,
                     _GroundY + _GroundFadeWidth, input.worldPosition.y);
                 artwork.a *= lerp(1.0h, groundFade, _GroundFadeEnabled);
                 clip(artwork.a - _Cutoff);
                 half shadowAttenuation = SHADOW_ATTENUATION(input);
                 half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);
+                half cloudDistance = distance(input.worldPosition.xz,
+                    _CFCloudShadowCenter.xy);
+                half cloudMask = (1.0h - smoothstep(
+                    _CFCloudShadowParams.x * (1.0h - _CFCloudShadowParams.z),
+                    _CFCloudShadowParams.x, cloudDistance)) *
+                    _CFCloudShadowParams.w;
+                illumination *= 1.0h - cloudMask * _CFCloudShadowParams.y;
                 return fixed4(artwork.rgb * illumination, artwork.a);
             }
             ENDCG

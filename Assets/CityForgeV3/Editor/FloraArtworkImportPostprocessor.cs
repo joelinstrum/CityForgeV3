@@ -15,7 +15,9 @@ namespace CityForgeV3.Editor
         private const string FloraRoot =
             "Assets/CityForgeV3/Resources/CityForgeV3/Flora/";
         private const string ImportContractVersionKey =
-            "CityForgeV3.FloraArtworkImportContract.V1";
+            "CityForgeV3.FloraArtworkImportContract.V2";
+
+        public override uint GetVersion() => 2;
 
         static FloraArtworkImportPostprocessor()
         {
@@ -48,9 +50,16 @@ namespace CityForgeV3.Editor
             var importer = (TextureImporter)assetImporter;
             importer.isReadable = true;
             importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
+            // Billboards can become only a handful of screen pixels at the
+            // district's wider zooms. Without mipmaps their leaf detail is
+            // undersampled into a noisy, pixelated shimmer across the scene.
+            importer.mipmapEnabled = true;
+            importer.mipMapBias = 0f;
+            importer.mipMapsPreserveCoverage = true;
+            importer.alphaTestReferenceValue = 0.02f;
             importer.npotScale = TextureImporterNPOTScale.None;
-            importer.filterMode = FilterMode.Bilinear;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.anisoLevel = 4;
         }
     }
 }

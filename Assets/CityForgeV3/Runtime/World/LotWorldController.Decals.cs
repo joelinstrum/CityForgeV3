@@ -16,6 +16,10 @@ namespace CityForgeV3.World
         {
             "brick-street-01", "brick-street-02", "street-splat-01"
         };
+        private static readonly string[] DirtDecalTextureIds =
+        {
+            "dirt-01", "dirt-02"
+        };
 
         private Transform _decalRoot;
         private Transform _decalPreview;
@@ -48,7 +52,8 @@ namespace CityForgeV3.World
                 return false;
             }
             _decalPreview.gameObject.SetActive(true);
-            _decalPreview.localPosition = new Vector3(point.x, 0.098f, point.z);
+            _decalPreview.localPosition = new Vector3(point.x,
+                SampleTerrainHeight(point.x, point.z) + 0.098f, point.z);
             return true;
         }
 
@@ -57,7 +62,8 @@ namespace CityForgeV3.World
         {
             LastDecalPlacementBlockedByBuilding = false;
             LastDecalPlacementRequiresStreet = false;
-            if ((categoryId != "grass" && categoryId != "street") ||
+            if ((categoryId != "grass" && categoryId != "street" &&
+                 categoryId != "dirt") ||
                 !TryLotPointFromPanel(panelPosition, panelSize, out var point) ||
                 !PointInsideLot(point)) return false;
             if (PointOccupiedByBuilding(new Vector2(point.x, point.z)))
@@ -74,8 +80,12 @@ namespace CityForgeV3.World
             }
 
             _session.Data.Decals ??= new List<PlacedDecal>();
-            var textureIds = categoryId == "street"
-                ? StreetDecalTextureIds : GrassDecalTextureIds;
+            var textureIds = categoryId switch
+            {
+                "street" => StreetDecalTextureIds,
+                "dirt" => DirtDecalTextureIds,
+                _ => GrassDecalTextureIds
+            };
             var textureIndex = UnityEngine.Random.Range(0, textureIds.Length);
             _session.Data.Decals.Add(new PlacedDecal
             {
@@ -215,12 +225,18 @@ namespace CityForgeV3.World
             }
             foreach (var placed in _session.Data.Decals ?? new List<PlacedDecal>())
             {
-                var folder = placed.CategoryId == "street" ? "Street" : "Grass";
+                var folder = placed.CategoryId switch
+                {
+                    "street" => "Street",
+                    "dirt" => "Dirt",
+                    _ => "Grass"
+                };
                 var texture = Resources.Load<Texture2D>(
                     $"CityForgeV3/Decals/{folder}/{placed.TextureId}");
                 var quad = BuildDecalQuad(_decalRoot, $"Decal — {placed.TextureId}",
                     texture, placed.SizeMeters, placed.AspectRatio,
                     placed.RotationQuarterTurns, Color.white);
+                ConformDecalToTerrain(quad, placed);
                 var material = quad.GetComponent<MeshRenderer>().sharedMaterial;
                 var marks = new Vector4[Mathf.Min(32,
                     placed.EraseMarks?.Count ?? 0)];
@@ -232,12 +248,86 @@ namespace CityForgeV3.World
                 }
                 material.SetInt("_EraseMarkCount", marks.Length);
                 if (marks.Length > 0) material.SetVectorArray("_EraseMarks", marks);
-                // Roads and their shadow receiver reach 0.085 m. Decals sit
-                // just above every ground-art layer. Flora and props remain
-                // in front through their nearer geometry/depth surfaces.
-                quad.localPosition = new Vector3(placed.PositionX, 0.092f,
-                    placed.PositionZ);
             }
+        }
+
+        private void RefreshDecalTerrainConformance()
+        {
+            if (_decalRoot == null) return;
+            var placedIndex = 0;
+            var decals = _session.Data.Decals ?? new List<PlacedDecal>();
+            for (var childIndex = 0; childIndex < _decalRoot.childCount &&
+                 placedIndex < decals.Count; childIndex++)
+            {
+                var child = _decalRoot.GetChild(childIndex);
+                if (child == _decalPreview ||
+                    !child.name.StartsWith("Decal — ", StringComparison.Ordinal))
+                    continue;
+                ConformDecalToTerrain(child, decals[placedIndex++]);
+            }
+        }
+
+        private void ConformDecalToTerrain(Transform decal, PlacedDecal placed)
+        {
+            const float surfaceOffset = 0.035f;
+            const float maximumVertexSpacing = 0.5f;
+            var widthMeters = placed.SizeMeters *
+                Mathf.Max(0.1f, placed.AspectRatio);
+            var depthMeters = placed.SizeMeters;
+            var columns = Mathf.Max(1,
+                Mathf.CeilToInt(widthMeters / maximumVertexSpacing));
+            var rows = Mathf.Max(1,
+                Mathf.CeilToInt(depthMeters / maximumVertexSpacing));
+            var vertices = new Vector3[(columns + 1) * (rows + 1)];
+            var uv = new Vector2[vertices.Length];
+            var radians = placed.RotationQuarterTurns * 90f * Mathf.Deg2Rad;
+            var cosine = Mathf.Cos(radians);
+            var sine = Mathf.Sin(radians);
+            for (var row = 0; row <= rows; row++)
+            for (var column = 0; column <= columns; column++)
+            {
+                var u = column / (float)columns;
+                var v = row / (float)rows;
+                var localX = (u - 0.5f) * widthMeters;
+                var localZ = (v - 0.5f) * depthMeters;
+                var rotatedX = localX * cosine + localZ * sine;
+                var rotatedZ = -localX * sine + localZ * cosine;
+                var x = placed.PositionX + rotatedX;
+                var z = placed.PositionZ + rotatedZ;
+                var index = row * (columns + 1) + column;
+                vertices[index] = new Vector3(rotatedX,
+                    SampleTerrainHeight(x, z) + surfaceOffset, rotatedZ);
+                uv[index] = new Vector2(u, v);
+            }
+            var triangles = new int[columns * rows * 6];
+            var triangle = 0;
+            for (var row = 0; row < rows; row++)
+            for (var column = 0; column < columns; column++)
+            {
+                var index = row * (columns + 1) + column;
+                triangles[triangle++] = index;
+                triangles[triangle++] = index + columns + 1;
+                triangles[triangle++] = index + 1;
+                triangles[triangle++] = index + 1;
+                triangles[triangle++] = index + columns + 1;
+                triangles[triangle++] = index + columns + 2;
+            }
+            var mesh = decal.GetComponent<MeshFilter>().sharedMesh;
+            if (mesh == null || mesh.name != "Terrain-Conforming Decal")
+            {
+                mesh = new Mesh { name = "Terrain-Conforming Decal" };
+                decal.GetComponent<MeshFilter>().sharedMesh = mesh;
+            }
+            mesh.Clear();
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.uv = uv;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            decal.localPosition = new Vector3(placed.PositionX, 0f,
+                placed.PositionZ);
+            decal.localRotation = Quaternion.identity;
+            decal.localScale = Vector3.one;
         }
 
         private static Transform BuildDecalQuad(Transform parent, string name,

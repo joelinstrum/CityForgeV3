@@ -9,6 +9,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         _MaterialTiling ("Material Tiling", Float) = 5
         _RoadMaterialTiling ("Road Material Tiling", Float) = 5
         _SidewalkMaterialTiling ("Sidewalk Material Tiling", Float) = 5
+        _HideCurbBorders ("Hide Curb Borders", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _TimeTint ("Time of Day Tint", Color) = (1, 1, 1, 1)
         _ReceiveSunShadow ("Receive Sun Shadow", Range(0, 1)) = 1
@@ -82,6 +83,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             {
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 worldPosition : TEXCOORD2;
                 SHADOW_COORDS(1)
             };
 
@@ -95,13 +97,18 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             float _MaterialTiling;
             float _RoadMaterialTiling;
             float _SidewalkMaterialTiling;
+            float _HideCurbBorders;
             float _ReceiveSunShadow;
+            float4 _CFCloudShadowCenter;
+            float4 _CFCloudShadowParams;
 
             Varyings vert(AppData input)
             {
                 Varyings output;
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.worldPosition = mul(unity_ObjectToWorld,
+                    input.vertex).xyz;
                 TRANSFER_SHADOW(output);
                 return output;
             }
@@ -110,6 +117,18 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             {
                 fixed4 artwork = tex2D(_MainTex, input.uv) * _Color;
                 clip(artwork.a - 0.02);
+                fixed3 authoredColor = artwork.rgb;
+                #ifndef UNITY_COLORSPACE_GAMMA
+                authoredColor = LinearToGammaSpace(authoredColor);
+                #endif
+                // The original colonial-brick sprites contain a pale authored
+                // border between the transparent verge and the brick paving.
+                // Remove that border only when explicitly requested; retain all
+                // brick and mortar pixels inside the roadway.
+                fixed legacyCurb = 1.0 - smoothstep(0.045, 0.12,
+                    distance(authoredColor, fixed3(0.718, 0.690, 0.647)));
+                if (_UseMaterialZones < 0.5 && _HideCurbBorders > 0.5)
+                    clip(0.48 - legacyCurb);
                 if (_UseMaterialZones > 0.5)
                 {
                     // Imported semantic artwork is authored in sRGB. tex2D only
@@ -141,6 +160,18 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                         input.uv * _SidewalkMaterialTiling).rgb;
                     artwork.rgb = lerp(artwork.rgb, roadSurface, roadMask);
                     artwork.rgb = lerp(artwork.rgb, sidewalkSurface, sidewalkMask);
+                    // Some semantic road templates include a narrow white curb
+                    // separator. Historic all-brick roads do not need that
+                    // modern-looking stripe, so allow it to inherit the adjacent
+                    // brick paving without changing the topology artwork.
+                    fixed curbMinimum = min(semantic.r,
+                        min(semantic.g, semantic.b));
+                    fixed curbSpread = max(semantic.r,
+                        max(semantic.g, semantic.b)) - curbMinimum;
+                    fixed curbMask = smoothstep(0.82, 0.94, curbMinimum) *
+                        (1.0 - smoothstep(0.035, 0.10, curbSpread));
+                    artwork.rgb = lerp(artwork.rgb, sidewalkSurface,
+                        curbMask * saturate(_HideCurbBorders));
 
                 }
                 fixed shadow = SHADOW_ATTENUATION(input);
@@ -148,6 +179,13 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                 // silhouettes cast by fully 3D vehicles.
                 fixed illumination = lerp(0.42, 1.0, shadow);
                 illumination = lerp(1.0, illumination, _ReceiveSunShadow);
+                fixed cloudDistance = distance(input.worldPosition.xz,
+                    _CFCloudShadowCenter.xy);
+                fixed cloudMask = (1.0h - smoothstep(
+                    _CFCloudShadowParams.x * (1.0h - _CFCloudShadowParams.z),
+                    _CFCloudShadowParams.x, cloudDistance)) *
+                    _CFCloudShadowParams.w;
+                illumination *= 1.0h - cloudMask * _CFCloudShadowParams.y;
                 // The road now receives the native shadow map itself. The old
                 // 90% opacity workaround exposed the already-shadowed ground
                 // below it and doubled/dirtied shadows across road tiles.

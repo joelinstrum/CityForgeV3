@@ -1,0 +1,174 @@
+{
+  "rooms": [
+    {
+      "id": "Window_Front_Upper_01",
+      "renderer": "CF_LitMesh_tripo_part_4",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Front_Upper_01",
+      "source": "tripo_part_4",
+      "on": true,
+      "position": [
+        -0.2128860056400299,
+        0.44689202308654785,
+        0.333766371011734
+      ]
+    },
+    {
+      "id": "Window_Front_Upper_02",
+      "renderer": "CF_LitMesh_tripo_part_4",
+      "slot": 2,
+      "material": "CF_WindowGlow_Window_Front_Upper_02",
+      "source": "tripo_part_4",
+      "on": false,
+      "position": [
+        0.03708083927631378,
+        0.4464009404182434,
+        0.333766371011734
+      ]
+    },
+    {
+      "id": "Window_Rear_Lower_01",
+      "renderer": "CF_LitMesh_tripo_part_7",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Rear_Lower_01",
+      "source": "tripo_part_7",
+      "on": false,
+      "position": [
+        -0.20908740162849426,
+        0.20626622438430786,
+        -0.4537458121776581
+      ]
+    },
+    {
+      "id": "Window_Left_Upper_01",
+      "renderer": "CF_LitMesh_tripo_part_8",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Left_Upper_01",
+      "source": "tripo_part_8",
+      "on": false,
+      "position": [
+        -0.3853106200695038,
+        0.44841957092285156,
+        0.1261182278394699
+      ]
+    },
+    {
+      "id": "Window_Rear_Upper_02",
+      "renderer": "CF_LitMesh_tripo_part_9",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Rear_Upper_02",
+      "source": "tripo_part_9",
+      "on": true,
+      "position": [
+        0.04344184696674347,
+        0.4477936029434204,
+        -0.4541635513305664
+      ]
+    },
+    {
+      "id": "Window_Front_02",
+      "renderer": "CF_LitMesh_tripo_part_12",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Front_02",
+      "source": "tripo_part_12",
+      "on": true,
+      "position": [
+        0.24341043829917908,
+        0.20684224367141724,
+        0.3339777886867523
+      ]
+    },
+    {
+      "id": "Window_Front_01",
+      "renderer": "CF_LitMesh_tripo_part_13",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Front_01",
+      "source": "tripo_part_13",
+      "on": false,
+      "position": [
+        -0.21275824308395386,
+        0.20587749779224396,
+        0.33393123745918274
+      ]
+    },
+    {
+      "id": "Window_Rear_Upper_01",
+      "renderer": "CF_LitMesh_tripo_part_14",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Rear_Upper_01",
+      "source": "tripo_part_14",
+      "on": false,
+      "position": [
+        -0.2072320580482483,
+        0.44545289874076843,
+        -0.45361918210983276
+      ]
+    },
+    {
+      "id": "Window_Rear_Lower_02",
+      "renderer": "CF_LitMesh_tripo_part_16",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Rear_Lower_02",
+      "source": "tripo_part_16",
+      "on": false,
+      "position": [
+        0.245088130235672,
+        0.20546799898147583,
+        -0.4536784589290619
+      ]
+    },
+    {
+      "id": "Window_Right_01",
+      "renderer": "CF_LitMesh_tripo_part_17",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Right_01",
+      "source": "tripo_part_17",
+      "on": true,
+      "position": [
+        0.41706910729408264,
+        0.19335289299488068,
+        0.13158373534679413
+      ]
+    },
+    {
+      "id": "Window_Right_02",
+      "renderer": "CF_LitMesh_tripo_part_18",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Right_02",
+      "source": "tripo_part_18",
+      "on": false,
+      "position": [
+        0.4280391037464142,
+        0.1569756418466568,
+        -0.22245442867279053
+      ]
+    },
+    {
+      "id": "Window_Left_Lower_01",
+      "renderer": "CF_LitMesh_tripo_part_21",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Left_Lower_01",
+      "source": "tripo_part_21",
+      "on": false,
+      "position": [
+        -0.3865324556827545,
+        0.20441003143787384,
+        -0.22203202545642853
+      ]
+    },
+    {
+      "id": "Window_Left_Upper_02",
+      "renderer": "CF_LitMesh_tripo_part_22",
+      "slot": 1,
+      "material": "CF_WindowGlow_Window_Left_Upper_02",
+      "source": "tripo_part_22",
+      "on": false,
+      "position": [
+        -0.38412973284721375,
+        0.44596001505851746,
+        -0.21736940741539001
+      ]
+    }
+  ],
+  "meshCount": 28
+}

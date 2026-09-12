@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace CityForgeV3.World
 {
@@ -66,6 +67,11 @@ namespace CityForgeV3.World
             "cityforge.base.building.commercial.colonial_corner_portico_commercial_01";
 
         private static BuildingCatalogEntry[] _entries;
+
+        public static void InvalidateCache()
+        {
+            _entries = null;
+        }
 
         private static BuildingCatalogEntry[] Entries
         {

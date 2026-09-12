@@ -12,7 +12,8 @@ namespace CityForgeV3.World
         Transportation = 2,
         Neighborhood = Transportation,
         Industrial = 3,
-        Mixed = 4
+        Mixed = 4,
+        Agricultural = 5
     }
 
     public enum LotZoomLevel
@@ -127,6 +128,18 @@ namespace CityForgeV3.World
                 RoadPorts = new List<RoadConnectionPort>
                 {
                     new() { Id = "mixed-access", WidthMeters = 6f, LaneCount = 2 }
+                }
+            },
+            new()
+            {
+                Type = LotType.Agricultural,
+                DisplayName = "AGRICULTURAL LOT",
+                AllowsInternalRoads = true,
+                AllowsThroughTraffic = false,
+                MaximumBuildings = 24,
+                RoadPorts = new List<RoadConnectionPort>
+                {
+                    new() { Id = "farm-access", WidthMeters = 4f, LaneCount = 1 }
                 }
             }
         };

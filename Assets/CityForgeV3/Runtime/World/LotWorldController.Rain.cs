@@ -13,6 +13,7 @@ namespace CityForgeV3.World
         private Coroutine _rainBuildUpRoutine;
         private Coroutine _rainFadeOutRoutine;
         private Coroutine _wetReflectionRefreshRoutine;
+        private bool _wetReflectionRefreshPending;
 
         public float RainVisualIntensity { get; private set; }
         public float RoadWetness { get; private set; }
@@ -40,10 +41,28 @@ namespace CityForgeV3.World
         private void ScheduleWetStreetReflectionRefresh()
         {
             if (!Application.isPlaying) return;
+            // The load browser rebuilds the lot before Show(LotEditor) enables
+            // its world. Keep the request until a coroutine can safely run.
+            _wetReflectionRefreshPending = true;
+            if (!isActiveAndEnabled) return;
             if (_wetReflectionRefreshRoutine != null)
                 StopCoroutine(_wetReflectionRefreshRoutine);
             _wetReflectionRefreshRoutine = StartCoroutine(
                 RefreshWetStreetReflectionsAfterRebuild());
+        }
+
+        private void OnEnable()
+        {
+            if (_wetReflectionRefreshPending)
+                ScheduleWetStreetReflectionRefresh();
+        }
+
+        private void OnDisable()
+        {
+            if (_wetReflectionRefreshRoutine == null) return;
+            StopCoroutine(_wetReflectionRefreshRoutine);
+            _wetReflectionRefreshRoutine = null;
+            _wetReflectionRefreshPending = true;
         }
 
         private IEnumerator RefreshWetStreetReflectionsAfterRebuild()
@@ -54,6 +73,7 @@ namespace CityForgeV3.World
             yield return null;
             UpdateWetStreetReflections();
             _wetReflectionRefreshRoutine = null;
+            _wetReflectionRefreshPending = false;
         }
 
         private void BuildRainParticles()

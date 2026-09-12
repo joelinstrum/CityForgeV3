@@ -33,6 +33,8 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
         fixed4 _Color;
         half _Cutoff;
         half _ShadowFloor;
+        float4 _CFCloudShadowCenter;
+        float4 _CFCloudShadowParams;
 
         struct appdata
         {
@@ -46,6 +48,7 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
             float4 pos : SV_POSITION;
             float2 uv : TEXCOORD0;
             fixed4 color : COLOR;
+            float3 worldPosition : TEXCOORD2;
             SHADOW_COORDS(1)
         };
 
@@ -55,6 +58,7 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
             output.pos = UnityObjectToClipPos(input.vertex);
             output.uv = input.uv;
             output.color = input.color;
+            output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
             TRANSFER_SHADOW(output);
             return output;
         }
@@ -65,6 +69,13 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
             clip(artwork.a - _Cutoff);
             half shadowAttenuation = SHADOW_ATTENUATION(input);
             half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);
+            half cloudDistance = distance(input.worldPosition.xz,
+                _CFCloudShadowCenter.xy);
+            half cloudMask = (1.0h - smoothstep(
+                _CFCloudShadowParams.x * (1.0h - _CFCloudShadowParams.z),
+                _CFCloudShadowParams.x, cloudDistance)) *
+                _CFCloudShadowParams.w;
+            illumination *= 1.0h - cloudMask * _CFCloudShadowParams.y;
             return fixed4(artwork.rgb * illumination, artwork.a);
         }
         ENDCG

@@ -4,7 +4,8 @@ namespace CityForgeV3.UI
     {
         Splash,
         MainMenu,
+        RegionEditor,
+        DistrictTerraform,
         LotEditor
     }
 }
-

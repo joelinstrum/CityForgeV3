@@ -9,6 +9,7 @@ namespace CityForgeV3.World
         private const string FencePropId = "wrought-iron-fence-straight-v01";
         private const string FenceCornerPropId = "wrought-iron-fence-corner-v01";
         public const string PicketFencePropId = "white-picket-fence-v01";
+        public const string OldWoodenFencePropId = "old-wooden-fence-v01";
         public const string DecorativeIronGardenPropId =
             "decorative-iron-garden-lamp-v01";
         public const string OrnateIronCornerPropId =
@@ -19,6 +20,11 @@ namespace CityForgeV3.World
             "simple-street-lamppost-v01";
         public const string OrnateBenchPropId = "ornate-bench-v01";
         public const string Hedge3DPropId = "hedge-3d-v01";
+        public const string WoodenPalisadePropId = "wooden-palisade-v01";
+        public const string MedievalWellPropId = "medieval-well-v01";
+        public const string WoodenPalisadeGatePropId =
+            "wooden-palisade-gate-v01";
+        public const string MedievalTorchPropId = "medieval-torch-v01";
         public const string PumpkinJackOLanternPropId =
             "pumpkin-jack-o-lantern-v01";
         public const string VictorianGentlemanCharacterId =
@@ -26,7 +32,19 @@ namespace CityForgeV3.World
         public const string HooliganCharacterId = "hooligan-animated-v01";
         public const string HistoricPolicemanCharacterId =
             "historic-policeman-animated-v01";
+        public const string MusketmanCharacterId = "musketman-animated-v01";
         public const string KingKongCharacterId = "king-kong-static-v01";
+        public const string BearAnimalId = "bear-animated-v01";
+        public const string HorseAnimalId = "horse-animated-v01";
+        public const string FarmerCharacterId = "founders-farmer-v01";
+        private const string FarmerResourcePath = "CityForgeV3/Props/Characters/FarmerV01/Farmer_Animated_v01";
+        public static bool IsFarmer(string propId) => string.Equals(propId, FarmerCharacterId, StringComparison.OrdinalIgnoreCase);
+        public bool SelectedPropIsFarmer => SelectedPropIsThreeDimensionalCharacter && IsFarmer(_session.Data.Props[SelectedPropIndex].PropId);
+        public const string TrapperPropId = "mounted-trapper-v01";
+        private const string TrapperResourcePath = "CityForgeV3/Props/Animals/TrapperV01/Trapper_Walk_Trot_Idle_v01";
+        public const string CavalryPropId = "mounted-cavalry-v01";
+        private const string CavalryResourcePath = "CityForgeV3/Props/Animals/CavalryV01/Cavalry_Walk_Trot_Idle_v01";
+        private const string HorseResourcePath = "CityForgeV3/Props/Animals/HorseV01/Horse_Walk_Trot_Idle_v01";
         public const string KingKongEnclosurePropId =
             "king-kong-enclosure-v01";
         private const string FenceResourcePath =
@@ -35,6 +53,8 @@ namespace CityForgeV3.World
             "CityForgeV3/Props/WroughtIronFenceV01/CF_WroughtIronFence_Corner_LShape_LOD0_v02";
         private const string PicketFenceResourcePath =
             "CityForgeV3/Props/PicketFenceV01/CF_Prop_PicketFence_Straight_v01";
+        private const string OldWoodenFenceResourcePath =
+            "CityForgeV3/Props/WoodenFenceV01/Source/tripo_convert_2472e70d-3194-4567-87d1-79928ec3a474";
         private const string DecorativeIronGardenResourcePath =
             "CityForgeV3/Props/WroughtIronVariationsV01/CF_Prop_DecorativeIronFence_v01";
         private const string OrnateIronCornerResourcePath =
@@ -49,8 +69,14 @@ namespace CityForgeV3.World
             "CityForgeV3/Props/Characters/HooliganV01/HooliganAnimatedV01";
         private const string HistoricPolicemanResourcePath =
             "CityForgeV3/Props/Characters/HistoricPolicemanV01/HistoricPolicemanAnimatedV01";
+        private const string MusketmanResourcePath =
+            "CityForgeV3/Props/Characters/MusketmanV01/Source/tripo_convert_38f9f44e-dfc8-475a-97bd-57b723a19872";
         private const string KingKongResourcePath =
             "CityForgeV3/Props/Characters/KingKongV01/KingKongV01";
+        private const string BearResourcePath =
+            "CityForgeV3/Props/Animals/BearBehaviorsV03/Bear_Walk_Idle_v03";
+        private const float BearHeightMeters = 1.45f;
+        private const float BearLengthMeters = 2.25f;
         private const string KingKongEnclosureResourcePath =
             "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/KingKongEnclosureV01";
         private const float KingKongHeightMeters = 8.1125f;
@@ -64,6 +90,14 @@ namespace CityForgeV3.World
             "CityForgeV3/Props/OrnateBenchV01/OrnateBenchV01";
         private const string Hedge3DResourcePath =
             "CityForgeV3/Props/Flora/Hedge3DV01/Hedge3DV01";
+        private const string WoodenPalisadeResourcePath =
+            "CityForgeV3/Props/Fortress/WoodenPalisadeV01/Source/tripo_convert_cc7c81ae-ad66-4115-b42b-bfab6e15d81a";
+        private const string MedievalWellResourcePath =
+            "CityForgeV3/Props/Fortress/MedievalWellV01/Source/tripo_convert_72f7c550-c77b-42d7-aad9-cc76f0e1fe62";
+        private const string WoodenPalisadeGateResourcePath =
+            "CityForgeV3/Props/Fortress/WoodenPalisadeGateV01/Source/tripo_convert_6e5abdee-f9cd-447e-ac26-bec3d789ddac";
+        private const string MedievalTorchResourcePath =
+            "CityForgeV3/Props/Fortress/MedievalTorchV01/Source/tripo_convert_c1bc2054-25d5-49fd-96ce-5bb602d08e1b";
         private const string PumpkinJackOLanternResourcePath =
             "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/tripo_convert_e24db562-efad-4eea-898c-23e1a123c182";
         // Blender FBX imports through Unity at 0.01; 336 restores the authored
@@ -77,6 +111,8 @@ namespace CityForgeV3.World
         private const float FenceCornerLengthMeters = 2.55f;
         private const float PicketFenceLengthMeters = 2.4f;
         private const float PicketFenceDepthMeters = 0.25f;
+        private const float OldWoodenFenceLengthMeters = 3.6f;
+        private const float OldWoodenFenceDepthMeters = 1.0f;
         private const float DecorativeIronGardenWidthMeters = 1.61f;
         private const float DecorativeIronGardenDepthMeters = 1.48f;
         private const float OrnateIronCornerWidthMeters = 5.30f;
@@ -88,6 +124,22 @@ namespace CityForgeV3.World
         private const float OrnateBenchDepthMeters = 0.7f;
         private const float Hedge3DLengthMeters = 2.4f;
         private const float Hedge3DDepthMeters = 0.75f;
+        private const float WoodenPalisadeLengthMeters = 4.8f;
+        private const float WoodenPalisadeDepthMeters = 0.8f;
+        private const float MedievalWellFootprintMeters = 2.2f;
+        private const float WoodenPalisadeGateLengthMeters = 9.6f;
+        private const float WoodenPalisadeGateDepthMeters = 2.2f;
+        // The supplied fortress/cabin atlases are deliberately weathered and
+        // nearly neutral. CityForge's bright lot-editor environment otherwise
+        // lifts them to silver-gray, so retain a restrained warm timber cast.
+        private static readonly Color FortressTimberTint =
+            new(0.98f, 0.68f, 0.42f, 1f);
+        // Preserve the supplied atlas's brown leather, warm linen and skin
+        // separation under the same cool daylight that neutralized the wood.
+        private static readonly Color MusketmanTint =
+            new(0.98f, 0.80f, 0.66f, 1f);
+        private const float MedievalTorchHeightMeters = 1.9f;
+        private const float MedievalTorchFootprintMeters = 0.45f;
         private const float PumpkinJackOLanternHeightMeters = 0.52f;
         private const float PumpkinJackOLanternFootprintMeters = 0.55f;
         // Blender's FBX is authored in meters but Unity imports this exporter
@@ -139,11 +191,14 @@ namespace CityForgeV3.World
                 : CharacterBehaviorScript.BusinessAsUsual;
 
         public static bool IsThreeDimensionalCharacter(string propId) =>
+            IsFarmer(propId) ||
             string.Equals(propId, VictorianGentlemanCharacterId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, HooliganCharacterId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, HistoricPolicemanCharacterId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, MusketmanCharacterId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, KingKongCharacterId,
                 StringComparison.OrdinalIgnoreCase);
@@ -156,17 +211,37 @@ namespace CityForgeV3.World
             string.Equals(propId, HistoricPolicemanCharacterId,
                 StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsMusketman(string propId) =>
+            string.Equals(propId, MusketmanCharacterId,
+                StringComparison.OrdinalIgnoreCase);
+
         public static bool IsKingKong(string propId) =>
             string.Equals(propId, KingKongCharacterId,
+                StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsCavalry(string propId) =>
+            string.Equals(propId, CavalryPropId, StringComparison.OrdinalIgnoreCase);
+        public static bool IsTrapper(string propId) =>
+            string.Equals(propId, TrapperPropId, StringComparison.OrdinalIgnoreCase);
+        public static bool IsMountedRider(string propId) => IsCavalry(propId) || IsTrapper(propId);
+        public static bool IsHorse(string propId) =>
+            IsMountedRider(propId) || string.Equals(propId, HorseAnimalId, StringComparison.OrdinalIgnoreCase);
+        private static string HorseModelResource(string propId) =>
+            IsTrapper(propId) ? TrapperResourcePath : IsCavalry(propId) ? CavalryResourcePath : HorseResourcePath;
+
+        public static bool IsThreeDimensionalAnimal(string propId) =>
+            IsHorse(propId) || string.Equals(propId, BearAnimalId,
                 StringComparison.OrdinalIgnoreCase);
 
         private static float CharacterGroundY(string propId) =>
             IsKingKong(propId) ? KingKongGroundOffsetMeters : 0.055f;
 
         private static string CharacterResourcePath(string propId) =>
+            IsFarmer(propId) ? FarmerResourcePath :
             IsKingKong(propId) ? KingKongResourcePath :
             IsHooligan(propId) ? HooliganResourcePath :
             IsHistoricPoliceman(propId) ? HistoricPolicemanResourcePath :
+            IsMusketman(propId) ? MusketmanResourcePath :
             VictorianGentlemanResourcePath;
 
 #if UNITY_EDITOR
@@ -338,7 +413,7 @@ namespace CityForgeV3.World
             var selected = _session.Data.Props[SelectedPropIndex];
             _propDragOffset = new Vector2(selected.PositionX - point.x,
                 selected.PositionZ - point.z);
-            _propDragActive = true;
+            _propDragActive = placingNewProp || (!IsThreeDimensionalAnimal(selected.PropId) && !IsHorseWagon(selected.PropId));
             _propPreviewHasPoint = false;
             if (_propPreview != null) _propPreview.gameObject.SetActive(false);
             ApplyPropSelection();
@@ -410,13 +485,40 @@ namespace CityForgeV3.World
             return new Vector2(Mathf.Sin(radians), Mathf.Cos(radians)).normalized;
         }
 
+        public static bool IsPointOnAgricultureField(IEnumerable<PlacedFlora> flora, float x, float z)
+        {
+            if (flora == null) return false;
+            // Corn flora is a fixed, axis-aligned 12 x 12 metre field tile.
+            foreach (var field in flora)
+                if (field != null && IsAgricultureFlora(field.FloraId) &&
+                    Mathf.Abs(x - field.PositionX) <= 6f &&
+                    Mathf.Abs(z - field.PositionZ) <= 6f) return true;
+            return false;
+        }
+
+        private bool FarmerIsOnField(PlacedProp farmer) =>
+            IsPointOnAgricultureField(_session.Data.Flora, farmer.PositionX, farmer.PositionZ);
+
+        public bool HoeSelectedFarmer()
+        {
+            if (!SelectedPropIsFarmer) return false;
+            var farmer = _session.Data.Props[SelectedPropIndex];
+            if (!FarmerIsOnField(farmer)) return false;
+            farmer.MovementX = farmer.MovementZ = 0f;
+            farmer.AnimationState = "hoe";
+            ApplyCharacterAnimation(SelectedPropIndex, "hoe");
+            ScheduleManualCharacterOverride(farmer, float.PositiveInfinity);
+            NotifyStateChanged();
+            return true;
+        }
+
         public bool StopSelectedCharacter()
         {
             if (!SelectedPropIsThreeDimensionalCharacter) return false;
             var character = _session.Data.Props[SelectedPropIndex];
             character.MovementX = 0f;
             character.MovementZ = 0f;
-            if (TrySeatCharacterAtNearestBench(character, out var benchTurns))
+            if (!IsFarmer(character.PropId) && TrySeatCharacterAtNearestBench(character, out var benchTurns))
             {
                 character.AnimationState = "sit";
                 if (SelectedPropIndex < _propPresentations.Count &&
@@ -475,6 +577,7 @@ namespace CityForgeV3.World
 
         private string DefaultCharacterBehaviorScript(string propId)
         {
+            if (IsFarmer(propId)) return CharacterBehaviorScript.BusinessAsUsual;
             var script = IsHooligan(propId)
                 ? _session.Data.DefaultHooliganBehaviorScript
                 : IsHistoricPoliceman(propId)
@@ -542,10 +645,21 @@ namespace CityForgeV3.World
                 presentation.GetComponent<CharacterGroundShadow>()?.SetLighting(
                     TimeOfDay, !IsRaining && TimeOfDay != TimeOfDayPreset.Night,
                     ExperimentalBuilding3DSunRotation() * Vector3.forward);
+                // Also cover saved hoe states, moving a worker, or removing his field.
+                if (IsFarmer(character.PropId) && character.AnimationState == "hoe" &&
+                    !FarmerIsOnField(character))
+                {
+                    character.AnimationState = "idle";
+                    character.MovementX = character.MovementZ = 0f;
+                    ApplyCharacterAnimation(index, "idle");
+                    _characterManualOverrideUntil.Remove(character.InstanceId ?? "");
+                    ScheduleBusinessAsUsual(character, 3f);
+                }
                 UpdateCharacterBusinessAsUsual(index, character);
                 var movement = new Vector2(character.MovementX,
                     character.MovementZ);
                 if (movement.sqrMagnitude < 0.01f &&
+                    !(IsFarmer(character.PropId) && character.AnimationState == "hoe") &&
                     CharacterBehaviorScript.Normalize(character.BehaviorScript) ==
                         CharacterBehaviorScript.BusinessAsUsual &&
                     DistanceToNearestPedestrianPath(character) > 0.45f &&
@@ -570,6 +684,24 @@ namespace CityForgeV3.World
                     character.MovementZ = 0f;
                     continue;
                 }
+                var characterAnimator = presentation.GetComponent<
+                    ThreeDimensionalCharacterAnimator>();
+                if (characterAnimator == null ||
+                    !characterAnimator.IsPlaying(character.AnimationState))
+                {
+                    // A route is only steering information. Never advance a
+                    // pedestrian unless the model is visibly performing the
+                    // matching locomotion clip; otherwise it glides like a
+                    // vehicle along the sidewalk.
+                    ApplyCharacterAnimation(index, character.AnimationState);
+                    if (characterAnimator == null ||
+                        !characterAnimator.IsPlaying(character.AnimationState))
+                    {
+                        character.MovementX = 0f;
+                        character.MovementZ = 0f;
+                        continue;
+                    }
+                }
                 if (new Vector2(character.MovementX,
                         character.MovementZ).sqrMagnitude < 0.01f) continue;
                 // Walking pedestrians continuously acquire and follow the
@@ -584,7 +716,7 @@ namespace CityForgeV3.World
                 }
                 var direction = new Vector3(character.MovementX, 0f,
                     character.MovementZ).normalized;
-                var movementSpeed = string.Equals(character.AnimationState, "run",
+                var movementSpeed = IsFarmer(character.PropId) ? 0.75f : string.Equals(character.AnimationState, "run",
                     StringComparison.OrdinalIgnoreCase) ? 2.6f : 1.35f;
                 if (TryPedestrianStairTraversal(
                         new Vector2(character.PositionX, character.PositionZ),
@@ -634,6 +766,8 @@ namespace CityForgeV3.World
 
             var action = BusinessAsUsualCharacterScript.SelectForCharacter(
                 character.PropId, UnityEngine.Random.value);
+            if (action == BusinessAsUsualAction.Hoe && !FarmerIsOnField(character))
+                action = BusinessAsUsualAction.Idle;
             var state = BusinessAsUsualCharacterScript.AnimationState(action);
             if (action == BusinessAsUsualAction.Walk)
             {
@@ -717,9 +851,9 @@ namespace CityForgeV3.World
                 BusinessAsUsualCharacterScript.AllowsTranslation(state);
             character.MovementX = allowsTranslation ? direction.x : 0f;
             character.MovementZ = allowsTranslation ? direction.y : 0f;
-            if (string.Equals(character.AnimationState, state,
-                    StringComparison.OrdinalIgnoreCase)) return;
-            character.AnimationState = state;
+            if (!string.Equals(character.AnimationState, state,
+                    StringComparison.OrdinalIgnoreCase))
+                character.AnimationState = state;
             ApplyCharacterAnimation(index, state);
         }
 
@@ -1383,6 +1517,7 @@ namespace CityForgeV3.World
             var position = ClampPropPosition(new Vector2(prop.PositionX, prop.PositionZ), turns);
             if (!CanPlacePropAt(position, turns, SelectedPropIndex)) return false;
             prop.RotationQuarterTurns = turns;
+            if (IsHorseWagon(prop.PropId)) prop.HasCarriagePose = false;
             prop.PositionX = position.x;
             prop.PositionZ = position.y;
             RebuildPropPresentations();
@@ -1417,6 +1552,7 @@ namespace CityForgeV3.World
 
         private void RebuildPropPresentations()
         {
+            CaptureCarriageMotions();
             if (_propRoot == null) return;
             for (var index = _propRoot.childCount - 1; index >= 0; index--)
             {
@@ -1436,6 +1572,7 @@ namespace CityForgeV3.World
                     0f, prop.RotationQuarterTurns * 90f, 0f);
                 presentation.localPosition = new Vector3(
                     prop.PositionX, CharacterGroundY(prop.PropId), prop.PositionZ);
+                RestoreCarriagePose(presentation, prop);
                 ApplyPropBuildingFrontRecovery(presentation, prop);
                 _propPresentations.Add(presentation);
                 presentation.gameObject.SetActive(
@@ -1455,6 +1592,27 @@ namespace CityForgeV3.World
             ApplyPropSelection();
             ApplyCharacterZoomVisibility();
             UpdateEffectAttachmentTransforms();
+        }
+
+        private void RefreshPropSeasonVisibility()
+        {
+            var placedProps = _session.Data.Props ?? new List<PlacedProp>();
+            if (_propPresentations.Count != placedProps.Count)
+            {
+                RebuildPropPresentations();
+                return;
+            }
+            for (var index = 0; index < _propPresentations.Count; index++)
+            {
+                var presentation = _propPresentations[index];
+                if (presentation != null)
+                    presentation.gameObject.SetActive(
+                        PropSeasonCatalog.IsAvailable(
+                            placedProps[index].PropId, Season));
+            }
+            ApplyPropSelection();
+            ApplyCharacterZoomVisibility();
+            UpdatePropProjectedShadows();
         }
 
         private void ApplyPropBuildingFrontRecovery(
@@ -1515,10 +1673,7 @@ namespace CityForgeV3.World
             // Props and buildings share one physical world sun. Keep the
             // lightweight projected prop shadows on the exact same bearing
             // as native 3D geometry, including the southwest 3D afternoon.
-            var ray = ExperimentalBuilding3DSunRotation() * Vector3.forward;
-            if (_buildingPackage != null)
-                ray = Quaternion.Euler(0f,
-                    _buildingPackage.ShadowDirectionOffsetDegrees, 0f) * ray;
+            var ray = ProjectedObjectShadowRay();
             var visible = !IsRaining && TimeOfDay != TimeOfDayPreset.Night &&
                 ray.y < -0.01f;
             var rawDisplacement = new Vector2(ray.x, ray.z) *
@@ -1545,10 +1700,17 @@ namespace CityForgeV3.World
             preset == TimeOfDayPreset.Afternoon ? 1f : ShadowLengthScale(preset);
 
         public static float PropShadowOpacityMultiplier(TimeOfDayPreset preset) =>
-            preset == TimeOfDayPreset.Afternoon ? 1.25f : 0.78f;
+            preset switch
+            {
+                TimeOfDayPreset.Afternoon => 1.25f,
+                TimeOfDayPreset.Noon => 1.15f,
+                _ => 0.78f
+            };
 
         private Transform CreatePropPresentation(string propId, string name, float alpha)
         {
+            if (IsHorseWagon(propId)) return CreateHorseCarriagePresentation(name, alpha, propId);
+            if (propId == CarriagePropId) return CreateCarriagePresentation(name, alpha);
             var resourcePath = string.Equals(propId, FencePropId,
                     StringComparison.OrdinalIgnoreCase)
                 ? FenceResourcePath
@@ -1558,6 +1720,9 @@ namespace CityForgeV3.World
                     : string.Equals(propId, PicketFencePropId,
                         StringComparison.OrdinalIgnoreCase)
                         ? PicketFenceResourcePath
+                    : string.Equals(propId, OldWoodenFencePropId,
+                        StringComparison.OrdinalIgnoreCase)
+                        ? OldWoodenFenceResourcePath
                     : string.Equals(propId, DecorativeIronGardenPropId,
                         StringComparison.OrdinalIgnoreCase)
                         ? DecorativeIronGardenResourcePath
@@ -1576,11 +1741,25 @@ namespace CityForgeV3.World
                         : string.Equals(propId, Hedge3DPropId,
                             StringComparison.OrdinalIgnoreCase)
                             ? Hedge3DResourcePath
+                        : string.Equals(propId, WoodenPalisadePropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? WoodenPalisadeResourcePath
+                        : string.Equals(propId, MedievalWellPropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? MedievalWellResourcePath
+                        : string.Equals(propId, WoodenPalisadeGatePropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? WoodenPalisadeGateResourcePath
+                        : string.Equals(propId, MedievalTorchPropId,
+                            StringComparison.OrdinalIgnoreCase)
+                            ? MedievalTorchResourcePath
                         : string.Equals(propId, PumpkinJackOLanternPropId,
                             StringComparison.OrdinalIgnoreCase)
                             ? PumpkinJackOLanternResourcePath
                         : IsKingKong(propId)
                             ? KingKongResourcePath
+                        : IsThreeDimensionalAnimal(propId)
+                            ? IsHorse(propId) ? HorseModelResource(propId) : BearResourcePath
                         : string.Equals(propId, KingKongEnclosurePropId,
                             StringComparison.OrdinalIgnoreCase)
                             ? KingKongEnclosureResourcePath
@@ -1597,6 +1776,8 @@ namespace CityForgeV3.World
                 KingKongEnclosurePropId, StringComparison.OrdinalIgnoreCase);
             model.name = IsKingKong(propId)
                 ? "King Kong Static Model"
+                : IsThreeDimensionalAnimal(propId)
+                    ? IsHorse(propId) ? "Horse Animated Model" : "Bear Animated Model"
                 : kingKongEnclosure
                     ? "King Kong Enclosure Model"
                 : IsThreeDimensionalCharacter(propId)
@@ -1604,6 +1785,9 @@ namespace CityForgeV3.World
                     ? "Hooligan Animated Model"
                     : IsHistoricPoliceman(propId)
                         ? "Historic Policeman Animated Model"
+                    : IsMusketman(propId)
+                        ? "Musketman Animated Model"
+                    : IsFarmer(propId) ? "Founders Farmer Animated Model"
                         : "Victorian Gentleman Animated Model"
                 : string.Equals(propId, OrnateBenchPropId,
                     StringComparison.OrdinalIgnoreCase)
@@ -1611,6 +1795,18 @@ namespace CityForgeV3.World
                 : string.Equals(propId, Hedge3DPropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? "3D Hedge Model"
+                : string.Equals(propId, WoodenPalisadePropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Wooden Palisade Model"
+                : string.Equals(propId, MedievalWellPropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Medieval Well Model"
+                : string.Equals(propId, WoodenPalisadeGatePropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Wooden Palisade Gate Model"
+                : string.Equals(propId, MedievalTorchPropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Medieval Torch Model"
                 : string.Equals(propId, PumpkinJackOLanternPropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? "Pumpkin Jack-o'-Lantern Model"
@@ -1623,6 +1819,9 @@ namespace CityForgeV3.World
                 : string.Equals(propId, PicketFencePropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? "White Picket Fence Model"
+                : string.Equals(propId, OldWoodenFencePropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "Old Wooden Fence Model"
                 : string.Equals(propId, DecorativeIronGardenPropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? "Decorative Iron Garden and Lamp Model"
@@ -1632,9 +1831,13 @@ namespace CityForgeV3.World
                 : "Wrought-Iron Fence Model";
             model.transform.localScale = kingKongEnclosure ||
                 IsKingKong(propId) ||
+                IsThreeDimensionalAnimal(propId) ||
                 IsThreeDimensionalCharacter(propId)
                 ? Vector3.one
                 : string.Equals(propId, PicketFencePropId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? Vector3.one
+                : string.Equals(propId, OldWoodenFencePropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? Vector3.one
                 : string.Equals(propId, SimpleStreetLamppostPropId,
@@ -1643,6 +1846,14 @@ namespace CityForgeV3.World
                 : string.Equals(propId, DecorativeIronGardenPropId,
                     StringComparison.OrdinalIgnoreCase) ||
                   string.Equals(propId, OrnateIronCornerPropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                  string.Equals(propId, WoodenPalisadePropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                  string.Equals(propId, MedievalWellPropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                  string.Equals(propId, WoodenPalisadeGatePropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                  string.Equals(propId, MedievalTorchPropId,
                     StringComparison.OrdinalIgnoreCase)
                     ? Vector3.one
                 : Vector3.one *
@@ -1661,7 +1872,14 @@ namespace CityForgeV3.World
                 else
                     NormalizeCharacterToHumanScale(model.transform);
                 ConfigureCharacterAnimation(root, model, propId, "idle");
-                root.gameObject.AddComponent<CharacterGroundShadow>().Initialize();
+            }
+            else if (IsThreeDimensionalAnimal(propId))
+            {
+                NormalizeStaticPropToHeight(model.transform,
+                    IsMountedRider(propId) ? 3.0f : IsHorse(propId) ? 2.2f : BearHeightMeters);
+                ConfigureEmbeddedAnimation(root, model,
+                    IsHorse(propId) ? HorseModelResource(propId) : BearResourcePath, IsHorse(propId) ? "idle" : "walk");
+                if (IsHorse(propId)) root.gameObject.AddComponent<HorseGaitController>();
             }
             else if (kingKongEnclosure)
                 NormalizeStaticPropToLength(model.transform,
@@ -1674,6 +1892,22 @@ namespace CityForgeV3.World
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToLength(model.transform,
                     Hedge3DLengthMeters);
+            else if (string.Equals(propId, WoodenPalisadePropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToLength(model.transform,
+                    WoodenPalisadeLengthMeters);
+            else if (string.Equals(propId, MedievalWellPropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToLength(model.transform,
+                    MedievalWellFootprintMeters);
+            else if (string.Equals(propId, WoodenPalisadeGatePropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToLength(model.transform,
+                    WoodenPalisadeGateLengthMeters);
+            else if (string.Equals(propId, MedievalTorchPropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToHeight(model.transform,
+                    MedievalTorchHeightMeters);
             else if (string.Equals(propId, PumpkinJackOLanternPropId,
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToHeight(model.transform,
@@ -1682,6 +1916,10 @@ namespace CityForgeV3.World
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToLength(model.transform,
                     PicketFenceLengthMeters);
+            else if (string.Equals(propId, OldWoodenFencePropId,
+                         StringComparison.OrdinalIgnoreCase))
+                NormalizeStaticPropToLength(model.transform,
+                    OldWoodenFenceLengthMeters);
             else if (string.Equals(propId, SimpleStreetLamppostPropId,
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToHeight(model.transform,
@@ -1693,7 +1931,11 @@ namespace CityForgeV3.World
                          StringComparison.OrdinalIgnoreCase))
                 NormalizeStaticPropToHeight(model.transform, 2.2f);
             SetPropOpacity(root, propId, alpha, true);
-            if (alpha >= 0.999f && !IsThreeDimensionalCharacter(propId))
+            var animatedActor = IsThreeDimensionalCharacter(propId) ||
+                IsThreeDimensionalAnimal(propId);
+            if (alpha >= 0.999f && animatedActor)
+                CreateAnimatedCharacterShadowCasters(root, model.transform);
+            if (alpha >= 0.999f && !animatedActor)
             {
                 CreatePropDepthPrepass(prefab, root, model.transform.localScale,
                     model.transform.localPosition);
@@ -1710,6 +1952,9 @@ namespace CityForgeV3.World
                 else if (string.Equals(propId, DecorativeIronGardenPropId,
                              StringComparison.OrdinalIgnoreCase))
                     CreateDecorativeIronGardenLight(root);
+                else if (string.Equals(propId, MedievalTorchPropId,
+                             StringComparison.OrdinalIgnoreCase))
+                    CreateMedievalTorchLight(root);
             }
             foreach (var collider in root.GetComponentsInChildren<Collider>())
                 collider.enabled = false;
@@ -1764,6 +2009,13 @@ namespace CityForgeV3.World
         private static void ConfigureCharacterAnimation(Transform root,
             GameObject model, string propId, string initialState)
         {
+            ConfigureEmbeddedAnimation(root, model,
+                CharacterResourcePath(propId), initialState);
+        }
+
+        private static void ConfigureEmbeddedAnimation(Transform root,
+            GameObject model, string resourcePath, string initialState)
+        {
             var animator = model.GetComponentInChildren<Animator>() ??
                 model.AddComponent<Animator>();
             animator.enabled = true;
@@ -1773,8 +2025,57 @@ namespace CityForgeV3.World
             var player = root.gameObject.AddComponent<
                 ThreeDimensionalCharacterAnimator>();
             player.Initialize(animator, Resources.LoadAll<AnimationClip>(
-                CharacterResourcePath(propId)));
+                resourcePath));
             player.Play(initialState);
+        }
+
+        private static void CreateAnimatedCharacterShadowCasters(
+            Transform presentationRoot, Transform model)
+        {
+            var shader = Shader.Find("Standard");
+            if (presentationRoot == null || model == null || shader == null)
+                return;
+            var owner = presentationRoot.gameObject.AddComponent<
+                CharacterShadowMaterialOwner>();
+            foreach (var source in
+                     model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (source.sharedMesh == null) continue;
+                // Share the live skeleton and mesh, but use a guaranteed
+                // opaque ShadowCaster pass. Imported character materials can
+                // be transparent and silently contribute nothing to the
+                // street's shadow map.
+                var casterObject = new GameObject(
+                    $"{source.name} Animated Shadow Caster");
+                casterObject.layer = 0;
+                casterObject.transform.SetParent(source.transform.parent,
+                    false);
+                casterObject.transform.localPosition =
+                    source.transform.localPosition;
+                casterObject.transform.localRotation =
+                    source.transform.localRotation;
+                casterObject.transform.localScale = source.transform.localScale;
+                var caster = casterObject.AddComponent<SkinnedMeshRenderer>();
+                caster.sharedMesh = source.sharedMesh;
+                caster.bones = source.bones;
+                caster.rootBone = source.rootBone;
+                caster.localBounds = source.localBounds;
+                caster.quality = source.quality;
+                caster.updateWhenOffscreen = true;
+                var material = new Material(shader)
+                {
+                    name = "CF Animated Character Shadow Caster"
+                };
+                owner.Add(material);
+                var materials = new Material[Mathf.Max(1,
+                    source.sharedMaterials.Length)];
+                for (var index = 0; index < materials.Length; index++)
+                    materials[index] = material;
+                caster.sharedMaterials = materials;
+                caster.receiveShadows = false;
+                caster.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+            }
         }
 
         private void ApplyCharacterAnimation(int index, string state)
@@ -1913,6 +2214,7 @@ namespace CityForgeV3.World
             var lamppost = simpleLamppost || string.Equals(propId,
                 ThreeLanternLamppostPropId, StringComparison.OrdinalIgnoreCase);
             var character = IsThreeDimensionalCharacter(propId);
+            var animal = IsThreeDimensionalAnimal(propId);
             var kingKong = IsKingKong(propId);
             var kingKongEnclosure = string.Equals(propId,
                 KingKongEnclosurePropId, StringComparison.OrdinalIgnoreCase);
@@ -1920,11 +2222,21 @@ namespace CityForgeV3.World
                 StringComparison.OrdinalIgnoreCase);
             var hedge3D = string.Equals(propId, Hedge3DPropId,
                 StringComparison.OrdinalIgnoreCase);
+            var woodenPalisade = string.Equals(propId, WoodenPalisadePropId,
+                StringComparison.OrdinalIgnoreCase);
+            var medievalWell = string.Equals(propId, MedievalWellPropId,
+                StringComparison.OrdinalIgnoreCase);
+            var woodenPalisadeGate = string.Equals(propId,
+                WoodenPalisadeGatePropId, StringComparison.OrdinalIgnoreCase);
+            var medievalTorch = string.Equals(propId, MedievalTorchPropId,
+                StringComparison.OrdinalIgnoreCase);
             var pumpkin = string.Equals(propId, PumpkinJackOLanternPropId,
                 StringComparison.OrdinalIgnoreCase);
             var corner = string.Equals(propId, FenceCornerPropId,
                 StringComparison.OrdinalIgnoreCase);
             var picket = string.Equals(propId, PicketFencePropId,
+                StringComparison.OrdinalIgnoreCase);
+            var oldWoodenFence = string.Equals(propId, OldWoodenFencePropId,
                 StringComparison.OrdinalIgnoreCase);
             var decorativeGarden = string.Equals(propId,
                 DecorativeIronGardenPropId, StringComparison.OrdinalIgnoreCase);
@@ -1950,6 +2262,16 @@ namespace CityForgeV3.World
                             ? "CF Ornate Bench Runtime Material"
                         : hedge3D
                             ? "CF 3D Hedge Runtime Material"
+                        : oldWoodenFence
+                            ? "CF Old Wooden Fence Runtime Material"
+                        : woodenPalisade
+                            ? "CF Wooden Palisade Runtime Material"
+                        : medievalWell
+                            ? "CF Medieval Well Runtime Material"
+                        : woodenPalisadeGate
+                            ? "CF Wooden Palisade Gate Runtime Material"
+                        : medievalTorch
+                            ? "CF Medieval Torch Runtime Material"
                         : pumpkin
                             ? "CF Autumn Pumpkin Runtime Material"
                         : kingKong
@@ -1964,17 +2286,35 @@ namespace CityForgeV3.World
                     : kingKong
                         ? "CityForgeV3/Props/Characters/KingKongV01/Textures/base-color"
                     : character
-                        ? IsHooligan(propId)
+                        ? IsFarmer(propId) ? "CityForgeV3/Props/Characters/FarmerV01/base-color"
+                        : IsHooligan(propId)
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/base-color-brown"
                             : IsHistoricPoliceman(propId)
                                 ? "CityForgeV3/Props/Characters/HistoricPolicemanV01/Textures/base-color"
+                            : IsMusketman(propId)
+                                ? "CityForgeV3/Props/Characters/MusketmanV01/Source/tripo_convert_38f9f44e-dfc8-475a-97bd-57b723a19872.fbm/pirate_3d_model_basecolor"
                             : "CityForgeV3/Props/Characters/VictorianGentlemanV01/Textures/base-color-dark"
+                        : animal
+                            ? IsTrapper(propId) ? "CityForgeV3/Props/Animals/TrapperV01/base-color"
+                            : IsCavalry(propId) ? "CityForgeV3/Props/Animals/CavalryV01/base-color"
+                            : IsHorse(propId) ? "CityForgeV3/Props/Animals/HorseV01/base-color"
+                            : "CityForgeV3/Props/Animals/BearQuadrupedV02/base-color"
                         : picket
                         ? "CityForgeV3/Props/PicketFenceV01/base-color"
+                        : oldWoodenFence
+                        ? "CityForgeV3/Props/WoodenFenceV01/Source/tripo_convert_2472e70d-3194-4567-87d1-79928ec3a474.fbm/wooden_fence_3d_model_basecolor"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/base-color"
                         : hedge3D
                         ? "CityForgeV3/Props/Flora/Hedge3DV01/Textures/base-color"
+                        : woodenPalisade
+                        ? "CityForgeV3/Props/Fortress/WoodenPalisadeV01/Source/tripo_convert_cc7c81ae-ad66-4115-b42b-bfab6e15d81a.fbm/wooden_palisade_fence_3d_model_basecolor"
+                        : medievalWell
+                        ? "CityForgeV3/Props/Fortress/MedievalWellV01/Source/tripo_convert_72f7c550-c77b-42d7-aad9-cc76f0e1fe62.fbm/medieval_well_3d_model_basecolor"
+                        : woodenPalisadeGate
+                        ? "CityForgeV3/Props/Fortress/WoodenPalisadeGateV01/Source/tripo_convert_6e5abdee-f9cd-447e-ac26-bec3d789ddac.fbm/wooden_palisade_gate_3d_model_basecolor"
+                        : medievalTorch
+                        ? "CityForgeV3/Props/Fortress/MedievalTorchV01/Source/tripo_convert_c1bc2054-25d5-49fd-96ce-5bb602d08e1b.fbm/medieval_torch_3d_model_basecolor"
                         : pumpkin
                         ? "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_basecolor"
                         : lamppost
@@ -1987,23 +2327,36 @@ namespace CityForgeV3.World
                         ? "CityForgeV3/Props/WroughtIronVariationsV01/gate-base-color"
                         : $"CityForgeV3/Props/WroughtIronFenceV01/{texturePrefix}base-color");
                 if (baseColor != null) material.mainTexture = baseColor;
-                var normal = Resources.Load<Texture2D>(
+                var normal = animal ? null : Resources.Load<Texture2D>(
                     kingKongEnclosure
                         ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/normal"
                     : kingKong
                         ? "CityForgeV3/Props/Characters/KingKongV01/Textures/normal"
                     : character
-                        ? IsHooligan(propId)
+                        ? IsFarmer(propId) ? "CityForgeV3/Props/Characters/FarmerV01/normal"
+                        : IsHooligan(propId)
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/normal"
                             : IsHistoricPoliceman(propId)
                                 ? "CityForgeV3/Props/Characters/HistoricPolicemanV01/Textures/normal"
+                            : IsMusketman(propId)
+                                ? "CityForgeV3/Props/Characters/MusketmanV01/Source/tripo_convert_38f9f44e-dfc8-475a-97bd-57b723a19872.fbm/pirate_3d_model_normal"
                             : "CityForgeV3/Props/Characters/VictorianGentlemanV01/Textures/normal"
-                        : picket
+                    : picket
                         ? "CityForgeV3/Props/PicketFenceV01/normal"
+                        : oldWoodenFence
+                        ? "CityForgeV3/Props/WoodenFenceV01/Source/tripo_convert_2472e70d-3194-4567-87d1-79928ec3a474.fbm/wooden_fence_3d_model_normal"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/normal"
                         : hedge3D
                         ? "CityForgeV3/Props/Flora/Hedge3DV01/Textures/normal"
+                        : woodenPalisade
+                        ? "CityForgeV3/Props/Fortress/WoodenPalisadeV01/Source/tripo_convert_cc7c81ae-ad66-4115-b42b-bfab6e15d81a.fbm/wooden_palisade_fence_3d_model_normal"
+                        : medievalWell
+                        ? "CityForgeV3/Props/Fortress/MedievalWellV01/Source/tripo_convert_72f7c550-c77b-42d7-aad9-cc76f0e1fe62.fbm/medieval_well_3d_model_normal"
+                        : woodenPalisadeGate
+                        ? "CityForgeV3/Props/Fortress/WoodenPalisadeGateV01/Source/tripo_convert_6e5abdee-f9cd-447e-ac26-bec3d789ddac.fbm/wooden_palisade_gate_3d_model_normal"
+                        : medievalTorch
+                        ? "CityForgeV3/Props/Fortress/MedievalTorchV01/Source/tripo_convert_c1bc2054-25d5-49fd-96ce-5bb602d08e1b.fbm/medieval_torch_3d_model_normal"
                         : pumpkin
                         ? "CityForgeV3/Props/Seasonal/PumpkinJackOLanternV01/Textures/pumpkin_jack-o'-lantern_3d_model_normal"
                         : lamppost
@@ -2034,7 +2387,7 @@ namespace CityForgeV3.World
                     material.SetFloat("_SmoothnessScale", 0.16f);
                     material.SetFloat("_CavityStrength", 0.38f);
                 }
-                var metallicSmoothness = Resources.Load<Texture2D>(
+                var metallicSmoothness = animal || IsFarmer(propId) ? null : Resources.Load<Texture2D>(
                     kingKongEnclosure
                         ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/metallic"
                     : kingKong
@@ -2044,12 +2397,19 @@ namespace CityForgeV3.World
                             ? "CityForgeV3/Props/Characters/HooliganV01/Textures/metallic-smoothness"
                             : IsHistoricPoliceman(propId)
                                 ? "CityForgeV3/Props/Characters/HistoricPolicemanV01/Textures/metallic-smoothness"
+                            : IsMusketman(propId)
+                                ? ""
                             : "CityForgeV3/Props/Characters/VictorianGentlemanV01/Textures/metallic-smoothness"
+                        : oldWoodenFence
+                        ? ""
                         : picket
                         ? "CityForgeV3/Props/PicketFenceV01/metallic-smoothness"
                         : bench
                         ? "CityForgeV3/Props/OrnateBenchV01/Textures/metallic"
                         : hedge3D
+                        ? ""
+                        : woodenPalisade || medievalWell ||
+                          woodenPalisadeGate || medievalTorch
                         ? ""
                         : lamppost
                         ? simpleLamppost
@@ -2070,22 +2430,42 @@ namespace CityForgeV3.World
                     material.EnableKeyword("_METALLICGLOSSMAP");
                 }
                 if (!kingKongEnclosure)
-                    material.SetFloat("_Metallic", kingKong
+                    material.SetFloat("_Metallic", animal ? 0f : kingKong
                         ? 0f : character ? 0.05f : picket ? 0f
-                        : hedge3D || pumpkin ? 0f : bench ? 0.55f : 1f);
+                        : hedge3D || pumpkin || oldWoodenFence || woodenPalisade || medievalWell ||
+                          woodenPalisadeGate || medievalTorch
+                            ? 0f : bench ? 0.55f : 1f);
                 // The supplied roughness maps are now inverted into the alpha
                 // channel of the metallic/smoothness textures. Previously the
                 // opaque alpha of a metallic JPG made every surface uniformly
                 // glossy, lifting black cloth and iron toward ambient gray.
                 if (!kingKongEnclosure)
-                    material.SetFloat("_GlossMapScale", kingKong
+                    material.SetFloat("_GlossMapScale", animal ? 0f : kingKong
                         ? 0.16f
                         : character
                         ? 0.72f
                         : simpleLamppost
                             ? 0.64f
                         : hedge3D ? 0.08f : pumpkin ? 0.14f
+                        : oldWoodenFence ? 0.12f
                         : picket ? 0.18f : bench ? 0.42f : 0.72f);
+                if (IsFarmer(propId))
+                {
+                    material.name = "CF Farmer Original Color";
+                    material.SetFloat("_Metallic", 0f);
+                    material.SetFloat("_Glossiness", .12f);
+                    material.SetFloat("_SpecularHighlights", 0f);
+                    material.SetFloat("_GlossyReflections", 0f);
+                    material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                    material.EnableKeyword("_GLOSSYREFLECTIONS_OFF");
+                }
+                if (animal)
+                {
+                    // Fur uses the supplied albedo only. Fence PBR maps and
+                    // metallic defaults bleach its brown coat toward silver.
+                    material.name = IsHorse(propId) ? "CF Horse Coat Runtime Material" : "CF Bear Fur Runtime Material";
+                    material.SetFloat("_Glossiness", 0.12f);
+                }
                 if (lamppost)
                 {
                     var emission = Resources.Load<Texture2D>(
@@ -2107,7 +2487,11 @@ namespace CityForgeV3.World
                 // the comparatively bright lot-editor lighting.  Emission is
                 // still driven independently by the lantern mask above.
                 var color = valid
-                    ? simpleLamppost
+                    ? animal
+                        // Keep the original brown atlas readable under the
+                        // bright gamma-space lot lighting.
+                        ? IsHorse(propId) ? new Color(0.7f, 0.7f, 0.7f) : new Color(0.62f, 0.45f, 0.30f)
+                        : simpleLamppost
                         ? new Color(0.3f, 0.32f, 0.34f)
                         : hedge3D
                             // Multiply the supplied yellow-green albedo toward
@@ -2116,6 +2500,12 @@ namespace CityForgeV3.World
                             ? new Color(0.36f, 0.58f, 0.32f)
                         : kingKongEnclosure
                             ? new Color(0.94f, 0.86f, 0.72f)
+                        : IsMusketman(propId)
+                            ? MusketmanTint
+                        : oldWoodenFence
+                            ? new Color(0.88f, 0.72f, 0.54f)
+                        : woodenPalisade || woodenPalisadeGate || medievalTorch
+                            ? FortressTimberTint
                         : Color.white
                     : new Color(1f, 0.2f, 0.15f);
                 color.a = alpha;
@@ -2141,13 +2531,64 @@ namespace CityForgeV3.World
                 // Committed fence meshes use the controlled projected shadow
                 // above. Raw shadow-map projection turns thin pickets into
                 // broken, extremely long streaks at low sun elevations.
-                // Characters use a presentation-root-owned ground shadow.
-                // Native skinned-mesh shadow bounds can retain animation/root
-                // offsets and leave a detached humanoid-shaped "ghost" behind.
-                renderer.shadowCastingMode =
-                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                var committedCharacter = alpha >= 0.999f &&
+                    (IsThreeDimensionalCharacter(propId) || animal);
+                renderer.shadowCastingMode = committedCharacter
+                    ? UnityEngine.Rendering.ShadowCastingMode.On
+                    : UnityEngine.Rendering.ShadowCastingMode.Off;
+                if (committedCharacter && renderer is SkinnedMeshRenderer skinned)
+                    skinned.updateWhenOffscreen = true;
                 renderer.receiveShadows = alpha >= 0.999f;
             }
+        }
+
+        private void ApplyFortressMaterial(Transform root,
+            string textureResourcePrefix, bool directionalBuilding = false)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(textureResourcePrefix))
+                return;
+            var shader = Shader.Find(directionalBuilding
+                ? "CityForgeV3/Experimental3DBuildingPBR"
+                : "Standard");
+            if (shader == null) return;
+            var material = new Material(shader)
+            {
+                name = directionalBuilding
+                    ? "CF Fortress Building Directional Material"
+                    : "CF Fortress Timber Runtime Material"
+            };
+            var baseColor = Resources.Load<Texture2D>(
+                $"{textureResourcePrefix}_basecolor");
+            var normal = Resources.Load<Texture2D>(
+                $"{textureResourcePrefix}_normal");
+            if (baseColor != null) material.mainTexture = baseColor;
+            // The Standard prop material needs a warm corrective tint. The
+            // building shader already grades the authored atlas, so applying
+            // that tint again turns the cabins unnaturally orange.
+            material.color = directionalBuilding
+                // Preserve timber color on both the lit and shaded faces.
+                // This is intentionally gentler than the Standard-material
+                // correction because the building shader grades the atlas.
+                ? new Color(1f, 0.86f, 0.72f, 1f)
+                : FortressTimberTint;
+            if (normal != null)
+            {
+                material.SetTexture("_BumpMap", normal);
+                material.SetFloat("_BumpScale", 0.72f);
+                material.EnableKeyword("_NORMALMAP");
+            }
+            material.SetFloat("_Metallic", 0f);
+            if (material.HasProperty("_Glossiness"))
+                material.SetFloat("_Glossiness", 0.18f);
+            if (material.HasProperty("_GlossMapScale"))
+                material.SetFloat("_GlossMapScale", 0.18f);
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                renderer.receiveShadows = true;
+            }
+            _experimentalBuilding3DMaterials.Add(material);
         }
 
         private bool IsLamppostLightingActive() =>
@@ -2197,6 +2638,21 @@ namespace CityForgeV3.World
             light.bounceIntensity = 0f;
             light.enabled = active;
 
+        }
+
+        private void CreateMedievalTorchLight(Transform root)
+        {
+            var lamp = new GameObject("CF Runtime Lantern Light");
+            lamp.transform.SetParent(root, false);
+            lamp.transform.localPosition = new Vector3(0f, 1.62f, 0f);
+            var light = lamp.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.42f, 0.12f);
+            light.intensity = 2.15f;
+            light.range = 6.5f;
+            light.shadows = LightShadows.Soft;
+            light.bounceIntensity = 0.15f;
+            light.enabled = IsLamppostLightingActive();
         }
 
         private void CreateDecorativeIronGardenLight(Transform root)
@@ -2285,6 +2741,20 @@ namespace CityForgeV3.World
                 depth = 0.65f;
                 return;
             }
+            if (propId == CarriagePropId || IsHorseWagon(propId))
+            {
+                width = IsHorseWagon(propId) ? HorseWagonDefinition.For(propId).Width : 1.8f;
+                depth = IsHorseWagon(propId) ? HorseWagonDefinition.For(propId).TeamLength : 5.4f;
+                if (Mathf.Abs(turns) % 2 == 1) (width,depth)=(depth,width);
+                return;
+            }
+            if (IsThreeDimensionalAnimal(propId))
+            {
+                width = IsMountedRider(propId) ? 1.35f : IsHorse(propId) ? 1.0f : BearLengthMeters;
+                depth = IsHorse(propId) ? 3.1f : 1.05f;
+                if (IsHorse(propId) && Mathf.Abs(turns) % 2 == 1) (width, depth) = (depth, width);
+                return;
+            }
             if (string.Equals(propId, KingKongEnclosurePropId,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -2308,6 +2778,40 @@ namespace CityForgeV3.World
                 depth = oddHedge ? Hedge3DLengthMeters : Hedge3DDepthMeters;
                 return;
             }
+            if (string.Equals(propId, WoodenPalisadeGatePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddGate = Mathf.Abs(turns) % 2 == 1;
+                width = oddGate ? WoodenPalisadeGateDepthMeters :
+                    WoodenPalisadeGateLengthMeters;
+                depth = oddGate ? WoodenPalisadeGateLengthMeters :
+                    WoodenPalisadeGateDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, MedievalTorchPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = MedievalTorchFootprintMeters;
+                depth = MedievalTorchFootprintMeters;
+                return;
+            }
+            if (string.Equals(propId, WoodenPalisadePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddPalisade = Mathf.Abs(turns) % 2 == 1;
+                width = oddPalisade ? WoodenPalisadeDepthMeters :
+                    WoodenPalisadeLengthMeters;
+                depth = oddPalisade ? WoodenPalisadeLengthMeters :
+                    WoodenPalisadeDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, MedievalWellPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = MedievalWellFootprintMeters;
+                depth = MedievalWellFootprintMeters;
+                return;
+            }
             if (string.Equals(propId, PumpkinJackOLanternPropId,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -2328,6 +2832,16 @@ namespace CityForgeV3.World
                 var oddPicket = Mathf.Abs(turns) % 2 == 1;
                 width = oddPicket ? PicketFenceDepthMeters : PicketFenceLengthMeters;
                 depth = oddPicket ? PicketFenceLengthMeters : PicketFenceDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, OldWoodenFencePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddWoodFence = Mathf.Abs(turns) % 2 == 1;
+                width = oddWoodFence ? OldWoodenFenceDepthMeters :
+                    OldWoodenFenceLengthMeters;
+                depth = oddWoodFence ? OldWoodenFenceLengthMeters :
+                    OldWoodenFenceDepthMeters;
                 return;
             }
             if (string.Equals(propId, DecorativeIronGardenPropId,
@@ -2480,6 +2994,26 @@ namespace CityForgeV3.World
             _overlay.depth = _source.depth + 50f;
             _overlay.clearFlags = CameraClearFlags.Depth;
             _overlay.cullingMask = 1 << LotWorldController.PropFrontRecoveryLayer;
+        }
+    }
+
+    internal sealed class CharacterShadowMaterialOwner : MonoBehaviour
+    {
+        private readonly List<Material> _materials = new();
+
+        public void Add(Material material)
+        {
+            if (material != null) _materials.Add(material);
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var material in _materials)
+            {
+                if (material == null) continue;
+                if (Application.isPlaying) Destroy(material);
+                else DestroyImmediate(material);
+            }
         }
     }
 }

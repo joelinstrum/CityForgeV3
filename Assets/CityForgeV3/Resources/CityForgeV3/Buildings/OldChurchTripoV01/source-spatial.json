@@ -1,0 +1,147 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.v3.civics.culture.old_church_tripo_01",
+  "sizeClass": "civic",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 24.999998,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.477489,
+        "y": -8.973709
+      },
+      {
+        "x": 5.477489,
+        "y": -8.973709
+      },
+      {
+        "x": 5.477489,
+        "y": 8.973708
+      },
+      {
+        "x": -5.477489,
+        "y": 8.973708
+      }
+    ]
+  },
+  "collisionMeters": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "x": -5.477489,
+          "y": -8.973709
+        },
+        {
+          "x": 5.477489,
+          "y": -8.973709
+        },
+        {
+          "x": 5.477489,
+          "y": 8.973708
+        },
+        {
+          "x": -5.477489,
+          "y": 8.973708
+        }
+      ]
+    }
+  ],
+  "occlusionMeters": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "x": -5.477489,
+          "y": -8.973709
+        },
+        {
+          "x": 5.477489,
+          "y": -8.973709
+        },
+        {
+          "x": 5.477489,
+          "y": 8.973708
+        },
+        {
+          "x": -5.477489,
+          "y": 8.973708
+        }
+      ]
+    }
+  ],
+  "shadowReceiverMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -5.477489,
+        "y": -8.973709
+      },
+      {
+        "x": 5.477489,
+        "y": -8.973709
+      },
+      {
+        "x": 5.477489,
+        "y": 8.973708
+      },
+      {
+        "x": -5.477489,
+        "y": 8.973708
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000122,
+        "y": 835.159622
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000488,
+        "y": 835.160126
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000244,
+        "y": 835.159698
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 835.159363
+      }
+    }
+  ]
+}

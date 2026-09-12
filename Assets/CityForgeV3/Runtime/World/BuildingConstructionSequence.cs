@@ -45,10 +45,10 @@ namespace CityForgeV3.World
             ? "CONSTRUCTION COMPLETE"
             : CompletedStories == _storyCount &&
               RevealedBuildingStories < _storyCount
-                ? "REVEALING FINAL STORY"
+                ? "ADDING FINISHING WORK"
             : CompletedStories == 0
                 ? "PREPARING FOUNDATION"
-                : $"BUILDING STORY {CompletedStories} OF {_storyCount}";
+                : $"ASSEMBLING PHASE {CompletedStories} OF {_storyCount}";
 
         public void Begin(GameObject finishedBuilding, float width,
             float depth, float height, Action changed = null,
@@ -175,10 +175,17 @@ namespace CityForgeV3.World
             foreach (var state in _finishedRenderers)
             {
                 if (state.Renderer == null) continue;
+                var supportsReveal = false;
                 foreach (var material in state.Renderer.sharedMaterials)
                     if (material != null &&
                         material.HasProperty("_ConstructionRevealHeight"))
+                    {
+                        supportsReveal = true;
                         material.SetFloat("_ConstructionRevealHeight", worldHeight);
+                    }
+                if (!supportsReveal)
+                    state.Renderer.enabled = state.Enabled &&
+                        state.Renderer.bounds.center.y <= worldHeight;
             }
         }
 

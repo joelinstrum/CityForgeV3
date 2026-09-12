@@ -16,6 +16,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         _AlbedoBoost ("Local Albedo Lift", Range(0.5,3)) = 1
         _EnvironmentDim ("Time Of Day Brightness", Range(0,1)) = 1
         _DirectionalContrast ("Directional Light Contrast", Range(0,1)) = 0
+        [HideInInspector] _DirectionalLightDirection ("Directional Light Direction", Vector) = (0,1,0,0)
         _SunIntensityScale ("Sun Intensity Scale", Range(0,3)) = 1
         [NoScaleOffset] _NightEmissionMask ("Night Emission Mask", 2D) = "black" {}
         [HDR] _NightEmissionColor ("Night Emission Color", Color) = (1,0.55,0.22,1)
@@ -29,7 +30,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         LOD 300
 
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows
+        #pragma surface surf Standard fullforwardshadows vertex:vert
         #pragma target 3.0
 
         sampler2D _MainTex;
@@ -46,6 +47,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _AlbedoBoost;
         half _EnvironmentDim;
         half _DirectionalContrast;
+        float4 _DirectionalLightDirection;
         half _SunIntensityScale;
         sampler2D _NightEmissionMask;
         fixed4 _NightEmissionColor;
@@ -57,9 +59,16 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
             float2 uv_MainTex;
             float2 uv_BumpMap;
             float3 worldNormal;
+            float3 geometricWorldNormal;
             float3 worldPos;
             INTERNAL_DATA
         };
+
+        void vert(inout appdata_full vertex, out Input output)
+        {
+            UNITY_INITIALIZE_OUTPUT(Input, output);
+            output.geometricWorldNormal = UnityObjectToWorldNormal(vertex.normal);
+        }
 
         fixed3 PreserveSourceColor(fixed3 source)
         {
@@ -81,17 +90,27 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
             fixed4 albedo = tex2D(_MainTex, input.uv_MainTex) * _Color;
             fixed3 preserved = saturate(
                 PreserveSourceColor(albedo.rgb) * _AlbedoBoost);
+            output.Normal = UnpackScaleNormal(
+                tex2D(_BumpMap, input.uv_BumpMap), _BumpScale);
             // Render the authored atlas directly, then apply stable
             // CityForge directional form in the emissive path. The standard
             // surface-lighting path crushes these Tripo atlases nearly black
             // in the project's gamma/exposure configuration.
-            half facingLight = saturate(dot(normalize(input.worldNormal),
-                normalize(_WorldSpaceLightPos0.xyz)));
+            // Classify the whole facade from the mesh normal. The imported
+            // normal map remains active for timber detail, but must not make
+            // neighboring texels disagree about which side of the building
+            // faces the afternoon sun.
+            half3 worldSurfaceNormal = normalize(input.geometricWorldNormal);
+            half facingLight = saturate(dot(worldSurfaceNormal,
+                normalize(_DirectionalLightDirection.xyz)));
             // Afternoon uses a much wider neutral value range so façades
             // facing away from the western sun read as genuinely shaded.
             // This remains local to building materials: it neither tints nor
             // changes the exposure of grass, roads, overlays, or props.
-            half shadowFloor = lerp(0.68h, 0.30h, _DirectionalContrast);
+            // Shade by scaling the complete RGB triplet uniformly. This
+            // lowers value without blending toward gray or reducing the
+            // authored timber saturation.
+            half shadowFloor = lerp(0.62h, 0.16h, _DirectionalContrast);
             // Let the lighting-lab sun control lift the directly illuminated
             // face without raising the shaded face or the environment.
             half directSunBoost = 1.0h +
@@ -124,11 +143,18 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
             // contrast, saturation, and vibrance grade. The former albedo.rgb
             // reference silently discarded every building color control and
             // made the warm sun act as the only visible source of color.
-            output.Emission = preserved * localLighting * _EnvironmentDim +
-                nightEmission;
+            // Darkness and colorfulness are separate controls. Reducing the
+            // full RGB triplet equally is numerically saturation-preserving,
+            // but the chroma becomes visually weak at low values. Darken the
+            // luminance fully while retaining more of the authored chroma so
+            // shaded timber reads as dark brown, not neutral gray.
+            fixed3 chromaComponent = preserved - luminance.xxx;
+            fixed3 directionallyShaded =
+                luminance.xxx * localLighting +
+                chromaComponent * sqrt(max(localLighting, 0.001h));
+            output.Emission = saturate(directionallyShaded) *
+                _EnvironmentDim + nightEmission;
             output.Alpha = albedo.a;
-            output.Normal = UnpackScaleNormal(
-                tex2D(_BumpMap, input.uv_BumpMap), _BumpScale);
             fixed4 metalSmooth = tex2D(_MetallicGlossMap, input.uv_MainTex);
             output.Metallic = saturate(metalSmooth.r * _Metallic);
             output.Smoothness = saturate(metalSmooth.a * _GlossMapScale);
