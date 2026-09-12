@@ -1,7 +1,7 @@
 # Default district grass decals — experiment v01, 2026-09-12
 
 Requested by Joe: try the Lot editor grass decals as automatic district terrain dressing.
-Implemented on `experiment/district-grass-decals`; visual acceptance remains pending.
+Implemented on `experiment/district-grass-decals`; Joe accepted the appearance and density: “That looks fantastic”.
 
 `DistrictGroundDecals` uses the original `Decals/Grass/leaves-01..03` PNGs and
 `SoftGroundDecal` shader. A stable tile-ID/cell hash chooses texture, quarter-turn,
@@ -36,7 +36,7 @@ brightness/exposure overrides were added. The original default grass remains unc
   checked in this saved fixture because it contains no district roads.
 
 Evidence: CityForgeMCP/artifacts/district-grass-decals-v01/.
-Joe has not yet accepted the density or appearance of this experiment.
+Joe accepted this density and appearance on 2026-09-12: “That looks fantastic”. Preserve this as the default district decal baseline; the verification limits above still apply.
 
 ## Review controls
 
