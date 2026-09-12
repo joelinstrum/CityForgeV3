@@ -57,6 +57,23 @@ namespace CityForgeV3.Buildings3D
             new(1f, 0.55f, 0.22f, 1f);
         [Min(0f)] [SerializeField] private float windowEmissionIntensity = 2f;
         [Range(0f, 1f)] [SerializeField] private float nightAmount;
+        [SerializeField] private bool roomLit = true;
+        public bool RoomLit => roomLit;
+
+        public void SetRoomLit(bool value)
+        {
+            roomLit = value;
+            RefreshRuntimeBindings();
+        }
+
+        public void ConfigurePane(Renderer renderer, int materialIndex, Color color)
+        {
+            windowMaterialTargets.Clear();
+            windowMaterialTargets.Add(new WindowMaterialTarget
+                { Renderer = renderer, MaterialIndex = materialIndex });
+            windowEmissionColor = color;
+            initialized = false;
+        }
 
         [Header("Window light spill")]
         [SerializeField] private List<WindowLightPoint> windowLights = new();
@@ -263,7 +280,7 @@ namespace CityForgeV3.Buildings3D
                 if (!IsValid(target)) continue;
                 target.Renderer.GetPropertyBlock(propertyBlock, target.MaterialIndex);
                 var material = target.Renderer.sharedMaterials[target.MaterialIndex];
-                var intensity = windowEmissionIntensity * nightAmount;
+                var intensity = windowEmissionIntensity * nightAmount * (roomLit ? 1f : 0f);
                 if (material.HasProperty(EmissionIntensityId))
                 {
                     if (emissionMask != null)
@@ -293,7 +310,7 @@ namespace CityForgeV3.Buildings3D
             foreach (var point in windowLights)
             {
                 if (point?.RuntimeLight == null) continue;
-                var enabled = active && point.EnabledAtNight && point.Selected;
+                var enabled = active && roomLit && point.EnabledAtNight && point.Selected;
                 point.RuntimeLight.enabled = enabled;
                 point.RuntimeLight.color = windowEmissionColor;
                 point.RuntimeLight.range = windowSpillRange * point.RangeMultiplier;

@@ -8,10 +8,14 @@ namespace CityForgeV3.World
     public sealed partial class LotWorldController
     {
         public const string WindowLightEffectId = "window-light-v01";
+        public const string CloudEffectId = "cloud-cumulonimbus-v01";
+        private const float CloudAltitudeMeters = 45f;
+        private const float CloudTravelMetersPerSecond = 0.65f;
         private Transform _effectRoot;
         private readonly List<GameObject> _effectPresentations = new();
         private GameObject _effectPreview;
         private bool _effectPlacementActive;
+        private string _effectPlacementId = "";
         private float _windowLightPlacementScale = 1f;
 
         private const string EffectHostBuilding3D = "building3d";
@@ -22,6 +26,27 @@ namespace CityForgeV3.World
         public bool LargeWindowLightPlacement =>
             _windowLightPlacementScale > 1.5f;
 
+#if UNITY_EDITOR
+        public bool PlaceCloudForQa(float positionX = 0f,
+            float positionZ = 0f)
+        {
+            _session.Data.Effects ??= new List<PlacedEffect>();
+            _session.Data.Effects.Add(new PlacedEffect
+            {
+                InstanceId = Guid.NewGuid().ToString("N"),
+                EffectId = CloudEffectId,
+                Scale = 1f,
+                PositionX = positionX,
+                PositionY = CloudAltitudeMeters,
+                PositionZ = positionZ,
+                NormalY = -1f
+            });
+            RebuildEffectPresentations();
+            NotifyStateChanged();
+            return true;
+        }
+#endif
+
         public void ToggleWindowLightPlacementSize()
         {
             _windowLightPlacementScale = LargeWindowLightPlacement ? 1f : 2f;
@@ -31,13 +56,20 @@ namespace CityForgeV3.World
 
         public void SetEffectPlacementPreview(string effectId)
         {
-            _effectPlacementActive = string.Equals(effectId,
-                WindowLightEffectId, StringComparison.OrdinalIgnoreCase);
+            _effectPlacementId = effectId ?? "";
+            _effectPlacementActive =
+                string.Equals(effectId, WindowLightEffectId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(effectId, CloudEffectId,
+                    StringComparison.OrdinalIgnoreCase);
             if (_effectPreview != null) DestroyForCurrentMode(_effectPreview);
-            _effectPreview = _effectPlacementActive
-                ? CreateWindowLightPresentation("Window Light Preview", true,
-                    _windowLightPlacementScale)
-                : null;
+            _effectPreview = string.Equals(effectId, CloudEffectId,
+                    StringComparison.OrdinalIgnoreCase)
+                ? CreateCloudPresentation("Cloud Preview", true)
+                : _effectPlacementActive
+                    ? CreateWindowLightPresentation("Window Light Preview", true,
+                        _windowLightPlacementScale)
+                    : null;
             if (_effectPreview != null)
             {
                 EnsureEffectRoot();
@@ -49,6 +81,24 @@ namespace CityForgeV3.World
         public bool UpdateEffectPreviewFromPanel(Vector2 panelPosition,
             Vector2 panelSize)
         {
+            if (_effectPlacementActive && string.Equals(_effectPlacementId,
+                    CloudEffectId, StringComparison.OrdinalIgnoreCase))
+            {
+                if (_effectPreview == null || !TryLotPointFromPanel(
+                        panelPosition, panelSize, out var lotPoint))
+                {
+                    if (_effectPreview != null) _effectPreview.SetActive(false);
+                    return false;
+                }
+                _effectPreview.transform.position = new Vector3(lotPoint.x,
+                    CloudAltitudeMeters, lotPoint.z);
+                _effectPreview.SetActive(true);
+                var showPreview = ZoomLevel == LotZoomLevel.Neighborhood;
+                foreach (var renderer in
+                         _effectPreview.GetComponentsInChildren<Renderer>())
+                    renderer.enabled = showPreview;
+                return true;
+            }
             if (!_effectPlacementActive || _effectPreview == null ||
                 !TryEffectSurfaceFromPanel(panelPosition, panelSize,
                     out var point, out var normal, out _, out _, out _))
@@ -64,6 +114,9 @@ namespace CityForgeV3.World
         public bool PlaceWindowLightFromPanel(Vector2 panelPosition,
             Vector2 panelSize)
         {
+            if (string.Equals(_effectPlacementId, CloudEffectId,
+                    StringComparison.OrdinalIgnoreCase))
+                return PlaceCloudFromPanel(panelPosition, panelSize);
             if (!_effectPlacementActive ||
                 !TryEffectSurfaceFromPanel(panelPosition, panelSize,
                     out var point, out var normal, out var host,
@@ -95,6 +148,27 @@ namespace CityForgeV3.World
                 NormalX = normal.x,
                 NormalY = normal.y,
                 NormalZ = normal.z
+            });
+            RebuildEffectPresentations();
+            NotifyStateChanged();
+            return true;
+        }
+
+        private bool PlaceCloudFromPanel(Vector2 panelPosition,
+            Vector2 panelSize)
+        {
+            if (!_effectPlacementActive || !TryLotPointFromPanel(panelPosition,
+                    panelSize, out var point)) return false;
+            _session.Data.Effects ??= new List<PlacedEffect>();
+            _session.Data.Effects.Add(new PlacedEffect
+            {
+                InstanceId = Guid.NewGuid().ToString("N"),
+                EffectId = CloudEffectId,
+                Scale = 1f,
+                PositionX = point.x,
+                PositionY = CloudAltitudeMeters,
+                PositionZ = point.z,
+                NormalY = -1f
             });
             RebuildEffectPresentations();
             NotifyStateChanged();
@@ -326,15 +400,15 @@ namespace CityForgeV3.World
 
         private void UpdateEffectAttachmentTransforms()
         {
-            var presentationIndex = 0;
-            foreach (var effect in _session?.Data?.Effects ??
-                     new List<PlacedEffect>())
+            var effects = _session?.Data?.Effects ?? new List<PlacedEffect>();
+            for (var index = 0; index < effects.Count &&
+                 index < _effectPresentations.Count; index++)
             {
+                var effect = effects[index];
                 if (effect == null || !string.Equals(effect.EffectId,
                         WindowLightEffectId, StringComparison.OrdinalIgnoreCase))
                     continue;
-                if (presentationIndex >= _effectPresentations.Count) break;
-                var presentation = _effectPresentations[presentationIndex++];
+                var presentation = _effectPresentations[index];
                 if (presentation == null) continue;
                 ResolveEffectWorldPose(effect, out var point, out var normal);
                 PositionWindowLight(presentation.transform, point, normal);
@@ -357,18 +431,178 @@ namespace CityForgeV3.World
             foreach (var effect in _session?.Data?.Effects ??
                      new List<PlacedEffect>())
             {
-                if (effect == null || !string.Equals(effect.EffectId,
-                        WindowLightEffectId, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                var presentation = CreateWindowLightPresentation(
-                    "Effect — Window Light", false,
-                    effect.Scale <= 0f ? 1f : effect.Scale);
+                if (effect == null) continue;
+                GameObject presentation;
+                if (string.Equals(effect.EffectId, CloudEffectId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    presentation = CreateCloudPresentation(
+                        "Effect — Cumulonimbus Cloud", false);
+                    presentation.transform.position = new Vector3(
+                        effect.PositionX, CloudAltitudeMeters, effect.PositionZ);
+                    presentation.AddComponent<CloudEffectMotion>();
+                }
+                else if (string.Equals(effect.EffectId, WindowLightEffectId,
+                             StringComparison.OrdinalIgnoreCase))
+                {
+                    presentation = CreateWindowLightPresentation(
+                        "Effect — Window Light", false,
+                        effect.Scale <= 0f ? 1f : effect.Scale);
+                    ResolveEffectWorldPose(effect, out var point, out var normal);
+                    PositionWindowLight(presentation.transform, point, normal);
+                }
+                else continue;
                 presentation.transform.SetParent(_effectRoot, true);
-                ResolveEffectWorldPose(effect, out var point, out var normal);
-                PositionWindowLight(presentation.transform, point, normal);
                 _effectPresentations.Add(presentation);
             }
             UpdateWindowEffectLighting();
+            UpdateCloudEffects(0f);
+        }
+
+        private static GameObject CreateCloudPresentation(string name,
+            bool preview)
+        {
+            var root = new GameObject(name);
+            // At Neighborhood zoom the camera covers a very large world area;
+            // use a broad storm-cell silhouette so the cloud still reads as
+            // atmosphere rather than a small prop.
+            root.transform.localScale = Vector3.one * 3.2f;
+            var shader = Shader.Find("CityForgeV3/SoftCloud") ??
+                Shader.Find("Standard");
+            var visibleMaterial = new Material(shader)
+            {
+                name = preview ? "CF Cloud Preview" : "CF Cloud"
+            };
+            visibleMaterial.color = new Color(0.94f, 0.97f, 1f, 0.30f);
+            ConfigureCloudTransparency(visibleMaterial);
+            var shadowMaterial = preview ? null : new Material(shader)
+            {
+                name = "CF Cloud Opaque Shadow Caster",
+                color = Color.white
+            };
+            var lobes = new[]
+            {
+                (new Vector3(-3.8f, 0f, 0f), new Vector3(5.5f, 2.8f, 4.2f)),
+                (new Vector3(0f, 0.5f, 0.2f), new Vector3(7.5f, 3.8f, 5.2f)),
+                (new Vector3(3.8f, 0f, -0.2f), new Vector3(5.8f, 2.9f, 4.4f)),
+                (new Vector3(-1.8f, 2.1f, 0f), new Vector3(4.8f, 4.2f, 4.4f)),
+                (new Vector3(1.5f, 2.8f, 0f), new Vector3(5.2f, 5.3f, 4.7f)),
+                (new Vector3(0.2f, 5.5f, 0f), new Vector3(4.1f, 5.8f, 4f))
+            };
+            for (var index = 0; index < lobes.Length; index++)
+            {
+                var lobe = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                lobe.name = $"Cloud Puff {index + 1}";
+                lobe.transform.SetParent(root.transform, false);
+                lobe.transform.localPosition = lobes[index].Item1;
+                lobe.transform.localScale = lobes[index].Item2;
+                var collider = lobe.GetComponent<Collider>();
+                if (collider != null) collider.enabled = false;
+                var renderer = lobe.GetComponent<Renderer>();
+                renderer.sharedMaterial = visibleMaterial;
+                renderer.receiveShadows = true;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                if (preview) continue;
+
+                // Visibility and shadow density are deliberately independent.
+                // The translucent puff never casts; an identical opaque copy
+                // writes only to the sun's shadow map.
+                var shadowLobe = GameObject.CreatePrimitive(
+                    PrimitiveType.Sphere);
+                shadowLobe.name = $"Cloud Puff Shadow {index + 1}";
+                shadowLobe.transform.SetParent(root.transform, false);
+                shadowLobe.transform.localPosition = lobes[index].Item1;
+                shadowLobe.transform.localScale = lobes[index].Item2;
+                var shadowCollider = shadowLobe.GetComponent<Collider>();
+                if (shadowCollider != null) shadowCollider.enabled = false;
+                var shadowRenderer = shadowLobe.GetComponent<Renderer>();
+                shadowRenderer.sharedMaterial = shadowMaterial;
+                shadowRenderer.receiveShadows = false;
+                shadowRenderer.shadowCastingMode =
+                    ShadowCastingMode.ShadowsOnly;
+            }
+            return root;
+        }
+
+        private static void ConfigureCloudTransparency(Material material)
+        {
+            if (material == null) return;
+            if (material.shader != null && material.shader.name ==
+                "CityForgeV3/SoftCloud") return;
+            material.SetFloat("_Mode", 3f);
+            material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+            material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+            material.SetInt("_ZWrite", 0);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.EnableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = (int)RenderQueue.Transparent;
+        }
+
+        private void UpdateCloudEffects(float deltaTime)
+        {
+            if (_effectPreview != null && string.Equals(_effectPlacementId,
+                    CloudEffectId, StringComparison.OrdinalIgnoreCase))
+            {
+                var showPreview = ZoomLevel == LotZoomLevel.Neighborhood;
+                foreach (var renderer in
+                         _effectPreview.GetComponentsInChildren<Renderer>())
+                    renderer.enabled = showPreview;
+                var previewPosition = _effectPreview.transform.position;
+                previewPosition.y = CloudAltitudeMeters;
+                _effectPreview.transform.position = previewPosition;
+            }
+            var hasCloud = false;
+            foreach (var presentation in _effectPresentations)
+            {
+                if (presentation == null ||
+                    presentation.GetComponent<CloudEffectMotion>() == null)
+                    continue;
+                hasCloud = true;
+                var position = presentation.transform.position;
+                position.x += CloudTravelMetersPerSecond * deltaTime;
+                var margin = 24f;
+                var maximum = LotWidthMeters * 0.5f + margin;
+                if (position.x > maximum)
+                    position.x = -maximum;
+                position.y = CloudAltitudeMeters;
+                presentation.transform.position = position;
+                var showCloud = ZoomLevel == LotZoomLevel.Neighborhood;
+                foreach (var renderer in
+                         presentation.GetComponentsInChildren<Renderer>())
+                {
+                    var shadowOnly = renderer.gameObject.name.StartsWith(
+                        "Cloud Puff Shadow", StringComparison.Ordinal);
+                    renderer.enabled = shadowOnly || showCloud;
+                    renderer.shadowCastingMode = shadowOnly
+                        ? ShadowCastingMode.ShadowsOnly
+                        : ShadowCastingMode.Off;
+                }
+
+                // Project the high cloud along the active sun ray to the
+                // ground. Overlay roads and billboard flora sample this same
+                // feathered field because their specialized render paths do
+                // not reliably receive the ordinary terrain shadow map.
+                var rayDirection = _sun == null
+                    ? Vector3.down
+                    : _sun.transform.forward.normalized;
+                var physicalProjection = position;
+                if (rayDirection.y < -0.001f)
+                    physicalProjection += rayDirection *
+                        (position.y / -rayDirection.y);
+                // Keep most of the broad footprint beneath the authored
+                // cloud position. A fully physical projection from 45 metres
+                // up can move the entire readable shadow beyond an 80 m lot.
+                var projected = Vector3.Lerp(position, physicalProjection,
+                    0.25f);
+                Shader.SetGlobalVector("_CFCloudShadowCenter",
+                    new Vector4(projected.x, projected.z, 0f, 0f));
+                Shader.SetGlobalVector("_CFCloudShadowParams",
+                    new Vector4(30f, 0.72f, 0.42f, 1f));
+                break;
+            }
+            if (!hasCloud)
+                Shader.SetGlobalVector("_CFCloudShadowParams", Vector4.zero);
         }
 
         private static void PositionWindowLight(Transform target,
@@ -474,6 +708,8 @@ namespace CityForgeV3.World
             foreach (var presentation in _effectPresentations)
             {
                 if (presentation == null) continue;
+                if (presentation.GetComponent<CloudEffectMotion>() != null)
+                    continue;
                 foreach (var light in
                          presentation.GetComponentsInChildren<Light>(true))
                     light.enabled = active;
@@ -495,5 +731,9 @@ namespace CityForgeV3.World
                     : new Color(0.18f, 0.13f, 0.07f, 0f);
             }
         }
+    }
+
+    internal sealed class CloudEffectMotion : MonoBehaviour
+    {
     }
 }

@@ -191,7 +191,7 @@ namespace CityForgeV3.World
                 }
 
                 texture.wrapMode = TextureWrapMode.Clamp;
-                texture.filterMode = FilterMode.Bilinear;
+                texture.filterMode = FilterMode.Trilinear;
                 _sprites[index] = Sprite.Create(
                     texture,
                     new Rect(0f, 0f, texture.width, texture.height),
@@ -233,7 +233,7 @@ namespace CityForgeV3.World
                 }
 
                 neutralTexture.wrapMode = TextureWrapMode.Clamp;
-                neutralTexture.filterMode = FilterMode.Bilinear;
+                neutralTexture.filterMode = FilterMode.Trilinear;
                 _neutralSprites[index] = Sprite.Create(
                     neutralTexture,
                     new Rect(0f, 0f, neutralTexture.width, neutralTexture.height),
@@ -262,7 +262,7 @@ namespace CityForgeV3.World
                 if (nightTexture != null)
                 {
                     nightTexture.wrapMode = TextureWrapMode.Clamp;
-                    nightTexture.filterMode = FilterMode.Bilinear;
+                    nightTexture.filterMode = FilterMode.Trilinear;
                     _nightOverlays[index] = Sprite.Create(
                         nightTexture,
                         new Rect(0f, 0f, nightTexture.width, nightTexture.height),
@@ -277,7 +277,7 @@ namespace CityForgeV3.World
                 if (fullNightTexture != null)
                 {
                     fullNightTexture.wrapMode = TextureWrapMode.Clamp;
-                    fullNightTexture.filterMode = FilterMode.Bilinear;
+                    fullNightTexture.filterMode = FilterMode.Trilinear;
                     _fullNightSprites[index] = Sprite.Create(
                         fullNightTexture,
                         new Rect(0f, 0f, fullNightTexture.width, fullNightTexture.height),
@@ -318,7 +318,7 @@ namespace CityForgeV3.World
                     }
 
                     shadeTexture.wrapMode = TextureWrapMode.Clamp;
-                    shadeTexture.filterMode = FilterMode.Bilinear;
+                    shadeTexture.filterMode = FilterMode.Trilinear;
                     _shadeOverlays[index, timeIndex] = Sprite.Create(
                         shadeTexture,
                         new Rect(0f, 0f, shadeTexture.width, shadeTexture.height),
@@ -773,7 +773,7 @@ namespace CityForgeV3.World
             // A due-west afternoon sun leaves the east/right facade in shade.
             // The hybrid artwork cannot receive directional light per face,
             // so this shared shade pass restores that contrast.
-            TimeOfDayPreset.Afternoon => 0.2375f,
+            TimeOfDayPreset.Afternoon => 0.55f,
             TimeOfDayPreset.Evening => 0.55f,
             _ => 0f
         };

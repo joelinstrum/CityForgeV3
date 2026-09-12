@@ -25,6 +25,12 @@ namespace CityForgeV3.World
         public HybridPlanManifest plan;
         public HybridShadowManifest shadow;
         public HybridFacingManifest[] facings;
+        public int plopCost;
+        public ContentResourceAmount[] constructionRequirements;
+        public ContentResourceAmount[] operatingInputs;
+        public ContentResourceAmount[] operatingOutputs;
+        public BuildingEffectContract[] effects;
+        public BuildingConstructionContract construction;
     }
 
     [Serializable]
@@ -142,6 +148,16 @@ namespace CityForgeV3.World
         public string ReviewStatus => _manifest.reviewStatus;
         public int OccupancyWidth => Mathf.Max(1, _manifest.occupancyWidth);
         public int OccupancyDepth => Mathf.Max(1, _manifest.occupancyDepth);
+        public int PlopCost => Mathf.Max(0, _manifest.plopCost);
+        public IReadOnlyList<ContentResourceAmount> ConstructionRequirements =>
+            _manifest.constructionRequirements ?? Array.Empty<ContentResourceAmount>();
+        public IReadOnlyList<ContentResourceAmount> OperatingInputs =>
+            _manifest.operatingInputs ?? Array.Empty<ContentResourceAmount>();
+        public IReadOnlyList<ContentResourceAmount> OperatingOutputs =>
+            _manifest.operatingOutputs ?? Array.Empty<ContentResourceAmount>();
+        public IReadOnlyList<BuildingEffectContract> Effects =>
+            _manifest.effects ?? Array.Empty<BuildingEffectContract>();
+        public BuildingConstructionContract Construction => _manifest.construction;
         public float WidthMeters => _manifest.spatial.widthMeters;
         public float DepthMeters => _manifest.spatial.depthMeters;
         public float HeightMeters => _manifest.spatial.heightMeters;
@@ -216,8 +232,11 @@ namespace CityForgeV3.World
                 _manifest.shadow?.morningLengthScale ?? 0f, 0.90f),
             TimeOfDayPreset.Noon => PositiveOr(
                 _manifest.shadow?.noonLengthScale ?? 0f, 0.45f),
+            // Authored values predate the district's physical west-sun
+            // contract. Preserve their relative calibration while ensuring
+            // afternoon building shadows read appreciably longer.
             TimeOfDayPreset.Afternoon => PositiveOr(
-                _manifest.shadow?.afternoonLengthScale ?? 0f, 1.15f),
+                _manifest.shadow?.afternoonLengthScale ?? 0f, 1.15f) * 1.25f,
             TimeOfDayPreset.Evening => PositiveOr(
                 _manifest.shadow?.eveningLengthScale ?? 0f, 0.65f),
             _ => 0.45f
@@ -455,11 +474,13 @@ namespace CityForgeV3.World
             return HybridBuildingPackage.Load(resourcePath);
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void InvalidateCache()
         {
             _all = null;
             _governmentHouse = null;
             _newEnglandHouse = null;
+            BuildingCatalog.InvalidateCache();
         }
     }
 }

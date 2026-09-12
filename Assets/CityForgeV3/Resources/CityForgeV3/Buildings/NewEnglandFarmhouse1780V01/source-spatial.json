@@ -1,0 +1,147 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "cityforge.v3.residential.new_england_farmhouse_1780_01",
+  "sizeClass": "medium",
+  "units": "meters",
+  "axes": "x-right-y-rear-z-up",
+  "originMeters": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "heightMeters": 8.0,
+  "foundationMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -4.172619,
+        "y": -3.455924
+      },
+      {
+        "x": 4.172619,
+        "y": -3.455924
+      },
+      {
+        "x": 4.172619,
+        "y": 3.455924
+      },
+      {
+        "x": -4.172619,
+        "y": 3.455924
+      }
+    ]
+  },
+  "collisionMeters": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "x": -4.172619,
+          "y": -3.455924
+        },
+        {
+          "x": 4.172619,
+          "y": -3.455924
+        },
+        {
+          "x": 4.172619,
+          "y": 3.455924
+        },
+        {
+          "x": -4.172619,
+          "y": 3.455924
+        }
+      ]
+    }
+  ],
+  "occlusionMeters": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "x": -4.172619,
+          "y": -3.455924
+        },
+        {
+          "x": 4.172619,
+          "y": -3.455924
+        },
+        {
+          "x": 4.172619,
+          "y": 3.455924
+        },
+        {
+          "x": -4.172619,
+          "y": 3.455924
+        }
+      ]
+    }
+  ],
+  "shadowReceiverMeters": {
+    "id": "foundation",
+    "points": [
+      {
+        "x": -4.172619,
+        "y": -3.455924
+      },
+      {
+        "x": 4.172619,
+        "y": -3.455924
+      },
+      {
+        "x": 4.172619,
+        "y": 3.455924
+      },
+      {
+        "x": -4.172619,
+        "y": 3.455924
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.0,
+        "y": 734.160095
+      }
+    },
+    {
+      "facing": "rear-right",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000427,
+        "y": 734.159607
+      }
+    },
+    {
+      "facing": "rear-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 512.000061,
+        "y": 734.15979
+      }
+    },
+    {
+      "facing": "front-left",
+      "canvasPixels": {
+        "width": 1024,
+        "height": 1024
+      },
+      "originPixel": {
+        "x": 511.999817,
+        "y": 734.15976
+      }
+    }
+  ]
+}

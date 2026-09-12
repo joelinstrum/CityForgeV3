@@ -12,7 +12,9 @@ namespace CityForgeV3.Editor
     internal sealed class BuildingArtworkImportPostprocessor : AssetPostprocessor
     {
         private const string ImportContractVersionKey =
-            "CityForgeV3.BuildingArtworkImportContract.V2";
+            "CityForgeV3.BuildingArtworkImportContract.V3";
+
+        public override uint GetVersion() => 3;
 
         static BuildingArtworkImportPostprocessor()
         {
@@ -49,9 +51,13 @@ namespace CityForgeV3.Editor
             importer.textureType = TextureImporterType.Default;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.maxTextureSize = 4096;
-            importer.mipmapEnabled = false;
+            importer.mipmapEnabled = true;
+            importer.mipMapBias = 0f;
+            importer.mipMapsPreserveCoverage = true;
+            importer.alphaTestReferenceValue = 0.02f;
             importer.npotScale = TextureImporterNPOTScale.None;
-            importer.filterMode = FilterMode.Bilinear;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.anisoLevel = 4;
             importer.alphaIsTransparency = true;
         }
     }

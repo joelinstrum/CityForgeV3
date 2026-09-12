@@ -9,6 +9,7 @@ Shader "CityForgeV3/ProjectedFloraShadow"
         [PerRendererData] _ProjectionScale ("Projection Scale", Float) = 1
         [PerRendererData] _ReferenceHeight ("Tree Height", Float) = 10
         [PerRendererData] _SinkCompensation ("Sink Compensation", Float) = 0
+        [PerRendererData] _UprightSource ("Upright Shadow Source", Float) = 0
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
     }
     SubShader
@@ -16,7 +17,7 @@ Shader "CityForgeV3/ProjectedFloraShadow"
         // Road artwork establishes its receiver stencil at Geometry+2. Draw
         // projections afterward so a second, road-only pass can restore the
         // same silhouette over the opaque brick pixels.
-        Tags { "Queue"="Transparent+10" "RenderType"="Transparent" "CanUseSpriteAtlas"="True" }
+        Tags { "Queue"="Transparent+10" "RenderType"="Transparent" "CanUseSpriteAtlas"="True" "DisableBatching"="True" }
 
         CGINCLUDE
             #include "UnityCG.cginc"
@@ -29,6 +30,7 @@ Shader "CityForgeV3/ProjectedFloraShadow"
             float _ReferenceHeight;
             float _SinkCompensation;
             half _Cutoff;
+            float _UprightSource;
 
             struct appdata
             {
@@ -48,6 +50,14 @@ Shader "CityForgeV3/ProjectedFloraShadow"
             {
                 v2f output;
                 float3 source = mul(unity_ObjectToWorld, input.vertex).xyz;
+                // Camera-facing artwork leans backward. Flattening that lean
+                // can cancel the sun projection at shallow camera angles.
+                // District trees cast from a vertical source at the same root.
+                float3 anchor = mul(unity_ObjectToWorld, float4(0,0,0,1)).xyz;
+                float3 right = mul((float3x3)unity_ObjectToWorld, float3(1,0,0));
+                float scaleY = length(mul((float3x3)unity_ObjectToWorld, float3(0,1,0)));
+                float3 upright = anchor + right * input.vertex.x + float3(0, input.vertex.y * scaleY, 0);
+                source = lerp(source, upright, _UprightSource);
                 // Sinking hides roots but must not detach the shadow from the
                 // tree's authored ground anchor or shorten its canopy.
                 source.y += _SinkCompensation;
@@ -55,7 +65,10 @@ Shader "CityForgeV3/ProjectedFloraShadow"
                 float3 ray = normalize(_SunRay.xyz);
                 float travel = height / max(0.05, -ray.y) * _ProjectionScale;
                 float3 projected = source + float3(ray.x, 0.0, ray.z) * travel;
-                projected.y = _GroundY;
+                // Keep the projection decisively above the receiving plane.
+                // Millimetre-scale separation collapsed into the same depth
+                // value at close orthographic zooms.
+                projected.y = _GroundY + 0.025;
                 output.vertex = UnityWorldToClipPos(projected);
                 output.uv = input.uv;
                 output.heightRatio = saturate(height /

@@ -75,6 +75,10 @@ namespace CityForgeV3.World
 
         public static readonly IReadOnlyList<LotTextureOption> GrassBaseTextures = new[]
         {
+            new LotTextureOption("default-grass", "Default Grass",
+                DistrictWorldController.DefaultGrassResource),
+            new LotTextureOption("wild-grass-lawn", "Wild Grass Lawn",
+                "CityForgeV3/LotTextures/RuralOverlaysV01/wild-grass-lawn"),
             new LotTextureOption("grass-poor", "Natural Grass — Poor", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2"),
             new LotTextureOption("grass-middle", "Natural Grass — Middle", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2"),
             new LotTextureOption("grass-lush", "Natural Grass — Lush",
@@ -87,11 +91,18 @@ namespace CityForgeV3.World
             new LotTextureOption("lawn-middle", "Mowed Lawn — Middle", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle"),
             new LotTextureOption("lawn-wealthy", "Mowed Lawn — Wealthy", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-wealthy"),
         };
+        private static readonly LotTextureOption LegacyBrickWalkwayOverlay =
+            new("brick-walkway", "Brick Walkway",
+                "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway",
+                pedestrianLayout: PedestrianOverlayLayout.Centerline);
         public static readonly IReadOnlyList<LotTextureOption> OverlayTextures = new[]
         {
-            new LotTextureOption("brick-walkway", "Brick Walkway",
-                "CityForgeV3/LotTextures/LegacyOverlaysV01/brick-walkway",
-                pedestrianLayout: PedestrianOverlayLayout.Centerline),
+            new LotTextureOption("brick-sidewalk-straight", "Brick Sidewalk — Straight",
+                "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-straight"),
+            new LotTextureOption("brick-sidewalk-corner", "Brick Sidewalk — Corner",
+                "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-corner"),
+            new LotTextureOption("brick-sidewalk-t-junction", "Brick Sidewalk — T-Junction",
+                "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-t-junction"),
             new LotTextureOption("concrete-sidewalk", "Concrete Sidewalk",
                 "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk",
                 pedestrianLayout: PedestrianOverlayLayout.Centerline),
@@ -109,12 +120,23 @@ namespace CityForgeV3.World
                 pedestrianLayout: PedestrianOverlayLayout.Stairs,
                 pedestrianWidthMeters: 2.2f, stairRiseMeters: 3.2f),
         };
-        public static LotTextureOption BrickWalkwayOverlay => OverlayTextures[0];
+        public static LotTextureOption BrickWalkwayOverlay =>
+            LegacyBrickWalkwayOverlay;
 
         public static LotTextureOption ResolveOverlayTexture(string id)
         {
             foreach (var option in OverlayTextures)
                 if (string.Equals(option.Id, id, StringComparison.OrdinalIgnoreCase)) return option;
+            // Preserve old saved lots that placed Wild Grass Lawn as an
+            // overlay. New selections expose it only as a whole-lot base.
+            if (string.Equals(id, "wild-grass-lawn",
+                    StringComparison.OrdinalIgnoreCase))
+                return ResolveBaseTexture(id);
+            // The retired Brick Walkway stays resolvable for old saved lots,
+            // but is intentionally absent from the authoring menu.
+            if (string.Equals(id, "brick-walkway",
+                    StringComparison.OrdinalIgnoreCase))
+                return LegacyBrickWalkwayOverlay;
             return OverlayTextures[0];
         }
 
@@ -550,5 +572,8 @@ namespace CityForgeV3.World
             TimeOfDayPreset.Evening => new Color(0.56f, 0.48f, 0.55f, 1f),
             _ => new Color(0.22f, 0.26f, 0.38f, 1f)
         };
+
+        public static Color TextureTintForTimeOfDay(TimeOfDayPreset preset) =>
+            LotTextureTint(preset);
     }
 }

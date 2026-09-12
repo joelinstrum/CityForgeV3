@@ -239,6 +239,7 @@ namespace CityForgeV3.World
         public const string AlleyId = "cityforge.base.road.alley.v1";
         public const string PedestrianStreetId =
             "cityforge.base.road.pedestrian-street.v1";
+        public const string DirtRoadId = "cityforge.base.road.dirt.v1";
         public const string DividedBoulevardId =
             "cityforge.base.road.divided-boulevard.v3";
         public const string WideTwoLaneAvenueId =
@@ -251,6 +252,7 @@ namespace CityForgeV3.World
             "CityForgeV3/Roads/FlatColorV1/one-way-with-sidewalk/road-package",
             "CityForgeV3/Roads/FlatColorV1/alley/road-package",
             "CityForgeV3/Roads/FlatColorV1/pedestrian-street/road-package",
+            "CityForgeV3/Roads/DirtRoadV1/road-package",
             "CityForgeV3/Roads/FlatColorV3/divided-boulevard/road-package",
             "CityForgeV3/Roads/FlatColorV4/wide-two-lane-avenue/road-package",
             RoadPiecePackage.ManifestResourcePath

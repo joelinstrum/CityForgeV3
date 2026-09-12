@@ -77,6 +77,1216 @@
     width: 505px;
 }
 
+.region-editor-screen {
+    overflow: hidden;
+    background-color: rgb(8, 14, 19);
+}
+
+.region-manage-overlay {
+    background-color: rgba(3, 7, 10, 0.72);
+}
+
+.region-manage-panel {
+    position: relative;
+    width: 1152px;
+    height: 1024px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.cf-image-button--region-manage-action {
+    position: absolute;
+    width: 465px;
+    height: 132px;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+    -unity-background-scale-mode: scale-to-fit;
+    opacity: 0.62;
+    transition-property: scale, opacity;
+    transition-duration: 0.14s;
+}
+
+.cf-image-button--region-manage-action:hover {
+    opacity: 1;
+}
+
+.region-manage-action--load {
+    left: 84px;
+    top: 600px;
+}
+
+.region-manage-action--create {
+    left: 603px;
+    top: 600px;
+}
+
+.region-manage-close {
+    position: absolute;
+    right: 26px;
+    top: 30px;
+    width: 84px;
+    height: 112px;
+    padding: 0;
+    margin: 0;
+    color: transparent;
+    background-color: transparent;
+    border-width: 0;
+}
+
+.region-manage-close:hover {
+    background-color: rgba(255, 232, 142, 0.12);
+    border-radius: 56px;
+}
+
+.open-region-panel {
+    position: relative;
+    width: 1450px;
+    height: 1120px;
+    max-width: 92%;
+    max-height: 90%;
+    padding: 26px 34px 28px 34px;
+    flex-shrink: 0;
+    background-color: rgb(4, 39, 73);
+    border-width: 5px;
+    border-color: rgb(210, 155, 43);
+    border-radius: 14px;
+}
+
+.open-region-title {
+    height: 78px;
+    flex-shrink: 0;
+    margin-bottom: 18px;
+    padding-left: 26px;
+    padding-right: 96px;
+    color: rgb(255, 245, 214);
+    background-color: rgb(3, 48, 88);
+    border-bottom-width: 3px;
+    border-bottom-color: rgb(216, 163, 52);
+    font-size: 34px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.open-region-panel .region-save-list {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    height: auto;
+    max-height: none;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    padding-right: 14px;
+    overflow: hidden;
+}
+
+.open-region-panel .region-save-list .unity-scroll-view__content-viewport {
+    overflow: hidden;
+}
+
+.open-region-panel .region-save-list .unity-scroller--vertical {
+    width: 18px;
+    min-width: 18px;
+}
+
+.open-region-panel .region-save-entry {
+    min-height: 90px;
+    height: 90px;
+    margin-bottom: 9px;
+    padding: 8px 14px 8px 8px;
+    flex-shrink: 0;
+    background-color: rgba(3, 27, 55, 0.84);
+    border-width: 2px;
+    border-color: rgb(207, 155, 49);
+    border-radius: 5px;
+}
+
+.open-region-panel .region-save-entry:hover {
+    background-color: rgba(8, 67, 119, 0.94);
+    border-color: rgb(71, 212, 255);
+}
+
+.region-save-preview {
+    width: 132px;
+    height: 72px;
+    flex-shrink: 0;
+    margin-right: 16px;
+    border-width: 2px;
+    border-color: rgb(220, 170, 55);
+    border-radius: 4px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.open-region-panel .region-save-entry-title {
+    color: rgb(255, 246, 218);
+    font-size: 22px;
+    -unity-font-style: bold;
+}
+
+.open-region-panel .region-save-entry-meta {
+    margin-top: 8px;
+    color: rgb(230, 217, 184);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.cf-button--region-load {
+    width: 145px;
+    height: 62px;
+    min-height: 62px;
+    flex-shrink: 0;
+    margin: 0 0 0 12px;
+    color: rgb(255, 239, 194);
+    background-color: rgb(4, 48, 94);
+    border-width: 3px;
+    border-color: rgb(221, 169, 55);
+    border-radius: 5px;
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}
+
+.cf-button--region-load:hover {
+    color: white;
+    background-color: rgb(8, 89, 159);
+    border-color: rgb(255, 212, 91);
+}
+
+.cf-image-button--region-cancel {
+    position: relative;
+    left: auto;
+    top: auto;
+    align-self: center;
+    width: 300px;
+    height: 100px;
+    flex-shrink: 0;
+    margin-top: 10px;
+    opacity: 0.72;
+}
+
+.cf-image-button--region-cancel:hover {
+    opacity: 1;
+}
+
+.open-region-close {
+    position: absolute;
+    right: 36px;
+    top: 30px;
+    width: 72px;
+    height: 72px;
+    margin: 0;
+    padding: 0;
+    color: rgb(255, 243, 207);
+    background-color: rgb(3, 48, 88);
+    border-width: 3px;
+    border-color: rgb(216, 163, 52);
+    border-radius: 56px;
+    font-size: 38px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.open-region-close:hover {
+    color: white;
+    background-color: rgb(7, 78, 132);
+    border-color: rgb(255, 218, 106);
+}
+
+.open-region-empty {
+    flex-grow: 1;
+    justify-content: center;
+    color: rgb(235, 220, 181);
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.region-header {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 86px;
+    flex-shrink: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(12, 18, 23, 0.86);
+    border-bottom-width: 2px;
+    border-bottom-color: var(--cf-brass-400);
+}
+
+.region-header > .cf-button {
+    width: 190px;
+    margin-bottom: 0;
+}
+
+.region-title-group {
+    flex-grow: 1;
+    padding-left: 24px;
+}
+
+.region-title {
+    color: var(--cf-paper-100);
+    font-size: 25px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.region-subtitle {
+    color: var(--cf-paper-300);
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-top: 4px;
+}
+
+.region-map-scroll {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 86px;
+    bottom: 0;
+    background-color: rgb(35, 43, 65);
+}
+
+.region-map-scroll .unity-scroll-view__content-container {
+    padding: 0;
+}
+
+.region-map {
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(39, 47, 70);
+}
+
+.region-map-projection {
+    position: absolute;
+    left: 0;
+    top: 0;
+    scale: 1 0.52;
+    transform-origin: 0 0;
+}
+
+.region-map-plane {
+    position: absolute;
+    rotate: 45deg;
+    transform-origin: 50% 50%;
+}
+
+.region-map-slab {
+    background-color: rgb(24, 29, 27);
+    border-width: 12px;
+    border-color: rgb(28, 33, 31);
+}
+
+.region-map-grass {
+    background-color: rgb(74, 104, 57);
+    border-width: 6px;
+    border-color: rgb(88, 96, 76);
+    overflow: hidden;
+}
+
+.region-grass-patch {
+    position: absolute;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.region-city-tile {
+    padding: 0;
+    border-left-width: 3px;
+    border-top-width: 3px;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-color: rgba(218, 230, 198, 0.54);
+    border-radius: 0;
+}
+
+.region-city-tone-0 { background-color: rgba(62, 91, 48, 0.08); }
+.region-city-tone-1 { background-color: rgba(81, 108, 61, 0.08); }
+.region-city-tone-2 { background-color: rgba(97, 117, 65, 0.08); }
+.region-city-tone-3 { background-color: rgba(58, 86, 45, 0.08); }
+
+.region-city-tile:hover,
+.region-city-tile--selected {
+    border-left-width: 6px;
+    border-top-width: 6px;
+    border-right-width: 6px;
+    border-bottom-width: 6px;
+    border-color: rgb(255, 239, 0);
+    background-color: rgba(122, 139, 67, 0.18);
+}
+
+.region-place-marker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.region-place-name {
+    color: rgb(239, 236, 215);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.region-district-name {
+    font-size: 13px;
+    letter-spacing: 2px;
+    opacity: 0.42;
+}
+
+.region-town-marker {
+    padding-top: 2px;
+}
+
+.region-town-name {
+    position: absolute;
+    bottom: 52%;
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0.92;
+}
+
+.region-town-dot {
+    width: 7px;
+    height: 7px;
+    margin-top: 12px;
+    background-color: rgb(244, 226, 161);
+    border-width: 1px;
+    border-color: rgb(35, 43, 38);
+    border-radius: 4px;
+}
+
+.region-info-card {
+    position: absolute;
+    left: 30px;
+    bottom: 38px;
+    width: 360px;
+    min-height: 116px;
+    padding: 18px 22px;
+    background-color: rgba(216, 229, 218, 0.94);
+    border-top-left-radius: 34px;
+    border-top-right-radius: 34px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-width: 3px;
+    border-color: rgba(255, 255, 255, 0.66);
+}
+
+.region-card-kicker {
+    color: rgb(48, 67, 78);
+    font-size: 15px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+}
+
+.region-card-name {
+    color: rgb(24, 40, 49);
+    font-size: 23px;
+    margin-top: 5px;
+    -unity-font-style: bold;
+}
+
+.region-card-meta {
+    color: rgb(52, 73, 82);
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-top: 8px;
+}
+
+.district-terraform-screen {
+    overflow: hidden;
+    background-color: rgba(32, 40, 61, 0);
+}
+
+.district-terraform-viewport {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    background-color: rgba(35, 43, 65, 0);
+}
+
+.district-terraform-projection {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    scale: 1 0.342;
+    transform-origin: 0 0;
+    overflow: visible;
+}
+
+.district-terraform-plane {
+    position: absolute;
+    rotate: 45deg;
+    transform-origin: 50% 50%;
+}
+
+.district-terraform-slab {
+    margin-top: 26px;
+    background-color: rgb(24, 29, 27);
+    border-width: 12px;
+    border-color: rgb(28, 33, 31);
+}
+
+.district-terraform-grass {
+    overflow: hidden;
+    background-color: rgb(74, 104, 57);
+    background-repeat: repeat;
+    border-width: 6px;
+    border-color: rgb(88, 96, 76);
+}
+
+.district-terraform-grass.district-grass-lod0 { background-size: 4px 4px; }
+.district-terraform-grass.district-grass-lod1 { background-size: 6px 6px; }
+.district-terraform-grass.district-grass-lod2 { background-size: 10px 10px; }
+.district-terraform-grass.district-grass-lod3 { background-size: 24px 24px; }
+.district-terraform-grass.district-grass-lod4 { background-size: 32px 32px; }
+.district-terraform-grass.district-grass-lod5 { background-size: 48px 48px; }
+
+.terraform-grid-line {
+    position: absolute;
+}
+
+.terraform-grid-line--minor {
+    background-color: rgba(226, 235, 205, 0.10);
+}
+
+.terraform-grid-line--major {
+    background-color: rgba(226, 235, 205, 0.22);
+}
+
+.cf-button--terraform-back {
+    position: absolute;
+    left: 28px;
+    top: 24px;
+    width: 150px;
+    margin: 0;
+    background-color: rgba(7, 29, 48, 0.82);
+    border-color: rgba(222, 180, 73, 0.82);
+}
+
+.district-mode-switch {
+    position: absolute;
+    left: 194px;
+    top: 24px;
+    height: 42px;
+    padding: 3px;
+    flex-direction: row;
+    background-color: rgba(7, 29, 48, 0.88);
+    border-width: 1px;
+    border-color: rgba(222, 180, 73, 0.72);
+    border-radius: 21px;
+}
+
+.district-mode-button {
+    width: 126px;
+    height: 34px;
+    margin: 0 2px;
+    padding: 0;
+    color: rgba(235, 241, 255, 0.72);
+    background-color: transparent;
+    border-width: 1px;
+    border-color: transparent;
+    border-radius: 17px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+}
+
+.district-mode-button:hover {
+    color: white;
+    background-color: rgba(67, 101, 172, 0.72);
+}
+
+.district-mode-button--selected {
+    color: white;
+    background-color: rgb(41, 104, 116);
+    border-color: rgb(38, 238, 104);
+}
+
+.district-mode-button--selected#district-mode-builder {
+    background-color: rgb(104, 72, 36);
+    border-color: rgb(244, 190, 62);
+}
+
+.terraform-rail {
+    position: absolute;
+    left: 28px;
+    top: 150px;
+    width: 92px;
+    padding: 12px 9px;
+    align-items: center;
+    background-color: rgba(220, 233, 224, 0.62);
+    border-radius: 44px;
+}
+
+.terraform-rail--builder {
+    background-color: rgba(226, 214, 184, 0.68);
+}
+
+.terraform-category-button {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 12px;
+    padding: 0;
+    color: rgb(235, 241, 255);
+    background-color: rgb(49, 75, 137);
+    border-width: 4px;
+    border-color: rgb(192, 160, 92);
+    border-radius: 36px;
+    font-size: 34px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.terraform-category-button:hover {
+    background-color: rgb(67, 101, 172);
+    border-color: rgb(243, 216, 117);
+    scale: 1.06 1.06;
+}
+
+.terraform-category-button--selected {
+    background-color: rgb(41, 104, 116);
+    border-color: rgb(38, 238, 104);
+}
+
+.terraform-flyout {
+    position: absolute;
+    left: 132px;
+    top: 146px;
+    width: 112px;
+    padding: 9px;
+    align-items: center;
+    background-color: rgba(8, 86, 43, 0.97);
+    border-width: 2px;
+    border-color: rgba(80, 241, 116, 0.9);
+    border-radius: 24px;
+}
+
+.terraform-flyout--builder {
+    background-color: rgba(76, 45, 15, 0.98);
+    border-color: rgba(244, 190, 62, 0.94);
+}
+
+.terraform-flyout-title {
+    margin-top: 2px;
+    margin-bottom: 8px;
+    color: rgb(239, 255, 235);
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.district-road-family-card {
+    width: auto;
+    min-height: 132px;
+    margin: 0 12px 14px 0;
+    padding: 12px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(25, 48, 67, 0.96);
+    border-width: 2px;
+    border-color: rgba(194, 153, 67, 0.75);
+    border-radius: 8px;
+    color: rgb(244, 239, 215);
+}
+
+.district-road-family-card--selected {
+    background-color: rgba(67, 116, 82, 0.98);
+    border-color: rgb(99, 229, 135);
+}
+
+.district-road-family-preview {
+    width: 150px;
+    height: 108px;
+    flex-shrink: 0;
+    background-size: cover;
+    border-width: 1px;
+    border-color: rgba(244, 239, 215, 0.8);
+}
+
+.district-road-family-copy {
+    flex-grow: 1;
+    margin-left: 18px;
+}
+
+.district-road-family-name {
+    font-size: 21px;
+    white-space: normal;
+    color: rgb(244, 239, 215);
+}
+
+.district-road-family-price {
+    margin-top: 7px;
+    font-size: 15px;
+    color: rgb(236, 198, 92);
+}
+
+.district-road-family-modal {
+    width: 820px;
+    height: 650px;
+    max-width: 88%;
+    max-height: 86%;
+    padding: 28px 34px 24px 34px;
+    background-color: rgba(7, 29, 48, 0.98);
+    border-width: 3px;
+    border-color: rgb(222, 180, 73);
+    border-radius: 22px;
+}
+
+.district-road-family-title {
+    color: rgb(248, 239, 208);
+    font-size: 31px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.district-road-family-intro {
+    margin: 10px 22px 20px 22px;
+    color: rgb(190, 207, 216);
+    font-size: 15px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.district-road-family-list {
+    flex-grow: 1;
+    min-height: 0;
+    padding: 4px 8px;
+}
+
+.district-road-family-actions {
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+.district-road-family-actions .cf-button {
+    width: 220px;
+    margin: 0;
+}
+
+.terraform-tool-button {
+    width: 82px;
+    height: 64px;
+    margin-bottom: 8px;
+    padding: 0;
+    color: rgb(237, 242, 255);
+    background-color: rgb(50, 73, 126);
+    border-width: 2px;
+    border-color: rgb(19, 40, 64);
+    border-radius: 9px;
+    font-size: 28px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.terraform-tool-button:hover {
+    color: white;
+    background-color: rgb(67, 100, 164);
+    border-color: rgb(220, 178, 74);
+}
+
+.terraform-tool-button--selected,
+.terraform-tool-button--selected:hover {
+    color: white;
+    background-color: rgb(48, 119, 112);
+    border-color: rgb(80, 232, 151);
+}
+
+.terraform-hud {
+    position: absolute;
+    left: 22px;
+    bottom: 20px;
+    width: 330px;
+    min-height: 190px;
+    padding: 16px;
+    background-color: rgba(185, 209, 218, 0.94);
+    border-width: 4px;
+    border-color: rgba(238, 247, 241, 0.92);
+    border-radius: 34px;
+}
+
+.district-info-toggle,
+.district-interface-toggle,
+.district-edge-pan {
+    position: absolute;
+    color: rgb(240, 244, 244);
+    background-color: rgba(7, 29, 48, 0.78);
+    border-width: 2px;
+    border-color: rgba(222, 180, 73, 0.82);
+    border-radius: 7px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}
+
+.district-info-toggle {
+    left: 22px;
+    bottom: 20px;
+    width: 64px;
+    height: 34px;
+    font-size: 11px;
+}
+
+.district-info-close {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: rgb(55, 78, 88);
+    background-color: rgba(235, 245, 238, 0.72);
+    border-width: 1px;
+    border-color: rgba(55, 78, 88, 0.45);
+    border-radius: 6px;
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}
+
+.district-interface-toggle {
+    right: 18px;
+    top: 18px;
+    width: 82px;
+    height: 34px;
+    font-size: 10px;
+}
+
+.district-edge-pan {
+    width: 38px;
+    height: 38px;
+    opacity: 0.48;
+}
+
+.district-edge-pan:hover {
+    opacity: 1;
+    background-color: rgba(31, 92, 101, 0.94);
+    border-color: rgb(80, 232, 151);
+}
+
+.district-edge-pan {
+    padding: 0;
+    -unity-text-align: middle-center;
+    font-size: 16px;
+}
+
+.district-edge-pan--left {
+    left: 7px;
+    top: 48%;
+}
+
+.district-edge-pan--right {
+    right: 7px;
+    top: 48%;
+}
+
+.district-edge-pan--top {
+    top: 7px;
+    left: 49%;
+}
+
+.district-edge-pan--bottom {
+    bottom: 7px;
+    left: 49%;
+}
+
+.terraform-minimap {
+    width: 138px;
+    height: 92px;
+    margin-bottom: 10px;
+    background-color: rgb(51, 112, 38);
+    border-width: 5px;
+    border-color: rgb(235, 245, 238);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.terraform-district-name {
+    color: rgb(25, 46, 60);
+    font-size: 22px;
+    -unity-font-style: bold;
+}
+
+.terraform-info-kicker {
+    color: rgb(55, 78, 88);
+    font-size: 9px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+}
+
+.terraform-district-name-field {
+    margin-top: 5px;
+    color: rgb(25, 46, 60);
+    font-size: 16px;
+}
+
+.terraform-district-name-field .unity-base-field__label {
+    min-width: 44px;
+    color: rgb(55, 78, 88);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.terraform-district-name-field .unity-base-text-field__input {
+    min-height: 28px;
+    padding-left: 7px;
+    color: rgb(25, 46, 60);
+    background-color: rgba(239, 247, 241, 0.76);
+    border-width: 1px;
+    border-color: rgba(55, 78, 88, 0.52);
+}
+
+.terraform-district-designation {
+    margin-top: 6px;
+    flex-direction: row;
+}
+
+.terraform-district-designation-button {
+    height: 25px;
+    margin-right: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: rgb(55, 78, 88);
+    background-color: rgba(239, 247, 241, 0.56);
+    border-width: 1px;
+    border-color: rgba(55, 78, 88, 0.46);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.terraform-district-designation-button--selected {
+    color: white;
+    background-color: rgb(67, 100, 164);
+    border-color: rgb(235, 239, 218);
+}
+
+.terraform-district-meta {
+    margin-top: 6px;
+    color: rgb(55, 78, 88);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.district-simulation-panel {
+    position: absolute;
+    right: 22px;
+    bottom: 20px;
+    width: 250px;
+    padding: 16px 18px;
+    background-color: rgba(7, 29, 48, 0.92);
+    border-width: 2px;
+    border-color: rgba(222, 180, 73, 0.90);
+    border-radius: 18px;
+}
+
+.district-simulation-panel--embedded {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    margin-top: 12px;
+    padding: 12px 14px;
+}
+
+.district-simulation-money {
+    margin-bottom: 8px;
+    color: rgb(238, 211, 128);
+    font-size: 25px;
+    -unity-font-style: bold;
+}
+
+.district-simulation-stat {
+    margin-top: 2px;
+    color: rgb(235, 241, 244);
+    font-size: 15px;
+}
+
+.district-time-controls {
+    margin-top: 13px;
+    flex-direction: row;
+}
+
+.district-time-button {
+    flex-grow: 1;
+    height: 38px;
+    margin: 0 4px 0 0;
+    padding: 0;
+    color: rgba(235, 241, 255, 0.74);
+    background-color: rgb(31, 52, 72);
+    border-width: 1px;
+    border-color: rgb(80, 101, 117);
+    border-radius: 7px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+}
+
+.district-time-button:hover {
+    color: white;
+    background-color: rgb(57, 83, 106);
+    border-color: rgb(238, 211, 128);
+}
+
+.district-time-button--selected {
+    color: white;
+    background-color: rgb(67, 112, 78);
+    border-color: rgb(122, 217, 139);
+}
+
+#district-simulation-pause.district-time-button--selected {
+    background-color: rgb(132, 72, 48);
+    border-color: rgb(240, 159, 101);
+}
+
+.district-simulation-status {
+    margin-top: 8px;
+    color: rgb(151, 176, 187);
+    font-size: 9px;
+    letter-spacing: 1px;
+    -unity-text-align: middle-center;
+}
+
+.district-unfounded-label {
+    margin-bottom: 12px;
+    color: rgb(238, 211, 128);
+    font-size: 11px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.district-founder-hint {
+    margin-top: 10px;
+    color: rgb(164, 184, 193);
+    font-size: 10px;
+    white-space: normal;
+}
+
+.district-founder-name {
+    margin-top: 7px;
+    color: rgb(238, 211, 128);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.district-founder-placement-name {
+    margin-bottom: 4px;
+    color: rgb(248, 239, 208);
+    font-size: 20px;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.founder-modal {
+    width: 880px;
+    height: 680px;
+    padding: 28px 34px;
+    background-color: rgb(8, 39, 68);
+    border-width: 3px;
+    border-color: rgb(222, 180, 73);
+    border-radius: 24px;
+}
+
+.founder-modal-title {
+    color: rgb(248, 239, 208);
+    font-size: 30px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.founder-modal-intro {
+    margin: 10px 28px 18px;
+    color: rgb(190, 207, 216);
+    font-size: 13px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.founder-building-list {
+    height: 500px;
+    margin-bottom: 12px;
+}
+
+.founder-building-card {
+    min-height: 104px;
+    margin: 0 8px 10px 0;
+    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(15, 53, 85);
+    border-width: 1px;
+    border-color: rgba(222, 180, 73, 0.55);
+    border-radius: 12px;
+}
+
+.founder-building-card:hover {
+    background-color: rgb(24, 76, 111);
+    border-color: rgb(242, 205, 105);
+}
+
+.founder-building-icon {
+    width: 82px;
+    height: 64px;
+    margin-right: 18px;
+    color: rgb(238, 211, 128);
+    background-color: rgba(5, 25, 43, 0.72);
+    border-width: 2px;
+    border-color: rgb(222, 180, 73);
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.founder-building-copy {
+    flex-grow: 1;
+}
+
+.founder-building-name {
+    color: rgb(248, 239, 208);
+    font-size: 19px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-left;
+}
+
+.founder-building-description {
+    margin-top: 5px;
+    color: rgb(185, 205, 214);
+    font-size: 11px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
+.founder-house-marker {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+}
+
+.founder-house-roof {
+    position: absolute;
+    left: 12px;
+    top: 5px;
+    width: 32px;
+    height: 32px;
+    rotate: 45deg;
+    border-left-width: 4px;
+    border-top-width: 4px;
+    border-color: rgb(255, 224, 94);
+}
+
+.founder-house-body {
+    position: absolute;
+    left: 11px;
+    top: 24px;
+    width: 35px;
+    height: 27px;
+    border-width: 4px;
+    border-color: rgb(255, 224, 94);
+    background-color: rgba(7, 29, 48, 0.34);
+}
+
+.founder-house-marker--cursor {
+    opacity: 0.82;
+}
+
+.district-placed-lot {
+    position: absolute;
+    overflow: visible;
+    background-color: rgba(70, 91, 45, 0.72);
+    border-width: 2px;
+    border-color: rgb(255, 218, 72);
+}
+
+.district-placed-lot--rendered {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    -unity-background-scale-mode: scale-to-fit;
+    rotate: -45deg;
+    scale: 1 2.924;
+    transform-origin: 50% 50%;
+}
+
+.district-lot-asset {
+    position: absolute;
+    background-size: contain;
+    background-repeat: no-repeat;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.district-lot-building {
+    background-color: rgba(92, 62, 36, 0.30);
+}
+
+.district-lot-prop {
+    background-color: rgba(79, 51, 27, 0.22);
+}
+
+.district-lot-palisade {
+    background-color: rgb(105, 67, 34);
+}
+
+.district-placed-lot-name {
+    position: absolute;
+    left: -14px;
+    right: -14px;
+    top: 78px;
+    color: rgb(255, 231, 139);
+    font-size: 8px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.region-save-list {
+    height: 400px;
+    max-height: 400px;
+}
+
+.region-save-entry {
+    min-height: 86px;
+    margin-bottom: 10px;
+    padding: 12px;
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--cf-ink-800);
+    border-width: 1px;
+    border-color: var(--cf-ink-700);
+}
+
+.region-save-details {
+    flex-grow: 1;
+}
+
+.region-save-entry-title {
+    color: var(--cf-paper-100);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.region-save-entry-meta {
+    color: var(--cf-paper-300);
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+}
+
 .cf-image-button {
     margin: 0;
     padding: 0;
@@ -1350,7 +2560,7 @@
     padding: 12px;
     background-color: rgba(26, 43, 50, 0.75);
     color: rgb(173, 169, 151);
-    unity-text-align: middle-center;
+    -unity-text-align: middle-center;
 }
 
 .lot-context-menu {
@@ -1458,4 +2668,287 @@
     color: rgb(255, 244, 196);
     background-color: rgb(67, 82, 64);
     border-color: rgb(221, 177, 67);
+}
+
+/* Large, high-contrast explanations for every Region and District control. */
+.region-hover-help-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 34px;
+}
+
+.region-hover-help {
+    width: 720px;
+    max-width: 82%;
+    min-height: 76px;
+    padding: 18px 26px;
+    background-color: rgba(8, 23, 34, 0.96);
+    border-width: 3px;
+    border-color: rgb(232, 193, 86);
+    border-radius: 12px;
+}
+
+.region-hover-help-text {
+    color: rgb(255, 248, 220);
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.district-lot-browser {
+    width: 760px;
+    max-width: 88%;
+}
+
+.district-lot-save-list {
+    height: 500px;
+    max-height: 58%;
+    flex-shrink: 0;
+}
+
+.district-lot-entry {
+    min-height: 108px;
+    margin-bottom: 10px;
+    padding: 12px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(25, 42, 51);
+    border-width: 2px;
+    border-color: rgba(215, 173, 75, 0.55);
+    border-radius: 6px;
+    -unity-text-align: middle-left;
+}
+
+.district-lot-entry:hover {
+    background-color: rgb(45, 70, 65);
+    border-color: rgb(232, 193, 86);
+}
+
+.district-lot-entry .lot-save-thumbnail {
+    width: 132px;
+    min-width: 132px;
+    height: 82px;
+    margin-right: 18px;
+}
+
+.district-lot-place-label {
+    margin-top: 8px;
+    color: rgb(232, 193, 86);
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+}
+
+.district-selected-lot-panel {
+    position: absolute;
+    right: 24px;
+    top: 92px;
+    width: 340px;
+    padding: 18px;
+    background-color: rgba(8, 28, 42, 0.94);
+    border-width: 2px;
+    border-color: rgb(232, 193, 86);
+    border-radius: 10px;
+}
+
+.district-lot-info-kicker {
+    color: rgb(232, 193, 86);
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.district-lot-info-name {
+    margin-top: 6px;
+    color: rgb(255, 248, 220);
+    font-size: 24px;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.district-lot-info-meta {
+    margin-top: 8px;
+    color: rgb(205, 218, 212);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.district-lot-rotation-controls {
+    margin-top: 14px;
+    flex-direction: row;
+}
+
+.district-lot-rotation-controls .cf-button {
+    width: 72px;
+    min-width: 72px;
+    height: 52px;
+    margin-right: 10px;
+    font-size: 28px;
+}
+
+.district-lot-info-hint {
+    margin-top: 12px;
+    color: rgb(205, 218, 212);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.district-loading-screen {
+    background-color: rgb(7, 25, 37);
+    align-items: center;
+    justify-content: center;
+}
+
+.district-loading-panel {
+    width: 520px;
+    padding: 42px;
+    background-color: rgba(13, 35, 45, 0.98);
+    border-width: 2px;
+    border-color: rgba(215, 173, 75, 0.75);
+    border-radius: 12px;
+    align-items: center;
+}
+
+.district-loading-kicker {
+    color: rgb(215, 173, 75);
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+}
+
+.district-loading-title {
+    margin-top: 12px;
+    color: rgb(255, 248, 220);
+    font-size: 32px;
+    -unity-font-style: bold;
+}
+
+.district-loading-name {
+    margin-top: 8px;
+    color: rgb(190, 207, 203);
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+.district-loading-track {
+    width: 100%;
+    height: 8px;
+    margin-top: 28px;
+    background-color: rgb(5, 18, 27);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.district-loading-fill {
+    width: 72%;
+    height: 100%;
+    background-color: rgb(215, 173, 75);
+    border-radius: 4px;
+}
+
+.district-loading-copy {
+    margin-top: 16px;
+    color: rgb(155, 178, 177);
+    font-size: 12px;
+}
+
+/* Actual model portraits, with a bounded scrolling library on smaller Game views. */
+.document-modal-panel.character-library-panel {
+    width: 940px;
+    max-width: 94%;
+    height: 740px;
+    max-height: 90%;
+    padding: 20px;
+}
+.character-library-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    padding-right: 6px;
+}
+.road-material-card.character-library-card {
+    width: 204px;
+    flex-shrink: 0;
+    margin-right: 10px;
+    margin-bottom: 12px;
+}
+.character-library-card .character-library-select {
+    flex-direction: column;
+    align-items: stretch;
+    height: 184px;
+    padding: 5px;
+}
+.character-library-image {
+    width: 100%;
+    height: 138px;
+    flex-shrink: 0;
+}
+.character-library-name {
+    height: 30px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 10px;
+    color: rgb(238, 231, 209);
+}
+.character-library-card .catalog-meta {
+    white-space: normal;
+    margin-top: 6px;
+}
+.character-library-scroll .unity-scroll-view__content-viewport {
+    overflow: hidden;
+}
+.character-library-scroll .unity-scroll-view__content-container,
+.character-library-scroll .road-material-grid,
+.character-library-scroll .road-material-role {
+    flex-shrink: 0;
+}
+.character-library-card .character-library-select {
+    min-height: 184px;
+    flex-shrink: 0;
+}
+.road-material-card.character-library-card {
+    min-height: 238px;
+}
+.character-library-name {
+    flex-shrink: 0;
+}
+
+/* Prop portraits use the character picker structure with readable item names. */
+.document-modal-panel.character-library-panel.prop-library-panel {
+    width: 1200px;
+}
+.prop-library-card .character-library-name {
+    font-size: 16px;
+    height: 44px;
+}
+.prop-library-card .character-library-select {
+    height: 200px;
+    min-height: 200px;
+}
+.prop-library-card .character-library-image {
+    background-color: rgb(48, 61, 66);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.prop-library-card .catalog-meta {
+    font-size: 12px;
+    color: rgb(203, 209, 208);
+}
+.prop-library-card .character-library-select {
+    width: 100%;
+    min-width: 0;
+}
+.prop-library-panel > .document-modal-title,
+.prop-library-panel > .document-modal-copy,
+.prop-library-panel > .document-modal-actions {
+    flex-shrink: 0;
 }

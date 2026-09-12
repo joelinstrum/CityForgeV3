@@ -125,15 +125,19 @@ namespace CityForgeV3.World
         {
             var spec = For(preset);
             // Unity's directional-light forward vector is the direction the
-            // rays travel. Our azimuth contract describes where the sun is,
-            // so the ray direction is the opposite compass bearing. The Lot
-            // Editor's displayed compass is rotated 90 degrees counter-clockwise
-            // from Unity's raw X/Z heading. The visual lot is authoritative:
-            // morning and afternoon must land on its west and east axes.
+            // rays travel. CityForge's accepted east/west presentation is the
+            // fixed isometric camera's visible horizontal axis: morning rays
+            // travel left from the visible east, while afternoon rays travel
+            // right from the visible west. Keep those two authored views
+            // camera-readable; the remaining presets use compass conversion.
+            var presentationYaw = preset switch
+            {
+                TimeOfDayPreset.Morning => 315f,
+                TimeOfDayPreset.Afternoon => 135f,
+                _ => spec.SunAzimuth + 90f
+            };
             return Quaternion.Euler(
-                spec.SunElevation,
-                spec.SunAzimuth + 90f,
-                0f);
+                spec.SunElevation, presentationYaw, 0f);
         }
     }
 }

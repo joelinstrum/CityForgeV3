@@ -113,11 +113,17 @@ namespace CityForgeV3.World
         public float PositionX;
         public float PositionZ;
         public float SinkDepthMeters;
+        public int RotationEighthTurns;
     }
 
     [Serializable]
     public sealed class PlacedProp
     {
+        public bool CarriageFast; // Missing in older saves means Slow.
+        public bool HasCarriagePose;
+        public float HorseHeadingDegrees;
+        public float CarriageHeadingDegrees;
+        public float ForecarriageHeadingDegrees;
         public string InstanceId = "";
         public string PropId = "";
         public float PositionX;
@@ -214,17 +220,19 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class LotSaveData
     {
-        public string Schema = "cityforge-v3-lot-save-v7";
+        public string Schema = "cityforge-v3-lot-save-v9";
         public string LotId = "untitled-lot";
         public string Name = "Untitled Lot";
         public string CreatedUtc = "";
         public string ModifiedUtc = "";
         public List<string> RequiredPackageIds = new();
+        public int BasePlopCost;
         public int LotSizeMeters = 20;
         public int LotWidthCells = 2;
         public int LotDepthCells = 2;
         public LotType LotType = LotType.Residential;
         public string EraId = LotEraCatalog.DefaultId;
+        public List<string> AvailableEraIds = new();
         public TrafficLotType TrafficType = TrafficLotType.None;
         public List<OutsideRoadConnector> OutsideRoadConnectors = new();
         public bool HasBuilding;
@@ -250,6 +258,9 @@ namespace CityForgeV3.World
         public List<PlacedStreetcarStop> StreetcarStops = new();
         public int StreetcarRiderDemand;
         public List<PlacedBuilding3D> Buildings3D = new();
+        public int TerrainGridWidth;
+        public int TerrainGridDepth;
+        public List<float> TerrainHeights = new();
 
         public LotSaveData Copy() =>
             new()
@@ -263,8 +274,10 @@ namespace CityForgeV3.World
                 CreatedUtc = CreatedUtc,
                 ModifiedUtc = ModifiedUtc,
                 RequiredPackageIds = RequiredPackageIds,
+                BasePlopCost = BasePlopCost,
                 LotType = LotType,
                 EraId = EraId,
+                AvailableEraIds = AvailableEraIds,
                 TrafficType = TrafficType,
                 OutsideRoadConnectors = OutsideRoadConnectors,
                 HasBuilding = HasBuilding,
@@ -289,7 +302,10 @@ namespace CityForgeV3.World
                 StreetcarTracks = StreetcarTracks,
                 StreetcarStops = StreetcarStops,
                 StreetcarRiderDemand = StreetcarRiderDemand,
-                Buildings3D = Buildings3D
+                Buildings3D = Buildings3D,
+                TerrainGridWidth = TerrainGridWidth,
+                TerrainGridDepth = TerrainGridDepth,
+                TerrainHeights = TerrainHeights
             };
     }
 
@@ -553,6 +569,7 @@ namespace CityForgeV3.World
             Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
             Data.WaterAreas ??= new List<PlacedWaterArea>();
             Data.Decals ??= new List<PlacedDecal>();
+            Data.TerrainHeights ??= new List<float>();
             foreach (var decal in Data.Decals)
             {
                 if (decal == null) continue;
@@ -568,7 +585,7 @@ namespace CityForgeV3.World
                 water.Boundary ??= new List<WaterBoundaryPoint>();
             }
             SetEra(Data.EraId);
-            Data.Schema = "cityforge-v3-lot-save-v7";
+            Data.Schema = "cityforge-v3-lot-save-v9";
             if (string.IsNullOrWhiteSpace(Data.Name)) Data.Name = "Untitled Lot";
             if (string.IsNullOrWhiteSpace(Data.LotId)) Data.LotId = LotSaveStore.Slug(Data.Name);
             Data.PedestrianNetwork.Mode = CirculationMode.Pedestrian;
@@ -614,14 +631,24 @@ namespace CityForgeV3.World
         public string ModifiedUtc;
         public string Path;
         public string BuildingId;
+        public int PlopCost;
         public List<string> RequiredPackageIds = new();
     }
 
     public static class LotSaveStore
     {
         public const string FolderName = "CityForge/Lots";
+        private const string SchemaPrefix = "cityforge-v3-lot-save-v";
+        private const int MinimumSupportedSchemaVersion = 2;
+        private const int CurrentSchemaVersion = 9;
 
         public static string DefaultRoot => Path.Combine(Application.persistentDataPath, FolderName);
+
+        public static string PreviewPath(string lotId, string root = null)
+        {
+            root ??= DefaultRoot;
+            return Path.Combine(root, $"{Slug(lotId)}.preview.png");
+        }
 
         public static string Slug(string value)
         {
@@ -644,6 +671,7 @@ namespace CityForgeV3.World
             var path = Path.Combine(root, $"{Slug(session.Data.LotId)}.json");
             File.WriteAllText(path, session.Serialize());
             session.MarkClean();
+            LotContentCatalog.InvalidateCache();
             return path;
         }
 
@@ -661,7 +689,23 @@ namespace CityForgeV3.World
             root ??= DefaultRoot;
             var path = Path.Combine(root, $"{Slug(lotId)}.json");
             if (!File.Exists(path)) return null;
-            return JsonUtility.FromJson<LotSaveData>(File.ReadAllText(path));
+            var data = JsonUtility.FromJson<LotSaveData>(File.ReadAllText(path));
+            ApplyKnownLotMetadata(data);
+            return data;
+        }
+
+        private static void ApplyKnownLotMetadata(LotSaveData data)
+        {
+            if (data == null) return;
+            data.AvailableEraIds ??= new List<string>();
+            if (!string.Equals(data.LotId, "1785-farm",
+                    StringComparison.OrdinalIgnoreCase)) return;
+
+            data.LotType = LotType.Agricultural;
+            data.EraId = "founders";
+            data.AvailableEraIds.Clear();
+            data.AvailableEraIds.Add("founders");
+            data.AvailableEraIds.Add("industrial");
         }
 
         public static string UniqueId(string name, string root = null)
@@ -681,6 +725,7 @@ namespace CityForgeV3.World
             var path = Path.Combine(root, $"{Slug(lotId)}.json");
             if (!File.Exists(path)) return false;
             File.Delete(path);
+            LotContentCatalog.InvalidateCache();
             return true;
         }
 
@@ -719,12 +764,8 @@ namespace CityForgeV3.World
             foreach (var path in Directory.GetFiles(root, "*.json"))
             {
                 var data = JsonUtility.FromJson<LotSaveData>(File.ReadAllText(path));
-                if (data == null || (data.Schema != "cityforge-v3-lot-save-v2" &&
-                    data.Schema != "cityforge-v3-lot-save-v3" &&
-                    data.Schema != "cityforge-v3-lot-save-v4" &&
-                    data.Schema != "cityforge-v3-lot-save-v5" &&
-                    data.Schema != "cityforge-v3-lot-save-v6" &&
-                    data.Schema != "cityforge-v3-lot-save-v7")) continue;
+                if (data == null || !IsSupportedSchema(data.Schema)) continue;
+                ApplyKnownLotMetadata(data);
                 summaries.Add(new LotSaveSummary
                 {
                     LotId = data.LotId,
@@ -741,11 +782,20 @@ namespace CityForgeV3.World
                     Path = path,
                     BuildingId = data.Buildings != null && data.Buildings.Count > 0
                         ? data.Buildings[0].BuildingId : data.BuildingId,
+                    PlopCost = LotEconomy.CalculatePlopCost(data),
                     RequiredPackageIds = data.RequiredPackageIds ?? new List<string>()
                 });
             }
             summaries.Sort((left, right) => string.CompareOrdinal(right.ModifiedUtc, left.ModifiedUtc));
             return summaries;
+        }
+
+        private static bool IsSupportedSchema(string schema)
+        {
+            if (string.IsNullOrWhiteSpace(schema) ||
+                !schema.StartsWith(SchemaPrefix, StringComparison.Ordinal)) return false;
+            return int.TryParse(schema.Substring(SchemaPrefix.Length), out var version) &&
+                version >= MinimumSupportedSchemaVersion && version <= CurrentSchemaVersion;
         }
     }
 }

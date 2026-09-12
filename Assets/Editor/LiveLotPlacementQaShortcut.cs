@@ -8,6 +8,202 @@ using UnityEngine.UIElements;
 
 public static class LiveLotPlacementQaShortcut
 {
+    [MenuItem("City Forge/QA/Open 1785 Farm")]
+    private static void Open1785Farm()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenSavedLotSelectionQa("1785-farm"))
+            Debug.Log("CF_QA_1785_FARM_OPENED");
+        else
+            Debug.LogError("Enter Play Mode before opening 1785 Farm QA.");
+    }
+
+    [MenuItem("City Forge/QA/Place Founders Cabins")]
+    private static void PlaceFoundersCabins()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (!EditorApplication.isPlaying || world == null)
+        {
+            Debug.LogError("Open a live lot before placing the founders cabins.");
+            return;
+        }
+        var large = world.AddExperimentalBuilding3D(
+            LotWorldController.FoundersCabinLargeEvaluationId, -7f, 2f, 0);
+        var small = world.AddExperimentalBuilding3D(
+            LotWorldController.FoundersCabinSmallEvaluationId, 7f, 2f, 0);
+        Debug.Log(large && small
+            ? "CF_QA_FOUNDERS_CABINS_PLACED"
+            : "CF_QA_FOUNDERS_CABINS_INCOMPLETE");
+    }
+
+    [MenuItem("City Forge/QA/Place Fortress Asset Set")]
+    private static void PlaceFortressAssetSet()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (!EditorApplication.isPlaying || world == null)
+        {
+            Debug.LogError("Open a live lot before placing the fortress asset set.");
+            return;
+        }
+        var tower = world.AddExperimentalBuilding3D(
+            LotWorldController.FortWatchtowerEvaluationId, -5f, 5f, 0);
+        var wall = world.PlacePropForQa(
+            LotWorldController.WoodenPalisadePropId, 4f, 5f);
+        var well = world.PlacePropForQa(
+            LotWorldController.MedievalWellPropId, 0f, -3f);
+        var gate = world.PlacePropForQa(
+            LotWorldController.WoodenPalisadeGatePropId, 8f, 5f);
+        var torch = world.PlacePropForQa(
+            LotWorldController.MedievalTorchPropId, 3f, -3f);
+        foreach (var candidate in Object.FindObjectsByType<Transform>(
+                     FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            var objectName = candidate.name;
+            if (!objectName.Contains("Fort", System.StringComparison.OrdinalIgnoreCase) &&
+                !objectName.Contains("Palisade", System.StringComparison.OrdinalIgnoreCase) &&
+                !objectName.Contains("Well", System.StringComparison.OrdinalIgnoreCase) &&
+                !objectName.Contains("Torch", System.StringComparison.OrdinalIgnoreCase))
+                continue;
+            var renderers = candidate.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) continue;
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++)
+                bounds.Encapsulate(renderers[index].bounds);
+            Debug.Log($"CF_QA_FORTRESS_BOUNDS {objectName} " +
+                $"center={bounds.center} size={bounds.size}");
+        }
+        Debug.Log(tower && wall && well && gate && torch
+            ? "CF_QA_FORTRESS_ASSET_SET_PLACED"
+            : "CF_QA_FORTRESS_ASSET_SET_INCOMPLETE");
+    }
+
+    [MenuItem("City Forge/QA/Open Terraform District Scale QA _F12")]
+    private static void OpenTerraformDistrictScaleQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenTerraformScaleQa())
+            Debug.Log("CF_QA_TERRAFORM_DISTRICT_SCALE_OPENED");
+        else
+            Debug.LogError("Enter Play Mode before opening Terraform district scale QA.");
+    }
+
+    [MenuItem("City Forge/QA/Open Builder District Scale QA")]
+    private static void OpenBuilderDistrictScaleQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenBuilderScaleQa())
+            Debug.Log("CF_QA_BUILDER_DISTRICT_SCALE_OPENED");
+        else
+            Debug.LogError("Enter Play Mode before opening Builder district scale QA.");
+    }
+
+    [MenuItem("City Forge/QA/Open Generated River MVP")]
+    private static void OpenGeneratedRiverMvp()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenGeneratedRiverQa())
+            Debug.Log("CF_QA_GENERATED_RIVER_MVP_OPENED");
+        else
+            Debug.LogError("Enter Play Mode before opening generated river QA.");
+    }
+
+    [MenuItem("City Forge/QA/Open Fortress District Preview QA")]
+    private static void OpenFortressDistrictPreviewQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenFortressDistrictPreviewQa())
+            Debug.Log("CF_QA_FORTRESS_DISTRICT_PREVIEW_OPENED");
+        else
+            Debug.LogError("Enter Play Mode and save Fortress Lot before opening its district preview QA.");
+    }
+
+    [MenuItem("City Forge/QA/Place Pedestrian Shadow QA")]
+    private static void PlacePedestrianShadowQa()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world != null && world.PlacePropForQa(
+                LotWorldController.VictorianGentlemanCharacterId, 8f, -7f))
+            Debug.Log("CF_QA_PEDESTRIAN_SHADOW_PLACED");
+        else
+            Debug.LogError("Open a live lot before placing pedestrian shadow QA.");
+    }
+
+    [MenuItem("City Forge/QA/Place Animated Bear QA")]
+    private static void PlaceAnimatedBearQa()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world != null && world.PlacePropForQa(
+                LotWorldController.BearAnimalId, 0f, -7f))
+            Debug.Log("CF_QA_ANIMATED_BEAR_PLACED");
+        else
+            Debug.LogError("Open a live lot before placing animated bear QA.");
+    }
+
+    [MenuItem("City Forge/QA/Open Animated Bear QA")]
+    private static void OpenAnimatedBearQa()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (EditorApplication.isPlaying && app != null &&
+            app.OpenAnimatedBearQa())
+            Debug.Log("CF_QA_ANIMATED_BEAR_OPENED");
+        else
+            Debug.LogError("Enter Play Mode before opening animated bear QA.");
+    }
+
+    [MenuItem("City Forge/QA/Place Moving Cloud")]
+    private static void PlaceMovingCloud()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world != null && world.PlaceCloudForQa())
+            Debug.Log("CF_QA_CLOUD_PLACED");
+        else
+            Debug.LogError("Open a live lot before placing Cloud QA.");
+    }
+
+    [MenuItem("City Forge/QA/Set Neighborhood Zoom")]
+    private static void SetNeighborhoodZoom()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Open a live lot before setting Neighborhood zoom.");
+            return;
+        }
+        world.SetZoomLevel(LotZoomLevel.Neighborhood);
+        Debug.Log("CF_QA_NEIGHBORHOOD_ZOOM");
+    }
+
+    [MenuItem("City Forge/QA/Arm Terrain Raise Brush")]
+    private static void ArmTerrainRaiseBrush()
+    {
+        var app = Object.FindFirstObjectByType<CityForgeApp>();
+        if (app != null && app.ArmTerrainRaiseForLiveQa())
+            Debug.Log("CF_QA_TERRAIN_RAISE_ARMED");
+        else
+            Debug.LogError("Open a live lot before arming Terrain Raise QA.");
+    }
+
+    [MenuItem("City Forge/QA/Sculpt Terrain Center Hill")]
+    private static void SculptTerrainCenterHill()
+    {
+        var world = Object.FindFirstObjectByType<LotWorldController>();
+        if (world == null)
+        {
+            Debug.LogError("Open a live lot before sculpting Terrain QA.");
+            return;
+        }
+        for (var pass = 0; pass < 20; pass++)
+            world.SculptTerrainAt(Vector2.zero,
+                CityForgeApp.DefaultTerrainBrushRadiusMeters,
+                CityForgeApp.DefaultTerrainBrushStrengthMeters, true);
+        Debug.Log($"CF_QA_TERRAIN_CENTER_HEIGHT {world.SampleTerrainHeight(0f, 0f):0.00}");
+    }
+
     [MenuItem("City Forge/QA/Arm Tea Storefront for Live Placement")]
     private static void ArmTeaStorefrontForLivePlacement()
     {
@@ -720,10 +916,25 @@ public static class LiveLotPlacementQaShortcut
 
     private static void SetLiveQaTime(TimeOfDayPreset preset)
     {
+        var applied = false;
+        foreach (var district in Object.FindObjectsByType<DistrictWorldController>(
+                     FindObjectsSortMode.None))
+        {
+            district.SetTimeOfDay(preset);
+            applied = true;
+        }
         foreach (var world in Object.FindObjectsByType<LotWorldController>(
                      FindObjectsSortMode.None))
+        {
             if (world.name == "Building Live Placement QA")
+            {
                 world.SetTimeOfDay(preset);
+                applied = true;
+            }
+        }
+        Debug.Log(applied
+            ? $"CF_QA_TIME_SET {preset}"
+            : $"CF_QA_TIME_NOT_APPLIED {preset}");
         EditorApplication.delayCall += DumpLivePlacement;
     }
 

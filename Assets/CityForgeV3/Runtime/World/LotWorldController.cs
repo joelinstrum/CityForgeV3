@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using CityForgeV3.Buildings3D;
 using UnityEngine;
 
@@ -49,6 +50,8 @@ namespace CityForgeV3.World
         private Transform _majorGrid;
         private Transform _majorStripDeletionPreview;
         private bool _gridVisible = true;
+        private bool _districtHosted;
+        private Func<Vector3, RiverSurfaceSample?> _districtRiverSurfaceSampler;
         private bool _gridEditorActive = true;
         private Transform _neighborhoodRoad;
         private Transform _roadArtworkRoot;
@@ -62,6 +65,8 @@ namespace CityForgeV3.World
         private readonly List<SpriteRenderer> _floraPresentations = new();
         private readonly List<SpriteRenderer> _floraCastShadows = new();
         private static readonly Dictionary<int, float> FloraRootPixelXCache = new();
+        private readonly Dictionary<string, Sprite> _floraSpriteCache = new();
+        private readonly Dictionary<string, Sprite> _cornCanopySpriteCache = new();
         private Material _floraLitShadowReceiverMaterial;
         private Material _floraProjectedShadowMaterial;
         private readonly Dictionary<int, Material>
@@ -93,7 +98,6 @@ namespace CityForgeV3.World
         private Transform _circulationCursor;
         private LineRenderer _circulationPathGuide;
         private Transform _pedestrianStairPathRoot;
-        private Transform _pedestrianTraveler;
         private Transform _vehicleTraveler;
         private VehicleRuntimePresentation _vehiclePresentation;
         private readonly List<VehicleRuntimePresentation> _vehiclePresentations = new();
@@ -120,9 +124,12 @@ namespace CityForgeV3.World
         private Light _sun;
         private Transform _ground;
         private Renderer _groundRenderer;
+        private MeshFilter _terrainShadowCasterMeshFilter;
+        private Renderer _terrainShadowCasterRenderer;
+        private MeshFilter _groundMeshFilter;
+        private MeshCollider _groundMeshCollider;
         private int _facing;
         private int _cameraOrbitOctant;
-        private bool _building3DCameraPreviewActive;
         private string _placementBuildingId =
             BuildingCatalog.ColonialGovernmentHouseId;
         private readonly LotEditorSession _session = new();
@@ -141,7 +148,6 @@ namespace CityForgeV3.World
         private float _buildingContextOpacity = 1f;
         private Vector2 _buildingDragOffset;
         private float _trafficProgress;
-        private float _pedestrianProgress;
         private RoadTrafficGraph _trafficGraph;
         private VehicleTypePackage _vehicleType;
         private readonly List<LaneVehicleState> _laneVehicleStates = new();
@@ -179,7 +185,8 @@ namespace CityForgeV3.World
         public RoadMaterialDefinition SelectedSidewalkMaterial =>
             RoadMaterialCatalog.Resolve(_selectedSidewalkMaterialId, true);
         public bool SelectedRoadSupportsMaterials => _roadPackage != null &&
-            _roadPackage.Id != RoadPiecePackage.LegacyPackageId;
+            _roadPackage.Id != RoadPiecePackage.LegacyPackageId &&
+            _roadPackage.Id != RoadPiecePackageCatalog.DirtRoadId;
         public RoadPieceTopology SelectedRoadTopology { get; private set; } = RoadPieceTopology.Straight;
         public Vector2Int RoadCursorCell { get; private set; } = new(-1, -1);
         public int RoadRotationQuarterTurns { get; private set; }
@@ -240,6 +247,11 @@ namespace CityForgeV3.World
         public int TestVehicleCount => _testVehicles.Count;
         public int FloraCount => _session.Data.Flora?.Count ?? 0;
         public int SelectedFloraIndex { get; private set; } = -1;
+        public string SelectedFloraId =>
+            SelectedFloraIndex >= 0 &&
+            SelectedFloraIndex < (_session.Data.Flora?.Count ?? 0)
+                ? _session.Data.Flora[SelectedFloraIndex].FloraId
+                : "";
 
 #if UNITY_EDITOR
         public bool PlaceFloraForQa(string floraId, float positionX,
@@ -433,6 +445,86 @@ namespace CityForgeV3.World
             ApplySessionState();
         }
 
+        public void BuildAsDistrictHosted(Camera sharedCamera, Light sharedSun)
+        {
+            _districtHosted = true;
+            _camera = sharedCamera;
+            _sun = sharedSun;
+            _buildingPackage = HybridBuildingPackageRegistry.GovernmentHouse;
+            BuildGround();
+            BuildLotTextureRoot();
+            BuildGrid();
+            BuildNeighborhoodRoadSlice();
+            BuildRoadArtworkSlice();
+            BuildWaterRoot();
+            BuildDecalRoot();
+            BuildFloraRoot();
+            BuildPropRoot();
+            BuildBuildingPropRoot();
+            BuildCirculationEditor();
+            BuildProxyBuilding();
+            BuildProjectedShadow();
+            BuildHybridPresentation();
+            BuildSelectionFootprint();
+            BuildObjectHoverHighlight();
+            BuildRegistrationDiagnostics();
+            ApplySessionState();
+        }
+
+        public void ConfigureDistrictRiverSurfaceSampler(
+            Func<Vector3, RiverSurfaceSample?> sampler)
+        {
+            _districtRiverSurfaceSampler = sampler;
+        }
+
+        /// <summary>
+        /// Loads an in-memory lot document without going through the editor's
+        /// save browser. Districts use this to compose genuine saved lots into
+        /// a larger world while leaving the canonical lot save untouched.
+        /// </summary>
+        public void LoadRuntimeLot(LotSaveData data)
+        {
+            if (data == null) return;
+            _session.Restore(JsonUtility.ToJson(data));
+            ResizeGround();
+            BuildGrid();
+            RebuildRoadArtwork();
+            RebuildRoadVehicleNetwork();
+            ApplySessionState();
+        }
+
+        public void ConfigureAsDistrictHosted(Camera sharedCamera,
+            Light sharedSun, LotZoomLevel presentationLevel)
+        {
+            _districtHosted = true;
+            if (_camera != null && _camera != sharedCamera)
+                Destroy(_camera.gameObject);
+            _camera = sharedCamera;
+            if (_sun != null && _sun != sharedSun)
+                Destroy(_sun.gameObject);
+            _sun = sharedSun;
+            ZoomLevel = presentationLevel;
+            _gridVisible = false;
+            ApplyGridVisibility();
+            ApplyCharacterZoomVisibility();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+            // Loading a hosted lot rebuilds its building shadows before the
+            // district finishes restoring the shared sun. Refresh once more
+            // here, after the authoritative district camera and sun are set.
+            ApplyTimeOfDay();
+            UpdateExperimentalBuilding3DProjectedGroundShadows();
+        }
+
+        public void SetDistrictPresentationLevel(LotZoomLevel level)
+        {
+            if (!_districtHosted) return;
+            ZoomLevel = level;
+            ApplyCharacterZoomVisibility();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+        }
+
         private void BuildFloraRoot()
         {
             _floraRoot = new GameObject("Placed Flora").transform;
@@ -490,6 +582,7 @@ namespace CityForgeV3.World
             _floraPreviewHasPoint = false;
             if (_floraPreview == null) return;
             _floraPreview.sprite = LoadFloraSprite(_floraPreviewId);
+            ConfigurePlaneTree(_floraPreview, _floraPreviewId);
             _floraPreview.color = FloraColorForTime(1f);
             _floraPreview.gameObject.SetActive(false);
         }
@@ -506,7 +599,10 @@ namespace CityForgeV3.World
                 Mathf.Clamp(point.z, -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f));
             _floraPreview.transform.localPosition =
                 new Vector3(position.x, 0.025f, position.y);
-            _floraPreview.transform.rotation = _camera.transform.rotation;
+            _floraPreview.transform.rotation = IsAgricultureFlora(_floraPreviewId)
+                ? Quaternion.Euler(90f, 0f, 0f)
+                : _camera.transform.rotation;
+            ConfigurePlaneTree(_floraPreview, _floraPreviewId);
             _floraPreview.color = CanPlaceFloraAt(position)
                 ? FloraColorForTime(1f)
                 : InvalidFloraPreviewColorForTime();
@@ -666,7 +762,8 @@ namespace CityForgeV3.World
                 InstanceId = Guid.NewGuid().ToString("N"),
                 FloraId = floraId,
                 PositionX = position.x,
-                PositionZ = position.y
+                PositionZ = position.y,
+                RotationEighthTurns = UnityEngine.Random.Range(0, 8)
             });
             return true;
         }
@@ -814,7 +911,8 @@ namespace CityForgeV3.World
                             InstanceId = Guid.NewGuid().ToString("N"),
                             FloraId = _floraLinePlacementId,
                             PositionX = position.x,
-                            PositionZ = position.y
+                            PositionZ = position.y,
+                            RotationEighthTurns = UnityEngine.Random.Range(0, 8)
                         });
                     }
                     LastFloraLinePlacementCount = intervalCount + 1;
@@ -830,6 +928,8 @@ namespace CityForgeV3.World
 
         public static float FloraLineSpacingMeters(string floraId) => floraId switch
         {
+            "plane-uk-3d-a" or "plane-uk-3d-b" => 8f,
+            "corn-field" => 12f,
             "small-hedge" => 1.25f,
             "medium-hedge" => 2.25f,
             "long-hedge" => 4.35f,
@@ -863,12 +963,23 @@ namespace CityForgeV3.World
             {
                 var renderer = _floraPresentations[index];
                 if (renderer == null || !renderer.enabled) continue;
-                if (!SpriteRendererContainsCameraPixel(
-                        renderer, _camera, pixel)) continue;
-                var textureName = renderer.sprite.texture.name;
+                var canopy = renderer.transform.Find("Corn Canopy");
+                var canopyRenderer = canopy != null
+                    ? canopy.GetComponent<SpriteRenderer>()
+                    : null;
+                var pickedRenderer = canopyRenderer != null &&
+                    SpriteRendererContainsCameraPixel(
+                        canopyRenderer, _camera, pixel)
+                    ? canopyRenderer
+                    : SpriteRendererContainsCameraPixel(
+                        renderer, _camera, pixel)
+                        ? renderer
+                        : null;
+                if (pickedRenderer == null) continue;
+                var textureName = pickedRenderer.sprite.texture.name;
                 var pickAnchor = UsesFoliageShapePicking(textureName)
-                    ? renderer.bounds.center
-                    : renderer.transform.position;
+                    ? pickedRenderer.bounds.center
+                    : pickedRenderer.transform.position;
                 var projectedAnchor = _camera.WorldToScreenPoint(pickAnchor);
                 var screenDistance = Vector2.SqrMagnitude(
                     pixel - new Vector2(projectedAnchor.x, projectedAnchor.y));
@@ -877,12 +988,12 @@ namespace CityForgeV3.World
                 // billboards cover one pixel, Unity's higher sorting order is
                 // the visible sprite at that pixel. Screen proximity and
                 // camera depth only break genuine render-order ties.
-                if (renderer.sortingOrder < bestSortingOrder ||
-                    (renderer.sortingOrder == bestSortingOrder &&
+                if (pickedRenderer.sortingOrder < bestSortingOrder ||
+                    (pickedRenderer.sortingOrder == bestSortingOrder &&
                      (screenDistance > bestScreenDistance + 0.01f ||
                       (Mathf.Abs(screenDistance - bestScreenDistance) <= 0.01f &&
                        depth >= bestDepth)))) continue;
-                bestSortingOrder = renderer.sortingOrder;
+                bestSortingOrder = pickedRenderer.sortingOrder;
                 bestScreenDistance = screenDistance;
                 bestDepth = depth;
                 best = index;
@@ -896,6 +1007,8 @@ namespace CityForgeV3.World
         {
             if (renderer == null || renderer.sprite == null || camera == null)
                 return false;
+            var meshTree = renderer.GetComponent<PlaneUkFloraPresentation>();
+            if (meshTree != null && meshTree.IsMeshVisible) return meshTree.ContainsPixel(camera, pixel);
             var ray = camera.ScreenPointToRay(pixel);
             var plane = new Plane(renderer.transform.forward,
                 renderer.transform.position);
@@ -950,7 +1063,9 @@ namespace CityForgeV3.World
         public static bool UsesFoliageShapePicking(string textureName) =>
             !string.IsNullOrWhiteSpace(textureName) &&
             (textureName.Contains("-hedge-") ||
-             textureName.Contains("fern"));
+             textureName.Contains("fern") ||
+             textureName.Contains("corn-field") ||
+             textureName.Contains("corn-canopy"));
 
         public static bool TreeRootHitZoneContainsLocalPoint(
             Bounds spriteBounds, Vector3 localPoint, float rootCenterX = 0f)
@@ -983,8 +1098,20 @@ namespace CityForgeV3.World
 
         private static float MeasuredFloraRootPixelX(Sprite sprite)
         {
+            // Dense low branches are not reliable trunk detectors. These two
+            // re-rendered firs have measured, authored planting pivots.
+            var identity = FloraTreeRepairs.Identity(sprite.texture.name);
+            if (identity == "cilician-fir" || identity == "fraser-fir-snowy")
+                return sprite.pivot.x;
+            if (StoneFloraCatalog.IsStone(sprite.texture.name)) return sprite.pivot.x;
             var texture = sprite.texture;
             if (texture == null || !texture.isReadable) return sprite.pivot.x;
+            // The Small Fraser Fir source is cropped through its lower
+            // foliage, so the generic lowest-alpha-band detector mistakes a
+            // left branch for the trunk. Its authored trunk axis is centered.
+            if (texture.name.StartsWith("fraser-fir-small-",
+                    StringComparison.OrdinalIgnoreCase))
+                return texture.width * 0.5f;
             var cacheKey = texture.GetInstanceID();
             if (FloraRootPixelXCache.TryGetValue(cacheKey, out var cached))
                 return cached;
@@ -1040,10 +1167,24 @@ namespace CityForgeV3.World
             _floraSelection.gameObject.SetActive(visible);
             if (!visible) return;
             var placed = _session.Data.Flora[SelectedFloraIndex];
+            var agricultureSelection = IsAgricultureFlora(placed.FloraId);
+            _floraSelection.localScale = agricultureSelection
+                ? new Vector3(7.35f, 1f, 7.35f)
+                : Vector3.one;
+            foreach (Transform edge in _floraSelection)
+            {
+                var edgeScale = edge.localScale;
+                if (edgeScale.x > edgeScale.z)
+                    edgeScale.z = agricultureSelection ? 0.04f : 0.08f;
+                else
+                    edgeScale.x = agricultureSelection ? 0.04f : 0.08f;
+                edge.localScale = edgeScale;
+            }
             var renderer = SelectedFloraIndex < _floraPresentations.Count
                 ? _floraPresentations[SelectedFloraIndex]
                 : null;
-            if (renderer != null && renderer.sprite != null)
+            if (!IsAgricultureFlora(placed.FloraId) &&
+                renderer != null && renderer.sprite != null)
             {
                 var rootWorld = renderer.transform.TransformPoint(new Vector3(
                     FloraRootLocalX(renderer.sprite, renderer.flipX), 0f, 0f));
@@ -1061,6 +1202,11 @@ namespace CityForgeV3.World
             for (var index = _floraRoot.childCount - 1; index >= 0; index--)
             {
                 var child = _floraRoot.GetChild(index).gameObject;
+                // Destroy is deferred in play mode. Detach the stale object
+                // immediately so camera-alignment code cannot mistake it for
+                // a newly rebuilt flora presentation later in this frame.
+                child.SetActive(false);
+                child.transform.SetParent(null, false);
                 if (Application.isPlaying) Destroy(child); else DestroyImmediate(child);
             }
             _floraPresentations.Clear();
@@ -1079,7 +1225,12 @@ namespace CityForgeV3.World
                 root.transform.localPosition = FloraPresentationPosition(placed);
                 var scale = FloraVariationScale(placed.FloraId, variation);
                 root.transform.localScale = new Vector3(scale, scale, scale);
-                if (_camera != null) root.transform.rotation = _camera.transform.rotation;
+                if (_camera != null)
+                    root.transform.rotation = IsAgricultureFlora(placed.FloraId)
+                        ? Quaternion.Euler(90f, 0f, 0f)
+                        : _camera.transform.rotation * Quaternion.Euler(
+                            0f, 0f, StoneFloraCatalog.IsStone(placed.FloraId)
+                                ? placed.RotationEighthTurns * 45f : 0f);
                 var renderer = root.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
                 renderer.flipX = IsMirroredFloraVariation(
@@ -1091,11 +1242,153 @@ namespace CityForgeV3.World
                 renderer.shadowCastingMode =
                     UnityEngine.Rendering.ShadowCastingMode.Off;
                 _floraPresentations.Add(renderer);
-                BuildFloraShadows(root.transform, sprite, renderer.flipX);
+                if (IsAgricultureFlora(placed.FloraId) &&
+                    Season != SeasonPreset.Winter)
+                    BuildCornCanopy(root.transform, placed);
+                if (!IsAgricultureFlora(placed.FloraId) && !StoneFloraCatalog.IsStone(placed.FloraId))
+                    BuildFloraShadows(root.transform, sprite, renderer.flipX);
+                ConfigurePlaneTree(renderer, placed.FloraId);
             }
             UpdateFloraShadows();
             ApplyFloraSelection();
             UpdatePresentationDepthOrdering();
+        }
+
+        private void RefreshFloraSeasonalPresentations()
+        {
+            var placedFlora = _session.Data.Flora ?? new List<PlacedFlora>();
+            if (_floraPresentations.Count != placedFlora.Count)
+            {
+                RebuildFloraPresentations();
+                return;
+            }
+            for (var index = 0; index < placedFlora.Count; index++)
+            {
+                var placed = placedFlora[index];
+                var renderer = _floraPresentations[index];
+                if (renderer == null)
+                {
+                    RebuildFloraPresentations();
+                    return;
+                }
+                var variation = FloraVariationProfile(placed);
+                var presentationId = ResolveFloraPresentationId(
+                    placed.FloraId, variation, Season);
+                var sprite = LoadFloraSprite(presentationId);
+                if (sprite == null) continue;
+                renderer.sprite = sprite;
+                ConfigurePlaneTree(renderer, placed.FloraId);
+                renderer.flipX = IsMirroredFloraVariation(
+                    placed.FloraId, variation);
+                ApplyFloraGroundFade(renderer, placed.SinkDepthMeters);
+                var shadow = renderer.transform.Find("Flora Shadow — Canopy");
+                if (shadow != null &&
+                    shadow.TryGetComponent<SpriteRenderer>(out var shadowRenderer))
+                {
+                    shadowRenderer.sprite = sprite;
+                    shadowRenderer.flipX = renderer.flipX;
+                }
+                if (IsAgricultureFlora(placed.FloraId))
+                    RefreshCornCanopy(renderer.transform, placed);
+            }
+            AlignFloraToCamera();
+            UpdateFloraShadows();
+            ApplyFloraSelection();
+            UpdatePresentationDepthOrdering();
+        }
+
+        private void BuildCornCanopy(Transform fieldRoot, PlacedFlora placed)
+        {
+            var canopySprite = LoadCornCanopySprite();
+            if (canopySprite == null || _camera == null) return;
+            var canopy = new GameObject("Corn Canopy");
+            canopy.layer = FloraShadowReceiverLayer;
+            canopy.transform.SetParent(fieldRoot, true);
+            PositionCornCanopy(canopy.transform, placed);
+            var canopyRenderer = canopy.AddComponent<SpriteRenderer>();
+            canopyRenderer.sprite = canopySprite;
+            canopyRenderer.color = FloraColorForTime(1f);
+            canopyRenderer.sharedMaterial = FloraLitShadowReceiverMaterial();
+            canopyRenderer.receiveShadows = true;
+            canopyRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            canopyRenderer.sortingOrder = DepthSortingOrder(
+                canopy.transform.position) + 1;
+            canopy.SetActive(ShouldShowAgricultureCanopy(ZoomLevel, Season));
+        }
+
+        public static bool ShouldShowAgricultureCanopy(
+            LotZoomLevel zoomLevel, SeasonPreset season) => false;
+
+        private Sprite LoadCornCanopySprite()
+        {
+            if (Season == SeasonPreset.Winter) return null;
+            var resourcePath = "CityForgeV3/Flora/AgricultureV01/corn-canopy-" +
+                               Season.ToString().ToLowerInvariant();
+            if (_cornCanopySpriteCache.TryGetValue(resourcePath, out var cached))
+                return cached;
+            var texture = Resources.Load<Texture2D>(resourcePath);
+            if (texture == null) return null;
+            var sprite = Sprite.Create(texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.617f, 0f), texture.width / 12.96f);
+            _cornCanopySpriteCache[resourcePath] = sprite;
+            return sprite;
+        }
+
+        private void RefreshCornCanopy(Transform fieldRoot, PlacedFlora placed)
+        {
+            var canopy = fieldRoot.Find("Corn Canopy");
+            if (Season == SeasonPreset.Winter)
+            {
+                if (canopy != null) canopy.gameObject.SetActive(false);
+                return;
+            }
+            if (canopy == null)
+            {
+                BuildCornCanopy(fieldRoot, placed);
+                return;
+            }
+            var sprite = LoadCornCanopySprite();
+            if (sprite == null)
+            {
+                canopy.gameObject.SetActive(false);
+                return;
+            }
+            canopy.gameObject.SetActive(
+                ShouldShowAgricultureCanopy(ZoomLevel, Season));
+            canopy.GetComponent<SpriteRenderer>().sprite = sprite;
+            PositionCornCanopy(canopy, placed);
+        }
+
+        private void PositionCornCanopy(Transform canopy, PlacedFlora placed)
+        {
+            if (canopy == null || placed == null || _camera == null) return;
+            const float halfField = 6f;
+            var frontCorner = Vector3.zero;
+            var lowestScreenY = float.PositiveInfinity;
+            for (var xSign = -1; xSign <= 1; xSign += 2)
+            for (var zSign = -1; zSign <= 1; zSign += 2)
+            {
+                var corner = _floraRoot.TransformPoint(new Vector3(
+                    placed.PositionX + xSign * halfField, 0.04f,
+                    placed.PositionZ + zSign * halfField));
+                var screen = _camera.WorldToScreenPoint(corner);
+                if (screen.y >= lowestScreenY) continue;
+                lowestScreenY = screen.y;
+                frontCorner = corner;
+            }
+            var worldUnitsPerPixel = _camera.orthographic
+                ? 2f * _camera.orthographicSize /
+                  Mathf.Max(1, _camera.pixelHeight)
+                : 0f;
+            canopy.position = frontCorner - _camera.transform.right * 0.5f +
+                              _camera.transform.up * 0.5f +
+                              _camera.transform.right *
+                              (10f * worldUnitsPerPixel) +
+                              _camera.transform.up *
+                              (10f * worldUnitsPerPixel);
+            canopy.rotation = _camera.transform.rotation;
         }
 
         private void BuildFloraShadows(Transform root, Sprite treeSprite,
@@ -1292,9 +1585,9 @@ namespace CityForgeV3.World
             TimeOfDayPreset.Morning => new(new(-0.06f, -0.12f), new(1.15f, 0.36f),
                 0.056f, new(-1.45f, -0.34f), new(5.375f, 1.675f), 22f, 0.14f),
             TimeOfDayPreset.Noon => new(new(0f, -0.10f), new(1f, 0.30f),
-                0.07f, new(0.08f, -0.22f), new(2f, 0.82f), 0f, 0.252f),
+                0.09f, new(0.08f, -0.22f), new(2f, 0.82f), 0f, 0.38f),
             TimeOfDayPreset.Afternoon => new(new(0f, -0.12f), new(1.55f, 0.46f),
-                0.077f, new(0.12f, -0.70f), new(8.1f, 2.43f), -26f, 0.315f),
+                0.077f, new(0.12f, -0.70f), new(10.5f, 2.95f), -26f, 0.36f),
             TimeOfDayPreset.Evening => new(new(0.04f, -0.16f), new(1.8f, 0.56f),
                 0.14f, new(0.82f, -0.92f), new(7.8f, 2.05f), -33f, 0.54f),
             _ => new(new(0f, -0.08f), new(0.8f, 0.22f),
@@ -1304,13 +1597,26 @@ namespace CityForgeV3.World
         public static string ResolveFloraResourcePath(string floraId,
             SeasonPreset season)
         {
+            if (floraId == "fraser-fir-snowy" && season != SeasonPreset.Winter)
+                floraId = "fraser-fir-small";
+            if (StoneFloraCatalog.IsStone(floraId)) return StoneFloraCatalog.ResourcePath(floraId);
+            var repairedPath=FloraTreeRepairs.BillboardPath(floraId, season);
+            if(repairedPath!=null)return repairedPath;
             if (string.IsNullOrWhiteSpace(floraId)) return null;
+            if (PlaneUkFloraPresentation.IsTree(floraId)) return PlaneUkFloraPresentation.BillboardPath(floraId, season);
+            if (IsAgricultureFlora(floraId))
+                return $"CityForgeV3/Flora/AgricultureV01/{floraId}-" +
+                       season.ToString().ToLowerInvariant();
             var root = $"CityForgeV3/Flora/LegacyTreesV01/{floraId}";
             var seasonalPath = $"{root}-{season.ToString().ToLowerInvariant()}";
             return Resources.Load<Texture2D>(seasonalPath) != null
                 ? seasonalPath
                 : $"{root}-summer";
         }
+
+        private static bool IsAgricultureFlora(string floraId) =>
+            string.Equals(floraId, "corn-field",
+                StringComparison.OrdinalIgnoreCase);
 
         public static int StableFloraVariationProfile(string seed)
         {
@@ -1331,6 +1637,8 @@ namespace CityForgeV3.World
         public static string ResolveFloraPresentationId(string floraId,
             int variation, SeasonPreset season = SeasonPreset.Summer)
         {
+            if (floraId == "fraser-fir-snowy" && season != SeasonPreset.Winter)
+                return "fraser-fir-small";
             if (string.Equals(floraId, "evergreen",
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -1386,34 +1694,73 @@ namespace CityForgeV3.World
         private Sprite LoadFloraSprite(string floraId)
         {
             if (string.IsNullOrWhiteSpace(floraId)) return null;
-            var texture = Resources.Load<Texture2D>(
-                ResolveFloraResourcePath(floraId, Season));
-            return texture == null ? null : Sprite.Create(texture,
+            if (StoneFloraCatalog.IsStone(floraId)) { if (!_floraSpriteCache.TryGetValue(floraId, out var stone)) _floraSpriteCache[floraId] = stone = StoneFloraCatalog.CreateSprite(floraId); return stone; }
+            var resourcePath = ResolveFloraResourcePath(floraId, Season);
+            if (string.IsNullOrWhiteSpace(resourcePath)) return null;
+            if (_floraSpriteCache.TryGetValue(resourcePath, out var cached))
+                return cached;
+            var texture = Resources.Load<Texture2D>(resourcePath);
+            if (texture == null) return null;
+            var sprite = Sprite.Create(texture,
                 new Rect(0f, 0f, texture.width, texture.height),
-                FloraPivot(texture.name), FloraPixelsPerUnit(floraId));
+                FloraPivot(texture.name),
+                FloraPixelsPerUnit(floraId, texture.name));
+            _floraSpriteCache[resourcePath] = sprite;
+            return sprite;
         }
 
-        private static float FloraPixelsPerUnit(string floraId) => floraId switch
+        public static float FloraPixelsPerUnit(string floraId,
+            string textureName)
         {
-            "hart-tongue-fern" => 649.091f,
-            "japanese-painted-fern" => 596.25f,
-            "male-fern" => 715f,
-            "soft-shield-fern" => 520f,
-            "eucalyptus-robusta-a" => 27.083f,
-            "eucalyptus-robusta-b" => 23.852f,
-            "silver-maple-a" => 32.611f,
-            "silver-maple-b" => 46.516f,
-            "canyon-live-oak-a" => 28.214f,
-            "canyon-live-oak-b" => 32.377f,
-            // The Lying Floor source is a monumental 42 m live oak. Its
-            // 544-pixel visible height maps to that authored scale.
-            "angel-oak-spanish-moss" => 12.952f,
-            _ => 32f
-        };
+            var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId);
+            if(repairPpu>0f)return repairPpu;
+            if (PlaneUkFloraPresentation.IsTree(floraId) && floraId!="angel-oak-spanish-moss") return 512f / 18f;
+            // The square top-down agricultural canvases present as 12 m-wide
+            // terrain tiles in every season.
+            if (IsAgricultureFlora(floraId))
+                return textureName == "corn-field-winter"
+                    ? 1100f / 10.8f
+                    : 1254f / 12f;
 
-        private static Vector2 FloraPivot(string textureName) =>
+            return floraId switch
+            {
+                "hart-tongue-fern" => 649.091f,
+                "japanese-painted-fern" => 596.25f,
+                "male-fern" => 715f,
+                "soft-shield-fern" => 520f,
+                "eucalyptus-robusta-a" => 27.083f,
+                "eucalyptus-robusta-b" => 23.852f,
+                "silver-maple-a" => 32.611f,
+                "silver-maple-b" => 46.516f,
+                // Double the pixels-per-unit contract to present the young maple
+                // at exactly half its former world dimensions.
+                "vendor-red-maple-young" => 64f,
+                // Three times larger than the initial reduced presentation.
+                "angel-oak-spanish-moss" => 43.1733f,
+                "cilician-fir" => 48f,
+                "camphor-tree" => 28f,
+                "fraser-fir-large" => 150f,
+                "fraser-fir-small" => 220f,
+                "fraser-fir-snowy" => 170f,
+                // London Plane vendor renders are broad, mature specimens.
+                // Present them at half their former world size.
+                "london-plane-a" => 64f,
+                "london-plane-b" => 64f,
+                "london-plane-c" => 64f,
+                _ => 32f
+            };
+        }
+
+        public static Vector2 FloraPivot(string textureName) =>
+            FloraTreeRepairs.TryPivot(textureName,out var repairedPivot) ? repairedPivot :
+            textureName != null && textureName.StartsWith("plane-") ? new Vector2(.5f, .22307235f) :
             textureName switch
             {
+                // Top-down field tiles are registered at their footprint
+                // center and laid flat on the terrain plane.
+                "corn-field-spring" or "corn-field-summer" or
+                    "corn-field-autumn" or "corn-field-winter" =>
+                    new(0.5f, 0.5f),
                 // IncomingVarious V01 billboards are rendered onto a shared
                 // 768 px canvas. Anchor each family on its lowest visible
                 // root pixel so transparent framing space does not lift the
@@ -1437,7 +1784,8 @@ namespace CityForgeV3.World
                 "eucalyptus-robusta-a-spring" or
                     "eucalyptus-robusta-a-summer" or
                     "eucalyptus-robusta-a-autumn" or
-                    "eucalyptus-robusta-a-winter" => new(0.5f, 54f / 768f),
+                    "eucalyptus-robusta-a-winter" =>
+                    new(0.48958333f, 0.0546875f),
                 "eucalyptus-robusta-b-spring" or
                     "eucalyptus-robusta-b-summer" or
                     "eucalyptus-robusta-b-autumn" or
@@ -1449,14 +1797,6 @@ namespace CityForgeV3.World
                     new(0.5f, 29f / 768f),
                 "silver-maple-b-autumn" => new(0.5f, 33f / 768f),
                 "silver-maple-b-winter" => new(0.5f, 27f / 768f),
-                "canyon-live-oak-a-spring" or
-                    "canyon-live-oak-a-summer" or
-                    "canyon-live-oak-a-autumn" or
-                    "canyon-live-oak-a-winter" => new(0.5f, 194f / 768f),
-                "canyon-live-oak-b-spring" or
-                    "canyon-live-oak-b-summer" => new(0.5f, 170f / 768f),
-                "canyon-live-oak-b-autumn" => new(0.5f, 167f / 768f),
-                "canyon-live-oak-b-winter" => new(0.5f, 169f / 768f),
                 "angel-oak-spanish-moss-spring" or
                     "angel-oak-spanish-moss-summer" or
                     "angel-oak-spanish-moss-autumn" or
@@ -1477,22 +1817,42 @@ namespace CityForgeV3.World
                 // Vendor billboard canvases include generous transparent
                 // margins. Register each sprite on the lowest opaque pixel in
                 // its central trunk band rather than the canvas bottom.
-                "vendor-red-maple-spring" => new(580f / 1024f, 196f / 1024f),
-                "vendor-red-maple-summer" => new(580f / 1024f, 196f / 1024f),
-                "vendor-red-maple-autumn" => new(547f / 1024f, 201f / 1024f),
-                "vendor-red-maple-winter" => new(566f / 1024f, 233f / 1024f),
+                // Register on the lowest root pixels, with the same six-pixel
+                // soil overlap used by the other full-size trees. The former
+                // pivots sat 16-50 px up inside the exposed root/branch fan.
+                "vendor-red-maple-spring" => new(520f / 1024f, 151f / 1024f),
+                "vendor-red-maple-summer" => new(520f / 1024f, 151f / 1024f),
+                "vendor-red-maple-autumn" => new(490f / 1024f, 191f / 1024f),
+                "vendor-red-maple-winter" => new(506f / 1024f, 194f / 1024f),
                 "vendor-red-maple-young-spring" => new(0.5f, 177f / 1024f),
                 "vendor-red-maple-young-summer" => new(0.5f, 177f / 1024f),
                 "vendor-red-maple-young-autumn" => new(0.5f, 69f / 1024f),
                 "vendor-red-maple-young-winter" => new(0.5f, 69f / 1024f),
-                "vendor-balsam-fir-broad-spring" => new(0.5f, 120f / 1024f),
-                "vendor-balsam-fir-broad-summer" => new(0.5f, 120f / 1024f),
-                "vendor-balsam-fir-broad-autumn" => new(0.5f, 120f / 1024f),
-                "vendor-balsam-fir-broad-winter" => new(0.5f, 120f / 1024f),
-                "vendor-balsam-fir-tall-spring" => new(0.5f, 0f),
-                "vendor-balsam-fir-tall-summer" => new(0.5f, 0f),
-                "vendor-balsam-fir-tall-autumn" => new(0.5f, 0f),
-                "vendor-balsam-fir-tall-winter" => new(0.5f, 0f),
+                "cilician-fir-spring" or "cilician-fir-summer" or
+                    "cilician-fir-autumn" or "cilician-fir-winter" =>
+                    new(0.5078125f, 0f),
+                "camphor-tree-spring" or "camphor-tree-summer" =>
+                    new(0.50683594f, 0.27148438f),
+                "camphor-tree-autumn" => new(0.50683594f, 0.2734375f),
+                "camphor-tree-winter" => new(0.5078125f, 0.27246094f),
+                "fraser-fir-large-spring" or "fraser-fir-large-summer" or
+                    "fraser-fir-large-autumn" or "fraser-fir-large-winter" =>
+                    new(0.46289062f, 0f),
+                "fraser-fir-small-spring" or "fraser-fir-small-summer" or
+                    "fraser-fir-small-autumn" or "fraser-fir-small-winter" =>
+                    new(0.48144531f, 0f),
+                "fraser-fir-snowy-spring" or "fraser-fir-snowy-summer" or
+                    "fraser-fir-snowy-autumn" => new(0.48144531f, 0f),
+                "fraser-fir-snowy-winter" => new(0.57617188f, 0f),
+                "london-plane-a-spring" or "london-plane-a-summer" or
+                    "london-plane-a-autumn" => new(0.45800781f, 0.0625f),
+                "london-plane-a-winter" => new(0.53320312f, 0.08886719f),
+                "london-plane-b-spring" or "london-plane-b-summer" or
+                    "london-plane-b-autumn" => new(0.51660156f, 0.13476562f),
+                "london-plane-b-winter" => new(0.5078125f, 0.18945312f),
+                "london-plane-c-spring" or "london-plane-c-summer" or
+                    "london-plane-c-autumn" => new(0.48535156f, 0.09570312f),
+                "london-plane-c-winter" => new(0.51660156f, 0.19433594f),
                 "vendor-balsam-fir-classic-spring" => new(0.5f, 0f),
                 "vendor-balsam-fir-classic-summer" => new(0.5f, 0f),
                 "vendor-balsam-fir-classic-autumn" => new(0.5f, 0f),
@@ -1841,13 +2201,11 @@ namespace CityForgeV3.World
 
         public void SetBuilding3DEditorContext(bool active)
         {
-            var shouldPreview = active && ExperimentalBuilding3DCount == 0;
-            if (_building3DCameraPreviewActive == shouldPreview) return;
-            _building3DCameraPreviewActive = shouldPreview;
-            // Entering the 3D building library on an empty lot should reveal
-            // the exact camera basis that the first native building will use.
-            // Deactivation deliberately preserves the user's current camera.
-            if (shouldPreview) ApplyCameraFacing(false);
+            // A tool/category change must not be a camera command. The former
+            // empty-lot preview switched to the native-3D camera basis here,
+            // which made opening the building library appear to rotate and
+            // reframe the entire lot.
+            _ = active;
         }
 
         public void SetInspectionMode(BuildingInspectionMode mode)
@@ -1913,6 +2271,7 @@ namespace CityForgeV3.World
 
         public void SetSeason(SeasonPreset preset)
         {
+            if (Season == preset) return;
             if (preset != SeasonPreset.Winter)
                 ClearWinterSnow();
             Season = preset;
@@ -1921,8 +2280,8 @@ namespace CityForgeV3.World
             else
                 ApplyTimeOfDay();
             ClearUnavailableSeasonalPropInteraction();
-            RebuildFloraPresentations();
-            RebuildPropPresentations();
+            RefreshFloraSeasonalPresentations();
+            RefreshPropSeasonVisibility();
             if (_floraPreview != null &&
                 !string.IsNullOrWhiteSpace(_floraPreviewId))
                 _floraPreview.sprite = LoadFloraSprite(_floraPreviewId);
@@ -2281,6 +2640,7 @@ namespace CityForgeV3.World
             // rotation, translation, or projected bounds here.
             ApplyZoomLevel();
             AlignFloraToCamera();
+            RefreshAgricultureCanopyVisibility();
             UpdatePresentationDepthOrdering();
             ApplyCharacterZoomVisibility();
             NotifyStateChanged();
@@ -2735,8 +3095,120 @@ namespace CityForgeV3.World
                     !requirements.Contains(building.BuildingId))
                     requirements.Add(building.BuildingId);
             var path = LotSaveStore.Save(_session, requirements);
+            CaptureLotPreview();
             NotifyStateChanged();
             return path;
+        }
+
+        public string CaptureLotPreview(string root = null)
+        {
+            if (_camera == null || _session?.Data == null ||
+                string.IsNullOrWhiteSpace(_session.Data.LotId)) return "";
+            root ??= LotSaveStore.DefaultRoot;
+            Directory.CreateDirectory(root);
+            var path = LotSaveStore.PreviewPath(_session.Data.LotId, root);
+            const int width = 1024;
+            const int height = 768;
+            var target = new RenderTexture(width, height, 24,
+                RenderTextureFormat.ARGB32);
+            var texture = new Texture2D(width, height,
+                TextureFormat.RGBA32, false);
+            var previousTarget = _camera.targetTexture;
+            var previousActive = RenderTexture.active;
+            var previousFlags = _camera.clearFlags;
+            var previousColor = _camera.backgroundColor;
+            var wasActive = gameObject.activeSelf;
+            try
+            {
+                _camera.targetTexture = target;
+                _camera.clearFlags = CameraClearFlags.SolidColor;
+                _camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+                if (!wasActive) gameObject.SetActive(true);
+                _camera.Render();
+                RenderTexture.active = target;
+                texture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
+                texture.Apply(false);
+                var pixels = texture.GetPixels32();
+                var minX = width;
+                var minY = height;
+                var maxX = -1;
+                var maxY = -1;
+                for (var pixelY = 0; pixelY < height; pixelY++)
+                for (var pixelX = 0; pixelX < width; pixelX++)
+                {
+                    // URP's camera target reports unreliable alpha values during
+                    // the CPU readback. The transparent clear is black, so use
+                    // visible RGB energy to find the actual lot silhouette.
+                    var pixel = pixels[pixelY * width + pixelX];
+                    if (Mathf.Max(pixel.r, Mathf.Max(pixel.g, pixel.b)) <= 12)
+                        continue;
+                    minX = Mathf.Min(minX, pixelX);
+                    minY = Mathf.Min(minY, pixelY);
+                    maxX = Mathf.Max(maxX, pixelX);
+                    maxY = Mathf.Max(maxY, pixelY);
+                }
+                if (maxX >= minX && maxY >= minY)
+                {
+                    const int padding = 12;
+                    minX = Mathf.Max(0, minX - padding);
+                    minY = Mathf.Max(0, minY - padding);
+                    maxX = Mathf.Min(width - 1, maxX + padding);
+                    maxY = Mathf.Min(height - 1, maxY + padding);
+                    var croppedWidth = maxX - minX + 1;
+                    var croppedHeight = maxY - minY + 1;
+                    Debug.Log($"Lot preview crop {_session.Data.LotId}: " +
+                        $"{croppedWidth}x{croppedHeight} at {minX},{minY}");
+                    var cropped = new Texture2D(croppedWidth, croppedHeight,
+                        TextureFormat.RGBA32, false);
+                    cropped.SetPixels(texture.GetPixels(minX, minY,
+                        croppedWidth, croppedHeight));
+                    cropped.Apply(false);
+                    File.WriteAllBytes(path, cropped.EncodeToPNG());
+                    if (Application.isPlaying) Destroy(cropped);
+                    else DestroyImmediate(cropped);
+                }
+                else
+                {
+                    // Some render pipelines expose the RGB/alpha channels only
+                    // during encoding, leaving the CPU-side bounds scan empty.
+                    // The lot camera always frames its subject centrally, so a
+                    // conservative center crop still removes the dead margins.
+                    const int fallbackX = 128;
+                    const int fallbackY = 128;
+                    const int fallbackWidth = 768;
+                    const int fallbackHeight = 512;
+                    var cropped = new Texture2D(fallbackWidth, fallbackHeight,
+                        TextureFormat.RGBA32, false);
+                    cropped.SetPixels(texture.GetPixels(fallbackX, fallbackY,
+                        fallbackWidth, fallbackHeight));
+                    cropped.Apply(false);
+                    File.WriteAllBytes(path, cropped.EncodeToPNG());
+                    Debug.Log($"Lot preview center crop {_session.Data.LotId}: " +
+                        $"{fallbackWidth}x{fallbackHeight}");
+                    if (Application.isPlaying) Destroy(cropped);
+                    else DestroyImmediate(cropped);
+                }
+                return path;
+            }
+            finally
+            {
+                _camera.targetTexture = previousTarget;
+                _camera.clearFlags = previousFlags;
+                _camera.backgroundColor = previousColor;
+                RenderTexture.active = previousActive;
+                if (!wasActive) gameObject.SetActive(false);
+                target.Release();
+                if (Application.isPlaying)
+                {
+                    Destroy(target);
+                    Destroy(texture);
+                }
+                else
+                {
+                    DestroyImmediate(target);
+                    DestroyImmediate(texture);
+                }
+            }
         }
 
         public string SaveLotAs(string name)
@@ -3494,6 +3966,12 @@ namespace CityForgeV3.World
                 panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
             var ray = _camera.ScreenPointToRay(pixel);
+            if (_groundMeshCollider != null &&
+                _groundMeshCollider.Raycast(ray, out var groundHit, 10000f))
+            {
+                lotPoint = transform.InverseTransformPoint(groundHit.point);
+                return true;
+            }
             var plane = new Plane(transform.up, transform.position);
             if (!plane.Raycast(ray, out var distance)) return false;
             lotPoint = transform.InverseTransformPoint(ray.GetPoint(distance));
@@ -4020,23 +4498,43 @@ namespace CityForgeV3.World
 
         private void BuildGround()
         {
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            var ground = new GameObject("Lot Surface");
             ground.name = "Lot Surface";
             ground.transform.SetParent(transform);
             _ground = ground.transform;
-            ResizeGround();
-            _groundRenderer = ground.GetComponent<Renderer>();
+            _groundMeshFilter = ground.AddComponent<MeshFilter>();
+            _groundRenderer = ground.AddComponent<MeshRenderer>();
+            _groundMeshCollider = ground.AddComponent<MeshCollider>();
             _groundRenderer.material =
                 ShadowReceivingLotMaterial(GroundColor);
             _groundRenderer.receiveShadows = true;
+            _groundRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.Off;
+            var terrainShadowCaster = new GameObject("Terrain Shadow Caster");
+            terrainShadowCaster.transform.SetParent(_ground, false);
+            // Inset the caster just below the visible heightfield. The
+            // receiver remains above it and therefore cannot shadow-acne
+            // itself, while raised terrain still projects its silhouette onto
+            // lower ground.
+            terrainShadowCaster.transform.localPosition = Vector3.down * 0.03f;
+            _terrainShadowCasterMeshFilter =
+                terrainShadowCaster.AddComponent<MeshFilter>();
+            _terrainShadowCasterRenderer =
+                terrainShadowCaster.AddComponent<MeshRenderer>();
+            _terrainShadowCasterRenderer.sharedMaterial =
+                _groundRenderer.sharedMaterial;
+            _terrainShadowCasterRenderer.receiveShadows = false;
+            _terrainShadowCasterRenderer.shadowCastingMode =
+                UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+            ResizeGround();
             ApplyTimeOfDay();
         }
 
         private void ResizeGround()
         {
             if (_ground == null) return;
-            _ground.localScale = new Vector3(
-                (LotWidthMeters + 4f) / 10f, 1f, (LotDepthMeters + 4f) / 10f);
+            _ground.localScale = Vector3.one;
+            RebuildTerrainMesh();
             ResizeSnowGroundCover();
         }
 
@@ -4441,7 +4939,8 @@ namespace CityForgeV3.World
                 // drawing after them also prevents rectangular road holes.
                 renderQueue = 3002
             };
-            if (package.Id != RoadPiecePackage.LegacyPackageId)
+            if (package.Id != RoadPiecePackage.LegacyPackageId &&
+                package.Id != RoadPiecePackageCatalog.DirtRoadId)
             {
                 material.SetFloat("_UseMaterialZones", 1f);
                 material.SetTexture("_RoadSurfaceTex",
@@ -4455,6 +4954,10 @@ namespace CityForgeV3.World
                 material.SetFloat("_SidewalkMaterialTiling",
                     RoadMaterialCatalog.Resolve(placed.SidewalkMaterialId, true).TilesPerTenMeters);
             }
+            if (material.HasProperty("_HideCurbBorders"))
+                material.SetFloat("_HideCurbBorders",
+                    package.Id == RoadPiecePackage.LegacyPackageId ||
+                    placed.RoadMaterialId == "antique-brick" ? 1f : 0f);
             roadObject.GetComponent<Renderer>().sharedMaterial = material;
             if (material.HasProperty("_TimeTint"))
                 material.SetColor("_TimeTint",
@@ -4525,7 +5028,6 @@ namespace CityForgeV3.World
             BuildNetworkVisualization(_session.Data.VehicleNetwork,
                 vehicleMaterial, true);
             RebuildUserPedestrianStairs();
-            _pedestrianTraveler = BuildTraveler("Pedestrian Traveler", new Color(1f, 0.42f, 0.76f), 0.36f);
             foreach (var variant in new[]
             {
                 VehiclePaintVariant.Green,
@@ -5135,7 +5637,7 @@ namespace CityForgeV3.World
             preset switch
             {
                 TimeOfDayPreset.Noon =>
-                    new Color(0.025f, 0.032f, 0.038f, 0.28f),
+                    new Color(0.025f, 0.032f, 0.038f, 0.36f),
                 TimeOfDayPreset.Evening =>
                     new Color(0.035f, 0.042f, 0.050f, 0.28f),
                 TimeOfDayPreset.Morning or TimeOfDayPreset.Afternoon =>
@@ -5148,7 +5650,7 @@ namespace CityForgeV3.World
             {
                 TimeOfDayPreset.Morning => 0.35f,
                 TimeOfDayPreset.Noon => 0.65f,
-                TimeOfDayPreset.Afternoon => 0.50f,
+                TimeOfDayPreset.Afternoon => 1.00f,
                 TimeOfDayPreset.Evening => 0.32f,
                 _ => 0.45f
             };
@@ -5158,7 +5660,7 @@ namespace CityForgeV3.World
             {
                 TimeOfDayPreset.Morning => 0.90f,
                 TimeOfDayPreset.Noon => 0.65f,
-                TimeOfDayPreset.Afternoon => 1.15f,
+                TimeOfDayPreset.Afternoon => 1.45f,
                 TimeOfDayPreset.Evening => 0.40f,
                 _ => 0.45f
             };
@@ -5383,7 +5885,13 @@ namespace CityForgeV3.World
                     { ClearObjectHover(); return; }
                     var flora = _session.Data.Flora[index];
                     position = new Vector3(flora.PositionX, 0f, flora.PositionZ);
-                    if (index < _floraPresentations.Count &&
+                    if (IsAgricultureFlora(flora.FloraId))
+                    {
+                        width = 10.575f;
+                        depth = 10.575f;
+                    }
+                    if (!IsAgricultureFlora(flora.FloraId) &&
+                        index < _floraPresentations.Count &&
                         _floraPresentations[index] != null &&
                         _floraPresentations[index].sprite != null)
                     {
@@ -5535,9 +6043,12 @@ namespace CityForgeV3.World
                     (IsRaining ? 0.32f : 1f);
                 _sun.color = sunColor;
                 _sun.shadows = IsRaining ? LightShadows.None : LightShadows.Soft;
-                _sun.shadowStrength = ExperimentalBuilding3DCount > 0
+                var worldShadowStrength = ExperimentalBuilding3DCount > 0
                     ? _environmentShadowStrength
                     : 0.72f;
+                _sun.shadowStrength = TimeOfDay == TimeOfDayPreset.Noon
+                    ? Mathf.Max(0.92f, worldShadowStrength)
+                    : worldShadowStrength;
                 _sun.shadowCustomResolution = ExperimentalBuilding3DCount > 0
                     ? 4096
                     : 0;
@@ -5557,8 +6068,16 @@ namespace CityForgeV3.World
                 // A hybrid building package may register its pre-rendered
                 // artwork with a visual offset, but that must never rotate a
                 // walking character's physical shadow.
-                _sun.transform.rotation =
+                var physicalSunRotation =
                     ExperimentalBuilding3DSunRotation();
+                if (_districtHosted)
+                {
+                    var projectedRay = physicalSunRotation * Vector3.forward;
+                    physicalSunRotation = Quaternion.LookRotation(new Vector3(
+                        -projectedRay.x, projectedRay.y, -projectedRay.z),
+                        Vector3.up);
+                }
+                _sun.transform.rotation = physicalSunRotation;
                 if (ExperimentalBuilding3DCount <= 0 &&
                     (_environmentSunElevationOffset != 0f ||
                      _environmentSunAzimuthOffset != 0f))
@@ -5605,9 +6124,6 @@ namespace CityForgeV3.World
                         _ => Color.white
                     };
                 }
-                if (string.IsNullOrWhiteSpace(_session.Data.BaseTextureId))
-                    groundBaseline = ExperimentalBuilding3DGroundColor(
-                        groundBaseline);
                 _groundRenderer.sharedMaterial.color =
                     BaseTextureHasExactSeasonResource()
                         ? groundBaseline
@@ -5621,6 +6137,16 @@ namespace CityForgeV3.World
                         TimeOfDayPreset.Afternoon => 0.66f,
                         _ => 0.52f
                     });
+                }
+                if (_groundRenderer.sharedMaterial.HasProperty("_TerrainSunDirection"))
+                {
+                    var terrainSunDirection = _sun == null
+                        ? Vector3.up
+                        : -_sun.transform.forward.normalized;
+                    _groundRenderer.sharedMaterial.SetVector(
+                        "_TerrainSunDirection",
+                        new Vector4(terrainSunDirection.x,
+                            terrainSunDirection.y, terrainSunDirection.z, 0f));
                 }
             }
 
@@ -5650,7 +6176,22 @@ namespace CityForgeV3.World
             }
             UpdateStreetcarShadowLighting();
             foreach (var flora in _floraPresentations)
-                if (flora != null) flora.color = FloraColorForTime(1f);
+                if (flora != null)
+                {
+                    flora.color = FloraColorForTime(1f);
+                    var canopy = flora.transform.Find("Corn Canopy");
+                    if (canopy != null &&
+                        canopy.TryGetComponent<SpriteRenderer>(out var renderer))
+                        renderer.color = FloraColorForTime(1f);
+                }
+            var floraShadowFloor = TimeOfDay == TimeOfDayPreset.Noon
+                ? 0.24f : 0.38f;
+            if (_floraLitShadowReceiverMaterial != null)
+                _floraLitShadowReceiverMaterial.SetFloat("_ShadowFloor",
+                    floraShadowFloor);
+            foreach (var material in _floraHostFrontRecoveryMaterials.Values)
+                if (material != null)
+                    material.SetFloat("_ShadowFloor", floraShadowFloor);
             UpdateFloraShadows();
             UpdatePropProjectedShadows();
             UpdateThreeLanternLamppostLighting();
@@ -5668,8 +6209,8 @@ namespace CityForgeV3.World
                     {
                         renderer.sharedMaterial.SetColor("_TimeTint", roadTint);
                         if (renderer.sharedMaterial.HasProperty("_ReceiveSunShadow"))
-                            renderer.sharedMaterial.SetFloat("_ReceiveSunShadow",
-                                TimeOfDay == TimeOfDayPreset.Noon ? 0f : 1f);
+                            renderer.sharedMaterial.SetFloat(
+                                "_ReceiveSunShadow", 1f);
                     }
             }
             UpdateProjectedShadow();
@@ -5692,8 +6233,7 @@ namespace CityForgeV3.World
                 return;
             }
 
-            var experimental3D = ExperimentalBuilding3DCount > 0 ||
-                _building3DCameraPreviewActive;
+            var experimental3D = ExperimentalBuilding3DCount > 0;
             // Keep the shallow 20-degree CityForge elevation, but view native
             // 3D lots from the diagonal. At any other azimuth an orthographic
             // camera gives the two ground axes different projected lengths;
@@ -5800,11 +6340,48 @@ namespace CityForgeV3.World
                 : new Vector2(0f, Mathf.Sign(worldScreenDirection.y));
         }
 
+        private void ConfigurePlaneTree(SpriteRenderer renderer, string floraId)
+        {
+            FloraTreeRepairs.Apply(renderer,floraId);
+            if (renderer == null) return;
+            var tree = renderer.GetComponent<PlaneUkFloraPresentation>();
+            if (tree == null && PlaneUkFloraPresentation.IsTree(floraId))
+                tree = renderer.gameObject.AddComponent<PlaneUkFloraPresentation>();
+            if (tree != null) tree.Configure(floraId, Season, ZoomLevel);
+        }
+
         private void AlignFloraToCamera()
         {
+            ConfigurePlaneTree(_floraPreview, _floraPreviewId);
             if (_floraRoot == null || _camera == null) return;
-            foreach (Transform flora in _floraRoot)
-                flora.rotation = _camera.transform.rotation;
+            var placedFlora = _session.Data.Flora;
+            var count = Mathf.Min(
+                _floraPresentations.Count, placedFlora?.Count ?? 0);
+            for (var index = 0; index < count; index++)
+            {
+                var renderer = _floraPresentations[index];
+                var placed = placedFlora[index];
+                if (renderer == null || placed == null) continue;
+                var flora = renderer.transform;
+                flora.rotation = IsAgricultureFlora(placed.FloraId)
+                    ? Quaternion.Euler(90f, 0f, 0f)
+                    : _camera.transform.rotation;
+                ConfigurePlaneTree(renderer, placed.FloraId);
+                var canopy = flora.Find("Corn Canopy");
+                if (canopy != null)
+                    PositionCornCanopy(canopy, placed);
+            }
+        }
+
+        private void RefreshAgricultureCanopyVisibility()
+        {
+            var shouldShow = ShouldShowAgricultureCanopy(ZoomLevel, Season);
+            foreach (var renderer in _floraPresentations)
+            {
+                if (renderer == null) continue;
+                var canopy = renderer.transform.Find("Corn Canopy");
+                if (canopy != null) canopy.gameObject.SetActive(shouldShow);
+            }
         }
 
         private int DepthSortingOrder(Vector3 worldPosition)
@@ -5951,8 +6528,13 @@ namespace CityForgeV3.World
 
         private void Update()
         {
-            HandleWorldClick();
+            if (!_districtHosted)
+                HandleWorldClick();
             UpdateThreeDimensionalCharacters();
+            UpdateHorseCarriages();
+            UpdateAnimalOrders();
+            UpdateBears();
+            UpdateCloudEffects(Time.deltaTime);
             UpdateNeighborhoodTraffic();
             UpdateCirculationTravelers();
             UpdateStreetcars();
@@ -5964,7 +6546,8 @@ namespace CityForgeV3.World
                 return;
 
             RebuildBuildingPropOverlayPass();
-            RetireCompetingScreenCameras();
+            if (!_districtHosted)
+                RetireCompetingScreenCameras();
         }
 
         private void RetireCompetingScreenCameras()
@@ -5992,8 +6575,6 @@ namespace CityForgeV3.World
 
         private void UpdateCirculationTravelers()
         {
-            _pedestrianProgress = Mathf.PingPong(_pedestrianProgress + Time.deltaTime * 0.18f, 1f);
-            PositionTraveler(_pedestrianTraveler, _session.Data.PedestrianNetwork, _pedestrianProgress);
             if (TrafficType == TrafficLotType.SuburbanStreet)
             {
                 UpdateSuburbanTraffic(Time.deltaTime);
@@ -6239,14 +6820,6 @@ namespace CityForgeV3.World
                 point = Vector2.Lerp(start, endPoint, Mathf.Clamp01(progress));
                 direction = (endPoint - start).normalized * (returning ? -1f : 1f);
             }
-        }
-
-        private static void PositionTraveler(Transform traveler, CirculationNetwork network, float progress)
-        {
-            if (traveler == null) return;
-            traveler.gameObject.SetActive(network.Segments.Count > 0);
-            var point = network.SampleFirstSegment3D(progress);
-            traveler.localPosition = point + Vector3.up * 0.42f;
         }
 
         private void PlaceVehicleAtRouteDistance()
@@ -6501,6 +7074,7 @@ namespace CityForgeV3.World
             _sessionStateApplyCountForQa++;
             var preservedCamera = CaptureCameraFraming();
             ApplyLotPlanningState();
+            RebuildTerrainMesh();
             ApplyBaseTexturePresentation();
             if (HasBuilding)
             {
@@ -6824,7 +7398,7 @@ namespace CityForgeV3.World
             new Color(0.025f, 0.03f, 0.038f, preset switch
             {
                 TimeOfDayPreset.Morning => 0.34f,
-                TimeOfDayPreset.Noon => 0.28f,
+                TimeOfDayPreset.Noon => 0.40f,
                 TimeOfDayPreset.Afternoon => 0.30f,
                 TimeOfDayPreset.Evening => 0.24f,
                 _ => 0f
@@ -6988,6 +7562,8 @@ namespace CityForgeV3.World
                 : 0f;
             _floraShadowSun.enabled = !IsRaining &&
                 TimeOfDay != TimeOfDayPreset.Night;
+            _floraShadowSun.shadowStrength =
+                TimeOfDay == TimeOfDayPreset.Noon ? 0.92f : 0.72f;
             _floraShadowSun.transform.rotation =
                 Quaternion.Euler(0f, directionOffset, 0f) *
                 ExperimentalBuilding3DSunRotation();
@@ -7037,25 +7613,56 @@ namespace CityForgeV3.World
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
-        private static void AddGridStrip(
+        private void AddGridStrip(
             Transform parent, Vector3 start, Vector3 end,
             Material material, float width)
         {
-            var strip = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var strip = new GameObject("Terrain Grid Line");
             strip.name = "Grid Line";
             strip.transform.SetParent(parent, false);
-            strip.transform.localPosition = (start + end) * 0.5f;
-            var delta = end - start;
-            strip.transform.localScale = Mathf.Abs(delta.x) >= Mathf.Abs(delta.z)
-                ? new Vector3(Mathf.Abs(delta.x), 0.012f, width)
-                : new Vector3(width, 0.012f, Mathf.Abs(delta.z));
-            var collider = strip.GetComponent<Collider>();
-            if (collider != null) collider.enabled = false;
-            var renderer = strip.GetComponent<Renderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode =
+            var line = strip.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.widthMultiplier = width;
+            line.numCornerVertices = 2;
+            line.numCapVertices = 2;
+            line.sharedMaterial = material;
+            line.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
+            line.receiveShadows = false;
+            PopulateTerrainGridLine(line, start, end);
+        }
+
+        private void PopulateTerrainGridLine(LineRenderer line,
+            Vector3 start, Vector3 end)
+        {
+            var length = Vector3.Distance(start, end);
+            var pointCount = Mathf.Max(2, Mathf.CeilToInt(length * 2f) + 1);
+            line.positionCount = pointCount;
+            for (var pointIndex = 0; pointIndex < pointCount; pointIndex++)
+            {
+                var amount = pointIndex / (float)(pointCount - 1);
+                var point = Vector3.Lerp(start, end, amount);
+                point.y = SampleTerrainHeight(point.x, point.z) + 0.12f;
+                line.SetPosition(pointIndex, point);
+            }
+        }
+
+        private void RefreshTerrainGridGeometry()
+        {
+            RefreshTerrainGridRoot(_minorGrid);
+            RefreshTerrainGridRoot(_majorGrid);
+        }
+
+        private void RefreshTerrainGridRoot(Transform root)
+        {
+            if (root == null) return;
+            foreach (var line in root.GetComponentsInChildren<LineRenderer>(true))
+            {
+                if (line.positionCount < 2) continue;
+                var start = line.GetPosition(0);
+                var end = line.GetPosition(line.positionCount - 1);
+                PopulateTerrainGridLine(line, start, end);
+            }
         }
 
         private static Material Material(Color color, float roughness)

@@ -20,6 +20,11 @@ namespace CityForgeV3.World
         public string State => _state;
         public IReadOnlyCollection<string> States => _clips.Keys;
 
+        public bool IsPlaying(string state) =>
+            _graph.IsValid() && _graph.IsPlaying() && _playable.IsValid() &&
+            string.Equals(_state, state, StringComparison.OrdinalIgnoreCase) &&
+            _playable.GetSpeed() > 0d;
+
         public void Initialize(Animator animator, IEnumerable<AnimationClip> clips)
         {
             _animatedRoot = animator != null ? animator.transform : null;
@@ -43,6 +48,7 @@ namespace CityForgeV3.World
 
         public bool Play(string state)
         {
+            if (IsPlaying(state)) return true;
             if (!_graph.IsValid() || !_clips.TryGetValue(state, out var clip))
                 return false;
             var output = (AnimationPlayableOutput)_graph.GetOutput(0);
@@ -54,6 +60,17 @@ namespace CityForgeV3.World
             _state = state;
             if (!_graph.IsPlaying()) _graph.Play();
             return true;
+        }
+
+        public void SetPlaybackPhase(float phase)
+        {
+            if (_playable.IsValid())
+                _playable.SetTime(Mathf.Repeat(phase, 1f) * _playable.GetAnimationClip().length);
+        }
+
+        public void SetPlaybackSpeed(float speed)
+        {
+            if (_playable.IsValid()) _playable.SetSpeed(Mathf.Max(0f, speed));
         }
 
         private void Update()
@@ -104,8 +121,10 @@ namespace CityForgeV3.World
             if (name.Contains("laugh")) return "laugh";
             if (name.Contains("wait")) return "wait";
             if (name.Contains("turn")) return "turn";
+            if (name.Contains("trot")) return "trot";
             if (name.Contains("walk")) return "walk";
             if (name.Contains("run")) return "run";
+            if (name.Contains("hoe")) return "hoe";
             if (name.Contains("idle")) return "idle";
             if (name.Contains("bow")) return "bow";
             if (name.Contains("sit")) return "sit";
@@ -113,7 +132,7 @@ namespace CityForgeV3.World
         }
 
         private static bool IsLoopingState(string state) =>
-            state is "walk" or "run" or "run_upstairs" or "wait" or "idle" or "look_around" or
+            state is "hoe" or "trot" or "walk" or "run" or "run_upstairs" or "wait" or "idle" or "look_around" or
                 "fold_arms" or "angry";
     }
 }

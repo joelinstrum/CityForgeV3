@@ -74,51 +74,23 @@ namespace CityForgeV3.World
                 return false;
             var storyHeight = _height / _stories;
             var bottom = story * storyHeight;
-            BuildWindowedWall($"Front Panel Wall — Story {story + 1}",
+            BuildSolidWall($"Front Panel Wall — Phase {story + 1}",
                 _width, bottom, storyHeight, -_depth * 0.5f, false);
-            BuildWindowedWall($"Rear Panel Wall — Story {story + 1}",
+            BuildSolidWall($"Rear Panel Wall — Phase {story + 1}",
                 _width, bottom, storyHeight, _depth * 0.5f, false);
-            BuildWindowedWall($"Left Panel Wall — Story {story + 1}",
+            BuildSolidWall($"Left Panel Wall — Phase {story + 1}",
                 _depth, bottom, storyHeight, -_width * 0.5f, true);
-            BuildWindowedWall($"Right Panel Wall — Story {story + 1}",
+            BuildSolidWall($"Right Panel Wall — Phase {story + 1}",
                 _depth, bottom, storyHeight, _width * 0.5f, true);
             return true;
         }
 
-        private void BuildWindowedWall(string name, float length, float bottom,
+        private void BuildSolidWall(string name, float length, float bottom,
             float storyHeight, float fixedAxis, bool alongDepth)
         {
             const float thickness = 0.10f;
-            var bays = Mathf.Max(1, Mathf.RoundToInt(length / 3f));
-            var bayWidth = length / bays;
-            var windowWidth = Mathf.Min(1.45f, bayWidth * 0.52f);
-            var windowBottom = bottom + storyHeight * 0.26f;
-            var windowHeight = storyHeight * 0.50f;
-            var wallTop = bottom + storyHeight;
-
-            for (var bay = 0; bay < bays; bay++)
-            {
-                var centre = -length * 0.5f + (bay + 0.5f) * bayWidth;
-                var sideWidth = Mathf.Max(0.12f,
-                    (bayWidth - windowWidth) * 0.5f);
-                CreateWallPanel($"{name} Bay {bay + 1} Left",
-                    centre - windowWidth * 0.5f - sideWidth * 0.5f,
-                    bottom + storyHeight * 0.5f, sideWidth, storyHeight,
-                    fixedAxis, alongDepth, thickness);
-                CreateWallPanel($"{name} Bay {bay + 1} Right",
-                    centre + windowWidth * 0.5f + sideWidth * 0.5f,
-                    bottom + storyHeight * 0.5f, sideWidth, storyHeight,
-                    fixedAxis, alongDepth, thickness);
-                CreateWallPanel($"{name} Bay {bay + 1} Sill",
-                    centre, bottom + (windowBottom - bottom) * 0.5f,
-                    windowWidth, windowBottom - bottom,
-                    fixedAxis, alongDepth, thickness);
-                CreateWallPanel($"{name} Bay {bay + 1} Header",
-                    centre, windowBottom + windowHeight +
-                            (wallTop - windowBottom - windowHeight) * 0.5f,
-                    windowWidth, wallTop - windowBottom - windowHeight,
-                    fixedAxis, alongDepth, thickness);
-            }
+            CreateWallPanel(name, 0f, bottom + storyHeight * 0.5f,
+                length, storyHeight, fixedAxis, alongDepth, thickness);
         }
 
         private void CreateWallPanel(string name, float runningPosition,
