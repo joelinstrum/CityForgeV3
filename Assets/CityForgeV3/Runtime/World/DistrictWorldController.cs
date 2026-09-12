@@ -148,6 +148,7 @@ namespace CityForgeV3.World
         private GameObject _lotOutline;
         private LineRenderer _lotOutlineRenderer;
         private Renderer _groundRenderer;
+        private DistrictGroundDecals _groundDecals;
         private float _widthMeters;
         private float _depthMeters;
         private Vector3 _pan;
@@ -334,6 +335,13 @@ namespace CityForgeV3.World
                      new List<PlacedDistrictRiver>())
                 BuildRiver(river);
             ApplyRiverGrassEdgeVisibility();
+            if (_groundDecals == null)
+            {
+                var decals = new GameObject("Default District Grass Decals");
+                decals.transform.SetParent(_content, false);
+                _groundDecals = decals.AddComponent<DistrictGroundDecals>();
+            }
+            _groundDecals.Rebuild(this, district, _widthMeters, _depthMeters);
         }
 
         public void RefreshFlora(RegionCityTile district,
@@ -2166,6 +2174,7 @@ namespace CityForgeV3.World
 
         private void ClearWorld()
         {
+            _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();
             _roadsByCell.Clear();
