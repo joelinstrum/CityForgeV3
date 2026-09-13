@@ -1189,6 +1189,7 @@ namespace CityForgeV3.UI
             // UI Toolkit resolves overlap primarily through hierarchy order.
             // Keep flyout tools last so terrain, HUD, and simulation panels
             // cannot paint over them or intercept their pointer events.
+            AddDistrictHarvestControls(flyout);
             screen.Add(flyout);
             if (!_districtInterfaceVisible)
                 flyout.style.display = DisplayStyle.None;
@@ -1388,7 +1389,7 @@ namespace CityForgeV3.UI
                     parts.Add($"flora:{flora.InstanceId}:{flora.FloraId}:" +
                               $"{flora.NormalizedX:0.0000}:" +
                               $"{flora.NormalizedZ:0.0000}:{flora.Scale:0.000}:" +
-                              $"{flora.RotationEighthTurns}");
+                              $"{flora.RotationEighthTurns}:{flora.HarvestState}:{flora.HarvestDirection}:{flora.RemainingWood}");
             if (parts.Count == 0) return district.LotId ?? "";
             return string.Join("|", parts);
         }

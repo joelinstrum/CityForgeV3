@@ -614,6 +614,9 @@ namespace CityForgeV3.World
                         presentationId, texture.name));
                 _districtFloraSprites[resource] = sprite;
             }
+            if (placed.FloraId == "cilician-fir" && placed.HarvestState != DistrictTreeHarvestState.Standing)
+                sprite = DistrictHarvestSprites.Get(placed.HarvestDirection, 23,
+                    placed.HarvestState == DistrictTreeHarvestState.Stump) ?? sprite;
             var item = new GameObject($"District Flora — {placed.FloraId}");
             item.transform.SetParent(_districtFloraRoot, false);
             item.transform.localPosition = DistrictFloraPosition(placed);

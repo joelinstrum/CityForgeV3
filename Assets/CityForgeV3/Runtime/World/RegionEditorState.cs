@@ -145,6 +145,9 @@ namespace CityForgeV3.World
         public float NormalizedZ = 0.5f;
         public float Scale = 1f;
         public int RotationEighthTurns;
+        public DistrictTreeHarvestState HarvestState;
+        public int HarvestDirection;
+        public int RemainingWood;
     }
 
     public enum RegionPlaceDesignation

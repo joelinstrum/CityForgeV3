@@ -36,7 +36,7 @@ namespace CityForgeV3.World
             {
                 if (flora == null || !_districtFloraPresentations.TryGetValue(
                         flora.InstanceId, out var renderer) || renderer == null || renderer.sprite == null) continue;
-                var bounds = renderer.sprite.bounds;
+                var bounds = DistrictHarvestSprites.BoundsFor(renderer.sprite);
                 var t = renderer.transform;
                 if (Hits(t.TransformPoint(new Vector3(bounds.min.x, bounds.min.y, 0f)),
                          t.TransformPoint(new Vector3(bounds.max.x, bounds.min.y, 0f)),
