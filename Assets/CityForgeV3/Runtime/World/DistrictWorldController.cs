@@ -34,7 +34,7 @@ namespace CityForgeV3.World
     /// It deliberately shares LotMetricScale instead of maintaining a second
     /// visual scale or a screenshot representation of a lot.
     /// </summary>
-    public sealed class DistrictWorldController : MonoBehaviour
+    public sealed partial class DistrictWorldController : MonoBehaviour
     {
         public const string DefaultGrassResource =
             "CityForgeV3/Art/Regions/default-grass-texture";

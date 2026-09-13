@@ -96,9 +96,13 @@ namespace CityForgeV3.UI
         private readonly List<DistrictSelectionRef> _districtSelection = new();
         private bool _districtMarqueeActive;
         private bool _districtSelectionDragActive;
+        private bool _districtSelectionMovedRiver;
         private Vector2 _districtSelectionStart;
         private Vector2 _districtSelectionLast;
         private Vector2 _districtSelectionScreenStart;
+        private Vector2 _districtSelectionScreenLast;
+        private int _districtSelectionPointerId = -1;
+        private VisualElement _districtSelectionSurface;
         private Vector2 _districtSelectionGridRemainder;
         private VisualElement _districtSelectionMarquee;
         private Vector2 _terraformPanOffset;
@@ -557,6 +561,11 @@ namespace CityForgeV3.UI
             Show(AppScreen.Splash);
         }
 
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused) CancelDistrictSelectionPointer();
+        }
+
         private void Update()
         {
             RefreshDecalCursorForControl(
@@ -579,6 +588,11 @@ namespace CityForgeV3.UI
                 // the player clicks directly in the district Game view. Poll
                 // the physical key here so G works regardless of which visual
                 // element last owned focus.
+                if (_districtMarqueeActive)
+                {
+                    if (Input.GetKeyDown(KeyCode.Escape)) CancelDistrictSelectionPointer();
+                    return;
+                }
                 if (Input.GetKeyDown(KeyCode.G))
                     _districtWorld?.ToggleGridVisibility();
                 PollTerraformViewKeys();
@@ -595,6 +609,7 @@ namespace CityForgeV3.UI
 
         private void Show(AppScreen screen)
         {
+            CancelDistrictSelectionPointer();
             // Script hot reload clears non-serialized field references while
             // the UIDocument survives. Rebind before composing so QA menu
             // commands cannot leave the Game view with a world but no UI.
@@ -666,6 +681,12 @@ namespace CityForgeV3.UI
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (_districtMarqueeActive)
+            {
+                if (evt.keyCode == KeyCode.Escape) CancelDistrictSelectionPointer();
+                evt.StopImmediatePropagation();
+                return;
+            }
             if (_currentScreen == AppScreen.DistrictTerraform &&
                 !TextInputHasFocus() &&
                 (evt.keyCode is KeyCode.Delete or KeyCode.Backspace))

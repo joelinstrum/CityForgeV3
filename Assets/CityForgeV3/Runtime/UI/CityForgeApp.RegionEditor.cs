@@ -646,6 +646,13 @@ namespace CityForgeV3.UI
                 _districtSelection);
             screen.RegisterCallback<PointerMoveEvent>(evt =>
             {
+                if (_districtMarqueeActive)
+                {
+                    if (evt.pointerId == _districtSelectionPointerId)
+                        UpdateDistrictSelectionMarquee(evt.position);
+                    evt.StopImmediatePropagation();
+                    return;
+                }
                 var target = evt.target as VisualElement;
                 if (evt.target is Button ||
                     target?.GetFirstAncestorOfType<Button>() != null ||
@@ -682,14 +689,8 @@ namespace CityForgeV3.UI
                     return;
                 }
 
-                if (DistrictSelectToolActive())
+                if (DistrictMoveToolActive())
                 {
-                    if (_districtMarqueeActive)
-                    {
-                        UpdateDistrictSelectionMarquee(evt.position,
-                            normalized);
-                        return;
-                    }
                     if (_districtSelectionDragActive)
                     {
                         MoveDistrictSelection(district, normalized);
@@ -762,6 +763,9 @@ namespace CityForgeV3.UI
             });
             screen.RegisterCallback<PointerLeaveEvent>(_ =>
             {
+                // Captured rectangle drags may cross UI or viewport edges.
+                // Leaving is not releasing the mouse.
+                if (_districtMarqueeActive) return;
                 FinishDistrictFloraPaint(district);
                 _districtWorld?.HideLotPlacementGuide();
                 if (_districtMarqueeActive || _districtSelectionDragActive)
@@ -781,9 +785,21 @@ namespace CityForgeV3.UI
             });
             screen.RegisterCallback<PointerDownEvent>(evt =>
             {
+                if (_districtMarqueeActive)
+                {
+                    evt.StopImmediatePropagation();
+                    return;
+                }
                 var target = evt.target as VisualElement;
                 if (evt.button != 0 || evt.target is Button ||
                     target?.GetFirstAncestorOfType<Button>() != null) return;
+                if (DistrictSelectToolActive())
+                {
+                    BeginDistrictSelectionPointer(district, evt.position,
+                        screen, evt.pointerId);
+                    evt.StopImmediatePropagation();
+                    return;
+                }
                 if (DistrictWaterSelectToolActive())
                 {
                     SelectDistrictRiverAt(district, evt.position);
@@ -798,10 +814,9 @@ namespace CityForgeV3.UI
                 {
                     BeginDistrictFloraPaint(district, normalized);
                 }
-                else if (DistrictSelectToolActive())
+                else if (DistrictMoveToolActive())
                 {
-                    BeginDistrictSelectionPointer(district, normalized,
-                        evt.position);
+                    BeginDistrictMovePointer(district, normalized, evt.position);
                 }
                 else if (!string.IsNullOrWhiteSpace(_pendingDistrictLotId))
                 {
@@ -867,8 +882,19 @@ namespace CityForgeV3.UI
                 }
                 evt.StopPropagation();
             }, TrickleDown.TrickleDown);
-            screen.RegisterCallback<PointerUpEvent>(_ =>
+            screen.RegisterCallback<PointerUpEvent>(evt =>
             {
+                if (_districtMarqueeActive)
+                {
+                    if (evt.button == 0 && evt.pointerId == _districtSelectionPointerId)
+                    {
+                        UpdateDistrictSelectionMarquee(evt.position);
+                        CompleteDistrictSelectionPointer(district);
+                    }
+                    evt.StopImmediatePropagation();
+                    return;
+                }
+                if (evt.button != 0) return;
                 FinishDistrictFloraPaint(district);
                 if (_districtMarqueeActive || _districtSelectionDragActive)
                 {
@@ -883,6 +909,20 @@ namespace CityForgeV3.UI
                 if (!_districtRoadPointerDown) return;
                 _districtRoadPointerDown = false;
                 RegionSaveStore.Save(_openRegion);
+            }, TrickleDown.TrickleDown);
+            screen.RegisterCallback<PointerCaptureOutEvent>(evt =>
+            {
+                if (_districtMarqueeActive && evt.pointerId == _districtSelectionPointerId)
+                    CancelDistrictSelectionPointer();
+            });
+            screen.RegisterCallback<PointerCancelEvent>(evt =>
+            {
+                if (_districtMarqueeActive && evt.pointerId == _districtSelectionPointerId)
+                    CancelDistrictSelectionPointer();
+            });
+            screen.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                if (_districtSelectionSurface == screen) CancelDistrictSelectionPointer();
             });
 
             var back = CfButton.Create("←  REGION",
@@ -1954,7 +1994,7 @@ namespace CityForgeV3.UI
                 // selection model. Handle them before the older, dedicated
                 // builder-road selection path.
                 if ((DistrictWaterSelectToolActive() ||
-                     DistrictSelectToolActive()) &&
+                     DistrictSelectToolActive() || DistrictMoveToolActive()) &&
                     DeleteDistrictSelection())
                     return;
                 if (TryDeleteSelectedDistrictRoad()) return;
@@ -2166,7 +2206,7 @@ namespace CityForgeV3.UI
         private static (string Name, string Glyph)[] TerraformTools(string category) =>
             category switch
             {
-                "Select" => new[] { ("Select", "↖") },
+                "Select" => new[] { ("Select", "↖"), ("Move", "✥") },
                 "Water" => new[] { ("Select Water", "↖"), ("Lake", "●"), ("Pond", "○"), ("River", "〰"), ("Stream", "≈"), ("Coast", "◒"), ("Erase Water", "×") },
                 "Flora" => new[] { ("Trees", "♣"), ("Forest", "♠"), ("Clear Flora", "⌫") },
                 "Environment" => new[] { ("Clouds", "☁"), ("Mist", "≋"), ("Clear Skies", "○") },
@@ -2179,7 +2219,7 @@ namespace CityForgeV3.UI
             mode == DistrictEditorMode.Builder
                 ? new[]
                 {
-                    ("Select", "↖", "Select — drag a rectangle around district objects, then move or delete them together"),
+                    ("Select", "↖", "Select — draw a rectangle, release to select; use Move to drag the group"),
                     ("Lots", "▦", "Lots — browse and place any complete lot saved in the Lot Editor"),
                     ("Roads", "=", "Roads - streets, avenues, highways, and intersections"),
                     ("Zoning", "#", "Zoning - designate residential, commercial, industrial, and mixed-use land"),
@@ -2190,7 +2230,7 @@ namespace CityForgeV3.UI
                 }
                 : new[]
                 {
-                    ("Select", "↖", "Select — drag a rectangle around district objects, then move or delete them together"),
+                    ("Select", "↖", "Select — draw a rectangle, release to select; use Move to drag the group"),
                     ("Terrain", "▲", "Terrain — shape district land"),
                     ("Water", "≈", "Water — lakes, rivers, and shorelines"),
                     ("Flora", "♣", "Flora — trees and natural ground cover"),
@@ -2225,7 +2265,7 @@ namespace CityForgeV3.UI
         private static (string Name, string Glyph)[] BuilderTools(string category) =>
             category switch
             {
-                "Select" => new[] { ("Select", "↖") },
+                "Select" => new[] { ("Select", "↖"), ("Move", "✥") },
                 "Lots" => new[] { ("Browse Lots", "▦") },
                 "Zoning" => new[] { ("Residential", "R"), ("Commercial", "C"), ("Industrial", "I"), ("Mixed Use", "M"), ("Dezone", "X") },
                 "Parks" => new[] { ("Pocket Park", "P"), ("Plaza", "Q"), ("Playground", "G"), ("Sports", "O") },
@@ -2254,6 +2294,16 @@ namespace CityForgeV3.UI
         {
             if (category == "Select")
             {
+                CancelDistrictSelectionPointer();
+                _districtFloraPointerDown = false;
+                _districtRoadPointerDown = false;
+                _districtSelectionDragActive = false;
+                _selectedDistrictFloraInstanceId = "";
+                _selectedDistrictLotInstanceId = "";
+                _hoveredDistrictLotInstanceId = "";
+                _hasSelectedDistrictRoad = false;
+                _districtWorld?.SelectDistrictFlora("");
+                _districtWorld?.HideLotOutline();
                 _pendingFounderBuildingId = "";
                 _pendingDistrictLotId = "";
                 _pendingDistrictLotName = "";
@@ -2599,6 +2649,9 @@ namespace CityForgeV3.UI
             ActiveDistrictCategory == "Select" &&
             ActiveDistrictTool == "Select";
 
+        private bool DistrictMoveToolActive() =>
+            ActiveDistrictCategory == "Select" && ActiveDistrictTool == "Move";
+
         private bool DistrictWaterSelectToolActive() =>
             _districtEditorMode == DistrictEditorMode.Terraform &&
             _terraformCategory == "Water" &&
@@ -2667,143 +2720,100 @@ namespace CityForgeV3.UI
              !string.IsNullOrWhiteSpace(_pendingDistrictFloraId));
 
         private void BeginDistrictSelectionPointer(RegionCityTile district,
-            Vector2 normalized, Vector2 screenPosition)
+            Vector2 panelPosition, VisualElement surface, int pointerId)
         {
-            var floraHit = _districtWorld?.FindDistrictFloraAtPanel(
-                DistrictCameraPoint(screenPosition)) ?? "";
-            if (!string.IsNullOrWhiteSpace(floraHit))
-            {
-                var alreadySelected = _districtSelection.Any(selected =>
-                    selected.Kind == DistrictSelectionKind.Flora &&
-                    selected.Id == floraHit);
-                if (!alreadySelected)
-                {
-                    _districtSelection.Clear();
-                    _districtSelection.Add(new DistrictSelectionRef(
-                        DistrictSelectionKind.Flora, floraHit));
-                    _districtWorld?.ShowDistrictSelection(district,
-                        _districtSelection);
-                }
-                _districtSelectionStart = _districtSelectionLast = normalized;
-                _districtSelectionScreenStart = screenPosition;
-                _districtSelectionGridRemainder = Vector2.zero;
-                _districtSelectionDragActive = true;
-                _districtMarqueeActive = false;
-                return;
-            }
-            var hit = CollectDistrictSelection(district,
-                new Rect(normalized.x - .006f, normalized.y - .006f,
-                    .012f, .012f));
-            var hitSelected = hit.Any(candidate =>
-                _districtSelection.Any(selected =>
-                    selected.Kind == candidate.Kind &&
-                    selected.Id == candidate.Id));
-            _districtSelectionStart = _districtSelectionLast = normalized;
-            _districtSelectionScreenStart = screenPosition;
-            _districtSelectionGridRemainder = Vector2.zero;
-            if (hitSelected)
-            {
-                _districtSelectionDragActive = true;
-                _districtMarqueeActive = false;
-                return;
-            }
-            _districtSelection.Clear();
-            _districtWorld?.ShowDistrictSelection(district,
-                _districtSelection);
-            _districtMarqueeActive = true;
+            if (_districtWorld == null || _districtMarqueeActive) return;
+            _districtSelectionScreenStart = _districtSelectionScreenLast = panelPosition;
+            _districtSelectionPointerId = pointerId;
+            _districtSelectionSurface = surface;
             _districtSelectionDragActive = false;
-            UpdateDistrictSelectionMarquee(screenPosition, normalized);
+            _districtFloraPointerDown = false;
+            _districtRoadPointerDown = false;
+            _districtEdgePanDirection = Vector2Int.zero;
+            _districtMarqueeActive = true;
+            _districtWorld.HideLotOutline();
+            _districtWorld.HideLotPlacementGuide();
+            _districtWorld.SelectDistrictFlora("");
+            // Retain the prior set for Escape/capture-loss cancellation, but
+            // suppress its highlighting and all selection actions during drag.
+            _districtWorld.ShowDistrictSelection(district, Array.Empty<DistrictSelectionRef>());
+            surface.CapturePointer(pointerId);
+            UpdateDistrictSelectionMarquee(panelPosition);
         }
 
-        private void UpdateDistrictSelectionMarquee(Vector2 screenPosition,
-            Vector2 normalized)
+        private void BeginDistrictMovePointer(RegionCityTile district,
+            Vector2 normalized, Vector2 panelPosition)
         {
-            _districtSelectionLast = normalized;
+            var pixel = DistrictCameraPoint(panelPosition);
+            var hits = _districtWorld.CollectDistrictSelectionInScreenRect(district,
+                new Rect(pixel.x - 4f, pixel.y - 4f, 8f, 8f));
+            if (!_districtSelection.Any(selected => hits.Any(hit =>
+                    hit.Kind == selected.Kind && hit.Id == selected.Id))) return;
+            _districtSelectionStart = _districtSelectionLast = normalized;
+            _districtSelectionGridRemainder = Vector2.zero;
+            _districtSelectionMovedRiver = false;
+            _districtSelectionDragActive = true;
+        }
+
+        private void UpdateDistrictSelectionMarquee(Vector2 panelPosition)
+        {
+            _districtSelectionScreenLast = panelPosition;
             if (_districtSelectionMarquee == null) return;
-            _districtSelectionMarquee.style.left = Mathf.Min(
-                _districtSelectionScreenStart.x, screenPosition.x);
-            _districtSelectionMarquee.style.top = Mathf.Min(
-                _districtSelectionScreenStart.y, screenPosition.y);
-            _districtSelectionMarquee.style.width = Mathf.Abs(
-                screenPosition.x - _districtSelectionScreenStart.x);
-            _districtSelectionMarquee.style.height = Mathf.Abs(
-                screenPosition.y - _districtSelectionScreenStart.y);
+            var parent = _districtSelectionMarquee.parent;
+            var start = parent.WorldToLocal(_districtSelectionScreenStart);
+            var end = parent.WorldToLocal(panelPosition);
+            var rect = DistrictSelectionGeometry.Rectangle(start, end);
+            _districtSelectionMarquee.style.left = rect.xMin;
+            _districtSelectionMarquee.style.top = rect.yMin;
+            _districtSelectionMarquee.style.width = rect.width;
+            _districtSelectionMarquee.style.height = rect.height;
             _districtSelectionMarquee.style.display = DisplayStyle.Flex;
+        }
+
+        private void CancelDistrictSelectionPointer()
+        {
+            if (!_districtMarqueeActive) return;
+            var surface = _districtSelectionSurface;
+            var pointerId = _districtSelectionPointerId;
+            _districtMarqueeActive = false;
+            _districtSelectionPointerId = -1;
+            _districtSelectionSurface = null;
+            if (_districtSelectionMarquee != null)
+                _districtSelectionMarquee.style.display = DisplayStyle.None;
+            if (surface != null && surface.HasPointerCapture(pointerId))
+                surface.ReleasePointer(pointerId);
+            _districtWorld?.ShowDistrictSelection(FindSelectedRegionTile(), _districtSelection);
         }
 
         private void CompleteDistrictSelectionPointer(RegionCityTile district)
         {
             if (_districtMarqueeActive)
             {
-                var min = Vector2.Min(_districtSelectionStart,
-                    _districtSelectionLast);
-                var max = Vector2.Max(_districtSelectionStart,
-                    _districtSelectionLast);
-                var rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
-                if (rect.width < .004f && rect.height < .004f)
-                    rect = new Rect(_districtSelectionLast.x - .006f,
-                        _districtSelectionLast.y - .006f, .012f, .012f);
+                var start = DistrictCameraPoint(_districtSelectionScreenStart);
+                var end = DistrictCameraPoint(_districtSelectionScreenLast);
+                var rect = DistrictSelectionGeometry.Rectangle(start, end);
+                // A click is also committed on release, with a fixed pixel
+                // tolerance instead of a district-size-dependent world radius.
+                if (Vector2.Distance(_districtSelectionScreenStart,
+                        _districtSelectionScreenLast) < 4f)
+                    rect = new Rect(end.x - 4f, end.y - 4f, 8f, 8f);
+                var selected = _districtWorld.CollectDistrictSelectionInScreenRect(district, rect);
                 _districtSelection.Clear();
-                _districtSelection.AddRange(CollectDistrictSelection(
-                    district, rect));
-                _districtWorld?.ShowDistrictSelection(district,
-                    _districtSelection);
+                _districtSelection.AddRange(selected);
+                CancelDistrictSelectionPointer();
+                return;
             }
             if (_districtSelectionDragActive)
             {
+                if (_districtSelectionMovedRiver) _districtWorld?.RefreshRivers(district);
+                _districtSelectionMovedRiver = false;
                 DistrictRoadPlacementModel.Repair(district.Roads);
                 _districtWorld?.RefreshRoads(district);
                 _districtWorldCompositionKey = DistrictCompositionKey(district);
                 RegionSaveStore.Save(_openRegion);
-                _districtWorld?.ShowDistrictSelection(district,
-                    _districtSelection);
+                _districtWorld?.ShowDistrictSelection(district, _districtSelection);
             }
-            _districtMarqueeActive = false;
             _districtSelectionDragActive = false;
-            if (_districtSelectionMarquee != null)
-                _districtSelectionMarquee.style.display = DisplayStyle.None;
-        }
-
-        private List<DistrictSelectionRef> CollectDistrictSelection(
-            RegionCityTile district, Rect normalizedRect)
-        {
-            var result = new List<DistrictSelectionRef>();
-            if (district == null) return result;
-            var columns = DistrictScale.Columns(district.Width);
-            var rows = DistrictScale.Columns(district.Height);
-            foreach (var flora in district.Flora ??
-                     new List<PlacedDistrictFlora>())
-                if (flora != null && normalizedRect.Contains(new Vector2(
-                        flora.NormalizedX, flora.NormalizedZ)))
-                    result.Add(new DistrictSelectionRef(
-                        DistrictSelectionKind.Flora, flora.InstanceId));
-            foreach (var lot in district.Lots ?? new List<PlacedDistrictLot>())
-            {
-                if (!TryGetDistrictLotFootprint(lot, out _, out var spanX,
-                        out var spanZ)) continue;
-                var center = new Vector2((lot.GridX + spanX * .5f) / columns,
-                    (lot.GridZ + spanZ * .5f) / rows);
-                var footprint = new Rect(lot.GridX / (float)columns,
-                    lot.GridZ / (float)rows, spanX / (float)columns,
-                    spanZ / (float)rows);
-                if (normalizedRect.Contains(center) ||
-                    normalizedRect.Overlaps(footprint, true))
-                    result.Add(new DistrictSelectionRef(
-                        DistrictSelectionKind.Lot, lot.InstanceId));
-            }
-            foreach (var road in district.Roads ?? new List<PlacedRoadPiece>())
-            {
-                if (road == null) continue;
-                var center = new Vector2((road.GridX + .5f) / columns,
-                    (road.GridZ + .5f) / rows);
-                var footprint = new Rect(road.GridX / (float)columns,
-                    road.GridZ / (float)rows, 1f / columns, 1f / rows);
-                if (normalizedRect.Contains(center) ||
-                    normalizedRect.Overlaps(footprint, true))
-                    result.Add(new DistrictSelectionRef(
-                        DistrictSelectionKind.Road, road.Id));
-            }
-            return result;
         }
 
         private void MoveDistrictSelection(RegionCityTile district,
@@ -2824,6 +2834,11 @@ namespace CityForgeV3.UI
                     flora.NormalizedX = Mathf.Clamp01(flora.NormalizedX + delta.x);
                     flora.NormalizedZ = Mathf.Clamp01(flora.NormalizedZ + delta.y);
                     floraChanged = true;
+                }
+                else if (selection.Kind == DistrictSelectionKind.River)
+                {
+                    var river = district.Rivers?.Find(item => item != null && item.InstanceId == selection.Id);
+                    _districtSelectionMovedRiver |= DistrictRiverEditing.Move(river, delta);
                 }
             }
             _districtSelectionGridRemainder += new Vector2(
@@ -2871,6 +2886,7 @@ namespace CityForgeV3.UI
 
         private bool DeleteDistrictSelection()
         {
+            if (_districtMarqueeActive) return false;
             var district = FindSelectedRegionTile();
             if (district == null) return false;
             SelectSoleDistrictRiverIfNeeded(district);
@@ -2905,10 +2921,6 @@ namespace CityForgeV3.UI
             if (removedRiver)
             {
                 _districtWorld?.RefreshRivers(district);
-                _districtWorld?.ShowDistrictSelection(district,
-                    _districtSelection);
-                _districtWorldCompositionKey = DistrictCompositionKey(district);
-                return true;
             }
             _districtWorldCompositionKey = "";
             Show(AppScreen.DistrictTerraform);
