@@ -930,6 +930,11 @@ namespace CityForgeV3.UI
                 LeaveDistrictEditor, true, "terraform-back");
             back.tooltip = "Return to the region map";
             screen.Add(back);
+            var labor = CfButton.Create("LABOR", ComposeDistrictLaborModal, true, "quiet");
+            labor.name = "district-labor-menu";
+            labor.style.position = Position.Absolute; labor.style.left = 20; labor.style.top = 78;
+            labor.style.width = 140; labor.style.height = 44; labor.style.fontSize = 20;
+            screen.Add(labor);
 
             var modeSwitch = new VisualElement();
             modeSwitch.AddToClassList("district-mode-switch");
@@ -1458,8 +1463,10 @@ namespace CityForgeV3.UI
             panel.Add(treasury);
             panel.Add(StyledLabel($"Year: {district.FoundingYear}",
                 "district-simulation-stat"));
-            panel.Add(StyledLabel($"Season: {_districtSeason}",
-                "district-simulation-stat"));
+            var laborSeason=StyledLabel($"Season: {DistrictLabor.SeasonName(DistrictLabor.State(district).SeasonIndex)}", "district-simulation-stat");
+            laborSeason.name="district-labor-season";panel.Add(laborSeason);
+            var laborStatus=StyledLabel($"Axemen: {DistrictLabor.State(district).AssignedAxemen} · Wood: {DistrictLabor.State(district).Wood}","district-simulation-stat");
+            laborStatus.name="district-labor-status";panel.Add(laborStatus);
             panel.Add(StyledLabel($"Pop: {_districtPopulation:N0}",
                 "district-simulation-stat"));
             panel.Add(StyledLabel(district.FounderBuildingName.ToUpperInvariant(),
@@ -1979,6 +1986,7 @@ namespace CityForgeV3.UI
 
         private void LeaveDistrictEditor()
         {
+            SaveDistrictEdit();
             SetDistrictSimulationPaused(false);
             _pendingDistrictLotId = "";
             _pendingDistrictLotName = "";

@@ -180,6 +180,7 @@ namespace CityForgeV3.World
         public List<PlacedDistrictRiver> Rivers = new();
         public List<PlacedDistrictFlora> Flora = new();
         public int Treasury = 280000;
+        public DistrictLaborState Labor = new();
     }
 
     [Serializable]

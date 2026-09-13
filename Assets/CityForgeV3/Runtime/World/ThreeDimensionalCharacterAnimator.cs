@@ -124,6 +124,7 @@ namespace CityForgeV3.World
             if (name.Contains("trot")) return "trot";
             if (name.Contains("walk")) return "walk";
             if (name.Contains("run")) return "run";
+            if (name.Contains("chop")) return "chop";
             if (name.Contains("hoe")) return "hoe";
             if (name.Contains("idle")) return "idle";
             if (name.Contains("bow")) return "bow";
@@ -132,7 +133,7 @@ namespace CityForgeV3.World
         }
 
         private static bool IsLoopingState(string state) =>
-            state is "hoe" or "trot" or "walk" or "run" or "run_upstairs" or "wait" or "idle" or "look_around" or
+            state is "chop" or "hoe" or "trot" or "walk" or "run" or "run_upstairs" or "wait" or "idle" or "look_around" or
                 "fold_arms" or "angry";
     }
 }

@@ -50,6 +50,8 @@ namespace CityForgeV3.UI
             if (district == null || district != _districtUndoTile ||
                 _openRegion != _districtUndoRegion || !_districtUndo.TryUndo(out var snapshot)) return false;
             JsonUtility.FromJsonOverwrite(snapshot, district);
+            if (DistrictLabor.State(district).Workers.Count > 0) SetDistrictSimulationPaused(true);
+            _laborNavigation = null;
             _districtSelection.Clear();
             _selectedDistrictFloraInstanceId = "";
             _selectedDistrictLotInstanceId = "";

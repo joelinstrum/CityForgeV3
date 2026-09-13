@@ -75,7 +75,6 @@ namespace CityForgeV3.UI
         private bool _hasSelectedDistrictRoad;
         private Vector2Int _selectedDistrictRoadCell;
         private int _districtYear = 1788;
-        private string _districtSeason = "Summer";
         private int _districtPopulation = 4300;
         private DistrictRiverDirection _districtRiverDirection =
             DistrictRiverDirection.SouthToNorth;
@@ -568,6 +567,7 @@ namespace CityForgeV3.UI
 
         private void Update()
         {
+            TickDistrictLabor();
             RefreshDecalCursorForControl(
                 Input.GetKey(KeyCode.LeftControl) ||
                 Input.GetKey(KeyCode.RightControl));
