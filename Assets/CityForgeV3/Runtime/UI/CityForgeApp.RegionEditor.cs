@@ -640,6 +640,7 @@ namespace CityForgeV3.UI
                 return;
             }
             EnsureDistrictWorld(district);
+            EnsureDistrictUndo(district);
             RefreshSelectedDistrictLotOutline(district);
             SelectSoleDistrictRiverIfNeeded(district);
             _districtWorld.ShowDistrictSelection(district,
@@ -774,12 +775,12 @@ namespace CityForgeV3.UI
                 {
                     _districtFloraPointerDown = false;
                     _districtWorldCompositionKey = DistrictCompositionKey(district);
-                    RegionSaveStore.Save(_openRegion);
+                    SaveDistrictEdit();
                 }
                 if (_districtRoadPointerDown)
                 {
                     _districtRoadPointerDown = false;
-                    RegionSaveStore.Save(_openRegion);
+                    SaveDistrictEdit();
                 }
                 RefreshSelectedDistrictLotOutline(district);
             });
@@ -904,11 +905,11 @@ namespace CityForgeV3.UI
                 {
                     _districtFloraPointerDown = false;
                     _districtWorldCompositionKey = DistrictCompositionKey(district);
-                    RegionSaveStore.Save(_openRegion);
+                    SaveDistrictEdit();
                 }
                 if (!_districtRoadPointerDown) return;
                 _districtRoadPointerDown = false;
-                RegionSaveStore.Save(_openRegion);
+                SaveDistrictEdit();
             }, TrickleDown.TrickleDown);
             screen.RegisterCallback<PointerCaptureOutEvent>(evt =>
             {
@@ -1035,7 +1036,7 @@ namespace CityForgeV3.UI
                     {
                         district.TimeOfDay = preset;
                         _districtWorld?.SetTimeOfDay(preset);
-                        RegionSaveStore.Save(_openRegion);
+                        SaveDistrictEdit();
                     }
                     Show(AppScreen.DistrictTerraform);
                 })
@@ -1070,13 +1071,14 @@ namespace CityForgeV3.UI
             var districtName = new TextField("NAME")
             {
                 name = "terraform-district-name-field",
+                isDelayed = true,
                 value = district.Name ?? ""
             };
             districtName.AddToClassList("terraform-district-name-field");
             districtName.RegisterValueChangedCallback(evt =>
             {
                 district.Name = evt.newValue ?? "";
-                RegionSaveStore.Save(_openRegion);
+                SaveDistrictEdit();
             });
             hud.Add(districtName);
             var designation = new VisualElement
@@ -1094,7 +1096,7 @@ namespace CityForgeV3.UI
                 var designationButton = new Button(() =>
                 {
                     district.Designation = capturedDesignation;
-                    RegionSaveStore.Save(_openRegion);
+                    SaveDistrictEdit();
                     Show(AppScreen.DistrictTerraform);
                 })
                 {
@@ -1799,7 +1801,7 @@ namespace CityForgeV3.UI
                 Mathf.Max(0, rows - oldSpanX));
             placement.RotationQuarterTurns =
                 (placement.RotationQuarterTurns + direction + 4) % 4;
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             if (_districtWorld != null &&
                 _districtWorld.UpdatePlacedLotTransform(district, placement))
                 _districtWorldCompositionKey = DistrictCompositionKey(district);
@@ -1868,7 +1870,7 @@ namespace CityForgeV3.UI
             _pendingDistrictLotId = "";
             _pendingDistrictLotName = "";
             _selectedDistrictLotInstanceId = instanceId;
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             if (_districtWorld != null)
                 _districtWorldCompositionKey = DistrictCompositionKey(district);
             Show(AppScreen.DistrictTerraform);
@@ -1917,7 +1919,7 @@ namespace CityForgeV3.UI
             _pendingDistrictLotId = "";
             _pendingDistrictLotName = "";
             _districtYear = district.FoundingYear;
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             Show(AppScreen.DistrictTerraform);
         }
 
@@ -2596,7 +2598,7 @@ namespace CityForgeV3.UI
         {
             _districtWorld.RefreshFlora(district, _selectedDistrictFloraInstanceId);
             _districtWorldCompositionKey = DistrictCompositionKey(district);
-            if (save) RegionSaveStore.Save(_openRegion);
+            if (save) SaveDistrictEdit();
         }
 
         private bool RerollDistrictRandomFlora()
@@ -2618,7 +2620,7 @@ namespace CityForgeV3.UI
             _districtWorld?.RefreshFlora(district,
                 _selectedDistrictFloraInstanceId);
             _districtWorldCompositionKey = DistrictCompositionKey(district);
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             return true;
         }
 
@@ -2705,7 +2707,7 @@ namespace CityForgeV3.UI
                 -horizontalWorldMotion / (float)DistrictScale.Columns(district.Width),
                 -verticalWorldMotion / (float)DistrictScale.Columns(district.Height));
             if (!DistrictRiverEditing.Move(river, delta)) return true;
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             _districtWorld?.RefreshRivers(district);
             _districtWorldCompositionKey = DistrictCompositionKey(district);
             _districtWorld?.ShowDistrictSelection(district,
@@ -2810,7 +2812,7 @@ namespace CityForgeV3.UI
                 DistrictRoadPlacementModel.Repair(district.Roads);
                 _districtWorld?.RefreshRoads(district);
                 _districtWorldCompositionKey = DistrictCompositionKey(district);
-                RegionSaveStore.Save(_openRegion);
+                SaveDistrictEdit();
                 _districtWorld?.ShowDistrictSelection(district, _districtSelection);
             }
             _districtSelectionDragActive = false;
@@ -2917,7 +2919,7 @@ namespace CityForgeV3.UI
             }
             DistrictRoadPlacementModel.Repair(district.Roads);
             _districtSelection.Clear();
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             if (removedRiver)
             {
                 _districtWorld?.RefreshRivers(district);
@@ -3052,7 +3054,7 @@ namespace CityForgeV3.UI
                 DistrictSelectionKind.River, result.River.InstanceId));
             _pendingDistrictRiver = null;
             _selectedDistrictLotInstanceId = "";
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             _districtWorldCompositionKey = "";
             RemoveDocumentModal();
             Show(AppScreen.DistrictTerraform);
@@ -3184,7 +3186,7 @@ namespace CityForgeV3.UI
             _districtWorld?.HideLotPlacementGuide();
             _hasSelectedDistrictRoad = false;
             _districtWorldCompositionKey = DistrictCompositionKey(district);
-            RegionSaveStore.Save(_openRegion);
+            SaveDistrictEdit();
             return true;
         }
 

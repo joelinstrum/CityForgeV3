@@ -593,6 +593,14 @@ namespace CityForgeV3.UI
                     if (Input.GetKeyDown(KeyCode.Escape)) CancelDistrictSelectionPointer();
                     return;
                 }
+                if (Input.GetKeyDown(KeyCode.Z) &&
+                    (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) ||
+                     Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)) &&
+                    !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                {
+                    UndoDistrictEdit();
+                    return;
+                }
                 if (Input.GetKeyDown(KeyCode.G))
                     _districtWorld?.ToggleGridVisibility();
                 PollTerraformViewKeys();
@@ -610,6 +618,7 @@ namespace CityForgeV3.UI
         private void Show(AppScreen screen)
         {
             CancelDistrictSelectionPointer();
+            if (screen != AppScreen.DistrictTerraform) ClearDistrictUndo();
             // Script hot reload clears non-serialized field references while
             // the UIDocument survives. Rebind before composing so QA menu
             // commands cannot leave the Game view with a world but no UI.
@@ -681,6 +690,14 @@ namespace CityForgeV3.UI
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (_currentScreen == AppScreen.DistrictTerraform && !TextInputHasFocus() &&
+                evt.keyCode == KeyCode.Z && (evt.ctrlKey || evt.commandKey))
+            {
+                // Physical GetKeyDown owns undo: UI events can repeat or arrive
+                // in the same frame, and must never consume a second history entry.
+                evt.StopImmediatePropagation();
+                return;
+            }
             if (_districtMarqueeActive)
             {
                 if (evt.keyCode == KeyCode.Escape) CancelDistrictSelectionPointer();
