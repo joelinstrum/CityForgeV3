@@ -6,6 +6,11 @@ namespace CityForgeV3.UI
  public sealed partial class CityForgeApp
  {
   bool _treeRepairQaActive;
+  public void OpenSmallStoneLibraryQa()
+  {
+   if (!_treeRepairQaActive) return;
+   _floraLibraryCategory="Stones";OpenFloraModal();
+  }
   public void OpenTreeRepairQa(string id)
   {
    if(!_treeRepairQaActive&&(_hasOpenLot||_currentScreen!=AppScreen.Splash)){Debug.LogWarning("Tree repair QA requires fresh splash; existing lot preserved.");return;}
@@ -13,6 +18,7 @@ namespace CityForgeV3.UI
    _lotWorld.PlaceFloraForQa(id,0,0);_lotWorld.SetBaseTexture("grass-lush");_lotWorld.SetTimeOfDay(TimeOfDayPreset.Noon);
    _hasOpenLot=true;_lotEditorCategory=LotEditorCategory.Flora;_lotEditorCategoryExpanded=false;_placementFloraId="";Show(AppScreen.LotEditor);
    _lotWorld.SetZoomLevel(LotZoomLevel.Inspection);_lotWorld.SetQaOrthographicSize(id == "fraser-fir-snowy" ? 5f : 10f);_lotWorld.SelectTreeRepairForQa();
+   if(id is "stone-cluster-4" or "pebbles") _lotWorld.SetQaOrthographicSize(2.5f);
   }
  }
 }
