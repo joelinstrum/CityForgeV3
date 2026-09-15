@@ -1,0 +1,20 @@
+{
+  "source": "Authoring/Buildings/BrickworksV01/Source",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": [
+    0,
+    0,
+    0
+  ],
+  "size": [
+    18.86098289489746,
+    24.0,
+    11.212567329406738
+  ],
+  "textureRoles": {
+    "Base Color": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/BrickworksV01/Source/extracted/tripo_convert_df020986-d919-4cd3-8941-a2db148c2e47.fbm/tripo_image_df020986_0.jpg",
+    "Normal": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/BrickworksV01/Source/extracted/tripo_convert_df020986-d919-4cd3-8941-a2db148c2e47.fbm/tripo_image_df020986_2.jpg",
+    "Roughness": "/Users/joelinstrum/dev/CityForge - V3/Authoring/Buildings/BrickworksV01/Source/extracted/tripo_convert_df020986-d919-4cd3-8941-a2db148c2e47.fbm/tripo_image_df020986-d919-4cd3-8941-a2db148c2e47_0_Roughness.jpg"
+  }
+}

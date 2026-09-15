@@ -176,6 +176,8 @@ namespace CityForgeV3.World
         public bool PropRepeatLineActive => _propRepeatLineActive;
         public int LastPropRepeatPlacementCount { get; private set; }
         public int SelectedPropIndex { get; private set; } = -1;
+        public string SelectedPropInstanceId => SelectedPropIndex >= 0 && SelectedPropIndex < PropCount
+            ? _session.Data.Props[SelectedPropIndex].InstanceId : "";
         public bool SelectedPropIsThreeDimensionalCharacter =>
             SelectedPropIndex >= 0 && SelectedPropIndex < PropCount &&
             IsThreeDimensionalCharacter(
@@ -1707,8 +1709,10 @@ namespace CityForgeV3.World
                 _ => 0.78f
             };
 
-        private Transform CreatePropPresentation(string propId, string name, float alpha)
+        public Transform CreatePropPresentation(string propId, string name, float alpha)
         {
+            var boat = BoatCatalog.Find(propId);
+            if (boat != null) return CreateBoatPresentation(boat, name, alpha);
             if (IsHorseWagon(propId)) return CreateHorseCarriagePresentation(name, alpha, propId);
             if (propId == CarriagePropId) return CreateCarriagePresentation(name, alpha);
             var resourcePath = string.Equals(propId, FencePropId,
@@ -2715,6 +2719,13 @@ namespace CityForgeV3.World
         private static void PropDimensions(string propId, int turns,
             out float width, out float depth)
         {
+            var boat = BoatCatalog.Find(propId);
+            if (boat != null)
+            {
+                width = boat.widthMeters; depth = boat.lengthMeters;
+                if (Mathf.Abs(turns) % 2 == 1) (width, depth) = (depth, width);
+                return;
+            }
             if (string.Equals(propId, ThreeLanternLamppostPropId,
                     StringComparison.OrdinalIgnoreCase))
             {

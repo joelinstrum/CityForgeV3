@@ -11,7 +11,8 @@ namespace CityForgeV3.World
         Flora,
         Lot,
         Road,
-        River
+        River,
+        Entity
     }
 
     public readonly struct DistrictSelectionRef
@@ -29,10 +30,15 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class PlacedDistrictLot
     {
+        public bool BehaviorsInitialized;
+        public int TimberBundles;
+        public List<CityForgeV3.Behaviors.LotBehaviorInstance> Behaviors = new();
         public string InstanceId = "";
         public string LotId = "";
         public int GridX;
         public int GridZ;
+        public float ShoreOffsetX;
+        public float ShoreOffsetZ;
         public int RotationQuarterTurns;
     }
 
@@ -68,6 +74,7 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class PlacedDistrictRiver
     {
+        public string RegionRiverId = "";
         public string InstanceId = "";
         public DistrictRiverDirection Direction =
             DistrictRiverDirection.SouthToNorth;
@@ -117,7 +124,7 @@ namespace CityForgeV3.World
         public static bool Move(PlacedDistrictRiver river,
             Vector2 normalizedDelta)
         {
-            if (river?.Points == null || river.Points.Count == 0) return false;
+            if (river?.Points == null || river.Points.Count == 0 || !string.IsNullOrEmpty(river.RegionRiverId)) return false;
             var minX = river.Points.Min(point => point.X);
             var maxX = river.Points.Max(point => point.X);
             var minZ = river.Points.Min(point => point.Z);
@@ -145,6 +152,10 @@ namespace CityForgeV3.World
         public float NormalizedZ = 0.5f;
         public float Scale = 1f;
         public int RotationEighthTurns;
+        public DistrictTreeHarvestState HarvestState;
+        public int HarvestDirection;
+        public int RemainingWood;
+        public bool WoodCredited;
     }
 
     public enum RegionPlaceDesignation
@@ -177,6 +188,15 @@ namespace CityForgeV3.World
         public List<PlacedDistrictRiver> Rivers = new();
         public List<PlacedDistrictFlora> Flora = new();
         public int Treasury = 280000;
+        public DistrictLaborState Labor = new();
+        public DistrictWildlifeState Wildlife = new();
+        public DistrictResourceInventory ResourceInventory = new();
+        public DistrictHillSettings Hills = new();
+        public bool StoneDepositsGenerated;
+        public List<DistrictStoneSite> StoneSites = new();
+        public List<DistrictBrickworksSite> Brickworks = new();
+        public string NaturalResourceGenerationKey = "";
+        public List<DistrictResourceDeposit> ResourceDeposits = new();
     }
 
     [Serializable]
@@ -188,6 +208,9 @@ namespace CityForgeV3.World
         public int Width = 28;
         public int Height = 20;
         public string ModifiedUtc = "";
+        public RegionTerrainSettings Terrain = new();
+        public int RiverSeed;
+        public List<RegionRiverPath> RiverPaths = new();
         public List<RegionCityTile> Tiles = new();
     }
 
@@ -279,6 +302,8 @@ namespace CityForgeV3.World
                 }
                 y += bandHeight;
             }
+            if (data.RiverPaths != null && data.RiverPaths.Count > 0)
+                RegionRiverGenerator.Apply(data, data.RiverPaths);
         }
 
         public static string Save(RegionSaveData data, string root = null)
@@ -302,6 +327,19 @@ namespace CityForgeV3.World
             return File.Exists(path)
                 ? JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(path))
                 : null;
+        }
+
+        public static bool Delete(string regionId, string root = null)
+        {
+            // IDs are filenames, never paths supplied by save contents.
+            if (string.IsNullOrWhiteSpace(regionId) || regionId == "." || regionId == ".." ||
+                regionId.IndexOfAny(new[] { '/', '\\', ':' }) >= 0 ||
+                regionId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                throw new ArgumentException("Invalid region ID.", nameof(regionId));
+            var path = Path.Combine(root ?? DefaultRoot, $"{regionId}.json");
+            if (!File.Exists(path)) return false;
+            File.Delete(path);
+            return true;
         }
 
         public static List<RegionSaveSummary> List(string root = null)

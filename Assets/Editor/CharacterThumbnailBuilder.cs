@@ -19,7 +19,7 @@ public static class CharacterThumbnailBuilder
     {
         BuildLibrary(Ids, DirectoryPath, "QA/CharacterThumbnails", true);
     }
-    public static void BuildLibrary(string[] ids, string directoryPath, string reportDirectory, bool characterPortraits)
+    public static void BuildLibrary(string[] ids, string directoryPath, string reportDirectory, bool characterPortraits, Func<string,Transform> factory = null)
     {
         if(!EditorApplication.isPlaying){Debug.LogError("Enter Play mode before rendering runtime character portraits.");return;}
         var world=Object.FindFirstObjectByType<LotWorldController>(FindObjectsInactive.Include);
@@ -30,7 +30,7 @@ public static class CharacterThumbnailBuilder
             var id=ids[i];var preview=new PreviewRenderUtility();Texture2D pixels=null;
             try
             {
-                var root=(Transform)typeof(LotWorldController).GetMethod("CreatePropPresentation",F).Invoke(world,new object[]{id,"Thumbnail "+id,1f});
+                var root=factory != null ? factory(id) : (Transform)typeof(LotWorldController).GetMethod("CreatePropPresentation",F).Invoke(world,new object[]{id,"Thumbnail "+id,1f});
                 if(root==null)throw new Exception("No presentation for "+id);
                 preview.AddSingleGO(root.gameObject);
                 foreach(var player in root.GetComponentsInChildren<ThreeDimensionalCharacterAnimator>())

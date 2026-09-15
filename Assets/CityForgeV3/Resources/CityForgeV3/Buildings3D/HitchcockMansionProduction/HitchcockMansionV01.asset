@@ -25,7 +25,7 @@ MonoBehaviour:
   UseCrossFade: 1
   CrossFadeWidth: 0.12
   KeepShadowMeshWithImpostor: 1
-  CollisionPrefab: {fileID: 8026664412626445224, guid: 44eebcc3820344d8d8b3cb5e12189a18, type: 3}
+  CollisionPrefab: {fileID: 7174001689562533170, guid: 44eebcc3820344d8d8b3cb5e12189a18, type: 3}
   NightLightingPrefab: {fileID: 0}
   NightLightingMaterial: {fileID: 0}
   NightLightingLocalPosition: {x: 0, y: 0, z: 0}
@@ -94,7 +94,7 @@ MonoBehaviour:
     Provenance: UV-preserving derivative accepted after silhouette review.
   - Level: 5
     ScreenRelativeHeight: 0.002
-    VisualPrefab: {fileID: 8552158160643940384, guid: 1a9691ea0a993427d99751663123ede9, type: 3}
+    VisualPrefab: {fileID: 6272068719367934246, guid: 1a9691ea0a993427d99751663123ede9, type: 3}
     OverrideMaterial: {fileID: 0}
     ShadowPrefab: {fileID: 919132149155446097, guid: 9db8e2ae3e0f5499fb4b40d51df6007a, type: 3}
     LocalPosition: {x: 0, y: 0, z: 0}

@@ -1,0 +1,499 @@
+{
+  "source": "DG_DryGoods_Animated_v04.blend",
+  "foundation": [
+    7.8,
+    6.0
+  ],
+  "height": 12.9,
+  "meshes": [
+    {
+      "name": "DG_Shell.001",
+      "kind": "opaque",
+      "textures": {
+        "Color": "Shell_Color.png",
+        "Normal": "Shell_Normal.png",
+        "Roughness": "Shell_Roughness.png"
+      },
+      "triangles": 79020
+    },
+    {
+      "name": "DG_Storefront.001",
+      "kind": "opaque",
+      "textures": {
+        "Color": "Storefront_Color.png",
+        "Normal": "Storefront_Normal.png",
+        "Roughness": "Storefront_Roughness.png"
+      },
+      "triangles": 51280
+    },
+    {
+      "name": "DG_StoreGlass",
+      "kind": "glass",
+      "textures": {},
+      "triangles": 156
+    },
+    {
+      "name": "DG_LanternGlow",
+      "kind": "glow",
+      "textures": {},
+      "triangles": 108
+    },
+    {
+      "name": "DG_Door",
+      "kind": "opaque",
+      "textures": {
+        "Color": "Door_Color.png",
+        "Normal": "Door_Normal.png",
+        "Roughness": "Door_Roughness.png"
+      },
+      "triangles": 1776
+    },
+    {
+      "name": "DG_DoorGlass",
+      "kind": "glass",
+      "textures": {},
+      "triangles": 12
+    },
+    {
+      "name": "DG_WindowFrames",
+      "kind": "opaque",
+      "textures": {
+        "Color": "WindowFrames_Color.png",
+        "Normal": "WindowFrames_Normal.png",
+        "Roughness": "WindowFrames_Roughness.png"
+      },
+      "triangles": 114072
+    },
+    {
+      "name": "DG_Pane_front_0",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_front_1",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_front_2",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_front_3",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_front_4",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_front_5",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_6",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_7",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_8",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_9",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_10",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_11",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_12",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_13",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_rear_14",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_left_15",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_left_16",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_left_17",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_right_18",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_right_19",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Pane_right_20",
+      "kind": "pane",
+      "textures": {},
+      "triangles": 216
+    },
+    {
+      "name": "DG_Roof.001",
+      "kind": "opaque",
+      "textures": {
+        "Color": "Roof_Color.png",
+        "Normal": "Roof_Normal.png",
+        "Roughness": "Roof_Roughness.png"
+      },
+      "triangles": 137772
+    }
+  ],
+  "lights": [
+    {
+      "id": "DG_NIGHT_Lantern.001",
+      "room": "storefront",
+      "position": [
+        0.0,
+        3.119999885559082,
+        3.6500000953674316
+      ]
+    },
+    {
+      "id": "DG_NIGHT_Entrance.001",
+      "room": "storefront",
+      "position": [
+        0.0,
+        2.8299999237060547,
+        2.7799999713897705
+      ]
+    },
+    {
+      "id": "DG_NIGHT_Display_2.001",
+      "room": "storefront",
+      "position": [
+        2.319999933242798,
+        2.9600000381469727,
+        2.8299999237060547
+      ]
+    },
+    {
+      "id": "DG_NIGHT_Display_-2.001",
+      "room": "storefront",
+      "position": [
+        -2.319999933242798,
+        2.9600000381469727,
+        2.8299999237060547
+      ]
+    },
+    {
+      "id": "front_0__DG_Room_Pilot_Spill",
+      "room": "front_0",
+      "position": [
+        -2.319999933242798,
+        5.208000183105469,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "front_1__DG_Room_Pilot_Spill",
+      "room": "front_1",
+      "position": [
+        0.0,
+        5.208000183105469,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "front_2__DG_Room_Pilot_Spill",
+      "room": "front_2",
+      "position": [
+        2.319999933242798,
+        5.208000183105469,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "front_3__DG_Room_Pilot_Spill",
+      "room": "front_3",
+      "position": [
+        -2.319999933242798,
+        7.808000087738037,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "front_4__DG_Room_Pilot_Spill",
+      "room": "front_4",
+      "position": [
+        0.0,
+        7.808000087738037,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "front_5__DG_Room_Pilot_Spill",
+      "room": "front_5",
+      "position": [
+        2.319999933242798,
+        7.808000087738037,
+        3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_9__DG_Room_Pilot_Spill",
+      "room": "rear_9",
+      "position": [
+        -2.319999933242798,
+        5.208000183105469,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_10__DG_Room_Pilot_Spill",
+      "room": "rear_10",
+      "position": [
+        3.32190772667218e-08,
+        5.208000183105469,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_11__DG_Room_Pilot_Spill",
+      "room": "rear_11",
+      "position": [
+        2.319999933242798,
+        5.208000183105469,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_12__DG_Room_Pilot_Spill",
+      "room": "rear_12",
+      "position": [
+        -2.319999933242798,
+        7.808000087738037,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_13__DG_Room_Pilot_Spill",
+      "room": "rear_13",
+      "position": [
+        3.32190772667218e-08,
+        7.808000087738037,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "rear_14__DG_Room_Pilot_Spill",
+      "room": "rear_14",
+      "position": [
+        2.319999933242798,
+        7.808000087738037,
+        -3.2200000286102295
+      ]
+    },
+    {
+      "id": "left_16__DG_Room_Pilot_Spill",
+      "room": "left_16",
+      "position": [
+        -4.119999885559082,
+        5.208000183105469,
+        1.66095386333609e-08
+      ]
+    },
+    {
+      "id": "left_17__DG_Room_Pilot_Spill",
+      "room": "left_17",
+      "position": [
+        -4.119999885559082,
+        7.808000087738037,
+        1.66095386333609e-08
+      ]
+    },
+    {
+      "id": "right_19__DG_Room_Pilot_Spill",
+      "room": "right_19",
+      "position": [
+        4.119999885559082,
+        5.208000183105469,
+        4.283558041606739e-08
+      ]
+    },
+    {
+      "id": "right_20__DG_Room_Pilot_Spill",
+      "room": "right_20",
+      "position": [
+        4.119999885559082,
+        7.808000087738037,
+        4.283558041606739e-08
+      ]
+    }
+  ],
+  "doorPivot": [
+    -0.615,
+    0.495,
+    2.86
+  ],
+  "doorAngleUnity": -90,
+  "rooms": [
+    {
+      "id": "front_0",
+      "renderer": "DG_Pane_front_0",
+      "lit": true
+    },
+    {
+      "id": "front_1",
+      "renderer": "DG_Pane_front_1",
+      "lit": true
+    },
+    {
+      "id": "front_2",
+      "renderer": "DG_Pane_front_2",
+      "lit": true
+    },
+    {
+      "id": "front_3",
+      "renderer": "DG_Pane_front_3",
+      "lit": true
+    },
+    {
+      "id": "front_4",
+      "renderer": "DG_Pane_front_4",
+      "lit": true
+    },
+    {
+      "id": "front_5",
+      "renderer": "DG_Pane_front_5",
+      "lit": true
+    },
+    {
+      "id": "rear_6",
+      "renderer": "DG_Pane_rear_6",
+      "lit": false
+    },
+    {
+      "id": "rear_7",
+      "renderer": "DG_Pane_rear_7",
+      "lit": false
+    },
+    {
+      "id": "rear_8",
+      "renderer": "DG_Pane_rear_8",
+      "lit": false
+    },
+    {
+      "id": "rear_9",
+      "renderer": "DG_Pane_rear_9",
+      "lit": true
+    },
+    {
+      "id": "rear_10",
+      "renderer": "DG_Pane_rear_10",
+      "lit": true
+    },
+    {
+      "id": "rear_11",
+      "renderer": "DG_Pane_rear_11",
+      "lit": true
+    },
+    {
+      "id": "rear_12",
+      "renderer": "DG_Pane_rear_12",
+      "lit": true
+    },
+    {
+      "id": "rear_13",
+      "renderer": "DG_Pane_rear_13",
+      "lit": true
+    },
+    {
+      "id": "rear_14",
+      "renderer": "DG_Pane_rear_14",
+      "lit": true
+    },
+    {
+      "id": "left_15",
+      "renderer": "DG_Pane_left_15",
+      "lit": false
+    },
+    {
+      "id": "left_16",
+      "renderer": "DG_Pane_left_16",
+      "lit": true
+    },
+    {
+      "id": "left_17",
+      "renderer": "DG_Pane_left_17",
+      "lit": true
+    },
+    {
+      "id": "right_18",
+      "renderer": "DG_Pane_right_18",
+      "lit": false
+    },
+    {
+      "id": "right_19",
+      "renderer": "DG_Pane_right_19",
+      "lit": true
+    },
+    {
+      "id": "right_20",
+      "renderer": "DG_Pane_right_20",
+      "lit": true
+    }
+  ]
+}

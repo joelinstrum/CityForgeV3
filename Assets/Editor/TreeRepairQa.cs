@@ -4,6 +4,9 @@ using UnityEngine;
 using CityForgeV3.UI;
 public static class TreeRepairQa
 {
+ [MenuItem("City Forge/Flora/Repairs/Show Stones Menu")]static void StoneMenu(){if(EditorApplication.isPlaying)Object.FindFirstObjectByType<CityForgeApp>()?.OpenSmallStoneLibraryQa();}
+ [MenuItem("City Forge/Flora/Repairs/Small Stones")]static void SmallStones()=>Open("stone-cluster-4");
+ [MenuItem("City Forge/Flora/Repairs/Small Pebbles")]static void SmallPebbles()=>Open("pebbles");
  [MenuItem("City Forge/Flora/Repairs/Stones Mostly Large")]static void SL()=>Open("stones-mostly-large");
  [MenuItem("City Forge/Flora/Repairs/Stones Mixed")]static void SM()=>Open("stones-large-and-small");
  [MenuItem("City Forge/Flora/Repairs/Stones Small")]static void SS()=>Open("stones-mostly-small");

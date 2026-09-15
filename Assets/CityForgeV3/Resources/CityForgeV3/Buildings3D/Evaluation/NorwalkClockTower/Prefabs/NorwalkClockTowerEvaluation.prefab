@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7254972382822833578}
-  - component: {fileID: 3680703617308043573}
+  - component: {fileID: 4000994196148278947}
   - component: {fileID: 4841198894645715132}
   m_Layer: 0
   m_Name: NorwalkClockTowerEvaluation
@@ -34,7 +34,7 @@ Transform:
   - {fileID: 7644651349137086168}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3680703617308043573
+--- !u!114 &4000994196148278947
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -1,0 +1,5 @@
+# Incremental district deletion
+
+All shared selection deletions now retain the district world. Flora removal clears only selected renderer registry entries and their child shadows. Roads repair connectivity and refresh deduplicated affected cells and cardinal neighbors. Mixed selections apply all relevant updates. Local rivers refresh the water network and ground decals; elevated terrain refresh retains existing flora/resource presentations rather than recreating them. Regional river deletion restriction remains. Save, undo, and selection cleanup retain their common path.
+
+Unity compilation passed. 500-tree fixture: single-tree handler 9.25ms; mixed tree/road/lot 6.39ms; local river 147.41ms. Includes synchronous saving, not full-frame GPU timing. Verified surviving tree/lot/camera instance identities, removed data, and river undo. Fixture was flat terrain; elevated riverbed refresh was code-reviewed, not separately benchmarked. River deletion can still cost more due to dependent water/terrain geometry.

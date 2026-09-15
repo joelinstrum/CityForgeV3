@@ -1,0 +1,4 @@
+PASS 500-tree fixture: single tree, mixed tree/road/lot, river deletion and river undo.
+single tree: 9.2482 ms; surviving tree, lot and camera retained
+mixed tree/road/lot: 6.3937 ms; surviving tree, lot and camera retained
+river: 147.4104 ms; surviving tree, lot and camera retained
