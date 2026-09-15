@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Linq;using System.Collections.Generic;using UnityEditor;using UnityEngine;using CityForgeV3.Buildings3D;
-[InitializeOnLoad] public static class DryGoodsContactReview {
+ public static class DryGoodsContactReview {
  const string Root="Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/DryGoodsV09";
  const string Report="/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/dry-goods/v09-contact-detail/";
  static Dictionary<Renderer,Material[]> original=new();static List<Material> copies=new();

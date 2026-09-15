@@ -18,7 +18,7 @@ public static class DryGoodsV06Builder
  [Serializable] public class Room { public string id,renderer; public bool lit; }
  [Serializable] public class Anchor { public string id,room; public float[] position; }
  [Serializable] public class Manifest { public MeshInfo[] meshes; public Room[] rooms; public Anchor[] lights; }
- [InitializeOnLoadMethod] static void Register(){EditorApplication.update+=Poll;}
+  static void Register(){EditorApplication.update+=Poll;}
  static void Poll()
  {
   if(EditorApplication.isCompiling || EditorApplication.isUpdating || !File.Exists(Command))return;

@@ -48,7 +48,7 @@ namespace CityForgeV3.Editor
             };
 
             PlayerSettings.companyName = "City Forge";
-            PlayerSettings.productName = "City Forge V3";
+            PlayerSettings.productName = "City Forge Regions Review";
             PlayerSettings.SetApplicationIdentifier(
                 NamedBuildTarget.Standalone,
                 "com.cityforge.v3");

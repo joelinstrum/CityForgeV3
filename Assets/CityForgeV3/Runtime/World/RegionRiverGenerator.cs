@@ -88,6 +88,10 @@ namespace CityForgeV3.World
                     {smooth.Add(Vector2.Lerp(points[i-1],points[i],.25f));smooth.Add(Vector2.Lerp(points[i-1],points[i],.75f));}
                     smooth.Add(points[points.Count-1]);points=smooth;
                 }
+                bool horizontal = flow == RegionRiverFlow.WestToEast || flow == RegionRiverFlow.EastToWest;
+                points = AddShortMeanders(points, new Vector2(
+                    DistrictScale.SizeMeters(horizontal ? region.Height : region.Width),
+                    DistrictScale.SizeMeters(horizontal ? region.Width : region.Height)), random, n < deep);
                 if(n>0)
                 {
                     var trial = new List<List<Vector2>>();
@@ -117,6 +121,56 @@ namespace CityForgeV3.World
                 }
             }
             return result;
+        }
+
+        private static List<Vector2> AddShortMeanders(List<Vector2> route, Vector2 scale, System.Random random, bool deep)
+        {
+            float wavelength = (deep ? 480f : 300f) * Mathf.Lerp(.85f,1.25f,(float)random.NextDouble());
+            float amplitude = deep ? 65f : 38f;
+            float phase = (float)random.NextDouble()*Mathf.PI*2;
+            float total=0;
+            for(int i=1;i<route.Count;i++)total+=Vector2.Scale(route[i]-route[i-1],scale).magnitude;
+            var result=new List<Vector2>();float distance=0;
+            for(int i=1;i<route.Count;i++)
+            {
+                var a=Vector2.Scale(route[i-1],scale);var b=Vector2.Scale(route[i],scale);
+                var tangent=(b-a).normalized;var normal=new Vector2(-tangent.y,tangent.x);
+                float length=Vector2.Distance(a,b);int steps=Mathf.Max(1,Mathf.CeilToInt(length/30f));
+                for(int j=0;j<steps;j++)
+                {
+                    float t=j/(float)steps;float along=distance+length*t;
+                    float envelope=Mathf.SmoothStep(0,1,Mathf.Min(along,total-along)/150f);
+                    float angle=along/wavelength*Mathf.PI*2;
+                    float offset=amplitude*envelope*(Mathf.Sin(angle+phase+.35f*Mathf.Sin(angle*.27f))+.18f*Mathf.Sin(angle*1.73f-phase));
+                    var p=Vector2.Lerp(a,b,t)+normal*offset;
+                    result.Add(new Vector2(Mathf.Clamp01(p.x/scale.x),Mathf.Clamp01(p.y/scale.y)));
+                }
+                distance+=length;
+            }
+            result.Add(route[route.Count-1]);
+            for(int pass=0;pass<2;pass++)
+            {
+                var smooth=new List<Vector2>{result[0]};
+                for(int i=1;i<result.Count;i++){smooth.Add(Vector2.Lerp(result[i-1],result[i],.25f));smooth.Add(Vector2.Lerp(result[i-1],result[i],.75f));}
+                smooth.Add(result[result.Count-1]);result=smooth;
+            }
+            // Retain the smoothed bends without paying for nearly collinear samples
+            // in terrain carving, water sampling and junction processing.
+            var keep=new bool[result.Count];keep[0]=keep[result.Count-1]=true;
+            void Simplify(int first,int last)
+            {
+                var a=Vector2.Scale(result[first],scale);var b=Vector2.Scale(result[last],scale);var delta=b-a;
+                float farthest=2f;int chosen=-1;
+                for(int i=first+1;i<last;i++)
+                {
+                    var p=Vector2.Scale(result[i],scale);var t=delta.sqrMagnitude<.001f?0:Mathf.Clamp01(Vector2.Dot(p-a,delta)/delta.sqrMagnitude);
+                    float distance=Vector2.Distance(p,a+delta*t);if(distance>farthest){farthest=distance;chosen=i;}
+                }
+                if(chosen<0)return;keep[chosen]=true;Simplify(first,chosen);Simplify(chosen,last);
+            }
+            Simplify(0,result.Count-1);
+            var compact=new List<Vector2>();for(int i=0;i<result.Count;i++)if(keep[i])compact.Add(result[i]);
+            return compact;
         }
 
         private static void JoinFirstRiver(List<Vector2> branch,List<List<Vector2>> rivers)

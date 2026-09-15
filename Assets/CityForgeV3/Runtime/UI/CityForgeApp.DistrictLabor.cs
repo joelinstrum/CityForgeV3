@@ -12,7 +12,7 @@ namespace CityForgeV3.UI
         private float _laborSaveTimer,_laborUiTimer;
         private DistrictLaborNavigation LaborNavigation(RegionCityTile d)
         {
-            // Updated by spatial edits; do not serialize every tree three times per frame.
+            // Spatial edits update this key; avoid serializing the district every frame.
             var key=_districtWorldCompositionKey;
             if(_laborNavigation==null||_laborDistrict!=d||_laborComposition!=key)
             { _laborNavigation=new DistrictLaborNavigation(d,_districtWorld.IsUnderRiverWater);_laborDistrict=d;_laborComposition=key; }

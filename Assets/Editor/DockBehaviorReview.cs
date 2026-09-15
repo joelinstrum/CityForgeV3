@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using System.Reflection;using UnityEditor;using UnityEditor.TestTools.TestRunner.Api;using UnityEngine;using CityForgeV3.World;using CityForgeV3.UI;using CityForgeV3.Behaviors;
-[InitializeOnLoad] public static class DockBehaviorReview
+ public static class DockBehaviorReview
 {
  const string Dir="/Users/joelinstrum/dev/CityForgeMCP/artifacts/behaviors/lumber-loading/v01/";
  [Serializable] class MoveExpected {public string id;public Vector3 position;}

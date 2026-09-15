@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using UnityEditor;using UnityEngine;using CityForgeV3.UI;
-[InitializeOnLoad] public static class BrickworksReview
+ public static class BrickworksReview
 {
  const string Root="Assets/CityForgeV3/Resources/CityForgeV3/Industry/BrickworksV01/";
  static BrickworksReview(){EditorApplication.update+=Poll;}

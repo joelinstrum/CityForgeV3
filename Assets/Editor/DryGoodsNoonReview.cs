@@ -1,5 +1,5 @@
 using System;using System.IO;using System.Linq;using UnityEditor;using UnityEngine;using CityForgeV3.World;using CityForgeV3.Buildings3D;
-[InitializeOnLoad] public static class DryGoodsNoonReview {
+ public static class DryGoodsNoonReview {
  const string Root="/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/dry-goods/v07-noon-lighting/";
  static DryGoodsNoonReview(){EditorApplication.update+=Poll;}
  static void Poll(){var p="/tmp/cityforge-noon-command.txt";if(!File.Exists(p))return;var c=File.ReadAllText(p).Trim();File.Delete(p);try{

@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using UnityEditor;using UnityEngine;using CityForgeV3.UI;using UnityEditor.TestTools.TestRunner.Api;
-[InitializeOnLoad] public static class StoneQuarryReview
+ public static class StoneQuarryReview
 {
  const string B="Assets/CityForgeV3/Resources/CityForgeV3/Industry/StoneQuarryV01";
  const string E="/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/stone-quarry/v01/";

@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using System.Reflection;using UnityEditor;using UnityEngine;using UnityEngine.UIElements;using CityForgeV3.UI;using CityForgeV3.World;
-[InitializeOnLoad] public static class BuildingInspectorReview {
+ public static class BuildingInspectorReview {
  const string D="/Users/joelinstrum/dev/CityForgeMCP/artifacts/fixes/lot-building-inspector-v01/";
  static BuildingInspectorReview(){EditorApplication.update+=Poll;}
  static readonly BindingFlags F=BindingFlags.NonPublic|BindingFlags.Instance;

@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using CityForgeV3.World;
 using CityForgeV3.UI;
-[InitializeOnLoad] public static class CragPilotReview
+ public static class CragPilotReview
 {
  static CragPilotReview(){EditorApplication.update+=Poll;}
  [MenuItem("City Forge/QA/Crag Pilot/Build and focus")]static void BuildMenu()=>Run("build");

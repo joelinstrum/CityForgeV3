@@ -106,9 +106,14 @@ namespace CityForgeV3.World
         private Transform _naturalResourceRoot;
         private void RefreshNaturalResources(RegionCityTile district)
         {
-            if(_naturalResourceRoot!=null){_naturalResourceRoot.gameObject.SetActive(false);if(Application.isPlaying)Destroy(_naturalResourceRoot.gameObject);else DestroyImmediate(_naturalResourceRoot.gameObject);}
             DistrictNaturalResources.Ensure(district,_elevation);
             EnsureStoneDeposits(district);PresentQuarries(district);
+            RefreshCoalBuildings();
+        }
+        public void RefreshCoalBuildings()
+        {
+            if(_naturalResourceRoot!=null){_naturalResourceRoot.gameObject.SetActive(false);Destroy(_naturalResourceRoot.gameObject);}
+            var district=_terrainDistrict;
             _naturalResourceRoot=new GameObject("District Natural Resources").transform;_naturalResourceRoot.SetParent(_content,false);
             _naturalResourceRoot.gameObject.AddComponent<DistrictCoalPresentation>().Build(this,district,_widthMeters,_depthMeters,DistrictFloraMaterial());
         }

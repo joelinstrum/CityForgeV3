@@ -83,6 +83,17 @@ namespace CityForgeV3.World
                         }
                     }
                     quarryViews[site.Id]=v;
+                    if (site.Built)
+                    {
+                        DistrictActionResult Rotate(float degrees) => TryRotateQuarry(d, site, degrees, out var reason) ? DistrictActionResult.Applied(reason) : new DistrictActionResult(false, reason);
+                        RegisterSelectable(v.Root.gameObject, new DistrictSelectionRef(DistrictSelectionKind.Entity, "quarry:" + site.Id),
+                            "STONE QUARRY", "Rotate around the stone deposit. Access conflicts are reported below.", true,
+                            v.Root.GetComponentsInChildren<Renderer>().Where(r =>
+                                (v.Wagon == null || !r.transform.IsChildOf(v.Wagon.transform)) &&
+                                r.GetComponentInParent<QuarryWorkerPresentation>() == null),
+                            new DistrictSelectionAction("↶ LEFT 90°", () => Rotate(-90)),
+                            new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => DistrictQuarry.Demolish(site), true, () => PresentQuarries(d));
+                    }
                 }
                 foreach(var worker in v.Workers)worker.SetWorking(running&&site.Enabled&&DistrictQuarry.WorkersPaid(d,site)&&site.Phase=="mining");
                 if(v.Wagon==null)continue;
@@ -90,6 +101,36 @@ namespace CityForgeV3.World
                 v.Crane.Present(site);
             }
         }
+        public bool TryRotateQuarry(RegionCityTile district, DistrictStoneSite site, float degrees, out string reason)
+        {
+            reason = "";
+            if (site == null || !site.Built || !district.StoneSites.Contains(site))
+            { reason = "This quarry is no longer available."; return false; }
+            bool away = site.Phase == "delivering" || site.Phase == "unloading" || site.Phase == "returning";
+            var yaw = Mathf.Repeat(site.Yaw + degrees, 360f);
+            var nav = new DistrictLaborNavigation(district, IsUnderRiverWater);
+            reason = DistrictQuarry.SiteBlockReason(district, DistrictQuarry.Point(district, site), nav.Walkable, yaw);
+            reason = reason.Replace("Move nearby roads out of the quarry footprint before building.",
+                "Nearby roads are within the quarry clearance area; access may be obstructed.");
+            if (away) reason += (string.IsNullOrEmpty(reason) ? "" : " ") + "The wagon is away; its return access will be recalculated.";
+            quarryViews.TryGetValue(site.Id, out var view);
+            if (view?.Wagon != null) SaveQuarryWagonPose(site, view.Wagon);
+            DistrictIndustryRotation.Apply(district, new DistrictSelectionRef(DistrictSelectionKind.Entity, "quarry:" + site.Id), degrees > 0 ? 1 : -1);
+            if (view?.Root != null)
+            {
+                view.Root.localRotation = Quaternion.Euler(0, yaw, 0);
+                if (view.Wagon != null)
+                {
+                    var position = _content.TransformPoint(new Vector3(site.WagonPosition.x, 0, site.WagonPosition.y));
+                    position.y = view.Wagon.transform.position.y;
+                    view.Wagon.transform.position = position;
+                    view.Wagon.RestoreHeadings(site.HorseHeading-yaw, site.BodyHeading-yaw, site.FrontHeading-yaw);
+                }
+                view.Navigation = null; view.Route = null; view.Retry = 0;
+            }
+            return true;
+        }
+
         static Transform StoneBlock(Transform parent,Material material,string name)
         {var o=GameObject.CreatePrimitive(PrimitiveType.Cube);o.name=name;o.transform.SetParent(parent,false);o.transform.localScale=new Vector3(.62f,.5f,.72f);o.GetComponent<Renderer>().sharedMaterial=material;Destroy(o.GetComponent<Collider>());return o.transform;}
     }

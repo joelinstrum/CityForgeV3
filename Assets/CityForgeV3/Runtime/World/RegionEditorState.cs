@@ -12,8 +12,7 @@ namespace CityForgeV3.World
         Lot,
         Road,
         River,
-        Quarry,
-        Brickworks
+        Entity
     }
 
     public readonly struct DistrictSelectionRef

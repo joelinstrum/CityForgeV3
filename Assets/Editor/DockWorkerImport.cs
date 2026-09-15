@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using UnityEditor;using UnityEditor.Animations;using UnityEngine;
-[InitializeOnLoad] public static class DockWorkerImport
+ public static class DockWorkerImport
 {
  const string Root="Assets/CityForgeV3/Resources/CityForgeV3/Characters/DockWorkerV01";
  static DockWorkerImport(){EditorApplication.update+=Poll;}

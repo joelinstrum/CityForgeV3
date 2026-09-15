@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using System.Collections.Generic;using UnityEditor;using UnityEngine;using CityForgeV3.Buildings3D;using CityForgeV3.World;using CityForgeV3.UI;
-[InitializeOnLoad] public static class LumberMillMainReview {
+ public static class LumberMillMainReview {
  const string B="Assets/CityForgeV3/Resources/CityForgeV3/Buildings3D/LumberMillV01";
  const string D="/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/lumber-mill/v01/main-review/";
  [Serializable] class Contract{public float[] unityWheelPivot;public float defaultRPM;public Foundation foundation;}

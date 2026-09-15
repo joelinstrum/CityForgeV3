@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using CityForgeV3.World;
-[InitializeOnLoad]public static class MineInsetReview
+public static class MineInsetReview
 {
     static MineInsetReview(){EditorApplication.update+=Poll;}
     static void Poll(){const string file="/tmp/cityforge-mine-inset-command.txt";if(EditorApplication.isCompiling||!File.Exists(file))return;var command=File.ReadAllText(file).Trim();File.Delete(file);try{

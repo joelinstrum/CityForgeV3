@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using CityForgeV3.UI;
-[InitializeOnLoad]public static class LaborUiRootReview
+public static class LaborUiRootReview
 {
  static LaborUiRootReview(){EditorApplication.update+=Poll;}
  static readonly BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;

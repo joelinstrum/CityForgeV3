@@ -73,6 +73,8 @@ namespace CityForgeV3.World
             // The terrain then covers only the submerged pixels; its existing
             // no-depth-write contract for flora and billboard buildings is preserved.
             foreach(var material in materials)material.renderQueue=1998;
+            world.RegisterSelectable(gameObject, new DistrictSelectionRef(DistrictSelectionKind.Entity, "mine:" + deposit.Id),
+                "COAL MINE", "This mine follows the mountain slope; its orientation is fixed to preserve the entrance and rail approach.").WithBuildingDeletion(() => deposit.MineBuilt=false, true, world.RefreshCoalBuildings);
         }
         private void FitRailApproach(GameObject model,DistrictWorldController world)
         {

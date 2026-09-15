@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using CityForgeV3.World;
 using CityForgeV3.UI;
-[InitializeOnLoad]
+
 public static class MountainRockReview
 {
     const string Command="/tmp/cityforge-mountain-rock-command.txt";

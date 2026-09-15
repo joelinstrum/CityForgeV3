@@ -16,25 +16,28 @@ namespace CityForgeV3.World
     public static class DistrictBrickworks
     {
         public const string ResourcePath="CityForgeV3/Industry/BrickworksV01/Brickworks";
+        // Keep the rendered asset, placement bounds and wagon access in the same scale contract.
+        public const float PresentationScale=2f;
+        public const float HalfWidth=10f*PresentationScale,HalfDepth=12.5f*PresentationScale;
         public const float SecondsPerTon=30,UnloadSeconds=8;
         public static bool Unlocked(RegionCityTile d)=>d?.StoneSites?.Any(s=>s.Built)==true;
         public static Vector2 Point(RegionCityTile d,DistrictBrickworksSite s)=>new((s.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(s.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height));
         public static Vector2 Offset(Vector2 center,float yaw,Vector2 offset)
         {var p=Quaternion.Euler(0,yaw,0)*new Vector3(offset.x,0,offset.y);return center+new Vector2(p.x,p.z);}
-        public static Vector2 ReceivingPoint(RegionCityTile d,DistrictBrickworksSite s)=>Offset(Point(d,s),s.Yaw,new Vector2(0,24));
+        public static Vector2 ReceivingPoint(RegionCityTile d,DistrictBrickworksSite s)=>Offset(Point(d,s),s.Yaw,new Vector2(0,24*PresentationScale));
         public static Vector2 QuarryHome(RegionCityTile d,DistrictStoneSite s)=>Offset(DistrictQuarry.Point(d,s),s.Yaw,DistrictQuarry.WagonHomeOffset);
         public static bool Contains(RegionCityTile d,DistrictBrickworksSite s,Vector2 p,float margin=0)
-        {var v=Quaternion.Euler(0,-s.Yaw,0)*new Vector3(p.x-Point(d,s).x,0,p.y-Point(d,s).y);return Mathf.Abs(v.x)<10+margin&&Mathf.Abs(v.z)<12.5f+margin;}
+        {var v=Quaternion.Euler(0,-s.Yaw,0)*new Vector3(p.x-Point(d,s).x,0,p.y-Point(d,s).y);return Mathf.Abs(v.x)<HalfWidth+margin&&Mathf.Abs(v.z)<HalfDepth+margin;}
         public static string PlacementReason(RegionCityTile d,DistrictBrickworksSite s,Func<Vector2,bool> dry)
         {
             if(!Unlocked(d))return "Place a Stone Quarry before building a Brickworks.";
             var center=Point(d,s);var elevation=new DistrictElevation(d);float low=float.MaxValue,high=float.MinValue;
-            for(float z=-13;z<=13;z+=2)for(float x=-11;x<=11;x+=2)
+            for(float z=-HalfDepth-1;z<=HalfDepth+1;z+=2)for(float x=-HalfWidth-1;x<=HalfWidth+1;x+=2)
             {
                 var p=Offset(center,s.Yaw,new Vector2(x,z));
                 if(!dry(p))return "Brickworks needs dry ground clear of lots and the district edge.";
                 if(d.StoneSites.Any(q=>q.Built&&Vector2.Distance(p,DistrictQuarry.Point(d,q))<19))return "Leave space around the quarry.";
-                if((d.Brickworks??new()).Any(b=>Contains(d,b,p,1)))return "Another Brickworks occupies this space.";
+                if((d.Brickworks??new()).Any(b=>b.Id!=s.Id&&Contains(d,b,p,1)))return "Another Brickworks occupies this space.";
                 foreach(var road in d.Roads??new())
                 {var r=new Vector2((road.GridX+.5f)*10-DistrictScale.SizeMeters(d.Width)/2,(road.GridZ+.5f)*10-DistrictScale.SizeMeters(d.Height)/2);if(Mathf.Abs(r.x-p.x)<5&&Mathf.Abs(r.y-p.y)<5)return "Keep roads outside the Brickworks footprint.";}
                 float y=elevation.Sample(p.x,p.y);low=Mathf.Min(low,y);high=Mathf.Max(high,y);
@@ -44,8 +47,8 @@ namespace CityForgeV3.World
         public static bool Build(RegionCityTile d,DistrictBrickworksSite s,Func<Vector2,bool> dry)
         {
             if(!string.IsNullOrEmpty(PlacementReason(d,s,dry)))return false;
-            d.Brickworks??=new();d.Brickworks.Add(s);var center=Point(d,s);
-            d.Flora?.RemoveAll(f=>Vector2.Distance(DistrictLabor.TreePoint(d,f),center)<19);return true;
+            d.Brickworks??=new();d.Brickworks.Add(s);
+            d.Flora?.RemoveAll(f=>Contains(d,s,DistrictLabor.TreePoint(d,f),3));return true;
         }
         public static bool Tick(RegionCityTile d,float dt)
         {

@@ -1,0 +1,1 @@
+PASS actual quarry Delete Building button, preserved resource ID/location, cleared selection, saved demolition and undo restoration.

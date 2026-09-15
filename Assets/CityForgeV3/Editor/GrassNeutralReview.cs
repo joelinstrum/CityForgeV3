@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using CityForgeV3.World;
-[InitializeOnLoad]public static class GrassNeutralReview
+public static class GrassNeutralReview
 {
     static GrassNeutralReview(){EditorApplication.update+=Poll;}
     static void Poll(){const string file="/tmp/cityforge-grass-neutral-command.txt";if(EditorApplication.isCompiling||!File.Exists(file))return;var c=File.ReadAllText(file).Trim();File.Delete(file);try{

@@ -15,7 +15,7 @@ namespace CityForgeV3.Editor
         private const string ResultPath = "/tmp/cityforge-empire-placement-qa.txt";
         private const string TriggerPath = "/tmp/cityforge-run-empire-placement-qa";
 
-        [InitializeOnLoadMethod]
+
         private static void RegisterTriggeredRun()
         {
             EditorApplication.delayCall += () =>

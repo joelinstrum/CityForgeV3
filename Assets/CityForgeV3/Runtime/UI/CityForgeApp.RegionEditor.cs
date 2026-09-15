@@ -884,8 +884,18 @@ namespace CityForgeV3.UI
           return;
         }
         var target = evt.target as VisualElement;
+        for (var element = target; element != null && element != screen; element = element.parent)
+          if (element.name == "selected-object-panel") return;
         if (evt.button != 0 || target?.name == "district-resource-bar" || evt.target is Button ||
                   target?.GetFirstAncestorOfType<Button>() != null) return;
+        // Inspect existing objects before dispatching any active category's tool.
+        // UI controls remain UI controls; only a click on the world surface picks.
+        if ((target == screen || target?.ClassListContains("district-terraform-viewport") == true) &&
+            TryInspectDistrictObject(DistrictCameraPoint(evt.position)))
+        {
+          evt.StopImmediatePropagation();
+          return;
+        }
         if (_placingBrickworks)
         {
           if(_districtWorld.TryGroundPoint(DistrictCameraPoint(evt.position),out var brickPoint))PlaceBrickworks(district,brickPoint);
@@ -995,8 +1005,6 @@ namespace CityForgeV3.UI
           PlaceFounderBuilding(district, normalized.x, normalized.y);
         else
         {
-          if (SelectIndustryAt(district, evt.position)) { evt.StopPropagation(); return; }
-          _districtSelection.Clear();
           var selectedLot = FindDistrictLotAt(district,
                     normalized.x, normalized.y);
           _selectedDistrictLotInstanceId = selectedLot?.InstanceId ?? "";
@@ -1869,47 +1877,14 @@ namespace CityForgeV3.UI
         _districtWorld?.HideLotOutline();
     }
 
-    private VisualElement ComposeSelectedDistrictLotPanel(
-        RegionCityTile district)
+    private VisualElement ComposeSelectedDistrictLotPanel(RegionCityTile district)
     {
-      var industryPanel = ComposeSelectedIndustryPanel(district);
-      if (industryPanel != null) return industryPanel;
-      var placement = district?.Lots?.Find(lot => lot != null &&
-          lot.InstanceId == _selectedDistrictLotInstanceId);
-      if (!TryGetDistrictLotFootprint(placement, out var lot,
-              out var spanX, out var spanZ)) return null;
-      var panel = new VisualElement();
-      panel.AddToClassList("district-selected-lot-panel");
-      panel.Add(StyledLabel("SELECTED LOT", "district-lot-info-kicker"));
-      panel.Add(StyledLabel(lot.Name, "district-lot-info-name"));
-      panel.Add(StyledLabel(
-          $"{LotTypeLabel(lot.LotType).ToUpperInvariant()}  •  " +
-          $"{lot.LotWidthCells} × {lot.LotDepthCells} CELLS  •  " +
-          $"FACING {placement.RotationQuarterTurns * 90}°  •  " +
-          $"PLOP COST ${LotEconomy.CalculatePlopCost(lot):N0}",
-          "district-lot-info-meta"));
-      var controls = new VisualElement();
-      controls.AddToClassList("district-lot-rotation-controls");
-      foreach (var direction in new[] { -1, 1 })
-      {
-        var capturedDirection = direction;
-        var canRotate = CanRotateDistrictLot(district, placement,
-            capturedDirection);
-        var rotate = CfButton.Create(direction < 0 ? "↶" : "↷",
-            () => RotateDistrictLot(district, placement,
-                capturedDirection), canRotate, "icon");
-        rotate.tooltip = canRotate
-            ? direction < 0
-                ? "Rotate lot 90 degrees counter-clockwise."
-                : "Rotate lot 90 degrees clockwise."
-            : "This rotation would overlap another lot or leave the district grid.";
-        controls.Add(rotate);
-      }
-      panel.Add(controls);
-      panel.Add(StyledLabel(
-          "R rotates clockwise · Shift+R counter-clockwise · Click empty land to deselect",
-          "district-lot-info-hint"));
-      return panel;
+      if (district == null) return null;
+      if (_districtSelection.Count == 1)
+        return BuildSelectedObjectPanel(_districtSelection[0]);
+      if (!string.IsNullOrEmpty(_selectedDistrictLotInstanceId))
+        return BuildSelectedObjectPanel(new DistrictSelectionRef(DistrictSelectionKind.Lot, _selectedDistrictLotInstanceId));
+      return null;
     }
 
     private bool CanRotateDistrictLot(RegionCityTile district,
@@ -1921,10 +1896,8 @@ namespace CityForgeV3.UI
       var rotatedSpanZ = spanX;
       var columns = DistrictScale.Columns(district.Width);
       var rows = DistrictScale.Columns(district.Height);
-      var rotatedGridX = Mathf.Clamp(placement.GridX, 0,
-          Mathf.Max(0, columns - rotatedSpanX));
-      var rotatedGridZ = Mathf.Clamp(placement.GridZ, 0,
-          Mathf.Max(0, rows - rotatedSpanZ));
+      var rotatedGridX = placement.GridX;
+      var rotatedGridZ = placement.GridZ;
       return IsDistrictFootprintClear(district, rotatedGridX,
           rotatedGridZ, rotatedSpanX, rotatedSpanZ,
           placement.InstanceId) && (_districtWorld == null || _districtWorld.ValidateLotBoatPlacement(district,
@@ -1940,25 +1913,31 @@ namespace CityForgeV3.UI
               LotContentCatalog.Read(placement.LotId), out _));
     }
 
+    private DistrictActionResult TryRotatePlacedDistrictLot(RegionCityTile district,
+        PlacedDistrictLot placement, int direction)
+    {
+      var warning = CanRotateDistrictLot(district, placement, direction) ? "" :
+        "The rotated lot may overlap another lot, extend beyond the district, or have unsuitable water access.";
+      if (!TryGetDistrictLotFootprint(placement, out _, out var oldSpanX, out var oldSpanZ))
+        return "The lot's saved footprint is unavailable.";
+      var oldX = placement.GridX; var oldZ = placement.GridZ; var oldRotation = placement.RotationQuarterTurns;
+      placement.RotationQuarterTurns = (placement.RotationQuarterTurns + direction + 4) % 4;
+      if (_districtWorld != null && !_districtWorld.UpdatePlacedLotTransform(district, placement, allowPlacementConflicts: true))
+      {
+        placement.GridX = oldX; placement.GridZ = oldZ; placement.RotationQuarterTurns = oldRotation;
+        return "The lot could not be rotated.";
+      }
+      return DistrictActionResult.Applied(warning);
+    }
+
     private void RotateDistrictLot(RegionCityTile district,
         PlacedDistrictLot placement, int direction)
     {
-      if (!CanRotateDistrictLot(district, placement, direction)) return;
-      if (!TryGetDistrictLotFootprint(placement, out _,
-              out var oldSpanX, out var oldSpanZ)) return;
-      var columns = DistrictScale.Columns(district.Width);
-      var rows = DistrictScale.Columns(district.Height);
       EnsureDistrictUndo(district);
-      placement.GridX = Mathf.Clamp(placement.GridX, 0,
-          Mathf.Max(0, columns - oldSpanZ));
-      placement.GridZ = Mathf.Clamp(placement.GridZ, 0,
-          Mathf.Max(0, rows - oldSpanX));
-      placement.RotationQuarterTurns =
-          (placement.RotationQuarterTurns + direction + 4) % 4;
+      var result = TryRotatePlacedDistrictLot(district, placement, direction);
+      if (!result.Succeeded) { ShowDistrictNotice(result.Message); return; }
       SaveDistrictEdit();
-      if (_districtWorld != null &&
-          _districtWorld.UpdatePlacedLotTransform(district, placement))
-        _districtWorldCompositionKey = DistrictCompositionKey(district);
+      _districtWorldCompositionKey = DistrictCompositionKey(district);
       Show(AppScreen.DistrictTerraform);
     }
 
@@ -2278,7 +2257,8 @@ namespace CityForgeV3.UI
         _terraformPanOffset = _districtWorld.ClampPan(
             _terraformPanOffset);
         _districtWorld.SetPan(_terraformPanOffset);
-        _districtWorld.SetZoom(_terraformZoomLevel);
+        if (_districtWorld.ZoomLevel != _terraformZoomLevel)
+          _districtWorld.SetZoom(_terraformZoomLevel);
         RefreshTerraformZoomLabel();
         return;
       }
@@ -2945,6 +2925,11 @@ namespace CityForgeV3.UI
     private void BeginDistrictMovePointer(RegionCityTile district,
         Vector2 normalized, Vector2 panelPosition)
     {
+      if (_districtSelection.Any(item => item.Kind == DistrictSelectionKind.Entity && _districtWorld?.ResolveSelectable(item)?.DeleteBuilding == null))
+      {
+        ShowDistrictNotice("This object's placement is fixed. Select it to see its supported actions.");
+        return;
+      }
       var pixel = DistrictCameraPoint(panelPosition);
       var hits = _districtWorld.CollectDistrictSelectionInScreenRect(district,
           new Rect(pixel.x - 4f, pixel.y - 4f, 8f, 8f));
@@ -2998,18 +2983,22 @@ namespace CityForgeV3.UI
         if (Vector2.Distance(_districtSelectionScreenStart,
                 _districtSelectionScreenLast) < 4f)
           rect = new Rect(end.x - 4f, end.y - 4f, 8f, 8f);
-        var selected = _districtWorld.CollectDistrictSelectionInScreenRect(district, rect);
         if (Vector2.Distance(_districtSelectionScreenStart, _districtSelectionScreenLast) < 4f)
         {
-          var building = selected.FirstOrDefault(s => s.Kind == DistrictSelectionKind.Quarry || s.Kind == DistrictSelectionKind.Brickworks || s.Kind == DistrictSelectionKind.Lot);
-          if (!string.IsNullOrEmpty(building.Id)) selected = new List<DistrictSelectionRef> { building };
+          var target = _districtWorld.FindSelectableAtScreenPoint(end);
+          if (target != null)
+          {
+            _districtSelection.Clear();
+            _districtSelection.Add(target.Identity);
+            CancelDistrictSelectionPointer();
+            if (target.ShowInspector) ComposeSelectedObject(target.Identity);
+            return;
+          }
         }
+        var selected = _districtWorld.CollectDistrictSelectionInScreenRect(district, rect);
         _districtSelection.Clear();
         _districtSelection.AddRange(selected);
         CancelDistrictSelectionPointer();
-        _selectedDistrictLotInstanceId = selected.FirstOrDefault(s => s.Kind == DistrictSelectionKind.Lot).Id ?? "";
-        RefreshSelectedDistrictLotOutline(district);
-        RefreshDistrictSelectionPanel(district);
         return;
       }
       if (_districtSelectionDragActive)
@@ -3126,13 +3115,26 @@ namespace CityForgeV3.UI
         panel.Add(CfButton.Create("CLOSE", RemoveDocumentModal, true, "quiet"));
         return false;
       }
-      _districtDeleteFrame = Time.frameCount;
+      if (_districtSelection.Any(item => item.Kind == DistrictSelectionKind.Entity && _districtWorld?.ResolveSelectable(item)?.DeleteBuilding == null))
+      {
+        ShowDistrictNotice("Use this object's management controls to remove it.");
+        return false;
+      }
+      var deletedBuildings = _districtSelection.Where(item => item.Kind == DistrictSelectionKind.Lot || item.Kind == DistrictSelectionKind.Entity)
+          .Select(item => _districtWorld.ResolveSelectable(item)).ToList();
+      var deletedFlora = _districtSelection.Where(item => item.Kind == DistrictSelectionKind.Flora).Select(item => item.Id).ToList();
+      var deletedRoadIds = new HashSet<string>(_districtSelection.Where(item => item.Kind == DistrictSelectionKind.Road).Select(item => item.Id));
+      var deletedRoadCells = district.Roads.Where(road => deletedRoadIds.Contains(road.Id)).Select(road => new Vector2Int(road.GridX, road.GridZ)).ToList();
       EnsureDistrictUndo(district);
-      var removed = _districtSelection.ToArray();
-      foreach (var selection in removed)
+      _districtDeleteFrame = Time.frameCount;
+      var removedRiver = false;
+      foreach (var selection in _districtSelection)
       {
         switch (selection.Kind)
         {
+          case DistrictSelectionKind.Entity:
+            _districtWorld.ResolveSelectable(selection).DeleteBuilding();
+            break;
           case DistrictSelectionKind.Flora:
             district.Flora?.RemoveAll(item => item != null &&
                 item.InstanceId == selection.Id);
@@ -3148,20 +3150,25 @@ namespace CityForgeV3.UI
           case DistrictSelectionKind.River:
             district.Rivers?.RemoveAll(item => item != null &&
                 item.InstanceId == selection.Id);
+            removedRiver = true;
             break;
         }
       }
-      if (removed.Any(item => item.Kind == DistrictSelectionKind.Road))
-        DistrictRoadPlacementModel.Repair(district.Roads);
-      _districtWorld?.RemoveDistrictPresentations(district, removed);
+      if (deletedRoadCells.Count > 0) DistrictRoadPlacementModel.Repair(district.Roads);
       _districtSelection.Clear();
       _selectedDistrictLotInstanceId = "";
-      _selectedDistrictFloraInstanceId = "";
       _hoveredDistrictLotInstanceId = "";
+      SaveDistrictEdit();
+      foreach (var target in deletedBuildings) _districtWorld.RemoveBuildingPresentation(target);
+      _districtWorld.RemoveFloraPresentations(deletedFlora);
+      _districtWorld.RefreshRoadCellsAndNeighbors(district, deletedRoadCells);
+      if (removedRiver) _districtWorld.RefreshRivers(district, preservePresentations: true);
+      _selectedDistrictFloraInstanceId = "";
+      _hasSelectedDistrictRoad = false;
       _laborNavigation = null;
       _districtWorldCompositionKey = DistrictCompositionKey(district);
-      SaveDistrictEdit();
-      RefreshDistrictSelectionPanel(district);
+      _districtWorld.ShowDistrictSelection(district, _districtSelection);
+      RefreshSelectedObjectPanel();
       return true;
     }
 

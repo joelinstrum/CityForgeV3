@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using CityForgeV3.World;
-[InitializeOnLoad] public static class MountainMorningReview
+ public static class MountainMorningReview
 {
     static MountainMorningReview(){EditorApplication.update+=Poll;}
     static void Poll(){const string path="/tmp/cityforge-mountain-morning-command.txt";if(EditorApplication.isCompiling||!File.Exists(path))return;var c=File.ReadAllText(path).Trim();File.Delete(path);try{

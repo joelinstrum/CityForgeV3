@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEditor;
 using CityForgeV3.World;
 using CityForgeV3.UI;
-[InitializeOnLoad]public static class MountainRangeReview
+public static class MountainRangeReview
 {
     static MountainRangeReview(){EditorApplication.update+=Poll;}
     static int Islands(DistrictElevation h)

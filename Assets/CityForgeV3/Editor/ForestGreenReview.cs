@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using CityForgeV3.World;
-[InitializeOnLoad]public static class ForestGreenReview
+public static class ForestGreenReview
 {
     static ForestGreenReview(){EditorApplication.update+=Poll;}
     static void Poll(){const string file="/tmp/cityforge-forest-green-command.txt";if(EditorApplication.isCompiling||!File.Exists(file))return;var c=File.ReadAllText(file).Trim();File.Delete(file);try{

@@ -11,7 +11,7 @@ namespace CityForgeV3.World
         GameObject CreateBrickworks(Transform parent)
         {
             var prefab=Resources.Load<GameObject>(DistrictBrickworks.ResourcePath);if(prefab==null)return null;
-            var go=Instantiate(prefab,parent);var material=Resources.Load<Material>("CityForgeV3/Industry/BrickworksV01/BrickworksMaterial");
+            var go=Instantiate(prefab,parent);go.transform.localScale*=DistrictBrickworks.PresentationScale;var material=Resources.Load<Material>("CityForgeV3/Industry/BrickworksV01/BrickworksMaterial");
             foreach(var r in go.GetComponentsInChildren<Renderer>())r.sharedMaterial=material;return go;
         }
         public void PresentBrickworks(RegionCityTile d)
@@ -19,13 +19,27 @@ namespace CityForgeV3.World
             if(brickworksRoot==null||brickworksRoot.parent!=_content)
             {brickworksRoot=new GameObject("District Brickworks").transform;brickworksRoot.SetParent(_content,false);brickworksViews.Clear();}
             foreach(var id in brickworksViews.Keys.Where(id=>!(d.Brickworks??new()).Any(b=>b.Id==id)).ToArray())
-            {Destroy(brickworksViews[id]);brickworksViews.Remove(id);}
+            {brickworksViews[id].SetActive(false);Destroy(brickworksViews[id]);brickworksViews.Remove(id);}
             foreach(var b in d.Brickworks??new())
             {
                 if(brickworksViews.ContainsKey(b.Id))continue;
                 var root=new GameObject("Brickworks — "+b.Id);root.transform.SetParent(brickworksRoot,false);
                 var p=DistrictBrickworks.Point(d,b);root.transform.localPosition=new Vector3(p.x,TerrainElevation(p.x,p.y),p.y);root.transform.localRotation=Quaternion.Euler(0,b.Yaw,0);
                 CreateBrickworks(root.transform);brickworksViews[b.Id]=root;
+                DistrictActionResult Rotate(float degrees)
+                {
+                    bool deliveries = d.StoneSites.Any(q => q.Phase == "delivering" || q.Phase == "unloading");
+                    var candidate = JsonUtility.FromJson<DistrictBrickworksSite>(JsonUtility.ToJson(b));
+                    candidate.Yaw = Mathf.Repeat(b.Yaw + degrees, 360);
+                    var reason = BrickworksPlacementReason(d, candidate);
+                    if (deliveries) reason += " Active stone deliveries may need a new approach.";
+                    DistrictIndustryRotation.Apply(d, new DistrictSelectionRef(DistrictSelectionKind.Entity, "brickworks:" + b.Id), degrees > 0 ? 1 : -1); root.transform.localRotation = Quaternion.Euler(0, b.Yaw, 0);
+                    return DistrictActionResult.Applied(reason);
+                }
+                RegisterSelectable(root, new DistrictSelectionRef(DistrictSelectionKind.Entity, "brickworks:" + b.Id),
+                    "BRICKWORKS", "Rotate the Brickworks. Placement or delivery conflicts are reported below.", true, null,
+                    new DistrictSelectionAction("↶ LEFT 90°", () => Rotate(-90)),
+                    new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => d.Brickworks.Remove(b), refresh: () => PresentBrickworks(d));
             }
         }
         public void ShowBrickworksPlacement(RegionCityTile d,DistrictBrickworksSite site)
@@ -35,7 +49,7 @@ namespace CityForgeV3.World
                 brickworksGhost=new GameObject("Brickworks placement preview");brickworksGhost.transform.SetParent(_content,false);CreateBrickworks(brickworksGhost.transform);
                 brickworksOutline=brickworksGhost.AddComponent<LineRenderer>();brickworksOutline.useWorldSpace=false;brickworksOutline.loop=true;brickworksOutline.positionCount=4;brickworksOutline.widthMultiplier=.2f;
                 var material=new Material(Shader.Find("Sprites/Default"));brickworksOutline.sharedMaterial=material;brickworksGhost.AddComponent<QuarryMaterials>().Owned.Add(material);
-                brickworksOutline.SetPositions(new[]{new Vector3(-10,.3f,-12.5f),new Vector3(10,.3f,-12.5f),new Vector3(10,.3f,12.5f),new Vector3(-10,.3f,12.5f)});
+                brickworksOutline.SetPositions(new[]{new Vector3(-DistrictBrickworks.HalfWidth,.3f,-DistrictBrickworks.HalfDepth),new Vector3(DistrictBrickworks.HalfWidth,.3f,-DistrictBrickworks.HalfDepth),new Vector3(DistrictBrickworks.HalfWidth,.3f,DistrictBrickworks.HalfDepth),new Vector3(-DistrictBrickworks.HalfWidth,.3f,DistrictBrickworks.HalfDepth)});
             }
             brickworksGhost.SetActive(true);var p=DistrictBrickworks.Point(d,site);
             brickworksGhost.transform.localPosition=new Vector3(p.x,TerrainElevation(p.x,p.y),p.y);brickworksGhost.transform.localRotation=Quaternion.Euler(0,site.Yaw,0);

@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;using System.IO;using System.Linq;using UnityEditor;using UnityEngine;using CityForgeV3.World;using CityForgeV3.UI;using UnityEngine.UIElements;using System.Reflection;
-[InitializeOnLoad] public static class WoodenBargeImport {
+ public static class WoodenBargeImport {
  const string Root="Assets/CityForgeV3/Resources/CityForgeV3/Vehicles/WoodenBargeV01";
  const string Report="/Users/joelinstrum/dev/CityForgeMCP/artifacts/vehicles/wooden-barge/v01/";
  static WoodenBargeImport(){EditorApplication.update+=Poll;}

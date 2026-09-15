@@ -3006,3 +3006,19 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
     background-color: rgba(71, 111, 82, 0.4);
     border-radius: var(--cf-radius-md);
 }
+
+/* Shared inspector actions use full labels instead of the former icon-only sizing. */
+#selected-object-panel .district-lot-rotation-controls .cf-button {
+    width: 130px;
+    min-width: 130px;
+    height: 44px;
+    font-size: 14px;
+    padding-left: 6px;
+    padding-right: 6px;
+    white-space: nowrap;
+}
+#selected-object-panel > .cf-button {
+    width: 180px;
+    min-width: 180px;
+    white-space: nowrap;
+}

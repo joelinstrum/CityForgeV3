@@ -8,3 +8,7 @@
 - Industry rotation data changes live in `DistrictIndustryRotation`; validation, picking and outlines live in the district world presentation; UI reuses the selected-lot panel styles. No artwork was changed or ported.
 
 Validation: 62 EditMode tests passed, including five rotation cases covering parked/traveling wagons, receiver changes, cargo preservation and save/reload. Live isolated-district checks exercised screen picking, both industrial inspectors, button rotation and undo. R was visually verified on the quarry. Evidence is in `QA/DistrictRotation/`.
+
+## Main integration (2026-09-15)
+
+The shared `DistrictSelectable` / `CityForgeApp.ObjectSelection` system from main now owns picking, inspector actions and incremental building deletion. Rotation follows main's advisory-conflict policy. R / Shift+R invoke the same shared actions as the inspector. `DistrictIndustryRotation` preserves cargo and traveling wagon poses and redirects delivery destinations. The old separate industry inspector and world selection/deletion helpers were retired. Brickworks dimensions now follow main's doubled presentation and footprint contract.

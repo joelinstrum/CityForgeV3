@@ -26,12 +26,11 @@ namespace CityForgeV3.World
             }
             bool HitsGround(Rect footprint)
             {
-                float y = .17f + TerrainElevation(footprint.center.x, footprint.center.y);
                 return Hits(
-                    _content.TransformPoint(new Vector3(footprint.xMin, y, footprint.yMin)),
-                    _content.TransformPoint(new Vector3(footprint.xMax, y, footprint.yMin)),
-                    _content.TransformPoint(new Vector3(footprint.xMax, y, footprint.yMax)),
-                    _content.TransformPoint(new Vector3(footprint.xMin, y, footprint.yMax)));
+                    _content.TransformPoint(new Vector3(footprint.xMin, .17f, footprint.yMin)),
+                    _content.TransformPoint(new Vector3(footprint.xMax, .17f, footprint.yMin)),
+                    _content.TransformPoint(new Vector3(footprint.xMax, .17f, footprint.yMax)),
+                    _content.TransformPoint(new Vector3(footprint.xMin, .17f, footprint.yMax)));
             }
             foreach (var flora in district.Flora ?? new List<PlacedDistrictFlora>())
             {
@@ -51,30 +50,6 @@ namespace CityForgeV3.World
                 var item = new DistrictSelectionRef(DistrictSelectionKind.Lot, lot.InstanceId);
                 if (TryDistrictSelectionBounds(district, item, out var footprint) && HitsGround(footprint))
                     result.Add(item);
-            }
-            bool HitsModel(Transform root)
-            {
-                if (root == null) return false;
-                foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>())
-                {
-                    var b = renderer.bounds;
-                    var a = new Vector3(b.min.x,b.min.y,b.min.z); var c = b.max;
-                    if (Hits(a,new Vector3(c.x,a.y,a.z),new Vector3(c.x,c.y,a.z),new Vector3(a.x,c.y,a.z)) ||
-                        Hits(new Vector3(a.x,a.y,c.z),new Vector3(c.x,a.y,c.z),c,new Vector3(a.x,c.y,c.z)) ||
-                        Hits(new Vector3(a.x,c.y,a.z),new Vector3(c.x,c.y,a.z),c,new Vector3(a.x,c.y,c.z))) return true;
-                }
-                return false;
-            }
-            foreach (var site in district.StoneSites ?? new List<DistrictStoneSite>())
-            {
-                if (!site.Built) continue;
-                var item = new DistrictSelectionRef(DistrictSelectionKind.Quarry, site.Id);
-                if (TryDistrictSelectionBounds(district, item, out var footprint) && (HitsGround(footprint) || (quarryViews.TryGetValue(site.Id, out var view) && HitsModel(view.Root)))) result.Add(item);
-            }
-            foreach (var site in district.Brickworks ?? new List<DistrictBrickworksSite>())
-            {
-                var item = new DistrictSelectionRef(DistrictSelectionKind.Brickworks, site.Id);
-                if (TryDistrictSelectionBounds(district, item, out var footprint) && (HitsGround(footprint) || (brickworksViews.TryGetValue(site.Id, out var view) && HitsModel(view.transform)))) result.Add(item);
             }
             foreach (var road in district.Roads ?? new List<PlacedRoadPiece>())
             {
@@ -104,6 +79,9 @@ namespace CityForgeV3.World
                     break;
                 }
             }
+            foreach (var target in SelectionTargets())
+                if (target.Overlaps(_camera, rectangle) && !result.Exists(item =>
+                    item.Kind == target.Identity.Kind && item.Id == target.Identity.Id)) result.Add(target.Identity);
             return result;
         }
     }

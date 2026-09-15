@@ -325,12 +325,13 @@ namespace CityForgeV3.World
                 AddRoadPiece(road);
         }
 
-        public void RefreshRivers(RegionCityTile district)
+        public void RefreshRivers(RegionCityTile district, bool preservePresentations = false)
         {
             if (_content == null || district == null) return;
             if (_riverRoot != null)
             {
                 var old = _riverRoot.gameObject;
+                old.SetActive(false);
                 if (Application.isPlaying) Destroy(old);
                 else DestroyImmediate(old);
             }
@@ -341,8 +342,9 @@ namespace CityForgeV3.World
             foreach (var river in district.Rivers ??
                      new List<PlacedDistrictRiver>())
                 BuildRiver(river);
+            MergeRiverJunctions(district);
             ApplyRiverGrassEdgeVisibility();
-            RefreshElevation();
+            RefreshElevation(preservePresentations);
             if (_groundDecals == null)
             {
                 var decals = new GameObject("Default District Grass Decals");
@@ -526,12 +528,6 @@ namespace CityForgeV3.World
                 line.shadowCastingMode = ShadowCastingMode.Off;
                 line.receiveShadows = false;
                 var y = .34f + TerrainElevation(bounds.center.x,bounds.center.y);
-                if (IndustryFootprint(district, item, out var center, out var half, out var yaw))
-                {
-                    var corners = new[] { new Vector2(-half.x,-half.y), new Vector2(half.x,-half.y), half, new Vector2(-half.x,half.y) };
-                    for (int i = 0; i < 4; i++) { var p = DistrictBrickworks.Offset(center,yaw,corners[i]); line.SetPosition(i,new Vector3(p.x,y,p.y)); }
-                    continue;
-                }
                 line.SetPosition(0, new Vector3(bounds.xMin, y, bounds.yMin));
                 line.SetPosition(1, new Vector3(bounds.xMax, y, bounds.yMin));
                 line.SetPosition(2, new Vector3(bounds.xMax, y, bounds.yMax));
@@ -543,13 +539,13 @@ namespace CityForgeV3.World
             DistrictSelectionRef selection, out Rect bounds)
         {
             bounds = default;
-            if (selection.Kind == DistrictSelectionKind.Quarry || selection.Kind == DistrictSelectionKind.Brickworks)
+            if (selection.Kind == DistrictSelectionKind.Entity &&
+                ResolveSelectable(selection) is DistrictSelectable target && target.WorldBounds(out var worldBounds))
             {
-                if (!IndustryFootprint(district, selection, out var center, out var half, out var yaw)) return false;
-                var a = DistrictBrickworks.Offset(Vector2.zero, yaw, half);
-                var b = DistrictBrickworks.Offset(Vector2.zero, yaw, new Vector2(-half.x, half.y));
-                var extent = new Vector2(Mathf.Max(Mathf.Abs(a.x), Mathf.Abs(b.x)), Mathf.Max(Mathf.Abs(a.y), Mathf.Abs(b.y)));
-                bounds = new Rect(center - extent, extent * 2); return true;
+                var a = _content.InverseTransformPoint(worldBounds.min);
+                var b = _content.InverseTransformPoint(worldBounds.max);
+                bounds = Rect.MinMaxRect(Mathf.Min(a.x,b.x), Mathf.Min(a.z,b.z), Mathf.Max(a.x,b.x), Mathf.Max(a.z,b.z));
+                return true;
             }
             if (selection.Kind == DistrictSelectionKind.Flora &&
                 _districtFloraPresentations.TryGetValue(selection.Id,
@@ -659,6 +655,8 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
+            RegisterSelectable(item, new DistrictSelectionRef(DistrictSelectionKind.Flora, placed.InstanceId),
+                placed.FloraId, inspector: false, geometry: new Renderer[] { renderer });
         }
 
         private Material DistrictFloraMaterial()
@@ -688,8 +686,9 @@ namespace CityForgeV3.World
         {
             var shader = Shader.Find("CityForgeV3/DistrictFloraGroundShadow");
             if (flora == null || sprite == null || shader == null) return;
-            _districtFloraShadowMaterial ??= new Material(shader)
-            { name = "District Projected Flora Shadow" };
+            if (_districtFloraShadowMaterial == null)
+                _districtFloraShadowMaterial = new Material(shader)
+                { name = "District Projected Flora Shadow" };
             _districtFloraShadowMaterial.shader = shader;
             var shadowObject = new GameObject("District Flora Shadow");
             shadowObject.transform.SetParent(flora, false);
@@ -914,7 +913,7 @@ namespace CityForgeV3.World
             var waterTexture = Resources.Load<Texture2D>(
                 RiverWaterTextureResource);
             var requestedDepth = Mathf.Abs(_waterHeight);
-            var waterDepth = deep ? requestedDepth : requestedDepth * depthScale;
+            var waterDepth = requestedDepth; // Connected water shares one level; bed depth remains independent.
             var waterElevation = terrainSurface - waterDepth;
             // Follow the existing bank profile up to the chosen water level.
             // Raising the surface must also cover the newly submerged slope.
@@ -1251,17 +1250,13 @@ namespace CityForgeV3.World
             if (material.HasProperty("_Brightness"))
                 material.SetFloat("_Brightness", _waterBrightness);
             if (material.HasProperty("_CenterOpacity"))
-                material.SetFloat("_CenterOpacity", deepRiver
-                    ? 1f - (1f - _waterOpacity) * .12f
-                    : _waterOpacity);
+                material.SetFloat("_CenterOpacity", 1f - (1f - _waterOpacity) * .12f);
             if (material.HasProperty("_EdgeOpacity"))
                 material.SetFloat("_EdgeOpacity", _waterEdgeOpacity);
             if (material.HasProperty("_DeepWaterStart"))
                 material.SetFloat("_DeepWaterStart", _deepWaterStart);
             if (material.HasProperty("_DeepWaterStrength"))
-                material.SetFloat("_DeepWaterStrength", deepRiver
-                    ? Mathf.Lerp(_deepWaterStrength, 1f, .78f)
-                    : Mathf.Min(_deepWaterStrength, .38f));
+                material.SetFloat("_DeepWaterStrength", Mathf.Lerp(_deepWaterStrength, 1f, .78f));
             if (material.HasProperty("_DepthBlendSoftness"))
                 material.SetFloat("_DepthBlendSoftness", _depthBlendSoftness);
             if (material.HasProperty("_FlowSpeed"))
@@ -1539,15 +1534,17 @@ namespace CityForgeV3.World
             }
         }
 
-        public void RefreshRoadAndNeighbors(RegionCityTile district, int x, int z)
+        public void RefreshRoadAndNeighbors(RegionCityTile district, int x, int z) =>
+            RefreshRoadCellsAndNeighbors(district, new[] { new Vector2Int(x, z) });
+
+        public void RefreshRoadCellsAndNeighbors(RegionCityTile district, IEnumerable<Vector2Int> changed)
         {
             if (district == null || _roadArtworkRoot == null) return;
-            foreach (var cell in new[]
-                     {
-                         new Vector2Int(x, z), new Vector2Int(x + 1, z),
-                         new Vector2Int(x - 1, z), new Vector2Int(x, z + 1),
-                         new Vector2Int(x, z - 1)
-                     })
+            var cells = new HashSet<Vector2Int>();
+            foreach (var c in changed)
+                foreach (var offset in new[] { Vector2Int.zero, Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down })
+                    cells.Add(c + offset);
+            foreach (var cell in cells)
             {
                 if (_roadsByCell.TryGetValue(cell, out var prior))
                 {
@@ -1560,6 +1557,7 @@ namespace CityForgeV3.World
                     }
                     if (prior != null)
                     {
+                        prior.SetActive(false);
                         if (Application.isPlaying) Destroy(prior);
                         else DestroyImmediate(prior);
                     }
@@ -1643,14 +1641,14 @@ namespace CityForgeV3.World
         }
 
         public bool UpdatePlacedLotTransform(RegionCityTile district,
-            PlacedDistrictLot placement)
+            PlacedDistrictLot placement, bool allowPlacementConflicts = false)
         {
             if (district == null || placement == null ||
                 !_lotsByInstance.TryGetValue(placement.InstanceId,
                     out var lot) || lot == null) return false;
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
-            if (!ValidateLotBoatPlacement(district, placement, data, out _)) return false;
+            if (!allowPlacementConflicts && !ValidateLotBoatPlacement(district, placement, data, out _)) return false;
             RefreshElevation();
             var center = DistrictLotCenterMeters(district, placement, data);
             lot.transform.localPosition = new Vector3(center.x, 0.04f, center.y);
@@ -1893,9 +1891,9 @@ namespace CityForgeV3.World
             foreach (var lot in _lots)
                 if (lot != null)
                     lot.SetDistrictPresentationLevel(PresentationLevel(level));
-            // Hosted lot LOD changes also reconfigure shared district lighting.
-            // Reapply standalone flora projections at every zoom transition.
-            UpdateDistrictFloraShadows();
+            // Orthographic zoom changes neither the sun nor terrain receivers.
+            // Flora shadows are refreshed when flora or lighting changes, not
+            // on camera movement (which can call SetZoom every frame).
             ApplyRiverGrassEdgeVisibility();
             ApplyGridVisibility();
             ApplyCameraPose();
@@ -2051,6 +2049,9 @@ namespace CityForgeV3.World
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
+            RegisterSelectable(host, new DistrictSelectionRef(DistrictSelectionKind.Lot, instanceId),
+                data.Name, inspector: true, geometry: host.GetComponentsInChildren<Renderer>().Where(r =>
+                    !r.name.Contains("Shadow") && !r.name.Contains("Ground") && !r.name.Contains("Grid")));
             if (animateConstruction)
                 lot.BeginAllBuildingConstruction();
             return lot;

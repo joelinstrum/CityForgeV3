@@ -39,6 +39,12 @@ namespace CityForgeV3.World
     }
     public static class DistrictQuarry
     {
+        public static void Demolish(DistrictStoneSite site)
+        {
+            site.Built=false;site.Elapsed=0;site.CartBlocks=0;site.CargoStoneTons=0;
+            site.Phase="mining";site.HasWagonPose=false;site.DeliveryRoute=null;
+            site.DeliveryTargetId="";site.DeliveryStatus="";site.DeliveryRetry=0;
+        }
         public static readonly Vector2 WagonHomeOffset=new(5.65f,4.57f);
         public const int WorkerCount = 2;
         public const int WorkerWage = 250;
@@ -48,14 +54,14 @@ namespace CityForgeV3.World
         public static Vector2 Point(RegionCityTile d,DistrictStoneSite p)=>new((p.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(p.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height));
         public static bool SiteClear(RegionCityTile d,Vector2 p,Func<Vector2,bool> walkable)
             => string.IsNullOrEmpty(SiteBlockReason(d, p, walkable));
-        public static string SiteBlockReason(RegionCityTile d,Vector2 p,Func<Vector2,bool> walkable)
+        public static string SiteBlockReason(RegionCityTile d,Vector2 p,Func<Vector2,bool> walkable,float yaw=0)
         {
             var terrain=new DistrictElevation(d);float low=float.MaxValue,high=float.MinValue;
             for(float z=-14;z<=14;z+=2)for(float x=-15;x<=15;x+=2)
-            {var q=p+new Vector2(x,z);if((d.Brickworks??new()).Any(b=>DistrictBrickworks.Contains(d,b,q,1)))return "A Brickworks occupies the quarry footprint.";if(!walkable(q))return "The quarry footprint overlaps water, a lot, or the district edge.";float y=terrain.Sample(q.x,q.y);low=Mathf.Min(low,y);high=Mathf.Max(high,y);}
+            {var offset=Quaternion.Euler(0,yaw,0)*new Vector3(x,0,z);var q=p+new Vector2(offset.x,offset.z);if((d.Brickworks??new()).Any(b=>DistrictBrickworks.Contains(d,b,q,1)))return "A Brickworks occupies the quarry footprint.";if(!walkable(q))return "The quarry footprint overlaps water, a lot, or the district edge.";float y=terrain.Sample(q.x,q.y);low=Mathf.Min(low,y);high=Mathf.Max(high,y);}
             if(high-low>1.5f)return "Level the quarry site first; the ground varies by more than 1.5 meters.";
             foreach(var road in d.Roads??new())
-            {var q=new Vector2((road.GridX+.5f)*10-DistrictScale.SizeMeters(d.Width)/2,(road.GridZ+.5f)*10-DistrictScale.SizeMeters(d.Height)/2);if(Mathf.Abs(q.x-p.x)<20&&Mathf.Abs(q.y-p.y)<19)return "Move nearby roads out of the quarry footprint before building.";}
+            {var q=new Vector2((road.GridX+.5f)*10-DistrictScale.SizeMeters(d.Width)/2,(road.GridZ+.5f)*10-DistrictScale.SizeMeters(d.Height)/2);var local=Quaternion.Euler(0,-yaw,0)*new Vector3(q.x-p.x,0,q.y-p.y);if(Mathf.Abs(local.x)<20&&Mathf.Abs(local.z)<19)return "Move nearby roads out of the quarry footprint before building.";}
             return "";
         }
         public static void Ensure(RegionCityTile d,Func<Vector2,bool> walkable)

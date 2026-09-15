@@ -35,7 +35,7 @@ namespace CityForgeV3.UI
                 row.Add(new Label("2 quarry workers · $250 each per season · $500 total"));
                 if(!DistrictQuarry.WorkersPaid(d,site))row.Add(CfButton.Create("PAY WORKERS · $500",()=>{DistrictQuarry.PayWorkers(d,site);SaveDistrictEdit();ComposeQuarryManagement();},d.Treasury>=DistrictQuarry.SeasonalPayroll,"primary"));
                 row.Add(new Label($"Cart: {site.CartBlocks}/{site.Script.cartCapacity} blocks · Loaded: {site.BlocksLoaded:N0} blocks"));
-                var actions=DocumentModalActions();actions.Add(CfButton.Create("VIEW SITE",()=>FocusQuarry(site),true,"quiet"));
+                var actions=DocumentModalActions();actions.Add(CfButton.Create("ROTATE",()=>ComposeSelectedObject(new DistrictSelectionRef(DistrictSelectionKind.Entity, "quarry:" + site.Id)),true,"quiet"));actions.Add(CfButton.Create("VIEW SITE",()=>FocusQuarry(site),true,"quiet"));
                 if(!site.Built)actions.Add(CfButton.Create("BUILD QUARRY",()=>SetQuarry(site,true),Resources.Load<GameObject>(DistrictQuarry.ResourcePath)!=null&&_districtWorld.QuarrySiteClear(d,site),"primary"));
                 else
                 {
@@ -61,8 +61,8 @@ namespace CityForgeV3.UI
             var d=FindSelectedRegionTile();if(d==null||!d.StoneSites.Contains(site))return;
             EnsureDistrictUndo(d);
             if(built){if(!_districtWorld.BuildQuarry(d,site))return;}
-            else{site.Built=false;site.Elapsed=0;site.CartBlocks=0;site.Phase="mining";}
-            SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);Show(AppScreen.DistrictTerraform);FocusQuarry(site);
+            else{DistrictQuarry.Demolish(site);}
+            SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);SelectDistrictCategory("Select");Show(AppScreen.DistrictTerraform);FocusQuarry(site);
         }
         void QuarryScriptEditor(DistrictStoneSite site,string source=null)
         {
