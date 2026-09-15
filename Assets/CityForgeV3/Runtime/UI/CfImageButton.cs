@@ -7,6 +7,7 @@ namespace CityForgeV3.UI
     public static class CfImageButton
     {
         private static Texture2D _houseIcon;
+        private static Texture2D _roadIcon;
         public static Button Create(
             string accessibleName,
             string resourcePath,
@@ -57,6 +58,33 @@ namespace CityForgeV3.UI
             button.style.backgroundImage = new StyleBackground(texture);
             button.SetEnabled(enabled);
             return button;
+        }
+
+        public static Texture2D CreateRoadIcon()
+        {
+            if (_roadIcon != null) return _roadIcon;
+            const int size = 64;
+            var pixels = new Color32[size * size];
+            for (var y = 8; y < 58; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var halfWidth = Mathf.Lerp(23, 10, (y - 8) / 50f);
+                var distance = Mathf.Abs(x - 31.5f);
+                if (distance > halfWidth) continue;
+                var edge = distance > halfWidth - 2;
+                var centerLine = distance < 1.5f && ((y - 8) / 8) % 2 == 0;
+                pixels[y * size + x] = edge ? new Color32(232, 222, 184, 255)
+                    : centerLine ? new Color32(225, 179, 69, 255)
+                    : new Color32(70, 80, 84, 255);
+            }
+            _roadIcon = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "CityForge Road Tool Icon", filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave
+            };
+            _roadIcon.SetPixels32(pixels);
+            _roadIcon.Apply(false, true);
+            return _roadIcon;
         }
 
         public static Texture2D CreateHouseIcon(Color color)

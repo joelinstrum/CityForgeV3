@@ -15,7 +15,7 @@ namespace CityForgeV3.World
             if(_content==null)return;
             if(laborRoot==null || laborRoot.parent!=_content){laborRoot=new GameObject("District Labor").transform;laborRoot.SetParent(_content,false);axemen.Clear();campMarker=null;}
             var s=DistrictLabor.State(district);
-            if(s.CampPlaced && campMarker==null)
+            if(s.CampPlaced && (s.TimberCrews==null||s.TimberCrews.Count==0) && campMarker==null)
             {
                 campMarker=new GameObject("Temporary Lumber Camp");campMarker.transform.SetParent(laborRoot,false);
                 var campMaterials=campMarker.AddComponent<CharacterShadowMaterialOwner>();
@@ -26,35 +26,22 @@ namespace CityForgeV3.World
                     var mat=new Material(Shader.Find("Standard"));mat.color=new Color(.30f,.18f,.09f);log.GetComponent<Renderer>().material=mat;campMaterials.Add(mat);
                 }
             }
-            if(campMarker!=null){campMarker.SetActive(s.CampPlaced);campMarker.transform.localPosition=new Vector3(s.Camp.x,0,s.Camp.y);}
+            if(campMarker!=null){campMarker.SetActive(s.CampPlaced && (s.TimberCrews==null||s.TimberCrews.Count==0));campMarker.transform.localPosition=new Vector3(s.Camp.x,TerrainElevation(s.Camp.x,s.Camp.y),s.Camp.y);}
             var ids=new HashSet<string>(s.Workers.Select(w=>w.Id));
             foreach(var id in axemen.Keys.Where(id=>!ids.Contains(id)).ToArray()){Destroy(axemen[id]);axemen.Remove(id);}
             foreach(var w in s.Workers)
             {
                 if(!axemen.TryGetValue(w.Id,out var root)||root==null)
                 {
-                    var prefab=Resources.Load<GameObject>(AxemanResource);if(prefab==null)continue;
-                    root=new GameObject("Axeman "+(w.Slot+1));root.transform.SetParent(laborRoot,false);
-                    var model=Instantiate(prefab,root.transform);model.transform.localScale=Vector3.one*1.85f;
-                    var ownedMaterials=root.AddComponent<CharacterShadowMaterialOwner>();
-                    foreach(var renderer in model.GetComponentsInChildren<Renderer>())
-                    {
-                        var materials=renderer.materials;
-                        foreach(var material in materials)
-                        {
-                            ownedMaterials.Add(material);
-                            string map=material.name.Contains("3ece3eba")?"AxeBaseColor":"AxemanBaseColor";
-                            material.mainTexture=Resources.Load<Texture2D>("Characters/AxemanLaborV01/"+map);
-                            material.color=Color.white;material.SetFloat("_Metallic",0);material.SetFloat("_Glossiness",.15f);
-                        }
-                    }
-                    var animator=model.GetComponentInChildren<Animator>();if(animator==null)animator=model.AddComponent<Animator>();animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
-                    var player=root.AddComponent<ThreeDimensionalCharacterAnimator>();player.Initialize(animator,Resources.LoadAll<AnimationClip>(AxemanResource));axemen[w.Id]=root;
+                    root=CreateAxemanVisual(laborRoot,"Axeman "+(w.Slot+1));
+                    if(root==null)continue;
+                    axemen[w.Id]=root;
                 }
-                root.transform.localPosition=new Vector3(w.Position.x,.02f,w.Position.y);
+                root.transform.localPosition=new Vector3(w.Position.x,.02f+TerrainElevation(w.Position.x,w.Position.y),w.Position.y);
                 if(w.Facing.sqrMagnitude>.01f)root.transform.localRotation=Quaternion.LookRotation(new Vector3(w.Facing.x,0,w.Facing.y));
                 var p=root.GetComponent<ThreeDimensionalCharacterAnimator>();
-                string state=w.Activity==AxemanActivity.Chopping?"chop":w.Activity is AxemanActivity.Walking or AxemanActivity.Delivering or AxemanActivity.Returning?"walk":"idle";
+                string state=w.Activity==AxemanActivity.Chopping?"chop":w.Activity is AxemanActivity.Walking or AxemanActivity.Delivering or AxemanActivity.Returning or AxemanActivity.Retreating?"walk":"idle";
+                if(w.Activity==AxemanActivity.Retreating&&!w.RetreatMoving)state="idle";
                 if(p.State!=state)p.Play(state);p.SetPlaybackSpeed(running?1:0);
             }
         }

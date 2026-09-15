@@ -68,6 +68,7 @@ namespace CityForgeV3.World
                     foreach (var corner in corners)
                         river |= world.SampleRiverSurface(transform.TransformPoint(corner)).HasValue;
                     if (river) continue;
+                    for(int k=0;k<corners.Length;k++) corners[k].y += world.TerrainElevation(corners[k].x,corners[k].z);
                     int start = vertices.Count;
                     vertices.AddRange(corners);
                     var turn = (int)(Hash(h + 2) % 4);
@@ -93,6 +94,11 @@ namespace CityForgeV3.World
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
                 _renderers.Add(renderer);
+            }
+            if(district.Hills!=null && district.Hills.HeightMeters>0)
+            {
+                var hills=new GameObject("Hill Surface Detail");hills.transform.SetParent(transform,false);
+                hills.AddComponent<DistrictHillGroundOverlay>().Rebuild(world,district,width,depth);
             }
             LateUpdate();
         }

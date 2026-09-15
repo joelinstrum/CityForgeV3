@@ -4,7 +4,11 @@ namespace CityForgeV3.World
     public enum DistrictTreeHarvestState { Standing, Fallen, Stump }
     public static class DistrictTreeHarvest
     {
-        public const int PrototypeWoodYield = 8;
+        public const int PrototypeWoodYield = 300;
+        public const int ProvisionalWoodBuildingCost = 100;
+        // A felled tree is raw cargo. Spendable wood is credited at barge loading.
+        public static bool FellForTransport(RegionCityTile district, PlacedDistrictFlora tree, int direction)
+            => district != null && Fell(tree, direction);
         public static bool CanFell(PlacedDistrictFlora tree) => tree != null &&
             tree.FloraId == "cilician-fir" && tree.HarvestState == DistrictTreeHarvestState.Standing;
         public static bool Fell(PlacedDistrictFlora tree, int direction)

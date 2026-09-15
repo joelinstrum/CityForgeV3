@@ -398,11 +398,11 @@
 
 .region-city-tile {
     padding: 0;
-    border-left-width: 3px;
-    border-top-width: 3px;
+    border-left-width: 1px;
+    border-top-width: 1px;
     border-right-width: 0;
     border-bottom-width: 0;
-    border-color: rgba(218, 230, 198, 0.54);
+    border-color: rgba(218, 230, 198, 0.24);
     border-radius: 0;
 }
 
@@ -413,11 +413,11 @@
 
 .region-city-tile:hover,
 .region-city-tile--selected {
-    border-left-width: 6px;
-    border-top-width: 6px;
-    border-right-width: 6px;
-    border-bottom-width: 6px;
-    border-color: rgb(255, 239, 0);
+    border-left-width: 2px;
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-color: rgba(230, 215, 135, 0.75);
     background-color: rgba(122, 139, 67, 0.18);
 }
 
@@ -2951,4 +2951,58 @@
 .prop-library-panel > .document-modal-copy,
 .prop-library-panel > .document-modal-actions {
     flex-shrink: 0;
+}
+
+/* Shared root-level choice popup: never inherits transparent native menu styling. */
+Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
+.cf-choice-option { flex-shrink: 0; }
+.cf-choice-option:focus, .cf-choice-option.is-selected {
+    color: rgb(248, 241, 217);
+    background-color: rgb(62, 91, 73);
+}
+
+
+/* District notices and resource-site selection. */
+.district-notice {
+    position: absolute;
+    left: 250px;
+    right: 250px;
+    bottom: 28px;
+    background-color: var(--cf-ink-900);
+    color: var(--cf-brass-300);
+    border-radius: var(--cf-radius-md);
+    padding: var(--cf-space-3) var(--cf-space-4);
+    font-size: 24px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+.industry-resource-card {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--cf-space-4);
+    margin-bottom: var(--cf-space-3);
+    background-color: var(--cf-ink-800);
+    border-radius: var(--cf-radius-md);
+}
+.industry-resource-thumbnail {
+    width: 250px;
+    height: 180px;
+    flex-shrink: 0;
+    margin-right: var(--cf-space-4);
+}
+.industry-deposit-arrow {
+    position: absolute;
+    width: 56px;
+    height: 62px;
+    padding: 2px;
+    margin: 0;
+    border-width: 0;
+    background-color: transparent;
+    align-items: center;
+    justify-content: center;
+}
+.industry-deposit-arrow:hover,
+.industry-deposit-arrow:focus {
+    background-color: rgba(71, 111, 82, 0.4);
+    border-radius: var(--cf-radius-md);
 }

@@ -33,7 +33,7 @@ namespace CityForgeV3.UI
             if (HarvestInputBusy) return;
             var district = FindSelectedRegionTile(); if (district == null) return;
             var ids = new HashSet<string>(_districtSelection.Where(s => s.Kind == DistrictSelectionKind.Flora).Select(s => s.Id));
-            ids.RemoveWhere(id => !DistrictTreeHarvest.Fell(FindDistrictFlora(district,id), _districtFallDirection));
+            ids.RemoveWhere(id => !DistrictTreeHarvest.FellForTransport(district,FindDistrictFlora(district,id), _districtFallDirection));
             if (ids.Count > 0) SaveAndPresentHarvest(district, ids);
         }
         // Worker hook: call once when chopping finishes, using the stable saved tree ID.
@@ -41,7 +41,7 @@ namespace CityForgeV3.UI
         {
             if (_currentScreen != AppScreen.DistrictTerraform || HarvestInputBusy) return false;
             var district = FindSelectedRegionTile();
-            if (!DistrictTreeHarvest.Fell(FindDistrictFlora(district,instanceId),direction)) return false;
+            if (!DistrictTreeHarvest.FellForTransport(district,FindDistrictFlora(district,instanceId),direction)) return false;
             SaveAndPresentHarvest(district,new HashSet<string> { instanceId }); return true;
         }
         // Returns wood removed from this tree, not resources delivered to a stockpile.
@@ -67,6 +67,7 @@ namespace CityForgeV3.UI
         {
             // Store the durable end state immediately. Loading mid-fall never replays/yields twice.
             SaveDistrictEdit();
+            RefreshDistrictResourceBar(district);
             _districtWorld.RefreshHarvestTrees(district, falling ?? changed);
             if (falling != null) _districtWorld.PlayTreeFalls(district,falling);
             _districtWorld.ShowDistrictSelection(district,_districtSelection);

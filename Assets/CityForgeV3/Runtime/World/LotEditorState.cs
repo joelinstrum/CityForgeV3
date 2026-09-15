@@ -235,6 +235,9 @@ namespace CityForgeV3.World
         public List<string> AvailableEraIds = new();
         public TrafficLotType TrafficType = TrafficLotType.None;
         public List<OutsideRoadConnector> OutsideRoadConnectors = new();
+        public bool HasWaterOrientation;
+        public Vector3 WaterOrientationLand;
+        public Vector3 WaterOrientationWater;
         public bool HasBuilding;
         public string BuildingId = "";
         public float CellX;
@@ -243,6 +246,7 @@ namespace CityForgeV3.World
         public List<PlacedBuilding> Buildings = new();
         public List<PlacedFlora> Flora = new();
         public List<PlacedProp> Props = new();
+        public List<CityForgeV3.Behaviors.LotBehaviorInstance> Behaviors = new();
         public List<PlacedEffect> Effects = new();
         public List<PlacedWaterArea> WaterAreas = new();
         public List<PlacedDecal> Decals = new();
@@ -280,6 +284,9 @@ namespace CityForgeV3.World
                 AvailableEraIds = AvailableEraIds,
                 TrafficType = TrafficType,
                 OutsideRoadConnectors = OutsideRoadConnectors,
+                HasWaterOrientation = HasWaterOrientation,
+                WaterOrientationLand = WaterOrientationLand,
+                WaterOrientationWater = WaterOrientationWater,
                 HasBuilding = HasBuilding,
                 BuildingId = BuildingId,
                 CellX = CellX,
@@ -288,6 +295,7 @@ namespace CityForgeV3.World
                 Buildings = Buildings,
                 Flora = Flora,
                 Props = Props,
+                Behaviors = Behaviors,
                 Effects = Effects,
                 WaterAreas = WaterAreas,
                 Decals = Decals,
@@ -312,6 +320,7 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class PlacedBuilding3D
     {
+        public bool DoorOpen;
         public string InstanceId = "";
         public string AssetId = "brownstone-building-22k";
         public float X;
@@ -516,7 +525,7 @@ namespace CityForgeV3.World
             ToolMode = LotToolMode.Select;
         }
 
-        public string Serialize() => JsonUtility.ToJson(Data);
+        public string Serialize() { LotObjectRegistry.EnsureIds(Data); return JsonUtility.ToJson(Data); }
 
         public void Restore(string json)
         {

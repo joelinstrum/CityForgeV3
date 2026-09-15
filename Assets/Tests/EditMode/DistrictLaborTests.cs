@@ -24,18 +24,18 @@ namespace CityForgeV3.Tests.EditMode
         [Test] public void TwoWorkersReserveDifferentTreesAndDeliverExactlyOnce()
         {
             var d=District();DistrictLabor.Assign(d,2);Run(d,1);Assert.AreEqual(2,d.Labor.Workers.Select(w=>w.TreeId).Distinct().Count());
-            Run(d,1800);Assert.AreEqual(16,d.Labor.Wood);Assert.True(d.Flora.All(t=>t.HarvestState==DistrictTreeHarvestState.Stump));Run(d,100);Assert.AreEqual(16,d.Labor.Wood);
+            Run(d,1800);Assert.AreEqual(0,d.Labor.Wood);Assert.True(d.Flora.All(t=>t.HarvestState==DistrictTreeHarvestState.Stump));Run(d,100);Assert.AreEqual(0,d.Labor.Wood);
         }
         [Test] public void ReloadWithCargoDeliversWithoutDuplicateWoodOrWages()
         {
             var d=District();DistrictLabor.Assign(d,1);
             for(int i=0;i<1000&&d.Labor.Workers[0].Cargo==0;i++)Run(d,1);
-            Assert.AreEqual(8,d.Labor.Workers[0].Cargo);var loaded=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));Run(loaded,1800);Assert.AreEqual(16,loaded.Labor.Wood);Assert.AreEqual(d.Treasury,loaded.Treasury);
+            Assert.AreEqual(300,d.Labor.Workers[0].Cargo);var loaded=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));Run(loaded,1800);Assert.AreEqual(0,loaded.Labor.Wood);Assert.AreEqual(d.Treasury,loaded.Treasury);
         }
         [Test] public void ReducingAssignmentsReturnsCargoBeforeRemovingWorker()
         {
             var d=District();DistrictLabor.Assign(d,1);for(int i=0;i<1000&&d.Labor.Workers[0].Cargo==0;i++)Run(d,1);
-            DistrictLabor.Assign(d,0);Run(d,300);Assert.AreEqual(8,d.Labor.Wood);Assert.IsEmpty(d.Labor.Workers);
+            DistrictLabor.Assign(d,0);Run(d,300);Assert.AreEqual(0,d.Labor.Wood);Assert.IsEmpty(d.Labor.Workers);
         }
         [Test] public void UnreachableTreeAndMissingTargetDoNotGrantWood()
         {

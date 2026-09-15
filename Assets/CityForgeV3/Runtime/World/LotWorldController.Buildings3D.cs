@@ -134,6 +134,18 @@ namespace CityForgeV3.World
         private Material _building3DMeshSelectionMaterial;
 
         public int SelectedBuilding3DIndex => _selectedBuilding3DIndex;
+        public string SelectedBuilding3DDisplayName
+        {
+            get
+            {
+                var buildings = _session?.Data?.Buildings3D;
+                if (buildings == null || _selectedBuilding3DIndex < 0 ||
+                    _selectedBuilding3DIndex >= buildings.Count) return string.Empty;
+                var id = buildings[_selectedBuilding3DIndex].AssetId;
+                return BuildingContentCatalog.Find(id)?.displayName ?? id ?? "Building";
+            }
+        }
+
         public BuildingConstructionSequence SelectedBuildingConstruction =>
             _selectedBuilding3DIndex >= 0 &&
             _selectedBuilding3DIndex < _experimentalBuilding3DVisibleRoots.Count
@@ -704,6 +716,7 @@ namespace CityForgeV3.World
 
         private void OnDestroy()
         {
+            DisposeLotBehaviors();
             RestoreExperimentalBuilding3DStudioEnvironment();
             if (_floraProjectedShadowMaterial != null)
             {
@@ -821,6 +834,7 @@ namespace CityForgeV3.World
                         IsPackageShadowRenderer(renderer);
                     renderer.allowOcclusionWhenDynamic = true;
                 }
+                root.GetComponentInChildren<BuildingDoorController>(true)?.SetOpen(placed.DoorOpen, true);
                 GroundExperimentalBuilding(root);
                 // Package-level unit conversion changes the representation
                 // bounds after the prefab's LODGroup was authored. Recompute
@@ -879,7 +893,7 @@ namespace CityForgeV3.World
                     ? shadow.transform.Find("Representations/LOD3") ??
                       shadow.transform.Find("Representations/LOD0")
                     : null;
-            DisableClonedPackageLodControl(shadow);
+            DisableClonedPackageLodControl(shadow, visibleRoot);
             foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
             {
                 var useRenderer = hasAuthoredShadowLod
@@ -1181,7 +1195,7 @@ namespace CityForgeV3.World
                     ? groundCaster.transform.Find("Representations/LOD3") ??
                       groundCaster.transform.Find("Representations/LOD0")
                     : null;
-            DisableClonedPackageLodControl(groundCaster);
+            DisableClonedPackageLodControl(groundCaster, visibleRoot);
             foreach (var child in groundCaster.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = 0;
             foreach (var collider in groundCaster.GetComponentsInChildren<Collider>(true))
@@ -1226,7 +1240,7 @@ namespace CityForgeV3.World
                     ? caster.transform.Find("Representations/LOD3") ??
                       caster.transform.Find("Representations/LOD0")
                     : null;
-            DisableClonedPackageLodControl(caster);
+            DisableClonedPackageLodControl(caster, visibleRoot);
             foreach (var child in caster.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = FloraShadowReceiverLayer;
             foreach (var collider in caster.GetComponentsInChildren<Collider>(true))
@@ -1244,8 +1258,16 @@ namespace CityForgeV3.World
             _experimentalBuilding3DRoots.Add(caster);
         }
 
-        private static void DisableClonedPackageLodControl(GameObject clone)
+        private static void DisableClonedPackageLodControl(GameObject clone, GameObject visibleRoot)
         {
+            // Shadow copies must not duplicate lamps and must follow the visible door.
+            foreach (var lighting in clone.GetComponentsInChildren<BuildingNightLighting>(true))
+            { lighting.SetNightAmount(0); lighting.enabled = false; }
+            foreach (var light in clone.GetComponentsInChildren<Light>(true)) light.enabled = false;
+            var sourceDoor = visibleRoot.GetComponentInChildren<BuildingDoorController>(true);
+            foreach (var door in clone.GetComponentsInChildren<BuildingDoorController>(true)) door.Follow(sourceDoor);
+            var sourceWheel = visibleRoot.GetComponentInChildren<BuildingWheelRotation>(true);
+            foreach (var wheel in clone.GetComponentsInChildren<BuildingWheelRotation>(true)) wheel.Follow(sourceWheel);
             var lodGroup = clone.GetComponent<LODGroup>();
             if (lodGroup != null) lodGroup.enabled = false;
             var package = clone.GetComponent<Building3DPackageInstance>();

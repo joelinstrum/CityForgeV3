@@ -1,0 +1,125 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using CityForgeV3.Buildings3D;
+namespace CityForgeV3.World
+{
+    public sealed partial class DistrictWorldController
+    {
+        Transform quarryRoot;LotWorldController quarryFactory;
+        readonly Dictionary<string,QuarryView> quarryViews=new();
+        sealed class QuarryView
+        {public Transform Root,Transfer;public HorseCarriageController Wagon;public QuarryCranePresentation Crane;public List<Transform> Blocks=new();public List<QuarryWorkerPresentation> Workers=new();public DistrictStoneSite Site;public DistrictQuarryNavigation Navigation;public List<Vector2> Route;public float Retry;public int NavigationKey;}
+        public void EnsureStoneDeposits(RegionCityTile d)
+        {var nav=new DistrictLaborNavigation(d,IsUnderRiverWater);DistrictQuarry.Ensure(d,nav.Walkable);}
+        public string QuarrySiteBlockReason(RegionCityTile d,DistrictStoneSite site)
+        {
+            if(d==null || site==null || site.Kind!="stone" || !d.StoneSites.Contains(site)) return "This is not a stone deposit in the selected district.";
+            if(site.Built)return "A quarry already occupies this deposit.";
+            if(DistrictQuarry.WagesDue(d,site)>d.Treasury)return "A quarry needs $500 to pay its two workers for the season.";
+            var nav=new DistrictLaborNavigation(d,IsUnderRiverWater);
+            return DistrictQuarry.SiteBlockReason(d,DistrictQuarry.Point(d,site),nav.Walkable);
+        }
+        public bool QuarrySiteClear(RegionCityTile d,DistrictStoneSite site)
+        {var nav=new DistrictLaborNavigation(d,IsUnderRiverWater);return DistrictQuarry.CanBuild(d,site,nav.Walkable);}
+        public Vector3 ResourceWorldPoint(Vector2 point) =>
+            _content.TransformPoint(new Vector3(point.x, TerrainElevation(point.x, point.y) + .2f, point.y));
+        public bool BuildQuarry(RegionCityTile d,DistrictStoneSite site)
+        {var nav=new DistrictLaborNavigation(d,IsUnderRiverWater);return Resources.Load<GameObject>(DistrictQuarry.ResourcePath)!=null&&DistrictQuarry.Build(d,site,nav.Walkable);}
+        public void PresentQuarries(RegionCityTile d,bool running=true)
+        {
+            if(quarryRoot==null||quarryRoot.parent!=_content)
+            {quarryRoot=new GameObject("Stone Deposits and Quarries").transform;quarryRoot.SetParent(_content,false);quarryViews.Clear();}
+            foreach(var id in quarryViews.Keys.Where(id=>!d.StoneSites.Any(p=>p.Id==id)).ToArray())
+            {Destroy(quarryViews[id].Root.gameObject);quarryViews.Remove(id);}
+            foreach(var site in d.StoneSites)
+            {
+                if(quarryViews.TryGetValue(site.Id,out var old)&&old.Root!=null&&(old.Wagon!=null)!=site.Built)
+                {old.Root.gameObject.SetActive(false);Destroy(old.Root.gameObject);quarryViews.Remove(site.Id);}
+                if(!quarryViews.TryGetValue(site.Id,out var v)||v.Root==null)
+                {
+                    v=new QuarryView{Root=new GameObject("Stone site — "+site.Id).transform,Site=site};v.Root.SetParent(quarryRoot,false);
+                    var p=DistrictQuarry.Point(d,site);v.Root.localPosition=new Vector3(p.x,TerrainElevation(p.x,p.y)+.03f,p.y);v.Root.localRotation=Quaternion.Euler(0,site.Yaw,0);
+                    var stone=new Material(Shader.Find("Standard")){color=new Color(.56f,.54f,.48f)};stone.SetFloat("_Glossiness",.08f);
+                    v.Root.gameObject.AddComponent<QuarryMaterials>().Owned.Add(stone);
+                    if(!site.Built)
+                    {
+                        v.Root.gameObject.AddComponent<DistrictStoneOutcrop>().Build(this);
+                    }
+                    else
+                    {
+                        var prefab=Resources.Load<GameObject>(DistrictQuarry.ResourcePath);
+                        var craneBase=Resources.Load<GameObject>(QuarryCranePresentation.BaseResource);
+                        if(craneBase!=null)
+                        {
+                            var model=Instantiate(craneBase,v.Root);
+                            var material=prefab.GetComponentInChildren<Renderer>().sharedMaterial;
+                            foreach(var renderer in model.GetComponentsInChildren<Renderer>())renderer.sharedMaterial=material;
+                        }
+                        else if(prefab!=null)Instantiate(prefab,v.Root);
+                        for(int worker=0;worker<DistrictQuarry.WorkerCount;worker++)
+                        {
+                            var miner=CreateAxemanVisual(v.Root,"Quarry miner "+(worker+1));
+                            if(miner==null)continue;
+                            miner.transform.localPosition=new Vector3(-3+worker*5,0,-13);
+                            var motion=miner.AddComponent<QuarryWorkerPresentation>();motion.Initialize(worker*.43f);v.Workers.Add(motion);
+                            var face=StoneBlock(v.Root,stone,"Working stone face "+(worker+1));
+                            face.localPosition=new Vector3(-3+worker*5,.65f,-11.7f);face.localScale=new Vector3(1.65f,1.3f,1.1f);
+                        }
+                        if(quarryFactory==null){var helper=new GameObject("Quarry vehicle factory");helper.transform.SetParent(_content,false);helper.SetActive(false);quarryFactory=helper.AddComponent<LotWorldController>();}
+                        var team=quarryFactory.CreateHorseCarriagePresentation("Quarry stone cart",1,LotWorldController.HorseForestryWagonPropId,TimberGround);
+                        if(team!=null)
+                        {
+                            team.SetParent(v.Root,false);v.Wagon=team.GetComponent<HorseCarriageController>();team.localPosition=QuarryCranePresentation.WagonBed+Vector3.forward*v.Wagon.Definition.HorseOffset;v.Wagon.RestoreHeadings(0,0,0);
+                            if(site.HasWagonPose)
+                            {
+                                team.position=_content.TransformPoint(new Vector3(site.WagonPosition.x,TerrainElevation(site.WagonPosition.x,site.WagonPosition.y)+.03f,site.WagonPosition.y));
+                                v.Wagon.RestoreHeadings(site.HorseHeading-site.Yaw,site.BodyHeading-site.Yaw,site.FrontHeading-site.Yaw);
+                            }
+                            foreach(var t in v.Wagon.Carriage.GetComponentsInChildren<Transform>())if(t.name.StartsWith("Cargo_Log_"))t.gameObject.SetActive(false);
+                            for(int i=0;i<8;i++){var b=StoneBlock(v.Wagon.Carriage,stone,"Loaded stone block "+i);b.localPosition=new Vector3((i%2-.5f)*.7f,1.37f+(i/4)*.5f,-.85f-((i/2)%2)*.95f);v.Blocks.Add(b);}
+                            v.Transfer=StoneBlock(v.Root,stone,"Stone block being loaded");
+                            v.Crane=v.Root.gameObject.AddComponent<QuarryCranePresentation>();v.Crane.Initialize(v.Transfer,v.Blocks);
+                        }
+                    }
+                    quarryViews[site.Id]=v;
+                }
+                foreach(var worker in v.Workers)worker.SetWorking(running&&site.Enabled&&DistrictQuarry.WorkersPaid(d,site)&&site.Phase=="mining");
+                if(v.Wagon==null)continue;
+                for(int i=0;i<v.Blocks.Count;i++)v.Blocks[i].gameObject.SetActive(i<site.CartBlocks);
+                v.Crane.Present(site);
+            }
+        }
+        static Transform StoneBlock(Transform parent,Material material,string name)
+        {var o=GameObject.CreatePrimitive(PrimitiveType.Cube);o.name=name;o.transform.SetParent(parent,false);o.transform.localScale=new Vector3(.62f,.5f,.72f);o.GetComponent<Renderer>().sharedMaterial=material;Destroy(o.GetComponent<Collider>());return o.transform;}
+    }
+    public sealed class DistrictStoneOutcrop : MonoBehaviour
+    {
+        public const string TexturePath = "CityForgeV3/NaturalResources/StoneV01/stones-for-quarry";
+        DistrictWorldController world;
+        Sprite sprite;
+        SpriteRenderer artwork;
+        public void Build(DistrictWorldController host)
+        {
+            world = host;
+            var texture = Resources.Load<Texture2D>(TexturePath);
+            if (texture == null) return;
+            sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                new Vector2(.5f, .07f), texture.width / 9f);
+            var go = new GameObject("Stone deposit artwork");
+            go.transform.SetParent(transform, false);
+            artwork = go.AddComponent<SpriteRenderer>();
+            artwork.sprite = sprite;
+            LateUpdate();
+        }
+        void LateUpdate()
+        {
+            if (artwork == null || world == null || world.WorldCamera == null) return;
+            artwork.transform.rotation = world.WorldCamera.transform.rotation;
+            artwork.color = TimeOfDayLighting.For(world.TimeOfDay).NeutralArtworkTint;
+        }
+        void OnDestroy() { if (sprite != null) Destroy(sprite); }
+    }
+    public sealed class QuarryMaterials:MonoBehaviour
+    {public readonly List<Material> Owned=new();void OnDestroy(){foreach(var m in Owned)if(m!=null)Destroy(m);}}
+}

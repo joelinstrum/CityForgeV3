@@ -47,7 +47,7 @@ namespace CityForgeV3.UI
    if(!BeginDistrictTreeFall(_harvestQaId,1))throw new Exception("Could not fell QA tree");
    if(TakeDistrictTreeWood(_harvestQaId,1)!=0)throw new Exception("Pickup allowed during fall");
    yield return new WaitForSecondsRealtime(1.7f);
-   if(TakeDistrictTreeWood(_harvestQaId,int.MaxValue)!=8)throw new Exception("Incorrect wood pickup");
+   if(TakeDistrictTreeWood(_harvestQaId,int.MaxValue)!=DistrictTreeHarvest.PrototypeWoodYield)throw new Exception("Incorrect wood pickup");
    var loaded=RegionSaveStore.Load(_openRegion.RegionId,_districtUndoQaSaveRoot).Tiles.Find(t=>t.TileId==district.TileId);
    if(loaded.Flora.Find(t=>t.InstanceId==_harvestQaId).HarvestState!=DistrictTreeHarvestState.Stump)throw new Exception("Stump did not survive save/load");
    _districtWorld.Build(loaded); // Exercise actual saved-state presentation, not just JSON.

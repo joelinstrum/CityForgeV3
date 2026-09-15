@@ -33,6 +33,8 @@ public static class DistrictLaborQa
     private static void AssignTwo(){if(EditorApplication.isPlaying)Object.FindFirstObjectByType<CityForgeApp>()?.AssignDistrictLaborQa();}
     [MenuItem("City Forge/QA/Labor/Inspect First Worker")]
     private static void InspectWorker(){if(EditorApplication.isPlaying)Object.FindFirstObjectByType<CityForgeApp>()?.InspectDistrictWorkerQa();}
+    [MenuItem("City Forge/QA/Labor/Check Wood HUD and Reload")]
+    private static void CheckWood(){if(EditorApplication.isPlaying)Object.FindFirstObjectByType<CityForgeApp>()?.CheckDistrictWoodHudQa();}
     private static TestRunnerApi _runner;
     [MenuItem("City Forge/QA/Labor/Run Labor Tests")]
     private static void Tests()
@@ -42,7 +44,7 @@ public static class DistrictLaborQa
         _runner.RegisterCallbacks(new Results());
         _runner.Execute(new ExecutionSettings(new Filter {
             testMode = TestMode.EditMode,
-            groupNames = new[] { "^CityForgeV3.Tests.EditMode.DistrictLaborTests" }
+            groupNames = new[] { "^CityForgeV3.Tests.EditMode.DistrictLaborTests", "^CityForgeV3.Tests.EditMode.DistrictTreeHarvestTests", "^CityForgeV3.Tests.EditMode.DistrictWoodResourceTests" }
         }));
     }
     private sealed class Results : ICallbacks

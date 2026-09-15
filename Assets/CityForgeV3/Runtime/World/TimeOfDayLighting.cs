@@ -133,6 +133,8 @@ namespace CityForgeV3.World
             var presentationYaw = preset switch
             {
                 TimeOfDayPreset.Morning => 315f,
+                // Higher southwest key: short shadows travel toward +X/+Z.
+                TimeOfDayPreset.Noon => 45f,
                 TimeOfDayPreset.Afternoon => 135f,
                 _ => spec.SunAzimuth + 90f
             };

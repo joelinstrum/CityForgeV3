@@ -12,7 +12,9 @@ namespace CityForgeV3.World
         Building,
         Flora,
         Prop,
-        BuildingProp
+        BuildingProp,
+        RuntimeObject,
+        WaterOrientation
     }
 
     public sealed partial class LotWorldController : MonoBehaviour
@@ -3583,6 +3585,7 @@ namespace CityForgeV3.World
             ClearObjectHover();
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
+            if (TrySelectRuntimeObject(pixel)) return LotObjectSelectionKind.RuntimeObject;
             var maySelectBuildingProp = ActiveObjectSelection is
                 LotObjectSelectionKind.None or LotObjectSelectionKind.BuildingProp;
             var buildingPropIndex = maySelectBuildingProp
@@ -6018,6 +6021,17 @@ namespace CityForgeV3.World
             RenderSettings.ambientLight = ambientLight *
                 _environmentAmbientIntensityScale;
 
+            if (TimeOfDay == TimeOfDayPreset.Noon && ExperimentalBuilding3DCount > 0)
+            {
+                // Sky fill keeps upward surfaces readable; less horizon and
+                // ground bounce preserves depth under siding and window trim.
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+                var fill = _environmentAmbientIntensityScale * (IsRaining ? 0.7f : 1f);
+                RenderSettings.ambientSkyColor = new Color(0.42f, 0.44f, 0.47f) * fill;
+                RenderSettings.ambientEquatorColor = new Color(0.30f, 0.305f, 0.315f) * fill;
+                RenderSettings.ambientGroundColor = new Color(0.12f, 0.115f, 0.105f) * fill;
+            }
+
             if (_sun != null)
             {
                 var sunIntensity = spec.SunIntensity;
@@ -6027,7 +6041,7 @@ namespace CityForgeV3.World
                     sunIntensity = TimeOfDay switch
                     {
                         TimeOfDayPreset.Morning => 0.62f,
-                        TimeOfDayPreset.Noon => 0.55f,
+                        TimeOfDayPreset.Noon => 1.05f,
                         TimeOfDayPreset.Afternoon => 0.50f,
                         TimeOfDayPreset.Evening => 0.14f,
                         _ => 0.035f
@@ -6070,7 +6084,13 @@ namespace CityForgeV3.World
                 // walking character's physical shadow.
                 var physicalSunRotation =
                     ExperimentalBuilding3DSunRotation();
-                if (_districtHosted)
+                // Afternoon illumination must agree with the projected shadow ray.
+                // Preserve the existing palette and other time-of-day presentations.
+                if (_districtHosted && (TimeOfDay == TimeOfDayPreset.Afternoon ||
+                    TimeOfDay == TimeOfDayPreset.Noon))
+                    physicalSunRotation = Quaternion.LookRotation(
+                        ProjectedObjectShadowRay(), Vector3.up);
+                else if (_districtHosted)
                 {
                     var projectedRay = physicalSunRotation * Vector3.forward;
                     physicalSunRotation = Quaternion.LookRotation(new Vector3(
@@ -6105,6 +6125,14 @@ namespace CityForgeV3.World
 
             if (_groundRenderer != null)
             {
+                // Blank district lots inherit the district's terrain and water.
+                // Keep the collider for picking, but hide the substitute surface
+                // and its invisible terrain shadow caster.
+                var showLotGround = !_districtHosted ||
+                    !string.IsNullOrWhiteSpace(_session.Data.BaseTextureId);
+                _groundRenderer.enabled = showLotGround;
+                if (_terrainShadowCasterRenderer != null)
+                    _terrainShadowCasterRenderer.enabled = showLotGround;
                 var groundBaseline = string.IsNullOrWhiteSpace(
                     _session.Data.BaseTextureId)
                     ? spec.GroundColor
@@ -6532,6 +6560,7 @@ namespace CityForgeV3.World
                 HandleWorldClick();
             UpdateThreeDimensionalCharacters();
             UpdateHorseCarriages();
+            UpdateLotBehaviors();
             UpdateAnimalOrders();
             UpdateBears();
             UpdateCloudEffects(Time.deltaTime);
@@ -6542,6 +6571,8 @@ namespace CityForgeV3.World
 
         private void LateUpdate()
         {
+            UpdateRuntimeObjectSelectionMarker();
+            UpdateWaterOrientationArrow();
             if (_camera == null)
                 return;
 
@@ -7512,6 +7543,7 @@ namespace CityForgeV3.World
 
         private void NotifyStateChanged()
         {
+            if (_session?.Data != null) LotObjectRegistry.EnsureIds(_session.Data);
             StateChanged?.Invoke();
         }
 

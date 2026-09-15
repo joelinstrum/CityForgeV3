@@ -92,6 +92,9 @@ namespace CityForgeV3.Buildings3D
 
         private readonly List<WindowMaterialTarget> cachedTargets = new();
         private MaterialPropertyBlock propertyBlock;
+        [SerializeField] private bool preferPixelLights;
+        public void ConfigurePerPixel(bool enabled) { preferPixelLights = enabled; initialized = false; }
+
         private bool initialized;
         private bool wasNight;
         private int nightCycle;
@@ -245,6 +248,8 @@ namespace CityForgeV3.Buildings3D
                 if (point?.Anchor != null)
                     point.RuntimeLight = ConfigureLight(point.Anchor,
                         "Window Spill", LightType.Point, false, 120f);
+            foreach (var point in windowLights)
+                if (point?.RuntimeLight != null) point.RuntimeLight.renderMode = preferPixelLights ? LightRenderMode.ForcePixel : LightRenderMode.Auto;
             foreach (var point in exteriorLamps)
                 if (point?.Anchor != null)
                     point.RuntimeLight = ConfigureLight(point.Anchor,

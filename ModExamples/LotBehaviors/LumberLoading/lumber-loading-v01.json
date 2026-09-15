@@ -1,0 +1,13 @@
+{
+  "id": "lumber-loading-v01",
+  "displayName": "Load lumber barge",
+  "kind": "cargo-loading-v1",
+  "workerPrefabResourcePath": "CityForgeV3/Characters/DockWorkerV01/DockWorkerV01",
+  "workers": 2,
+  "capacity": 12,
+  "pickupSeconds": 2.0,
+  "unloadSeconds": 2.0,
+  "walkSpeed": 1.1,
+  "departureSpeed": 2.0,
+  "staggerSeconds": 1.5
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "cityforge-lot-script-v1",
+  "boatId": "3c8f1351c78d4ac99b6afbf3f088a476",
+  "pickup": {
+    "objectId": "",
+    "offset": {
+      "x": 9.5,
+      "y": 0.06,
+      "z": 3
+    }
+  },
+  "dock": {
+    "objectId": "",
+    "offset": {
+      "x": 9.5,
+      "y": 0.06,
+      "z": -5
+    }
+  },
+  "behavior": {
+    "id": "lumber-loading-v01",
+    "displayName": "Load lumber barge",
+    "kind": "cargo-loading-v1",
+    "workerPrefabResourcePath": "CityForgeV3/Characters/DockWorkerV01/DockWorkerV01",
+    "workers": 2,
+    "capacity": 12,
+    "pickupSeconds": 2.0,
+    "unloadSeconds": 2.0,
+    "walkSpeed": 1.1,
+    "departureSpeed": 2.0,
+    "staggerSeconds": 1.5
+  }
+}

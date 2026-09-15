@@ -30,6 +30,14 @@ namespace CityForgeV3.World
             ShaftAnchor=new Vector3(.44f,.81f,2.54f),DriverHands=new Vector3(.17f,1.63f,.57f),
             ShadowSize=new Vector2(2.1f,3.3f),ShadowCenterZ=-.95f
         };
+        public static readonly HorseWagonDefinition Forestry=CreateForestry();
+        static HorseWagonDefinition CreateForestry()
+        {
+            var value=JsonUtility.FromJson<HorseWagonDefinition>(JsonUtility.ToJson(Lumber));
+            value.DisplayName="Forestry log wagon";
+            value.ResourcePath="CityForgeV3/Vehicles/ForestryWagonV02/Forestry_Wagon_v02";
+            return value;
+        }
         public static readonly HorseWagonDefinition Covered=new()
         {
             DisplayName="Two horses and covered wagon",HorseCount=2,HorseSpacing=1f,
@@ -52,6 +60,7 @@ namespace CityForgeV3.World
         };
         public static HorseWagonDefinition For(string propId)=>propId switch
         {
+            LotWorldController.HorseForestryWagonPropId=>Forestry,
             LotWorldController.HorseFoodWagonPropId=>Food,
             LotWorldController.HorseCoveredWagonPropId=>Covered,
             LotWorldController.HorseLumberWagonPropId=>Lumber,

@@ -39,6 +39,19 @@ namespace CityForgeV3.UI
             _openRegion=loaded;ClearDistrictUndo();_laborNavigation=null;_districtWorld.Build(next);_districtWorldCompositionKey=DistrictCompositionKey(next);Show(AppScreen.DistrictTerraform);_districtWorld.SetPan(next.Labor.Camp);_districtWorld.WorldCamera.orthographicSize=15f;
             Debug.Log($"LABOR QA RELOAD PASS workers={next.Labor.Workers.Count} wood={next.Labor.Wood} treasury={next.Treasury}");
         }
+        public void CheckDistrictWoodHudQa()
+        {
+            if(_districtUndoQaSaveRoot==null)return;
+            var d=FindSelectedRegionTile();RemoveDocumentModal();SetDistrictSimulationPaused(true);
+            var tree=d.Flora.FirstOrDefault(DistrictTreeHarvest.CanFell);if(tree==null)throw new Exception("No saved tree for resource QA");
+            int before=d.Labor.Wood;
+            ComposeDistrictResourcesModal();
+            if(!BeginDistrictTreeFall(tree.InstanceId,0))throw new Exception("Saved tree fall failed");
+            if(d.Labor.Wood!=before || !_root.Q<Label>("district-resource-wood").text.Contains((before).ToString("N0")))throw new Exception("Felling incorrectly changed lumber tally");
+            ReloadDistrictLaborQa();d=FindSelectedRegionTile();ComposeDistrictResourcesModal();
+            if(d.Labor.Wood!=before || !_root.Q<Label>("district-resource-wood").text.Contains((before).ToString("N0")))throw new Exception("HUD tally did not survive reload");
+            Debug.Log($"WOOD HUD QA PASS savedTree={tree.InstanceId} before={before} after={d.Labor.Wood} reload=true");
+        }
         public void InspectDistrictWorkerQa()
         {
             if(_districtUndoQaSaveRoot==null)return;var d=FindSelectedRegionTile();var worker=d.Labor.Workers.FirstOrDefault();if(worker==null)return;
