@@ -15,7 +15,7 @@ namespace CityForgeV3.UI
     SetQuarry(s,true);var center=DistrictQuarry.Point(d,s);
     var b=new DistrictBrickworksSite{NormalizedX=.5f+(center.x+40)/640,NormalizedZ=.5f+60/640f};
     if(!DistrictBrickworks.Build(d,b,_=>true))throw new Exception("Brickworks fixture placement failed");
-    int gridX=Mathf.FloorToInt((center.x+25+320)/10);
+    int gridX=Mathf.FloorToInt((center.x+15+320)/10);
     for(int z=32;z<=41;z++)d.Roads.Add(new(){GridX=gridX,GridZ=z});
     s.Phase="full";s.Elapsed=s.Script.fullCartSeconds;s.CartBlocks=4;s.CargoStoneTons=4;d.ResourceInventory.Stone=4;
     _districtWorldCompositionKey="";EnsureDistrictWorld(d);Show(AppScreen.DistrictTerraform);SetDistrictSimulationPaused(true);
@@ -23,6 +23,24 @@ namespace CityForgeV3.UI
    }
    if(_districtUndoQaSaveRoot==null||FindSelectedRegionTile().TileId!="quarry-placement-review")throw new Exception("Isolated Brickworks fixture required");
    var district=FindSelectedRegionTile();var site=district.StoneSites[1];
+   if(command=="merge-check")
+   {
+    CheckDistrictDeletionPerformanceQa();
+    district=FindSelectedRegionTile();site=district.StoneSites[1];
+    foreach(var identity in new[]{new DistrictSelectionRef(DistrictSelectionKind.Entity,"quarry:"+site.Id),new DistrictSelectionRef(DistrictSelectionKind.Entity,"brickworks:"+district.Brickworks[0].Id)})
+    {
+     _districtWorld.PresentQuarries(district,false);_districtWorld.PresentBrickworks(district);
+     var target=_districtWorld.ResolveSelectable(identity);
+     if(target==null)throw new Exception("Missing shared selection target "+identity.Id);
+     ComposeSelectedObject(identity);
+     DistrictIndustryRotation.TryFootprint(district,identity,out _,out _,out var before);
+     if(!RotateSelectedDistrictObject(1))throw new Exception("Shared keyboard rotation failed");
+     DistrictIndustryRotation.TryFootprint(district,identity,out _,out _,out var after);
+     if(after!=Mathf.Repeat(before+90,360))throw new Exception("Incorrect shared rotation");
+     if(!UndoDistrictEdit())throw new Exception("Shared rotation undo failed");
+    }
+    File.WriteAllText(dir+"merge-check.txt","PASS: shared quarry and Brickworks selection, keyboard rotation, undo, and incremental tree deletion.");return;
+   }
    if(command=="diagnose"){File.WriteAllText(dir+"diagnostic.txt",_districtWorld.DiagnoseQuarryDelivery(district,site));return;}
    if(command=="menu"){ComposeDistrictIndustryModal();return;}
    if(command=="focus")

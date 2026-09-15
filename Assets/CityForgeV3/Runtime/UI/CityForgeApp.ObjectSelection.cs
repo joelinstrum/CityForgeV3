@@ -5,6 +5,27 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
+        bool RotateSelectedDistrictObject(int direction)
+        {
+            if (_placingBrickworks || IndustryPlacementActive || !string.IsNullOrEmpty(_pendingDistrictLotId) || _districtSelection.Count != 1) return false;
+            var identity = _districtSelection[0];
+            var target = _districtWorld?.ResolveSelectable(identity);
+            if (target == null) return false;
+            BindPlacedLotInspector(target);
+            var label = direction < 0 ? "LEFT 90" : "RIGHT 90";
+            foreach (var action in target.Actions)
+                if (action.Label.Contains(label))
+                {
+                    var district = FindSelectedRegionTile(); EnsureDistrictUndo(district);
+                    var result = action.Execute();
+                    _selectionWarnings[SelectionWarningKey(identity)] = result.Message;
+                    if (result.Succeeded) { SaveDistrictEdit(); _districtWorldCompositionKey = DistrictCompositionKey(district); }
+                    _districtWorld.ShowDistrictSelection(district, _districtSelection);
+                    RefreshSelectedObjectPanel(); return true;
+                }
+            return false;
+        }
+
         readonly System.Collections.Generic.Dictionary<string,string> _selectionWarnings = new();
         string SelectionWarningKey(DistrictSelectionRef identity) =>
             (_openRegion?.RegionId ?? "") + "/" + (FindSelectedRegionTile()?.TileId ?? "") + "/" + identity.Kind + "/" + identity.Id;

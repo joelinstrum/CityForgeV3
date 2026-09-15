@@ -47,7 +47,7 @@ namespace CityForgeV3.Tests.EditMode
   [Test] public void ConnectedRoadsReachBrickworksButDisconnectedOrFloodedRoadsDoNot()
   {
    var d=District();var s=Quarry(d);var b=Works(d);Assert.True(DistrictBrickworks.Build(d,b,_=>true));
-   for(int z=32;z<=41;z++)d.Roads.Add(new(){GridX=34,GridZ=z});
+   for(int z=32;z<=41;z++)d.Roads.Add(new(){GridX=33,GridZ=z});
    var from=DistrictBrickworks.QuarryHome(d,s);var nav=new DistrictQuarryNavigation(d,s,_=>false);
    var destinations=nav.Destinations(from).ToList();Assert.IsNotEmpty(destinations);
    foreach(var route in destinations.Select(t=>t.Route))for(int i=1;i<route.Count;i++)Assert.Greater(Vector2.Distance(route[i],route[i-1]),.01f,"Duplicate junctions prevent wagon corner rounding");

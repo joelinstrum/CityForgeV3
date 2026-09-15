@@ -606,6 +606,7 @@ namespace CityForgeV3.UI
           if(Input.GetKeyDown(KeyCode.Escape)){CancelBrickworksPlacement();return;}
           if(Input.GetKeyDown(KeyCode.R)){RotateBrickworksPreview();return;}
         }
+        if (Input.GetKeyDown(KeyCode.R) && RotateSelectedDistrictObject(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ? -1 : 1)) return;
         if (IndustryPlacementActive && Input.GetKeyDown(KeyCode.Escape))
         { CancelIndustryPlacement(); return; }
         if (Input.GetKeyDown(KeyCode.Z) &&

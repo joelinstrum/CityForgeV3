@@ -24,7 +24,7 @@ using System;using System.IO;using System.Linq;using UnityEditor;using UnityEngi
  }
  else if(c=="build")Build();
  else if(c=="art")ImportArtwork();
- else if(c=="tests"){runner=ScriptableObject.CreateInstance<TestRunnerApi>();runner.RegisterCallbacks(new Results());runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{".*(DistrictBrickworksTests|DistrictQuarryTests|QuarryCraneTests|DistrictNoticeTests|DistrictWildlifeTests|DistrictLaborTests|DistrictTimberTests|DistrictWoodResourceTests|DistrictCoalMineTests|DistrictNaturalResourcesTests).*"}}));}
+ else if(c=="tests"){runner=ScriptableObject.CreateInstance<TestRunnerApi>();runner.RegisterCallbacks(new Results());runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{".*(DistrictIndustryRotationTests|DistrictBrickworksTests|DistrictQuarryTests|QuarryCraneTests|DistrictNoticeTests|DistrictWildlifeTests|DistrictLaborTests|DistrictTimberTests|DistrictWoodResourceTests|DistrictCoalMineTests|DistrictNaturalResourcesTests).*"}}));}
  else UnityEngine.Object.FindFirstObjectByType<CityForgeApp>().QuarryQa(c);
  File.WriteAllText("/tmp/cityforge-quarry-result.txt","OK "+c);
  }catch(Exception e){File.WriteAllText("/tmp/cityforge-quarry-result.txt",e.ToString());Debug.LogException(e);}}

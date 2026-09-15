@@ -33,7 +33,7 @@ namespace CityForgeV3.World
                     candidate.Yaw = Mathf.Repeat(b.Yaw + degrees, 360);
                     var reason = BrickworksPlacementReason(d, candidate);
                     if (deliveries) reason += " Active stone deliveries may need a new approach.";
-                    b.Yaw = candidate.Yaw; root.transform.localRotation = Quaternion.Euler(0, b.Yaw, 0);
+                    DistrictIndustryRotation.Apply(d, new DistrictSelectionRef(DistrictSelectionKind.Entity, "brickworks:" + b.Id), degrees > 0 ? 1 : -1); root.transform.localRotation = Quaternion.Euler(0, b.Yaw, 0);
                     return DistrictActionResult.Applied(reason);
                 }
                 RegisterSelectable(root, new DistrictSelectionRef(DistrictSelectionKind.Entity, "brickworks:" + b.Id),
@@ -135,12 +135,13 @@ namespace CityForgeV3.World
 #endif
         public bool TickQuarryDeliveries(RegionCityTile d,bool running,float dt)
         {
-            if(!running||dt<=0)return false;bool changed=false;
+            if(!running||dt<=0||d.StoneSites==null||!d.StoneSites.Any(s=>s.Built&&s.Enabled&&(s.Phase=="full"||s.Phase=="delivering"||s.Phase=="unloading"||s.Phase=="returning")))return false;bool changed=false;
             int navigationKey=17;
             unchecked
             {
                 foreach(var road in d.Roads??new())navigationKey=navigationKey*31+road.GridX*397+road.GridZ;
                 foreach(var tree in d.Flora??new())navigationKey=navigationKey*31+tree.NormalizedX.GetHashCode()+tree.NormalizedZ.GetHashCode()+(int)tree.HarvestState;
+                foreach(var q in d.StoneSites??new())navigationKey=navigationKey*31+q.Yaw.GetHashCode();
                 foreach(var b in d.Brickworks??new())navigationKey=navigationKey*31+b.Id.GetHashCode()+b.NormalizedX.GetHashCode()+b.NormalizedZ.GetHashCode()+b.Yaw.GetHashCode();
             }
             foreach(var site in d.StoneSites.Where(s=>s.Built&&s.Enabled))

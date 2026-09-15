@@ -113,21 +113,20 @@ namespace CityForgeV3.World
             reason = reason.Replace("Move nearby roads out of the quarry footprint before building.",
                 "Nearby roads are within the quarry clearance area; access may be obstructed.");
             if (away) reason += (string.IsNullOrEmpty(reason) ? "" : " ") + "The wagon is away; its return access will be recalculated.";
-            site.Yaw = yaw;
-            if (quarryViews.TryGetValue(site.Id, out var view) && view.Root != null)
+            quarryViews.TryGetValue(site.Id, out var view);
+            if (view?.Wagon != null) SaveQuarryWagonPose(site, view.Wagon);
+            DistrictIndustryRotation.Apply(district, new DistrictSelectionRef(DistrictSelectionKind.Entity, "quarry:" + site.Id), degrees > 0 ? 1 : -1);
+            if (view?.Root != null)
             {
-                // Keep an away wagon in world space while rotating its home site.
-                var wagonPosition = view.Wagon != null ? view.Wagon.transform.position : Vector3.zero;
-                var horse = site.HorseHeading; var body = site.BodyHeading; var front = site.FrontHeading;
                 view.Root.localRotation = Quaternion.Euler(0, yaw, 0);
-                if (away && view.Wagon != null)
+                if (view.Wagon != null)
                 {
-                    view.Wagon.transform.position = wagonPosition;
-                    view.Wagon.RestoreHeadings(horse-yaw, body-yaw, front-yaw);
-                    if (site.Phase == "returning") site.DeliveryDestination = DistrictBrickworks.QuarryHome(district, site);
+                    var position = _content.TransformPoint(new Vector3(site.WagonPosition.x, 0, site.WagonPosition.y));
+                    position.y = view.Wagon.transform.position.y;
+                    view.Wagon.transform.position = position;
+                    view.Wagon.RestoreHeadings(site.HorseHeading-yaw, site.BodyHeading-yaw, site.FrontHeading-yaw);
                 }
                 view.Navigation = null; view.Route = null; view.Retry = 0;
-                if (view.Wagon != null) SaveQuarryWagonPose(site, view.Wagon);
             }
             return true;
         }

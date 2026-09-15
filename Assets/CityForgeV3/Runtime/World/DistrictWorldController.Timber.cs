@@ -201,6 +201,7 @@ namespace CityForgeV3.World
             {timberRoot=new GameObject("Timber Wagons").transform;timberRoot.SetParent(_content,false);timberViews.Clear();}
             foreach(var id in timberViews.Keys.Where(id=>!crews.Any(c=>c.Id==id)).ToArray())
             {if(timberViews[id].Wagon!=null)Destroy(timberViews[id].Wagon.gameObject);timberViews.Remove(id);}
+            if (crews.Count == 0) return false;
             var nav=new DistrictTimberNavigation(district,IsUnderRiverWater);
             bool durable=false;
             foreach(var crew in crews)
