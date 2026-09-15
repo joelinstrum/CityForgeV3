@@ -16,7 +16,7 @@ namespace CityForgeV3.Editor
         private const string ScreenshotPath = "/tmp/cityforge-art-deco-corner-placement-qa.png";
         private const string TriggerPath = "/tmp/cityforge-run-art-deco-corner-placement-qa";
 
-        [InitializeOnLoadMethod]
+
         private static void RegisterTriggeredRun()
         {
             EditorApplication.delayCall += () =>

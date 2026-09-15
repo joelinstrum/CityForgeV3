@@ -1,0 +1,141 @@
+{
+  "contractVersion": "cityforge-building-spatial-v1",
+  "assetId": "DistrictCoalMine",
+  "sizeClass": "medium",
+  "coordinateSystem": "blender-metric-origin-centered",
+  "metersPerGridUnit": 10.0,
+  "originPolicy": "foundation-center-ground",
+  "rotationAnchor": {
+    "column": 0,
+    "row": 0
+  },
+  "dimensionsMeters": {
+    "width": 5.756482,
+    "depth": 8.370882,
+    "height": 4.0
+  },
+  "occupancy": {
+    "width": 1,
+    "depth": 1,
+    "derivation": "ceil-foundation-meters-over-grid-unit"
+  },
+  "foundation": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.287824,
+        "row": -0.418544
+      },
+      {
+        "column": 0.287824,
+        "row": -0.418544
+      },
+      {
+        "column": 0.287824,
+        "row": 0.418544
+      },
+      {
+        "column": -0.287824,
+        "row": 0.418544
+      }
+    ]
+  },
+  "collision": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.287824,
+          "row": -0.418544
+        },
+        {
+          "column": 0.287824,
+          "row": -0.418544
+        },
+        {
+          "column": 0.287824,
+          "row": 0.418544
+        },
+        {
+          "column": -0.287824,
+          "row": 0.418544
+        }
+      ]
+    }
+  ],
+  "occlusion": [
+    {
+      "id": "foundation",
+      "points": [
+        {
+          "column": -0.287824,
+          "row": -0.418544
+        },
+        {
+          "column": 0.287824,
+          "row": -0.418544
+        },
+        {
+          "column": 0.287824,
+          "row": 0.418544
+        },
+        {
+          "column": -0.287824,
+          "row": 0.418544
+        }
+      ]
+    }
+  ],
+  "shadowReceiver": {
+    "id": "foundation",
+    "points": [
+      {
+        "column": -0.287824,
+        "row": -0.418544
+      },
+      {
+        "column": 0.287824,
+        "row": -0.418544
+      },
+      {
+        "column": 0.287824,
+        "row": 0.418544
+      },
+      {
+        "column": -0.287824,
+        "row": 0.418544
+      }
+    ]
+  },
+  "renders": [
+    {
+      "facing": "front-right",
+      "pivot": {
+        "x": 0.5,
+        "y": 0.647170217
+      }
+    },
+    {
+      "facing": "front-left",
+      "pivot": {
+        "x": 0.49999982,
+        "y": 0.647170723
+      }
+    },
+    {
+      "facing": "rear-left",
+      "pivot": {
+        "x": 0.50000018,
+        "y": 0.647170217
+      }
+    },
+    {
+      "facing": "rear-right",
+      "pivot": {
+        "x": 0.500000061,
+        "y": 0.647170455
+      }
+    }
+  ],
+  "placementScale": 1
+}

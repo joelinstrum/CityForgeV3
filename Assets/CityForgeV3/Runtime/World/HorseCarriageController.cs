@@ -175,6 +175,13 @@ namespace CityForgeV3.World
         public bool Step(float dt,Func<Vector3,float> ground,Func<Vector3,Vector3,bool> clear)
         {
             if(!IsMoving)return false;
+            // Float accumulation over a long route can exhaust the braking
+            // distance a few millimeters before the final waypoint. Finish
+            // only when both the remaining path and actual endpoint are near;
+            // a loop or a route passing near its destination must keep moving.
+            if(loopStart<0 && distanceToEnd<=.01f &&
+                Vector3.Distance(Flat(transform.position),path[path.Count-1])<=.01f)
+            {Park();return true;}
             dt=Mathf.Clamp(dt,0,.05f);
             var target=IsStopping?0f:SpeedMetersPerSecond;
             if(loopStart<0)

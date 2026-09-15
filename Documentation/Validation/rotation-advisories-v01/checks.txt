@@ -1,0 +1,1 @@
+PASS rotation despite nearby road; advisory visible in side panel; orientation saved; next clear rotation removes warning. Advisory: Rotation applied. Possible issue: Nearby roads are within the quarry clearance area; access may be obstructed.

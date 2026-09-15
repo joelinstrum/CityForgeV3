@@ -95,7 +95,7 @@ MonoBehaviour:
       identity preserved.
   - Level: 5
     ScreenRelativeHeight: 0.002
-    VisualPrefab: {fileID: 6496660673311710257, guid: c02888fe23bae4d5fa85af3301b37a1c, type: 3}
+    VisualPrefab: {fileID: 6151365692048822048, guid: c02888fe23bae4d5fa85af3301b37a1c, type: 3}
     OverrideMaterial: {fileID: 0}
     ShadowPrefab: {fileID: 919132149155446097, guid: e1cbf15b2b40a4abc99513e4dfa9eddc, type: 3}
     LocalPosition: {x: 0, y: 0, z: 0}

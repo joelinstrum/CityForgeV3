@@ -1,0 +1,7 @@
+{
+  "source": "/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/stone-quarry/v01/v02_metric/StoneQuarry_metric_v02.blend",
+  "operation": "Remove fused upper crane faces for separate runtime swivel jib; preserve original UV atlas, stone platform, lower trestle, and quarry grounds",
+  "removed_faces": 314,
+  "remaining_faces": 18495,
+  "script": "Tools/Quarry/derive_crane_base.py"
+}

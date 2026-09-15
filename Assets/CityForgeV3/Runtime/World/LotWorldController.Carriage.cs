@@ -33,6 +33,18 @@ namespace CityForgeV3.World
             }
             root.gameObject.AddComponent<CharacterShadowMaterialOwner>().Add(material);
             foreach(var r in renderers){r.sharedMaterial=material;r.shadowCastingMode=ShadowCastingMode.On;r.receiveShadows=true;}
+            if(vehicle==HorseWagonDefinition.Forestry)
+            {
+                foreach(var kind in new[]{"Bark","Endgrain"})
+                {
+                    var cargoMaterial=new Material(Shader.Find("Standard"));
+                    cargoMaterial.name="Forestry log "+kind;
+                    cargoMaterial.mainTexture=Resources.Load<Texture2D>("CityForgeV3/Vehicles/ForestryWagonV02/Forestry_"+kind);
+                    cargoMaterial.color=Color.white;cargoMaterial.SetFloat("_Glossiness",.08f);
+                    root.GetComponent<CharacterShadowMaterialOwner>().Add(cargoMaterial);
+                    foreach(var r in renderers)if(r.name.StartsWith("Cargo_Log_"+kind))r.sharedMaterial=cargoMaterial;
+                }
+            }
             var foreMesh=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="Carriage_Forecarriage");
             if(foreMesh!=null)
             {

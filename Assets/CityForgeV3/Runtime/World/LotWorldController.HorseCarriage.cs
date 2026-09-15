@@ -29,14 +29,15 @@ namespace CityForgeV3.World
             if(_carriageRebuildMotions.TryGetValue(prop.InstanceId,out var state))c.RestoreMotion(state);
         }
         public const string HorseCarriagePropId="horse-carriage-v02";
+        public const string HorseForestryWagonPropId="horse-forestry-wagon-v02";
         public const string HorseLumberWagonPropId="horse-lumber-wagon-v01";
         public const string HorseCoveredWagonPropId="horse-covered-wagon-v01";
         public const string HorseFoodWagonPropId="horse-food-wagon-v01";
-        public static bool IsHorseWagon(string id)=>id==HorseCarriagePropId||id==HorseLumberWagonPropId||id==HorseCoveredWagonPropId||id==HorseFoodWagonPropId;
+        public static bool IsHorseWagon(string id)=>id==HorseForestryWagonPropId||id==HorseCarriagePropId||id==HorseLumberWagonPropId||id==HorseCoveredWagonPropId||id==HorseFoodWagonPropId;
         public string SelectedHorseWagonName=>SelectedPropIsCarriageTeam?HorseWagonDefinition.For(_session.Data.Props[SelectedPropIndex].PropId).DisplayName:"Horse and wagon";
         public bool SelectedPropIsCarriageTeam=>SelectedPropIndex>=0&&SelectedPropIndex<PropCount&&IsHorseWagon(_session.Data.Props[SelectedPropIndex].PropId);
         public bool SelectedPropCanWalk=>SelectedPropIsAnimal||SelectedPropIsCarriageTeam;
-        Transform CreateHorseCarriagePresentation(string name,float alpha,string propId)
+        public Transform CreateHorseCarriagePresentation(string name,float alpha,string propId, System.Func<Vector3,float> ground = null)
         {
             var vehicle=HorseWagonDefinition.For(propId);
             var root=new GameObject(name).transform;
@@ -55,7 +56,7 @@ namespace CityForgeV3.World
             }
             root.gameObject.AddComponent<HorseCarriageController>().Configure(horse,carriage,vehicle,secondHorse);
             if(alpha>=.999f)
-                root.gameObject.AddComponent<HorseCarriageGroundShadow>().Initialize(horse,carriage,CarriageShadowGroundY,vehicle,secondHorse);
+                root.gameObject.AddComponent<HorseCarriageGroundShadow>().Initialize(horse,carriage,ground ?? CarriageShadowGroundY,vehicle,secondHorse);
             return root;
         }
         float CarriageShadowGroundY(Vector3 point)

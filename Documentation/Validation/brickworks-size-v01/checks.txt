@@ -1,0 +1,1 @@
+PASS doubled model and preview scale, 40 x 50 footprint, rotated containment, 48m receiving offset, shared geometry selection and rotation.

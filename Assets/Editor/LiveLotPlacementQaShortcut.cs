@@ -293,7 +293,7 @@ public static class LiveLotPlacementQaShortcut
     private const string PendingTriggerPath = "/tmp/cityforge-art-deco-qa-pending";
     private static TimeOfDayPreset _requestedTime = TimeOfDayPreset.Afternoon;
 
-    [InitializeOnLoadMethod]
+
     private static void RegisterFileTriggers()
     {
         EditorApplication.update -= PollFileTriggers;

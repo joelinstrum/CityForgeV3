@@ -34,7 +34,7 @@ namespace CityForgeV3.World
     /// It deliberately shares LotMetricScale instead of maintaining a second
     /// visual scale or a screenshot representation of a lot.
     /// </summary>
-    public sealed class DistrictWorldController : MonoBehaviour
+    public sealed partial class DistrictWorldController : MonoBehaviour
     {
         public const string DefaultGrassResource =
             "CityForgeV3/Art/Regions/default-grass-texture";
@@ -148,6 +148,7 @@ namespace CityForgeV3.World
         private GameObject _lotOutline;
         private LineRenderer _lotOutlineRenderer;
         private Renderer _groundRenderer;
+        private DistrictGroundDecals _groundDecals;
         private float _widthMeters;
         private float _depthMeters;
         private Vector3 _pan;
@@ -265,10 +266,14 @@ namespace CityForgeV3.World
             // viewing pose first, including when reloading a saved district.
             ApplyCameraPose();
             BuildSun();
+            _terrainDistrict = district;
+            _elevation = new DistrictElevation(district);
+            _buildingDistrict = true;
             BuildGround();
             RefreshRivers(district);
             RefreshRoads(district);
             RefreshFlora(district);
+            RefreshNaturalResources(district);
             BuildGrid();
             var placements = district.Lots ?? new List<PlacedDistrictLot>();
             foreach (var placement in placements)
@@ -277,8 +282,9 @@ namespace CityForgeV3.World
                     continue;
                 var lot = LotContentCatalog.Read(placement.LotId);
                 if (lot == null) continue;
-                AddLot(lot, DistrictLotCenterMeters(district, placement, lot),
+                var hosted = AddLot(lot, DistrictLotCenterMeters(district, placement, lot),
                     placement.RotationQuarterTurns, placement.InstanceId);
+                hosted.BindDistrictBehaviors(placement, district);
             }
             // Region v1 stored only its founder lot. Preserve those saves by
             // projecting the legacy normalized position onto the shared grid.
@@ -296,6 +302,7 @@ namespace CityForgeV3.World
                     AddLot(founderLot, center, 0, "legacy-founder");
                 }
             }
+            _buildingDistrict = false;
             SetZoom(DistrictZoom.DefaultLevel);
             SetTimeOfDay(district.TimeOfDay);
         }
@@ -310,6 +317,7 @@ namespace CityForgeV3.World
                 var old = _roadArtworkRoot.gameObject;
                 if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
             }
+            RefreshElevation();
             _roadArtworkRoot = new GameObject("District Roads").transform;
             _roadArtworkRoot.SetParent(_content, false);
             _roadsByCell.Clear();
@@ -317,12 +325,13 @@ namespace CityForgeV3.World
                 AddRoadPiece(road);
         }
 
-        public void RefreshRivers(RegionCityTile district)
+        public void RefreshRivers(RegionCityTile district, bool preservePresentations = false)
         {
             if (_content == null || district == null) return;
             if (_riverRoot != null)
             {
                 var old = _riverRoot.gameObject;
+                old.SetActive(false);
                 if (Application.isPlaying) Destroy(old);
                 else DestroyImmediate(old);
             }
@@ -333,7 +342,16 @@ namespace CityForgeV3.World
             foreach (var river in district.Rivers ??
                      new List<PlacedDistrictRiver>())
                 BuildRiver(river);
+            MergeRiverJunctions(district);
             ApplyRiverGrassEdgeVisibility();
+            RefreshElevation(preservePresentations);
+            if (_groundDecals == null)
+            {
+                var decals = new GameObject("Default District Grass Decals");
+                decals.transform.SetParent(_content, false);
+                _groundDecals = decals.AddComponent<DistrictGroundDecals>();
+            }
+            _groundDecals.Rebuild(this, district, _widthMeters, _depthMeters);
         }
 
         public void RefreshFlora(RegionCityTile district,
@@ -509,7 +527,7 @@ namespace CityForgeV3.World
                     new Color(.35f, .82f, 1f, .96f);
                 line.shadowCastingMode = ShadowCastingMode.Off;
                 line.receiveShadows = false;
-                const float y = .34f;
+                var y = .34f + TerrainElevation(bounds.center.x,bounds.center.y);
                 line.SetPosition(0, new Vector3(bounds.xMin, y, bounds.yMin));
                 line.SetPosition(1, new Vector3(bounds.xMax, y, bounds.yMin));
                 line.SetPosition(2, new Vector3(bounds.xMax, y, bounds.yMax));
@@ -521,6 +539,14 @@ namespace CityForgeV3.World
             DistrictSelectionRef selection, out Rect bounds)
         {
             bounds = default;
+            if (selection.Kind == DistrictSelectionKind.Entity &&
+                ResolveSelectable(selection) is DistrictSelectable target && target.WorldBounds(out var worldBounds))
+            {
+                var a = _content.InverseTransformPoint(worldBounds.min);
+                var b = _content.InverseTransformPoint(worldBounds.max);
+                bounds = Rect.MinMaxRect(Mathf.Min(a.x,b.x), Mathf.Min(a.z,b.z), Mathf.Max(a.x,b.x), Mathf.Max(a.z,b.z));
+                return true;
+            }
             if (selection.Kind == DistrictSelectionKind.Flora &&
                 _districtFloraPresentations.TryGetValue(selection.Id,
                     out var renderer) && renderer != null)
@@ -606,6 +632,9 @@ namespace CityForgeV3.World
                         presentationId, texture.name));
                 _districtFloraSprites[resource] = sprite;
             }
+            if (placed.FloraId == "cilician-fir" && placed.HarvestState != DistrictTreeHarvestState.Standing)
+                sprite = DistrictHarvestSprites.Get(placed.HarvestDirection, 23,
+                    placed.HarvestState == DistrictTreeHarvestState.Stump) ?? sprite;
             var item = new GameObject($"District Flora — {placed.FloraId}");
             item.transform.SetParent(_districtFloraRoot, false);
             item.transform.localPosition = DistrictFloraPosition(placed);
@@ -626,6 +655,8 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
+            RegisterSelectable(item, new DistrictSelectionRef(DistrictSelectionKind.Flora, placed.InstanceId),
+                placed.FloraId, inspector: false, geometry: new Renderer[] { renderer });
         }
 
         private Material DistrictFloraMaterial()
@@ -655,8 +686,9 @@ namespace CityForgeV3.World
         {
             var shader = Shader.Find("CityForgeV3/DistrictFloraGroundShadow");
             if (flora == null || sprite == null || shader == null) return;
-            _districtFloraShadowMaterial ??= new Material(shader)
-            { name = "District Projected Flora Shadow" };
+            if (_districtFloraShadowMaterial == null)
+                _districtFloraShadowMaterial = new Material(shader)
+                { name = "District Projected Flora Shadow" };
             _districtFloraShadowMaterial.shader = shader;
             var shadowObject = new GameObject("District Flora Shadow");
             shadowObject.transform.SetParent(flora, false);
@@ -735,7 +767,8 @@ namespace CityForgeV3.World
                     var world = root + right * (vertices[i].x * scale.x);
                     var travel = height / Mathf.Max(.05f, -ray.y);
                     world += new Vector3(ray.x,0f,ray.z) * travel;
-                    world.y = groundY + .025f;
+                    var terrainPoint = _content.InverseTransformPoint(world);
+                    world.y = groundY + .025f + TerrainElevation(terrainPoint.x, terrainPoint.z) - TerrainElevation(root.x, root.z);
                     projected[i] = shadow.transform.InverseTransformPoint(world);
                     colors[i] = new Color(1f,1f,1f,Mathf.Clamp01(height/referenceHeight));
                 }
@@ -752,7 +785,7 @@ namespace CityForgeV3.World
         {
             var x = (placed.NormalizedX - .5f) * _widthMeters;
             var z = (placed.NormalizedZ - .5f) * _depthMeters;
-            const float ground = .19f;
+            var ground = .19f + TerrainElevation(x, z);
             var local = new Vector3(x, ground, z);
             var sample = SampleRiverSurface(_content.TransformPoint(local));
             if (sample.HasValue)
@@ -880,7 +913,7 @@ namespace CityForgeV3.World
             var waterTexture = Resources.Load<Texture2D>(
                 RiverWaterTextureResource);
             var requestedDepth = Mathf.Abs(_waterHeight);
-            var waterDepth = deep ? requestedDepth : requestedDepth * depthScale;
+            var waterDepth = requestedDepth; // Connected water shares one level; bed depth remains independent.
             var waterElevation = terrainSurface - waterDepth;
             // Follow the existing bank profile up to the chosen water level.
             // Raising the surface must also cover the newly submerged slope.
@@ -975,6 +1008,7 @@ namespace CityForgeV3.World
             }
 
             private readonly List<Vector2> _points;
+            public IReadOnlyList<Vector2> Points => _points;
             private readonly float _dirtOuterDistance;
             private readonly float _terrainSurface;
             private readonly float _depthScale;
@@ -1216,17 +1250,13 @@ namespace CityForgeV3.World
             if (material.HasProperty("_Brightness"))
                 material.SetFloat("_Brightness", _waterBrightness);
             if (material.HasProperty("_CenterOpacity"))
-                material.SetFloat("_CenterOpacity", deepRiver
-                    ? 1f - (1f - _waterOpacity) * .12f
-                    : _waterOpacity);
+                material.SetFloat("_CenterOpacity", 1f - (1f - _waterOpacity) * .12f);
             if (material.HasProperty("_EdgeOpacity"))
                 material.SetFloat("_EdgeOpacity", _waterEdgeOpacity);
             if (material.HasProperty("_DeepWaterStart"))
                 material.SetFloat("_DeepWaterStart", _deepWaterStart);
             if (material.HasProperty("_DeepWaterStrength"))
-                material.SetFloat("_DeepWaterStrength", deepRiver
-                    ? Mathf.Lerp(_deepWaterStrength, 1f, .78f)
-                    : Mathf.Min(_deepWaterStrength, .38f));
+                material.SetFloat("_DeepWaterStrength", Mathf.Lerp(_deepWaterStrength, 1f, .78f));
             if (material.HasProperty("_DepthBlendSoftness"))
                 material.SetFloat("_DepthBlendSoftness", _depthBlendSoftness);
             if (material.HasProperty("_FlowSpeed"))
@@ -1504,15 +1534,17 @@ namespace CityForgeV3.World
             }
         }
 
-        public void RefreshRoadAndNeighbors(RegionCityTile district, int x, int z)
+        public void RefreshRoadAndNeighbors(RegionCityTile district, int x, int z) =>
+            RefreshRoadCellsAndNeighbors(district, new[] { new Vector2Int(x, z) });
+
+        public void RefreshRoadCellsAndNeighbors(RegionCityTile district, IEnumerable<Vector2Int> changed)
         {
             if (district == null || _roadArtworkRoot == null) return;
-            foreach (var cell in new[]
-                     {
-                         new Vector2Int(x, z), new Vector2Int(x + 1, z),
-                         new Vector2Int(x - 1, z), new Vector2Int(x, z + 1),
-                         new Vector2Int(x, z - 1)
-                     })
+            var cells = new HashSet<Vector2Int>();
+            foreach (var c in changed)
+                foreach (var offset in new[] { Vector2Int.zero, Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down })
+                    cells.Add(c + offset);
+            foreach (var cell in cells)
             {
                 if (_roadsByCell.TryGetValue(cell, out var prior))
                 {
@@ -1525,6 +1557,7 @@ namespace CityForgeV3.World
                     }
                     if (prior != null)
                     {
+                        prior.SetActive(false);
                         if (Application.isPlaying) Destroy(prior);
                         else DestroyImmediate(prior);
                     }
@@ -1595,23 +1628,28 @@ namespace CityForgeV3.World
                 string.IsNullOrWhiteSpace(placement.LotId)) return false;
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
+            if (!ValidateLotBoatPlacement(district, placement, data, out _)) return false;
+            RefreshElevation();
             var lot = AddLot(data,
                 DistrictLotCenterMeters(district, placement, data),
                 placement.RotationQuarterTurns, placement.InstanceId, true);
             if (lot == null) return false;
+            lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);
             return true;
         }
 
         public bool UpdatePlacedLotTransform(RegionCityTile district,
-            PlacedDistrictLot placement)
+            PlacedDistrictLot placement, bool allowPlacementConflicts = false)
         {
             if (district == null || placement == null ||
                 !_lotsByInstance.TryGetValue(placement.InstanceId,
                     out var lot) || lot == null) return false;
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
+            if (!allowPlacementConflicts && !ValidateLotBoatPlacement(district, placement, data, out _)) return false;
+            RefreshElevation();
             var center = DistrictLotCenterMeters(district, placement, data);
             lot.transform.localPosition = new Vector3(center.x, 0.04f, center.y);
             lot.transform.localRotation = Quaternion.Euler(0f,
@@ -1621,7 +1659,7 @@ namespace CityForgeV3.World
         }
 
         public void ShowLotPlacementGuide(int gridX, int gridZ,
-            int spanX, int spanZ, bool placeable)
+            int spanX, int spanZ, bool placeable, float offsetX = 0, float offsetZ = 0)
         {
             if (_content == null) return;
             spanX = Mathf.Max(1, spanX);
@@ -1658,10 +1696,10 @@ namespace CityForgeV3.World
                 var z0 = z * DistrictScale.CellSizeMeters + inset;
                 var z1 = (z + 1) * DistrictScale.CellSizeMeters - inset;
                 var start = vertices.Count;
-                vertices.Add(new Vector3(x0, elevation, z0));
-                vertices.Add(new Vector3(x1, elevation, z0));
-                vertices.Add(new Vector3(x1, elevation, z1));
-                vertices.Add(new Vector3(x0, elevation, z1));
+                vertices.Add(new Vector3(x0, elevation + TerrainElevation(x0-_widthMeters*.5f+gridX*DistrictScale.CellSizeMeters,z0-_depthMeters*.5f+gridZ*DistrictScale.CellSizeMeters), z0));
+                vertices.Add(new Vector3(x1, elevation + TerrainElevation(x1-_widthMeters*.5f+gridX*DistrictScale.CellSizeMeters,z0-_depthMeters*.5f+gridZ*DistrictScale.CellSizeMeters), z0));
+                vertices.Add(new Vector3(x1, elevation + TerrainElevation(x1-_widthMeters*.5f+gridX*DistrictScale.CellSizeMeters,z1-_depthMeters*.5f+gridZ*DistrictScale.CellSizeMeters), z1));
+                vertices.Add(new Vector3(x0, elevation + TerrainElevation(x0-_widthMeters*.5f+gridX*DistrictScale.CellSizeMeters,z1-_depthMeters*.5f+gridZ*DistrictScale.CellSizeMeters), z1));
                 triangles.Add(start);
                 triangles.Add(start + 2);
                 triangles.Add(start + 1);
@@ -1677,9 +1715,9 @@ namespace CityForgeV3.World
                 ? new Color(0.35f, 1f, 0.08f, 0.48f)
                 : new Color(1f, 0.08f, 0.06f, 0.52f);
             _placementGuide.transform.localPosition = new Vector3(
-                -_widthMeters * 0.5f + gridX * DistrictScale.CellSizeMeters,
+                -_widthMeters * 0.5f + gridX * DistrictScale.CellSizeMeters + offsetX,
                 0f,
-                -_depthMeters * 0.5f + gridZ * DistrictScale.CellSizeMeters);
+                -_depthMeters * 0.5f + gridZ * DistrictScale.CellSizeMeters + offsetZ);
             _placementGuide.SetActive(true);
         }
 
@@ -1715,9 +1753,7 @@ namespace CityForgeV3.World
             var screenPoint = new Vector3(panelPosition.x,
                 Screen.height - panelPosition.y, 0f);
             var ray = _camera.ScreenPointToRay(screenPoint);
-            var ground = new Plane(Vector3.up, Vector3.zero);
-            if (!ground.Raycast(ray, out var distance)) return false;
-            var point = ray.GetPoint(distance);
+            if (!TerrainRaycast(ray, out var point)) return false;
             normalized = new Vector2(point.x / _widthMeters + 0.5f,
                 point.z / _depthMeters + 0.5f);
             return normalized.x >= 0f && normalized.x <= 1f &&
@@ -1730,9 +1766,7 @@ namespace CityForgeV3.World
             if (_camera == null || _widthMeters <= 0f || _depthMeters <= 0f)
                 return false;
             var ray = _camera.ScreenPointToRay(Input.mousePosition);
-            var ground = new Plane(Vector3.up, Vector3.zero);
-            if (!ground.Raycast(ray, out var distance)) return false;
-            var point = ray.GetPoint(distance);
+            if (!TerrainRaycast(ray, out var point)) return false;
             normalized = new Vector2(point.x / _widthMeters + 0.5f,
                 point.z / _depthMeters + 0.5f);
             return normalized.x >= 0f && normalized.x <= 1f &&
@@ -1803,7 +1837,7 @@ namespace CityForgeV3.World
         }
 
         public void ShowLotOutline(int gridX, int gridZ, int spanX,
-            int spanZ, bool selected)
+            int spanZ, bool selected, float offsetX=0, float offsetZ=0)
         {
             if (_content == null) return;
             if (_lotOutline == null)
@@ -1827,9 +1861,9 @@ namespace CityForgeV3.World
             var width = spanX * DistrictScale.CellSizeMeters;
             var depth = spanZ * DistrictScale.CellSizeMeters;
             _lotOutline.transform.localPosition = new Vector3(
-                -_widthMeters * 0.5f + gridX * DistrictScale.CellSizeMeters,
+                -_widthMeters * 0.5f + gridX * DistrictScale.CellSizeMeters + offsetX,
                 0.34f,
-                -_depthMeters * 0.5f + gridZ * DistrictScale.CellSizeMeters);
+                -_depthMeters * 0.5f + gridZ * DistrictScale.CellSizeMeters + offsetZ);
             _lotOutlineRenderer.SetPosition(0, new Vector3(0f, 0f, 0f));
             _lotOutlineRenderer.SetPosition(1, new Vector3(width, 0f, 0f));
             _lotOutlineRenderer.SetPosition(2, new Vector3(width, 0f, depth));
@@ -1857,9 +1891,9 @@ namespace CityForgeV3.World
             foreach (var lot in _lots)
                 if (lot != null)
                     lot.SetDistrictPresentationLevel(PresentationLevel(level));
-            // Hosted lot LOD changes also reconfigure shared district lighting.
-            // Reapply standalone flora projections at every zoom transition.
-            UpdateDistrictFloraShadows();
+            // Orthographic zoom changes neither the sun nor terrain receivers.
+            // Flora shadows are refreshed when flora or lighting changes, not
+            // on camera movement (which can call SetZoom every frame).
             ApplyRiverGrassEdgeVisibility();
             ApplyGridVisibility();
             ApplyCameraPose();
@@ -1892,9 +1926,40 @@ namespace CityForgeV3.World
                     _zoomLevel <= DistrictZoomLevel.LOD2);
         }
 
+        private readonly Dictionary<Light, bool> _afternoonSceneLights = new();
+
+        private void RestoreAfternoonSceneLights()
+        {
+            foreach (var pair in _afternoonSceneLights)
+                if (pair.Key != null) pair.Key.enabled = pair.Value;
+            _afternoonSceneLights.Clear();
+        }
+
+        private void ApplyAfternoonSceneLights(TimeOfDayPreset preset)
+        {
+            if (preset != TimeOfDayPreset.Afternoon && preset != TimeOfDayPreset.Noon)
+            { RestoreAfternoonSceneLights(); return; }
+            // Scene-template suns have no world owner and can illuminate the
+            // shaded facade from the opposite direction to the district sun.
+            foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            {
+                if (light == _sun || light.type != LightType.Directional ||
+                    light.transform.parent != null) continue;
+                if (!_afternoonSceneLights.ContainsKey(light))
+                    _afternoonSceneLights.Add(light, light.enabled);
+                light.enabled = false;
+            }
+        }
+
+        private void OnDisable() => RestoreAfternoonSceneLights();
+        private void OnDestroy() => RestoreAfternoonSceneLights();
+        private void OnEnable()
+        { if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay); }
+
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             TimeOfDay = preset;
+            ApplyAfternoonSceneLights(preset);
             foreach (var renderer in _districtFloraPresentations.Values)
                 if (renderer != null)
                     renderer.color = TimeOfDayLighting.For(preset)
@@ -1904,20 +1969,10 @@ namespace CityForgeV3.World
                     lot.SetTimeOfDay(preset);
 
             var spec = TimeOfDayLighting.For(preset);
-            // A hosted LotWorldController applies the complete, proven Lot
-            // Editor lighting contract to this shared sun: bias, strength,
-            // culling, projected shadows, flora, characters, and night lights.
-            // Only use the simple fallback when the district has no lot yet.
-            if (_sun != null && _lots.Count == 0)
-            {
-                _sun.transform.rotation = TimeOfDayLighting.SunRotation(preset);
-                _sun.color = spec.SunColor;
-                _sun.intensity = spec.SunIntensity;
-                _sun.shadows = preset == TimeOfDayPreset.Night
-                    ? LightShadows.None : LightShadows.Soft;
-                _sun.shadowStrength = preset == TimeOfDayPreset.Noon
-                    ? 0.92f : 0.72f;
-            }
+            // District terrain owns its environment, regardless of whether a lot
+            // happened to initialize global ambient lighting first. Match the
+            // established native-building daylight baseline (including District 9).
+            ApplyRegionEnvironment(preset, _sun);
             if (_camera != null)
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
@@ -1944,14 +1999,15 @@ namespace CityForgeV3.World
             var width = DistrictScale.SizeMeters(district.Width);
             var depth = DistrictScale.SizeMeters(district.Height);
             var spanX = DistrictScale.GridSpanForMeters(
-                lot.LotWidthCells * LotMetricScale.MajorGridMeters);
+                lot.LotWidthCells * LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
             var spanZ = DistrictScale.GridSpanForMeters(
-                lot.LotDepthCells * LotMetricScale.MajorGridMeters);
+                lot.LotDepthCells * LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
+            if ((placement.RotationQuarterTurns & 1) != 0) (spanX, spanZ) = (spanZ, spanX);
             return new Vector2(
                 -width * 0.5f + (placement.GridX + spanX * 0.5f) *
-                    LotMetricScale.MajorGridMeters,
+                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetX,
                 -depth * 0.5f + (placement.GridZ + spanZ * 0.5f) *
-                    LotMetricScale.MajorGridMeters);
+                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
         }
 
         public static float OrthographicSize(DistrictZoomLevel level,
@@ -1982,6 +2038,7 @@ namespace CityForgeV3.World
             var lot = host.AddComponent<LotWorldController>();
             lot.BuildAsDistrictHosted(_camera, _sun);
             lot.ConfigureDistrictRiverSurfaceSampler(SampleRiverSurface);
+            lot.ConfigureBoatRouteProvider(FindDownstreamBoatRoute);
             lot.LoadRuntimeLot(data);
             lot.ConfigureAsDistrictHosted(_camera, _sun,
                 PresentationLevel(DistrictZoom.DefaultLevel));
@@ -1992,6 +2049,9 @@ namespace CityForgeV3.World
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
+            RegisterSelectable(host, new DistrictSelectionRef(DistrictSelectionKind.Lot, instanceId),
+                data.Name, inspector: true, geometry: host.GetComponentsInChildren<Renderer>().Where(r =>
+                    !r.name.Contains("Shadow") && !r.name.Contains("Ground") && !r.name.Contains("Grid")));
             if (animateConstruction)
                 lot.BeginAllBuildingConstruction();
             return lot;
@@ -2023,11 +2083,15 @@ namespace CityForgeV3.World
 
         private void BuildGround()
         {
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            var ground = new GameObject();
+            ground.AddComponent<MeshFilter>().sharedMesh = _elevation.CreateMesh();
+            ground.AddComponent<MeshRenderer>();
+            ground.AddComponent<DistrictTerrainMeshOwner>();
+            _terrainCollider = ground.AddComponent<MeshCollider>();
+            _terrainCollider.sharedMesh = ground.GetComponent<MeshFilter>().sharedMesh;
             ground.name = "District Ground — 10 Meter Lot Grid Contract";
             ground.transform.SetParent(_content, false);
-            ground.transform.localScale = new Vector3(
-                _widthMeters / 10f, 1f, _depthMeters / 10f);
+
             var renderer = ground.GetComponent<MeshRenderer>();
             _groundRenderer = renderer;
             var shader = Shader.Find("CityForgeV3/ShadowReceivingLotSurface") ??
@@ -2050,6 +2114,7 @@ namespace CityForgeV3.World
                     _depthMeters / DistrictGrassTextureWorldSizeMeters);
             }
             renderer.sharedMaterial = material;
+            ConfigureMountainGroundMaterial();
             renderer.receiveShadows = true;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
@@ -2075,6 +2140,10 @@ namespace CityForgeV3.World
             var direction = _sun == null
                 ? Vector3.up
                 : -_sun.transform.forward.normalized;
+            // Mountain morning faces the visible eastern side. Preserve the
+            // authored elevation and every other lighting preset.
+            if (_terrainDistrict?.Hills?.Mountains == true && preset == TimeOfDayPreset.Morning)
+                direction = new Vector3(-direction.x, direction.y, -direction.z);
             material.SetVector("_TerrainSunDirection", new Vector4(
                 direction.x, direction.y, direction.z, 0f));
         }
@@ -2105,21 +2174,21 @@ namespace CityForgeV3.World
             void AddQuad(float x0, float z0, float x1, float z1)
             {
                 var start = vertices.Count;
-                vertices.Add(new Vector3(x0, elevation, z0));
-                vertices.Add(new Vector3(x1, elevation, z0));
-                vertices.Add(new Vector3(x1, elevation, z1));
-                vertices.Add(new Vector3(x0, elevation, z1));
+                vertices.Add(new Vector3(x0, elevation + TerrainElevation(x0,z0), z0));
+                vertices.Add(new Vector3(x1, elevation + TerrainElevation(x1,z0), z0));
+                vertices.Add(new Vector3(x1, elevation + TerrainElevation(x1,z1), z1));
+                vertices.Add(new Vector3(x0, elevation + TerrainElevation(x0,z1), z1));
                 triangles.Add(start); triangles.Add(start + 2); triangles.Add(start + 1);
                 triangles.Add(start); triangles.Add(start + 3); triangles.Add(start + 2);
             }
             for (var x = -_widthMeters * 0.5f;
                  x <= _widthMeters * 0.5f + 0.001f; x += spacing)
-                AddQuad(x - lineWidth * 0.5f, -_depthMeters * 0.5f,
-                    x + lineWidth * 0.5f, _depthMeters * 0.5f);
+                for(float z=-_depthMeters*.5f;z<_depthMeters*.5f;z+=10f)
+                    AddQuad(x-lineWidth*.5f,z,x+lineWidth*.5f,Mathf.Min(z+10,_depthMeters*.5f));
             for (var z = -_depthMeters * 0.5f;
                  z <= _depthMeters * 0.5f + 0.001f; z += spacing)
-                AddQuad(-_widthMeters * 0.5f, z - lineWidth * 0.5f,
-                    _widthMeters * 0.5f, z + lineWidth * 0.5f);
+                for(float x=-_widthMeters*.5f;x<_widthMeters*.5f;x+=10f)
+                    AddQuad(x,z-lineWidth*.5f,Mathf.Min(x+10,_widthMeters*.5f),z+lineWidth*.5f);
             var mesh = new Mesh { name = objectName };
             mesh.indexFormat = vertices.Count > 65535
                 ? IndexFormat.UInt32 : IndexFormat.UInt16;
@@ -2129,6 +2198,7 @@ namespace CityForgeV3.World
             var item = new GameObject(objectName);
             item.transform.SetParent(_grid, false);
             item.AddComponent<MeshFilter>().sharedMesh = mesh;
+            item.AddComponent<DistrictTerrainMeshOwner>();
             item.AddComponent<MeshRenderer>().sharedMaterial = material;
             return item;
         }
@@ -2137,8 +2207,15 @@ namespace CityForgeV3.World
         {
             if (_camera == null) return;
             var target = _pan;
+            target.y += TerrainElevation(target.x,target.z);
             const float elevationDegrees = 20f;
             var cameraRadius = CameraRadius(_zoomLevel);
+            // Orthographic dolly preserves framing while keeping tall foreground
+            // terrain in front of the near plane at district zooms.
+            if (_terrainDistrict?.Hills?.Mountains == true && (int)_zoomLevel >= (int)DistrictZoomLevel.LOD2)
+                cameraRadius = Mathf.Max(cameraRadius,
+                    new Vector2(_widthMeters, _depthMeters).magnitude * .5f
+                    + Mathf.Max(0, _terrainDistrict.Hills.HeightMeters) + 20f);
             var horizontalRadius = Mathf.Cos(
                 elevationDegrees * Mathf.Deg2Rad) * cameraRadius;
             var diagonal = horizontalRadius / Mathf.Sqrt(2f);
@@ -2166,6 +2243,7 @@ namespace CityForgeV3.World
 
         private void ClearWorld()
         {
+            _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();
             _roadsByCell.Clear();
@@ -2175,6 +2253,7 @@ namespace CityForgeV3.World
             for (var index = transform.childCount - 1; index >= 0; index--)
             {
                 var child = transform.GetChild(index).gameObject;
+                child.SetActive(false);
                 if (Application.isPlaying) Destroy(child);
                 else DestroyImmediate(child);
             }

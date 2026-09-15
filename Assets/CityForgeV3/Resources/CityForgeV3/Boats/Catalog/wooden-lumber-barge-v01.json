@@ -1,0 +1,9 @@
+{
+  "id": "wooden-lumber-barge-v01",
+  "displayName": "Wooden Lumber Barge",
+  "category": "Cargo Boats",
+  "prefabResourcePath": "CityForgeV3/Vehicles/WoodenBargeV01/WoodenBargeV01",
+  "thumbnailResourcePath": "CityForgeV3/Boats/Thumbnails/wooden-lumber-barge-v01",
+  "widthMeters": 3.2486,
+  "lengthMeters": 10
+}
