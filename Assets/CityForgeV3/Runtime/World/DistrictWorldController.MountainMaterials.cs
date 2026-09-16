@@ -3,6 +3,27 @@ namespace CityForgeV3.World
 {
     public sealed partial class DistrictWorldController
     {
+        // Match the screen-space detail of the next existing camera band.
+        // Farther views keep their original world-space texture scale.
+        public static float DistrictGrassWorldSizeForZoom(DistrictZoomLevel level)
+        {
+            if (level != DistrictZoomLevel.LOD0 && level != DistrictZoomLevel.LOD1)
+                return DistrictGrassTextureWorldSizeMeters;
+            var next = (DistrictZoomLevel)((int)level + 1);
+            return DistrictGrassTextureWorldSizeMeters *
+                OrthographicSize(level, 1, 1, 1) / OrthographicSize(next, 1, 1, 1);
+        }
+
+        private void ApplyDistrictGrassZoomScale()
+        {
+            if (_terrainDistrict?.Hills?.Mountains == true) return;
+            var material = _groundRenderer?.sharedMaterial;
+            if (material == null) return;
+            float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
+            var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
+            if (material.mainTextureScale != scale) material.mainTextureScale = scale;
+        }
+
         private void ConfigureMountainGroundMaterial()
         {
             var material = _groundRenderer?.sharedMaterial;
@@ -15,7 +36,7 @@ namespace CityForgeV3.World
             // including triplanar slope sampling; retain that artwork contract.
             var grass = Resources.Load<Texture2D>(mountains ? DefaultGrassResource : DistrictGrassResource);
             if (grass != null) material.mainTexture = grass;
-            float grassMetres = mountains ? GrassTextureWorldSizeMeters : DistrictGrassTextureWorldSizeMeters;
+            float grassMetres = mountains ? GrassTextureWorldSizeMeters : DistrictGrassWorldSizeForZoom(_zoomLevel);
             material.mainTextureScale = new Vector2(_widthMeters / grassMetres, _depthMeters / grassMetres);
             if (!mountains)
             {

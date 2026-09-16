@@ -1,0 +1,41 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.UI;
+using CityForgeV3.World;
+[InitializeOnLoad] public static class FarmhouseIntakeReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic;
+ static FarmhouseIntakeReview(){EditorApplication.update+=Poll;}
+ static void Poll(){var path=Root+"farmhouse-intake.request";if(!File.Exists(path)||EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+ var cmd=File.ReadAllText(path).Trim();if(cmd=="tests"&&EditorApplication.isPlayingOrWillChangePlaymode)return;
+ if(cmd=="show"&&!EditorApplication.isPlaying){EditorApplication.isPlaying=true;return;}
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(cmd=="show"&&app==null)return;
+ File.Delete(path);
+ try{
+ if(cmd=="tests"){
+ var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var type=asm.GetType("NewEnglandFarmhouseContentTests");var lines=new List<string>();
+ foreach(var method in type.GetMethods()){
+ var attrs=method.GetCustomAttributes(false);var cases=attrs.Where(x=>x.GetType().Name=="TestCaseAttribute").ToArray();
+ if(cases.Length==0&&!attrs.Any(x=>x.GetType().Name=="TestAttribute"))continue;
+ var args=cases.Length==0?new[]{Array.Empty<object>()}:cases.Select(x=>(object[])x.GetType().GetProperty("Arguments").GetValue(x)).ToArray();
+ foreach(var values in args)try{method.Invoke(Activator.CreateInstance(type),values);lines.Add("PASS "+method.Name+" "+string.Join(",",values));}catch(Exception e){lines.Add("FAIL "+method.Name+" "+(e.InnerException??e));}
+ }File.WriteAllLines(Root+"farmhouse-intake-tests.txt",lines);
+ }
+ if(cmd=="show"){
+ var type=app.GetType();if((bool)type.GetField("_hasOpenLot",F).GetValue(app)||type.GetField("_openRegion",F).GetValue(app)!=null)throw new Exception("Live work exists; refusing to replace it with intake fixture.");
+ type.GetMethod("EnsureLotWorld",F).Invoke(app,null);var world=(LotWorldController)type.GetField("_lotWorld",F).GetValue(app);
+ world.NewEmptyLot("New England Farmhouse — Intake Review",LotType.Residential,6,6);world.ConfigureLot("New England Farmhouse — Intake Review",LotType.Residential,6,6,"founders");
+ world.AddExperimentalBuilding3D("new-england-farmhouse-v02",-10,0,0);world.AddExperimentalBuilding3D("founders-farm-cabin-v01",12,0,0);
+ world.SetBaseTexture("grass-lush");world.SetTimeOfDay(TimeOfDayPreset.Noon);world.SetCameraOrbitOctant(0);
+ type.GetField("_hasOpenLot",F).SetValue(app,true);var category=type.GetField("_lotEditorCategory",F);category.SetValue(app,Enum.Parse(category.FieldType,"Buildings3D"));type.GetField("_lotEditorCategoryExpanded",F).SetValue(app,false);
+ var show=type.GetMethod("Show",F);show.Invoke(app,new[]{Enum.Parse(show.GetParameters()[0].ParameterType,"LotEditor")});world.SetQaOrthographicSize(18);
+ File.WriteAllText(Root+"farmhouse-intake-live.txt","Opened unsaved comparison: new farmhouse left, existing Founders farmhouse/cabin right; no user saves written.\n");
+ }
+ }catch(Exception e){File.WriteAllText(Root+"farmhouse-intake-error.txt",e.ToString());}
+ }
+}

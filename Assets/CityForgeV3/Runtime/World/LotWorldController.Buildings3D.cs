@@ -1385,6 +1385,11 @@ namespace CityForgeV3.World
             ActiveObjectSelection = LotObjectSelectionKind.None;
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
+            _propDragActive = false;
+            _floraDragActive = false;
+            ApplyPropSelection();
+            ApplyFloraSelection();
+            ClearObjectHover();
             _selectedBuilding3DIndex = bestIndex;
             _building3DDragOffset = new Vector2(placed.X - point.x,
                 placed.Z - point.z);
@@ -1508,6 +1513,7 @@ namespace CityForgeV3.World
         public int BeginAllBuildingConstruction()
         {
             var started = 0;
+            LotConstructionSite site = null;
             var roots = new HashSet<GameObject>();
             foreach (var root in _experimentalBuilding3DVisibleRoots)
                 if (root != null) roots.Add(root);
@@ -1516,17 +1522,23 @@ namespace CityForgeV3.World
                 if (presentation != null) roots.Add(presentation.gameObject);
             foreach (var root in roots)
             {
-                if (root.GetComponent<BuildingConstructionSequence>() != null)
+                if (!root.activeInHierarchy || root.GetComponent<BuildingConstructionSequence>() != null)
                     continue;
                 var bounds = CombinedRendererBounds(root, out var hasBounds);
                 if (!hasBounds) continue;
                 var sequence = root.AddComponent<BuildingConstructionSequence>();
+                if (_districtHosted)
+                {
+                    site ??= GetComponent<LotConstructionSite>() ?? gameObject.AddComponent<LotConstructionSite>();
+                    site.Track(sequence, LotWidthMeters, LotDepthMeters);
+                }
                 _experimentalBuilding3DGroundShadows.TryGetValue(root,
                     out var shadow);
                 if (shadow != null) shadow.SetActive(false);
                 sequence.Begin(root, bounds.size.x, bounds.size.z,
                     bounds.size.y, () =>
                     {
+                        site?.SequenceChanged(sequence);
                         if (sequence.IsComplete && shadow != null)
                             shadow.SetActive(true);
                         NotifyStateChanged();

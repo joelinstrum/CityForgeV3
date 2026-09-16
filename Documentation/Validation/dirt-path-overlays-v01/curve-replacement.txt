@@ -1,0 +1,6 @@
+Replaced curve from /Users/joelinstrum/Downloads/overlays/dirt-path/dirth-path-curve.png
+Dimensions: 1536 x 1536
+Previous SHA-256: 70e82da0fdb9dbc7057cfcfade33e0bccfbe65228c7afe8a6f34bed4dbbc60ec
+Replacement SHA-256: 4423f2f149bef8425d7eaa29778c9dc727d4b79c9845f301a853911f7662bbbd
+Previous artwork preserved in original-curve.png.
+Runtime/review bytes match the new source; both importer metadata files unchanged.

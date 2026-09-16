@@ -62,6 +62,50 @@
       "resource": "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-t-junction",
       "footprintMeters": [10, 10],
       "transparent": true
+    },
+    {
+      "id": "dirt-path-straight",
+      "name": "Dirt Path — Straight",
+      "resource": "CityForgeV3/LotTextures/DirtPathV01/dirt-path-straight",
+      "footprintMeters": [
+        10,
+        10
+      ],
+      "transparent": true,
+      "sourceDirectory": "/Users/joelinstrum/Downloads/overlays/dirt-path"
+    },
+    {
+      "id": "dirt-path-curve",
+      "name": "Dirt Path — Curve",
+      "resource": "CityForgeV3/LotTextures/DirtPathV01/dirt-path-curve",
+      "footprintMeters": [
+        10,
+        10
+      ],
+      "transparent": true,
+      "sourceDirectory": "/Users/joelinstrum/Downloads/overlays/dirt-path"
+    },
+    {
+      "id": "dirt-path-tee",
+      "name": "Dirt Path — T-Junction",
+      "resource": "CityForgeV3/LotTextures/DirtPathV01/dirt-path-tee",
+      "footprintMeters": [
+        10,
+        10
+      ],
+      "transparent": true,
+      "sourceDirectory": "/Users/joelinstrum/Downloads/overlays/dirt-path"
+    },
+    {
+      "id": "dirt-path-cross",
+      "name": "Dirt Path — Cross",
+      "resource": "CityForgeV3/LotTextures/DirtPathV01/dirt-path-cross",
+      "footprintMeters": [
+        10,
+        10
+      ],
+      "transparent": true,
+      "sourceDirectory": "/Users/joelinstrum/Downloads/overlays/dirt-path"
     }
   ]
 }

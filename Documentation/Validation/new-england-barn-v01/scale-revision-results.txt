@@ -1,0 +1,2 @@
+PASS barn model, textures, grounding, scale, render-pass orientation, thumbnail, placement, rotation, and session round-trip.
+PASS existing iron fence and picket fence render-pass alignment.

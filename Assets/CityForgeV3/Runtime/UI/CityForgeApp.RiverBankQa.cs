@@ -74,6 +74,35 @@ namespace CityForgeV3.UI
                 if(command=="bank-hill-before")material.DisableKeyword("HILL_MEADOW");
                 else if(command=="bank-hill-after")material.EnableKeyword("HILL_MEADOW");
                 else if(command=="bank-hill-profile")StartCoroutine(ProfileHillMeadow(material));
+                else if(command=="bank-hill-zoom-check")
+                {
+                    var original=material.mainTexture;
+                    var hillTexture=material.GetTexture("_HillTex");
+                    var mesh=ground.GetComponent<MeshFilter>().sharedMesh;
+                    var before=JsonUtility.ToJson(FindSelectedRegionTile());
+                    for(int i=0;i<6;i++)
+                    {
+                        var level=(DistrictZoomLevel)i;
+                        _districtWorld.SetZoom(level);
+                        float metres=DistrictWorldController.DistrictGrassWorldSizeForZoom(level);
+                        if(i>=2 && !Mathf.Approximately(metres,40))throw new Exception("Far grass scale changed");
+                        if(i<2)
+                        {
+                            float nextCamera=DistrictWorldController.OrthographicSize((DistrictZoomLevel)(i+1),1,1,1);
+                            float camera=DistrictWorldController.OrthographicSize(level,1,1,1);
+                            if(!Mathf.Approximately(metres/camera,40/nextCamera))throw new Exception("Near grass apparent scale differs");
+                        }
+                        // This isolated fixture is 640m square.
+                        if(Vector2.Distance(material.mainTextureScale,Vector2.one*(640/metres))>.001f)
+                            throw new Exception("Ground material did not inherit zoom scale");
+                        if(material.mainTexture!=original || material.GetTexture("_HillTex")!=hillTexture ||
+                            !material.IsKeywordEnabled("HILL_MEADOW") || ground.GetComponent<MeshFilter>().sharedMesh!=mesh)
+                            throw new Exception("Zoom changed hill artwork or rebuilt ground");
+                    }
+                    _districtWorld.SetZoom(_terraformZoomLevel);
+                    if(before!=JsonUtility.ToJson(FindSelectedRegionTile()))throw new Exception("Grass zoom changed saved state");
+                    File.WriteAllText("/tmp/cityforge-hill-zoom-check.txt",DateTime.UtcNow.ToString("o")+" PASS six zoom scales, hill artwork, mesh identity and district data\n");
+                }
                 else if(command=="bank-hill-view")
                 {
                     var overlay=_districtWorld.GetComponentInChildren<DistrictHillGroundOverlay>();

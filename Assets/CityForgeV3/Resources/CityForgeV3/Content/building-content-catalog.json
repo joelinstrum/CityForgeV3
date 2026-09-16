@@ -29,6 +29,23 @@
       "runtimeProfile": "authored-materials"
     },
     {
+      "id": "new-england-farmhouse-v02",
+      "displayName": "New England Farmhouse",
+      "category": "Residential",
+      "description": "Clapboard farmhouse with a side wing and covered entry \u2022 Founders Era / Industrial Age",
+      "eraIds": [
+        "founders",
+        "industrial"
+      ],
+      "modelResourcePath": "CityForgeV3/Buildings3D/NewEnglandFarmhouseV02/Source/tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8",
+      "thumbnailResourcePath": "CityForgeV3/Buildings3D/NewEnglandFarmhouseV02/thumbnail",
+      "pitchDegrees": -90,
+      "baseYawDegrees": 270,
+      "normalizeAxis": "height",
+      "normalizeMeters": 9,
+      "materialMode": "embedded"
+    },
+    {
       "id": "victorian-color-house-v01",
       "displayName": "Queen Anne House",
       "category": "Residential",

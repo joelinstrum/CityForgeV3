@@ -73,7 +73,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 output.elevation = input.vertex.y;
                 output.hillVariation=0;
                 #if defined(HILL_MEADOW)
-                float2 metres=output.uv*40;
+                // Broad hill colour stays anchored when near-zoom grass detail changes.
+                float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
                 #endif
                 TRANSFER_SHADOW(output);

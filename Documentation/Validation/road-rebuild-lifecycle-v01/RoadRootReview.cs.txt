@@ -1,0 +1,47 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Collections;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.UI;
+using CityForgeV3.World;
+[InitializeOnLoad] public static class RoadRootReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic;
+ static RoadRootReview(){EditorApplication.update+=Poll;}
+ static void Poll(){
+ if(!File.Exists(Root+"road-root.request")||EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+ if(!EditorApplication.isPlaying){EditorApplication.isPlaying=true;return;}
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(app==null)return;
+ var t=app.GetType();var region=t.GetField("_openRegion",F).GetValue(app);
+ if(region==null){region=JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(Root+"RecoveryBackups/road-root-fix/live-region.json"));t.GetField("_openRegion",F).SetValue(app,region);var d=((RegionSaveData)region).Tiles.Find(x=>x.Name=="District 9");t.GetMethod("SelectRegionTile",F).Invoke(app,new object[]{d.TileId});return;}
+ var world=UnityEngine.Object.FindFirstObjectByType<DistrictWorldController>();if(world==null||world.WorldCamera==null)return;
+ File.Delete(Root+"road-root.request");app.gameObject.AddComponent<RoadRootProbe>().App=app;
+ }
+}
+public class RoadRootProbe:MonoBehaviour {
+ public CityForgeApp App;
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic;
+ IEnumerator Start(){var e=Run();while(true){bool more;try{more=e.MoveNext();}catch(Exception ex){File.WriteAllText(Root+"road-root-results.txt",ex.ToString());break;}if(!more)break;yield return e.Current;}Destroy(this);}
+ IEnumerator Run(){
+ var type=App.GetType();var pause=type.GetField("_districtSimulationPaused",F);var wasPaused=pause.GetValue(App);pause.SetValue(App,true);
+ try {
+ var district=(RegionCityTile)type.GetMethod("FindSelectedRegionTile",F).Invoke(App,null);
+ var before=JsonUtility.ToJson(district);var world=(DistrictWorldController)type.GetField("_districtWorld",F).GetValue(App);var zoom=world.ZoomLevel;
+ var pan=(Vector2)type.GetField("_terraformPanOffset",F).GetValue(App);
+ var rootField=typeof(DistrictWorldController).GetField("_roadArtworkRoot",F);
+ for(int i=0;i<2;i++){
+ world.Build(district);world.SetPan(pan);world.SetZoom(zoom);
+ var root=(Transform)rootField.GetValue(world);
+ if(root==null||!root.gameObject.activeInHierarchy||root.parent.name!="District World Content")throw new Exception("Roads attached to stale/inactive root");
+ yield return null;
+ if(root==null||root.childCount!=district.Roads.Count)throw new Exception("Roads destroyed after frame: expected "+district.Roads.Count);
+ }
+ if(JsonUtility.ToJson(district)!=before)throw new Exception("Presentation rebuild changed district data");
+ var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var test=asm.GetType("DistrictRoadPresentationLifecycleTests");test.GetMethod("ClearingWorldReleasesRoadRootAndCachedVisualState").Invoke(Activator.CreateInstance(test),null);
+ File.WriteAllText(Root+"road-root-results.txt","PASS repeated Play Mode rebuilds retain all "+district.Roads.Count+" road objects after deferred destruction.\nPASS root active and parented to current district content.\nPASS district data unchanged; no save writes.\nPASS lifecycle regression test.\n");
+ }finally{pause.SetValue(App,wasPaused);}
+ }
+}

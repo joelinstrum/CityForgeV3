@@ -6,6 +6,7 @@ namespace CityForgeV3.World
     public static class DistrictRoadPlacementModel
     {
         public const string DirtFamily = "Dirt Road";
+        public const string PikeDirtFamily = "Pike Dirt Road";
         public const string AntiqueBrickFamily = "Antique Brick Road";
         public const int AntiqueBrickCostPerTile = 25;
 
@@ -18,7 +19,9 @@ namespace CityForgeV3.World
         public static string PackageId(string family) =>
             family == AntiqueBrickFamily
                 ? RoadPiecePackageCatalog.TwoLaneSidewalkId
-                : RoadPiecePackageCatalog.NationalPikeDirtId;
+                : family == PikeDirtFamily
+                    ? RoadPiecePackageCatalog.NationalPikeDirtId
+                    : RoadPiecePackageCatalog.DirtRoadId;
 
         public static int CostPerTile(string family) =>
             family == AntiqueBrickFamily ? AntiqueBrickCostPerTile : 0;

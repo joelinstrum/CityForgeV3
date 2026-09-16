@@ -218,9 +218,29 @@ namespace CityForgeV3.World
     }
 
     [Serializable]
+    public sealed class LotEditorViewState
+    {
+        public bool Valid;
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public float OrthographicSize;
+        public Vector3 PanWorld;
+        public int Facing;
+        public int OrbitOctant;
+        public LotZoomLevel ZoomLevel;
+        public bool TopDown;
+        public Vector2 TopDownWorldZScreenDirection;
+        public BuildingInspectionMode InspectionMode;
+        public BuildingInspectionMode InspectionModeBeforeTopDown;
+
+        public LotEditorViewState Copy() => (LotEditorViewState)MemberwiseClone();
+    }
+
+    [Serializable]
     public sealed class LotSaveData
     {
         public string Schema = "cityforge-v3-lot-save-v9";
+        public LotEditorViewState EditorView;
         public string LotId = "untitled-lot";
         public string Name = "Untitled Lot";
         public string CreatedUtc = "";
@@ -274,6 +294,7 @@ namespace CityForgeV3.World
                 LotWidthCells = LotWidthCells,
                 LotDepthCells = LotDepthCells,
                 Schema = Schema,
+                EditorView = EditorView?.Copy(),
                 LotId = LotId,
                 Name = Name,
                 CreatedUtc = CreatedUtc,

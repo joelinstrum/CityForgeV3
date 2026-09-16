@@ -1,0 +1,72 @@
+{
+  "boundsMin": [
+    -0.4497070908546448,
+    -0.4911194443702698,
+    -2.143616484318045e-08
+  ],
+  "boundsMax": [
+    0.44989013671875,
+    0.48968517780303955,
+    0.72589111328125
+  ],
+  "dimensions": [
+    0.8995972275733948,
+    0.9808046221733093,
+    0.72589111328125
+  ],
+  "objects": [
+    {
+      "name": "tripo_node_6e4dde22",
+      "vertices": 13167,
+      "polygons": 26380,
+      "triangles": 26380,
+      "materials": [
+        "tripo_mat_6e4dde22"
+      ]
+    }
+  ],
+  "materials": {
+    "tripo_mat_6e4dde22": [
+      {
+        "node": "Image Texture",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Authoring/Buildings/NewEnglandFarmhouseV02/Source/tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22_0.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Base Color"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.001",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Authoring/Buildings/NewEnglandFarmhouseV02/Source/tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22_2.jpg",
+        "links": [
+          [
+            "Normal Map",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.002",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Authoring/Buildings/NewEnglandFarmhouseV02/Source/tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22-3566-484b-a685-c971607adfc8_0_Roughness.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Roughness"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.003",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Authoring/Buildings/NewEnglandFarmhouseV02/Source/tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22-3566-484b-a685-c971607adfc8_0_Metallic.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Metallic"
+          ]
+        ]
+      }
+    ]
+  }
+}

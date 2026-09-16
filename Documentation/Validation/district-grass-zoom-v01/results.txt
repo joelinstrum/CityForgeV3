@@ -1,0 +1,6 @@
+LOD0: PASS, texture world size=10.39773m
+LOD1: PASS, texture world size=13.33333m
+LOD2: PASS, texture world size=40m
+LOD3: PASS, texture world size=40m
+LOD4: PASS, texture world size=40m
+LOD5Billboard: PASS, texture world size=40m

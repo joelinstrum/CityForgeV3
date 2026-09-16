@@ -1,5 +1,8 @@
 using System.IO;
 using NUnit.Framework;
+using CityForgeV3.World;
+using UnityEngine;
+using System.Linq;
 
 namespace CityForgeV3.Tests.EditMode
 {
@@ -23,18 +26,17 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
-        public void BuildingHitPriorityIsLimitedToNoSelectionOrBuildingSelection()
+        public void BuildingClicksAreNotBlockedByThePreviousSelection()
         {
             var source = File.ReadAllText(
                 "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
             var call = source.IndexOf("_lotWorld.BeginBuilding3DDragFromPanel(",
                 System.StringComparison.Ordinal);
-            var guard = source.Substring(call - 700, 700);
-
-            StringAssert.Contains(
-                "LotObjectSelectionKind.None", guard);
-            StringAssert.Contains(
-                "LotObjectSelectionKind.Building", guard);
+            var start = source.LastIndexOf("if (evt.button == 0 && !ShouldPrioritizeToolPlacement(",
+                call, System.StringComparison.Ordinal);
+            var guard = source.Substring(start, call - start);
+            StringAssert.DoesNotContain("ActiveObjectSelection", guard);
+            StringAssert.Contains("ShouldPrioritizeToolPlacement", guard);
         }
 
         [Test]
@@ -53,6 +55,48 @@ namespace CityForgeV3.Tests.EditMode
             StringAssert.Contains("floraIndex == SelectedFloraIndex", method);
             StringAssert.Contains("propIndex == SelectedPropIndex", method);
             StringAssert.Contains("maySelectBuildingProp", method);
+        }
+
+        [Test]
+        public void BarnAndNativeBuildingCanBeSelectedInSuccessionWithoutEscape()
+        {
+            var owner = new GameObject("Click selection fixture");
+            try
+            {
+                var world = owner.AddComponent<LotWorldController>();
+                world.Build();
+                world.NewEmptyLot("Click selection", LotType.Residential, 6, 6);
+                world.AddExperimentalBuilding3D("new-england-farmhouse-v02", 12, 12, 0);
+                world.PlacePropForQa(LotWorldController.NewEnglandBarnPropId, -12, -12);
+                world.DeselectBuilding3D();
+                world.SetPropEditorContext(true);
+                var camera = owner.GetComponentInChildren<Camera>();
+                var size = new Vector2(camera.pixelWidth, camera.pixelHeight);
+                Vector2 Panel(Vector3 point)
+                {
+                    var pixel = camera.WorldToScreenPoint(point);
+                    return new Vector2(pixel.x, size.y - pixel.y);
+                }
+                var barn = owner.GetComponentsInChildren<Transform>().First(x => x.name == "New England Barn Model");
+                var barnPoint = Panel(barn.GetComponentInChildren<Renderer>().bounds.center);
+                Assert.IsTrue(world.BeginPropDragFromPanel("", barnPoint, size));
+                world.EndPropDrag();
+                Assert.AreEqual(LotObjectSelectionKind.Prop, world.ActiveObjectSelection);
+                Assert.IsTrue(world.BeginBuilding3DDragFromPanel(Panel(new Vector3(12, 4, 12)), size));
+                world.EndBuilding3DDrag();
+                Assert.AreEqual(0, world.SelectedBuilding3DIndex);
+                Assert.AreEqual(-1, world.SelectedPropIndex);
+                var highlight = owner.GetComponentsInChildren<Transform>(true).First(x => x.name == "Selected Prop Highlight");
+                Assert.IsFalse(highlight.gameObject.activeSelf);
+                // The viewport releases the native selection before the shared
+                // prop hit path, without invoking DeselectAll/Escape.
+                world.DeselectBuilding3D();
+                Assert.AreEqual(LotObjectSelectionKind.Prop,
+                    world.BeginExistingObjectManipulationFromPanel(barnPoint, size));
+                world.EndPropDrag();
+                Assert.AreEqual(0, world.SelectedPropIndex);
+            }
+            finally { Object.DestroyImmediate(owner); }
         }
 
         [Test]

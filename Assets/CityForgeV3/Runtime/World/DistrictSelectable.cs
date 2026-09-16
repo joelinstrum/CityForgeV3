@@ -114,12 +114,22 @@ namespace CityForgeV3.World
 
         public void RemoveFloraPresentations(IEnumerable<string> ids)
         {
-            foreach (var id in ids)
-                if (_districtFloraPresentations.TryGetValue(id, out var renderer))
-                {
-                    _districtFloraPresentations.Remove(id);
-                    if (renderer != null) { renderer.gameObject.SetActive(false); Destroy(renderer.gameObject); }
-                }
+            _floraBatches?.BeginChanges();
+            try
+            {
+                foreach (var id in ids)
+                    if (_districtFloraPresentations.TryGetValue(id, out var renderer))
+                    {
+                        _districtFloraPresentations.Remove(id);
+                        if (renderer != null)
+                        {
+                            _floraBatches?.Remove(renderer);
+                            renderer.gameObject.SetActive(false);
+                            if (Application.isPlaying) Destroy(renderer.gameObject); else DestroyImmediate(renderer.gameObject);
+                        }
+                    }
+            }
+            finally { _floraBatches?.EndChanges(); }
             // Shadows are children of each flora root; surviving trees need no refresh.
             SelectDistrictFlora("");
         }

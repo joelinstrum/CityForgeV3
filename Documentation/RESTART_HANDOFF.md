@@ -227,3 +227,11 @@ Fresh targeted EditMode results: 77/77 passed at 2026-09-16 21:35:28Z.
 ### September16 — preserve meadow hue on hills
 
 User likes the lighter crest art but questioned the different green. Ordinary hills already inherit MeadowV01 as their base; the HillMeadow fragment function additionally multiplied RGB by (.91,1.005,.95) in low areas, introducing a green bias. Replaced both low/crest colour multipliers with neutral scalar brightness (.96 to1.055), retaining the lighter crest texture, height/slope blending, and broad irregular variation. No texture replacements or hill-overlay changes. Live shader/material and surface-cache checks passed; windowed Game-view capture inspected at QA/RiverBanks/Pine-Ridge-214720651.png. Fixture restored without Save.
+
+## 2026-09-16 — Main grass update merged into cloud/hill branch
+
+- Preserved cloud/hill work in checkpoint `6a175fc`, then merged `origin/main` at `3350d59` into `feature/distant-clouds`.
+- Retained both cloud visibility and incoming grass texture scale updates in SetZoom. Main also includes building assets, lot fixes and performance improvements.
+- Hill broad colour noise now uses terrain-local metres, so near-zoom grass UV scaling does not shift hill wear/colour regions. Crest texture detail inherits the same zoom scaling as default meadow; lighter artwork and neutral brightness treatment remain.
+- Fresh Unity EditMode run: 78 passed, 0 failed, finished 2026-09-16 22:14:58 UTC. Live isolated hills passed all six grass scales, retained hill artwork/mesh identity and district data; bank shader, cloud visibility, and surface cache checks passed. Actual Game view captures reviewed. Fixture state restored; no progress saved.
+- Validation: `Documentation/Validation/main-grass-cloud-hill-merge/`. No new performance benchmark for this uniform/vertex-coordinate integration; prior hill shader cost remains documented in HILL_MEADOW.md.

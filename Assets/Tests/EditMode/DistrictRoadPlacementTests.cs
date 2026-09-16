@@ -7,6 +7,24 @@ namespace CityForgeV3.Tests.EditMode
     public sealed class DistrictRoadPlacementTests
     {
         [Test]
+        public void CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads()
+        {
+            var roads = new List<PlacedRoadPiece>();
+            var treasury = 100;
+            DistrictRoadPlacementModel.TryPlace(roads, 1, 1, 8, 8,
+                DistrictRoadPlacementModel.DirtFamily, ref treasury);
+            DistrictRoadPlacementModel.TryPlace(roads, 2, 1, 8, 8,
+                DistrictRoadPlacementModel.PikeDirtFamily, ref treasury);
+            Assert.That(roads[0].PackageId, Is.EqualTo(RoadPiecePackageCatalog.DirtRoadId));
+            Assert.That(roads[1].PackageId, Is.EqualTo(RoadPiecePackageCatalog.NationalPikeDirtId));
+            Assert.That(DistrictRoadPlacementModel.TryPlace(roads, 2, 1, 8, 8,
+                DistrictRoadPlacementModel.DirtFamily, ref treasury), Is.True);
+            Assert.That(roads.Count, Is.EqualTo(2));
+            Assert.That(roads[1].PackageId, Is.EqualTo(RoadPiecePackageCatalog.DirtRoadId));
+            Assert.That(treasury, Is.EqualTo(100));
+        }
+
+        [Test]
         public void DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile()
         {
             var roads = new List<PlacedRoadPiece>();
