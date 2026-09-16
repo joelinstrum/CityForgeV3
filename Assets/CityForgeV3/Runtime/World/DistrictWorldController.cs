@@ -382,13 +382,18 @@ namespace CityForgeV3.World
 #endif
         }
 
+        private DistrictFloraBatches _floraBatches;
+
         public void RefreshFlora(RegionCityTile district,
             string selectedInstanceId = "")
         {
             if (_content == null || district == null) return;
+            _floraClimate = district.Climate;
+            _floraBatches = null;
             if (_districtFloraRoot != null)
             {
                 var old = _districtFloraRoot.gameObject;
+                old.SetActive(false);
                 if (Application.isPlaying) Destroy(old);
                 else DestroyImmediate(old);
             }
@@ -399,6 +404,8 @@ namespace CityForgeV3.World
                      new List<PlacedDistrictFlora>())
                 AddDistrictFloraPresentation(placed);
             UpdateDistrictFloraShadows();
+            _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
+            _floraBatches.Build(_districtFloraPresentations.Values);
             BuildDistrictFloraSelection(selectedInstanceId);
         }
 
@@ -475,9 +482,11 @@ namespace CityForgeV3.World
             if (placed == null || !_districtFloraPresentations.TryGetValue(
                     placed.InstanceId, out var renderer) || renderer == null)
                 return;
+            _floraBatches?.Remove(renderer);
             renderer.transform.localPosition = DistrictFloraPosition(placed);
             renderer.sortingOrder = DistrictFloraSortingOrder(
                 renderer.transform.localPosition);
+            UpdateDistrictFloraShadowsFor(new[] { renderer });
             BuildDistrictFloraSelection(placed.InstanceId);
         }
 
@@ -638,13 +647,14 @@ namespace CityForgeV3.World
             return false;
         }
 
+        private RegionClimate _floraClimate;
         private void AddDistrictFloraPresentation(PlacedDistrictFlora placed)
         {
             if (placed == null || string.IsNullOrWhiteSpace(placed.FloraId)) return;
             var variation = LotWorldController.StableFloraVariationProfile(
                 placed.InstanceId);
             var presentationId = LotWorldController.ResolveFloraPresentationId(
-                placed.FloraId, variation, SeasonPreset.Summer);
+                RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
             var resource = LotWorldController.ResolveFloraResourcePath(
                 presentationId, SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
@@ -735,6 +745,12 @@ namespace CityForgeV3.World
 
         private void UpdateDistrictFloraShadows()
         {
+            UpdateDistrictFloraShadowsFor(_districtFloraPresentations.Values);
+            _floraBatches?.Rebuild();
+        }
+
+        private void UpdateDistrictFloraShadowsFor(IEnumerable<SpriteRenderer> renderers)
+        {
             if (_districtFloraRoot == null) return;
             var visible = TimeOfDay != TimeOfDayPreset.Night;
             var ray = _sun != null
@@ -747,7 +763,7 @@ namespace CityForgeV3.World
                 TimeOfDayPreset.Afternoon => .25f,
                 _ => 0f
             };
-            foreach (var visibleRenderer in _districtFloraPresentations.Values)
+            foreach (var visibleRenderer in renderers)
             {
                 if (visibleRenderer == null) continue;
                 var shadow = visibleRenderer.transform.Find(
@@ -2360,6 +2376,7 @@ namespace CityForgeV3.World
 
         private void ClearWorld()
         {
+            _floraBatches = null;
             _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();

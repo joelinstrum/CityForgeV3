@@ -128,12 +128,11 @@ namespace CityForgeV3.UI
             try
             {
                 district.Rivers=draft;district.RiversEditedLocally=true;
-                PersistDistrictRegion();
             }
             catch(Exception e)
             {
                 district.Rivers=previous;district.RiversEditedLocally=edited;
-                var panel=CreateDocumentModal("RIVER SHAPING","Could not save: "+e.Message);panel.Add(CfButton.Create("CLOSE",RemoveDocumentModal,true,"quiet"));return;
+                var panel=CreateDocumentModal("RIVER SHAPING","Could not apply river edit: "+e.Message);panel.Add(CfButton.Create("CLOSE",RemoveDocumentModal,true,"quiet"));return;
             }
             _districtUndo.Commit(JsonUtility.ToJson(district));
             _districtSelection.Clear();_districtWorld.ShowDistrictSelection(district,_districtSelection);

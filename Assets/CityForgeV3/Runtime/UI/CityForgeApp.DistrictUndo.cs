@@ -1,5 +1,6 @@
 using CityForgeV3.World;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace CityForgeV3.UI
 {
@@ -24,21 +25,44 @@ namespace CityForgeV3.UI
             _districtUndoRegion = null;
             _districtUndo.Reset(null);
         }
+        // Record an editor undo boundary in memory. Only the Save button writes to disk.
         private void SaveDistrictEdit()
         {
             var district = FindSelectedRegionTile();
             if (_currentScreen == AppScreen.DistrictTerraform && district != null &&
                 district == _districtUndoTile && _openRegion == _districtUndoRegion)
                 _districtUndo.Commit(JsonUtility.ToJson(district));
-            PersistDistrictRegion();
         }
         private void PersistDistrictRegion()
         {
 #if UNITY_EDITOR
-            RegionSaveStore.Save(_openRegion, _districtUndoQaSaveRoot);
+            RegionSaveStore.Save(_openRegion, string.IsNullOrWhiteSpace(_districtUndoQaSaveRoot) ? null : _districtUndoQaSaveRoot);
 #else
             RegionSaveStore.Save(_openRegion);
 #endif
+        }
+        private Button CreateRegionSaveButton(string name, string variant)
+        {
+            Button button = null;
+            button = CfButton.Create("SAVE", () =>
+            {
+                try
+                {
+                    PersistDistrictRegion();
+                    button.text = "SAVED";
+                    button.tooltip = "Region and all districts saved.";
+                    button.schedule.Execute(() => { button.text = "SAVE"; button.tooltip = "Save region and all districts. Changes are not saved automatically."; }).ExecuteLater(2000);
+                }
+                catch (System.Exception error)
+                {
+                    button.text = "SAVE FAILED";
+                    button.tooltip = "Could not save: " + error.Message + " — click to retry.";
+                    Debug.LogException(error);
+                }
+            }, true, variant);
+            button.name = name;
+            button.tooltip = "Save region and all districts. Changes are not saved automatically.";
+            return button;
         }
         private bool UndoDistrictEdit()
         {
@@ -60,7 +84,6 @@ namespace CityForgeV3.UI
             _hasSelectedDistrictRoad = false;
             _activeDistrictRandomFloraGroupId = "";
             _districtWorldCompositionKey = "";
-            PersistDistrictRegion();
             // Rebuild from restored data through the normal saved-district path.
             EnsureDistrictWorld(district);
             Show(AppScreen.DistrictTerraform);

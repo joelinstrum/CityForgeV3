@@ -1,0 +1,47 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.UI;
+using CityForgeV3.World;
+[InitializeOnLoad] public static class FloraPerformanceChecks {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static FloraPerformanceChecks(){EditorApplication.update+=Poll;}
+ static void Poll(){if(EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Root+"flora-performance-checks.request"))return;
+ File.Delete(Root+"flora-performance-checks.request");try{Run();}catch(Exception e){File.WriteAllText(Root+"flora-performance-checks.txt",e.ToString());}}
+ static void Run(){
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();var flags=BindingFlags.Instance|BindingFlags.NonPublic;var type=app.GetType();
+ object Get(string n)=>type.GetField(n,flags).GetValue(app);void Set(string n,object v)=>type.GetField(n,flags).SetValue(app,v);
+ object Call(string n,params object[] args)=>type.GetMethod(n,flags).Invoke(app,args);
+ var world=(DistrictWorldController)Get("_districtWorld");var d=(RegionCityTile)Call("FindSelectedRegionTile");
+ var renderers=(Dictionary<string,SpriteRenderer>)world.GetType().GetField("_districtFloraPresentations",flags).GetValue(world);
+ var trees=d.Flora.Where(t=>renderers.ContainsKey(t.InstanceId)&&renderers[t.InstanceId].transform.Find("District Flora Shadow")!=null).Take(2).ToArray();
+ var other=renderers[trees[1].InstanceId].transform.Find("District Flora Shadow").GetComponent<MeshFilter>().sharedMesh;
+ var colors=other.colors;var sentinel=(Color[])colors.Clone();sentinel[0]=Color.magenta;other.colors=sentinel;
+ var sprite=renderers[trees[0].InstanceId].sprite;var watch=System.Diagnostics.Stopwatch.StartNew();
+ world.RefreshHarvestTrees(d,new HashSet<string>{trees[0].InstanceId});var single=watch.Elapsed.TotalMilliseconds;
+ if(other.colors[0]!=Color.magenta)throw new Exception("Unchanged shadow was recomputed");other.colors=colors;
+ if(renderers[trees[0].InstanceId].sprite!=sprite)throw new Exception("Sprite not reused");
+ var lines=new List<string>{"PASS single-tree refresh leaves other shadow untouched and reuses sprite; elapsed ms="+single};
+ var oldRoot=Get("_districtUndoQaSaveRoot");var pause=Get("_districtSimulationPaused");
+ var scratch=Root+"ReviewScratch/FloraPerformance";Directory.CreateDirectory(scratch);
+ try{
+ Set("_districtUndoQaSaveRoot",scratch);Set("_districtSimulationPaused",true);
+ var region=(RegionSaveData)Get("_openRegion");watch.Restart();Call("PersistDistrictRegion");lines.Add("Compact full-region save ms="+watch.Elapsed.TotalMilliseconds);
+ var path=Path.Combine(scratch,region.RegionId+".json");var before=File.GetLastWriteTimeUtc(path);
+ var loaded=RegionSaveStore.Load(region.RegionId,scratch);
+ if(loaded.Tiles.Sum(t=>t.Flora.Count)!=region.Tiles.Sum(t=>t.Flora.Count))throw new Exception("Lost saved trees");
+ lines.Add("PASS save/reload tree count="+loaded.Tiles.Sum(t=>t.Flora.Count)+" bytes="+new FileInfo(path).Length);
+ Set("_laborSaveTimer",0f);Set("_districtSimulationDirty",true);
+ for(int i=0;i<3;i++)Call("TickDistrictLotBehaviors");
+ if(File.GetLastWriteTimeUtc(path)!=before)throw new Exception("Saved before checkpoint due");
+ Set("_laborSaveTimer",5f);Call("TickDistrictLotBehaviors");
+ if((bool)Get("_districtSimulationDirty")||(float)Get("_laborSaveTimer")!=0)throw new Exception("Checkpoint not cleared");
+ lines.Add("PASS simulation checkpoint coalesces changes and resets after saving");
+ }finally{Set("_districtUndoQaSaveRoot",oldRoot);Set("_districtSimulationPaused",pause);Directory.Delete(scratch,true);}
+ File.WriteAllLines(Root+"flora-performance-checks.txt",lines);
+ }
+}

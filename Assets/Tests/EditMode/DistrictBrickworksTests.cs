@@ -63,7 +63,7 @@ namespace CityForgeV3.Tests.EditMode
   {
    var d=District();var s=Quarry(d);s.Script.miningSeconds=1;s.Script.loadingSeconds=1;
    DistrictQuarry.Tick(d,8,_=>true);Assert.AreEqual("full",s.Phase);Assert.AreEqual(4,s.CargoStoneTons);
-   DistrictQuarry.Tick(d,100,_=>true);Assert.AreEqual(4,s.CartBlocks);Assert.AreEqual(4,d.ResourceInventory.Stone);
+   DistrictQuarry.Tick(d,100,_=>true);Assert.AreEqual(4,s.CartBlocks);Assert.AreEqual(0,d.ResourceInventory.Stone);
    DistrictQuarryDelivery.Tick(d,s,8,_=>null,_=>false);DistrictQuarryDelivery.Tick(d,s,1,_=>null,_=>false);
    StringAssert.StartsWith("Bricksworks required",s.DeliveryStatus);Assert.AreEqual(4,s.CartBlocks);
    var b=Works(d);DistrictBrickworks.Build(d,b,_=>true);
@@ -73,13 +73,14 @@ namespace CityForgeV3.Tests.EditMode
   [Test] public void DeliveryReloadPauseAndConversionDoNotDuplicateMaterial()
   {
    var d=District();var s=Quarry(d);var b=Works(d);DistrictBrickworks.Build(d,b,_=>true);
-   s.Phase="delivering";s.CargoStoneTons=4;s.CartBlocks=4;s.DeliveryTargetId=b.Id;d.ResourceInventory.Stone=4;
+   s.Phase="delivering";s.CargoStoneTons=4;s.CartBlocks=4;s.DeliveryTargetId=b.Id;d.ResourceInventory.Stone=0;
    DistrictQuarryDelivery.Tick(d,s,1,_=>null,_=>true);Assert.AreEqual("unloading",s.Phase);
    s.Enabled=false;DistrictQuarryDelivery.Tick(d,s,100,_=>null,_=>true);Assert.AreEqual(0,b.StoneInput);s.Enabled=true;
    DistrictQuarryDelivery.Tick(d,s,4,_=>null,_=>true);d=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));s=d.StoneSites[0];b=d.Brickworks[0];
-   DistrictQuarryDelivery.Tick(d,s,4,_=>null,_=>true);Assert.AreEqual(4,b.StoneInput);Assert.AreEqual(0,s.CartBlocks);Assert.AreEqual("returning",s.Phase);
-   DistrictQuarryDelivery.Tick(d,s,1,_=>null,_=>true);Assert.AreEqual("mining",s.Phase);Assert.AreEqual(4,b.StoneInput);
-   DistrictBrickworks.Tick(d,29);Assert.AreEqual(0,d.ResourceInventory.Bricks);DistrictBrickworks.Tick(d,1);Assert.AreEqual(1,d.ResourceInventory.Bricks);Assert.AreEqual(3,d.ResourceInventory.Stone);
+   DistrictQuarryDelivery.Tick(d,s,4,_=>null,_=>true);Assert.AreEqual(0,b.StoneInput);Assert.AreEqual(4,d.ResourceInventory.Bricks);Assert.AreEqual(0,s.CartBlocks);Assert.AreEqual("returning",s.Phase);
+   DistrictQuarryDelivery.Tick(d,s,1,_=>null,_=>true);Assert.AreEqual("mining",s.Phase);Assert.AreEqual(0,b.StoneInput);Assert.AreEqual(4,d.ResourceInventory.Bricks);
+   Assert.AreEqual(1,b.CompletedDeliveries);Assert.AreEqual(4,b.DeliveredStoneTons);
+   DistrictBrickworks.Tick(d,1);Assert.AreEqual(4,d.ResourceInventory.Bricks);Assert.AreEqual(0,d.ResourceInventory.Stone);
    DistrictBrickworks.Tick(d,90);Assert.AreEqual(4,d.ResourceInventory.Bricks);Assert.AreEqual(0,b.StoneInput);Assert.AreEqual(0,d.ResourceInventory.Stone);
    DistrictBrickworks.Tick(d,100);Assert.AreEqual(4,d.ResourceInventory.Bricks);
   }
@@ -89,5 +90,36 @@ namespace CityForgeV3.Tests.EditMode
    DistrictQuarryDelivery.Tick(d,s,1,_=>null,_=>false);Assert.AreEqual("full",s.Phase);Assert.AreEqual(4,s.CartBlocks);
    var b=Works(d);b.Enabled=false;b.StoneInput=4;d.Brickworks.Add(b);d.ResourceInventory.Stone=4;DistrictBrickworks.Tick(d,100);Assert.AreEqual(0,d.ResourceInventory.Bricks);
   }
+  [TestCase(0)] [TestCase(1)] public void LegacyCargoIsReclassifiedOnceAndDeliveredWithoutDoubleCredit(int version)
+  {
+   var d=District();var q=Quarry(d);var b=Works(d);d.Brickworks.Add(b);
+   q.DeliveryVersion=version;q.CartBlocks=4;q.CargoStoneTons=version==0?0:4;
+   q.Phase="unloading";q.DeliveryTargetId=b.Id;d.ResourceInventory.Stone=11;
+   Assert.True(DistrictQuarry.UpgradeDeliveryInventory(d,q));Assert.AreEqual(7,d.ResourceInventory.Stone);
+   d=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));q=d.StoneSites[0];b=d.Brickworks[0];
+   Assert.False(DistrictQuarry.UpgradeDeliveryInventory(d,q));Assert.AreEqual(7,d.ResourceInventory.Stone);
+   DistrictQuarryDelivery.Tick(d,q,8,_=>null,_=>false);
+   Assert.AreEqual(7,d.ResourceInventory.Stone);Assert.AreEqual(4,d.ResourceInventory.Bricks);
+   Assert.AreEqual(1,b.CompletedDeliveries);Assert.AreEqual(4,b.DeliveredStoneTons);
+  }
+  [Test] public void SaturatedInventoryRetainsCargoUntilItCanConvertTheWholeLoad()
+  {
+   var d=District();var q=Quarry(d);var b=Works(d);d.Brickworks.Add(b);
+   q.CartBlocks=4;q.CargoStoneTons=4;q.Phase="unloading";q.DeliveryTargetId=b.Id;
+   d.ResourceInventory.Bricks=int.MaxValue-3;
+   DistrictQuarryDelivery.Tick(d,q,8,_=>null,_=>false);
+   Assert.AreEqual(4,q.CargoStoneTons);Assert.AreEqual(0,b.CompletedDeliveries);Assert.AreEqual(0,d.ResourceInventory.Stone);
+   d.ResourceInventory.Bricks-=1;DistrictQuarryDelivery.Tick(d,q,1,_=>null,_=>false);
+   Assert.AreEqual(0,q.CargoStoneTons);Assert.AreEqual(int.MaxValue,d.ResourceInventory.Bricks);
+   Assert.AreEqual(1,b.CompletedDeliveries);Assert.AreEqual(4,b.DeliveredStoneTons);
+  }
+  [Test] public void LegacyDeliveredStockConvertsImmediatelyWithoutInventingDeliveryHistory()
+  {
+   var d=District();var b=Works(d);d.Brickworks.Add(b);b.StoneInput=6;b.Elapsed=17;d.ResourceInventory.Stone=9;
+   Assert.True(DistrictBrickworks.Tick(d,.1f));Assert.AreEqual(6,d.ResourceInventory.Bricks);Assert.AreEqual(3,d.ResourceInventory.Stone);
+   Assert.AreEqual(0,b.CompletedDeliveries);Assert.AreEqual(0,b.DeliveredStoneTons);
+   Assert.False(DistrictBrickworks.Tick(d,.1f));
+  }
+
  }
 }

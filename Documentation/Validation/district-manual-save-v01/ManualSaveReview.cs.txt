@@ -1,0 +1,71 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+using CityForgeV3.World;
+using CityForgeV3.UI;
+[InitializeOnLoad] public static class ManualSaveReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static ManualSaveReview(){EditorApplication.update+=Poll;}
+ static void Poll(){if(EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Root+"manual-save.request"))return;
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(app==null||!Application.isPlaying)return;
+ File.Delete(Root+"manual-save.request");app.gameObject.AddComponent<ManualSaveProbe>().App=app;}
+}
+public class ManualSaveProbe:MonoBehaviour {
+ public CityForgeApp App;
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ object Get(string n)=>App.GetType().GetField(n,Flags).GetValue(App);
+ void Set(string n,object value)=>App.GetType().GetField(n,Flags).SetValue(App,value);
+ object Call(string n,params object[] args)=>App.GetType().GetMethod(n,Flags).Invoke(App,args);
+ void Check(bool ok,string reason){if(!ok)throw new Exception(reason);}
+ Button Button(string name)=>((VisualElement)Get("_root")).Q<Button>(name);
+ void Submit(string name){var b=Button(name);Check(b!=null,"Missing "+name);using(var e=NavigationSubmitEvent.GetPooled()){e.target=b;b.SendEvent(e);}}
+ IEnumerator Start(){var steps=Run();while(true){bool more;try{more=steps.MoveNext();}catch(Exception e){File.WriteAllText(Root+"manual-save-results.txt",e.ToString());(steps as IDisposable)?.Dispose();break;}if(!more)break;yield return steps.Current;}Destroy(this);}
+ IEnumerator Run(){
+ var oldRegion=Get("_openRegion");var oldTile=Get("_selectedRegionTileId");var oldRoot=Get("_districtUndoQaSaveRoot");var oldPause=Get("_districtSimulationPaused");
+ var folder=Root+"ReviewScratch/ManualSave-"+Guid.NewGuid().ToString("N");Directory.CreateDirectory(folder);
+ var d=new RegionCityTile{TileId="manual-save",Name="Manual save fixture",Width=1,Height=1,Treasury=10000};
+ var other=new RegionCityTile{TileId="neighbor",Name="Neighbor",Width=1,Height=1,Treasury=20000};
+ var region=new RegionSaveData{RegionId="manual-save-fixture",Name="Manual save fixture",Width=8,Height=8,Tiles=new(){d,other}};
+ var lines=new List<string>();
+ try{
+ Set("_openRegion",region);Set("_districtUndoQaSaveRoot",folder);Call("SelectRegionTile",d.TileId);
+ var ready=Time.realtimeSinceStartup+15f;while(Button("district-save-button")==null&&Time.realtimeSinceStartup<ready)yield return null;
+ Check(Button("district-save-button")!=null,"District Save missing");
+ Call("EnsureDistrictUndo",d);d.Treasury=9999;Call("SaveDistrictEdit");
+ Check(Directory.GetFiles(folder).Length==0,"Edit wrote to disk");
+ Check((bool)Call("UndoDistrictEdit"),"Undo failed");Check(d.Treasury==10000,"Undo lost original state");
+ Check(Directory.GetFiles(folder).Length==0,"Undo wrote to disk");
+ for(int i=0;i<20;i++)yield return null;
+ Set("_districtSimulationPaused",false);float season=d.Labor.SeasonSeconds;var until=Time.realtimeSinceStartup+8f;
+ while(Time.realtimeSinceStartup<until)yield return null;
+ Check(d.Labor.SeasonSeconds>season,"Simulation did not run");Check(Directory.GetFiles(folder).Length==0,"Simulation autosaved");
+ lines.Add("PASS edits, undo, and 8 seconds of active simulation produce no save files");
+ var job=new RegionFloraGeneration(region,RegionTreeCoverage.Sparse,37,d);job.Step();job.Commit(_=>{});Call("SaveDistrictEdit");
+ Check(Directory.GetFiles(folder).Length==0,"Generation autosaved");
+ Call("LeaveDistrictEditor");for(int i=0;i<10;i++)yield return null;
+ Check(Directory.GetFiles(folder).Length==0,"Leaving district autosaved");
+ Submit("region-save-button");var loaded=RegionSaveStore.Load(region.RegionId,folder);
+ Check(loaded.Tiles[0].Flora.Count==d.Flora.Count,"Region Save did not persist flora");
+ lines.Add("PASS leaving district does not save; regional Save writes generated flora");
+ Call("SelectRegionTile",d.TileId);ready=Time.realtimeSinceStartup+15f;while(Button("district-save-button")==null&&Time.realtimeSinceStartup<ready)yield return null;
+ Set("_districtSimulationPaused",true);d.Treasury=8123;other.Treasury=4567;Submit("district-save-button");
+ Check(Button("district-save-button").text=="SAVED","Save feedback missing");loaded=RegionSaveStore.Load(region.RegionId,folder);
+ Check(loaded.Tiles[0].Treasury==8123&&loaded.Tiles[1].Treasury==4567,"District Save did not persist whole region");
+ Check(App.GetType().GetMethod("OnApplicationQuit",Flags)==null,"Automatic quit save still exists");
+ lines.Add("PASS district Save writes all districts and shows SAVED; quit autosave hook removed");
+ File.WriteAllLines(Root+"manual-save-results.txt",lines);
+ }finally{
+ Set("_openRegion",oldRegion);Set("_districtUndoQaSaveRoot",oldRoot);Set("_districtWorldCompositionKey","");Call("SelectRegionTile",oldTile);Set("_districtSimulationPaused",oldPause);
+ Directory.Delete(folder,true);
+ }
+ var restored=Time.realtimeSinceStartup+15f;while(Button("district-save-button")==null&&Time.realtimeSinceStartup<restored)yield return null;
+ for(int i=0;i<3;i++)yield return null;
+ ScreenCapture.CaptureScreenshot(Root+"manual-save-menu.png");
+ }
+}

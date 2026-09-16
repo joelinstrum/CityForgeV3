@@ -40,21 +40,16 @@ namespace CityForgeV3.UI
                     var kept=(tile.Roads ?? new()).Where(r=>r==null || !water.Contains(
                         new Vector2(tile.X*640+(r.GridX+.5f)*10,tile.Y*640+(r.GridZ+.5f)*10),7.1f)).ToList();
                     if(kept.Count==(tile.Roads?.Count??0))continue;
-                    // Repair copies so a failed save also restores original junctions.
+                    // Repair copies so a failed edit also restores original junctions.
                     tile.Roads=kept.Select(r=>r==null?null:JsonUtility.FromJson<PlacedRoadPiece>(JsonUtility.ToJson(r))).ToList();
                     DistrictRoadPlacementModel.Repair(tile.Roads);
                 }
-#if UNITY_EDITOR
-                RegionSaveStore.Save(_openRegion,_mapQaActive?System.IO.Path.Combine(System.IO.Path.GetTempPath(),"CityForgeMapLayersQa"):null);
-#else
-                RegionSaveStore.Save(_openRegion);
-#endif
             }
             catch(Exception ex)
             {
                 _openRegion.RiverPaths=previousPaths;
                 foreach(var tile in _openRegion.Tiles){tile.Rivers=rivers[tile];tile.Roads=roads[tile];}
-                _pikeHint.text="Could not save river: "+ex.Message+". Draw again to retry, or press Esc to cancel.";
+                _pikeHint.text="Could not apply river: "+ex.Message+". Draw again to retry, or press Esc to cancel.";
                 return;
             }
             _districtWorldCompositionKey="";

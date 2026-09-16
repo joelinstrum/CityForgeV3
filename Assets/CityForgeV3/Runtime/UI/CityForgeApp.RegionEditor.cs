@@ -231,7 +231,6 @@ namespace CityForgeV3.UI
       actions.Add(CfButton.Create("CREATE REGION", () =>
       {
         _openRegion = RegionSaveStore.Create(nameField.value);
-        RegionSaveStore.Save(_openRegion);
         _selectedRegionTileId = "";
         _regionMapScrollOffset = Vector2.zero;
         _regionMapScrollInitialized = false;
@@ -431,12 +430,7 @@ namespace CityForgeV3.UI
         reroll.tooltip = "Try a fresh river placement using the current river options";
         header.Add(reroll);
       }
-      var save = CfButton.Create("SAVE REGION", () =>
-      {
-        RegionSaveStore.Save(_openRegion);
-      }, true, "primary");
-      save.name = "region-save-button";
-      save.tooltip = "Save Region — save this region, its district borders, and your current changes.";
+      var save = CreateRegionSaveButton("region-save-button", "primary");
       header.Add(save);
       screen.Add(header);
 
@@ -1085,6 +1079,10 @@ namespace CityForgeV3.UI
       screen.Add(labor);
       screen.Add(ComposeDistrictResourceBar(district));
       screen.Add(ComposeDistrictIndustryBar());
+      var saveDistrict = CreateRegionSaveButton("district-save-button", "quiet");
+      saveDistrict.style.position = Position.Absolute; saveDistrict.style.left = 530; saveDistrict.style.top = 78;
+      saveDistrict.style.width = 170; saveDistrict.style.height = 44; saveDistrict.style.fontSize = 20;
+      screen.Add(saveDistrict);
 
       var modeSwitch = new VisualElement();
       modeSwitch.AddToClassList("district-mode-switch");
@@ -1179,9 +1177,10 @@ namespace CityForgeV3.UI
           }
           if (_districtEditorMode == DistrictEditorMode.Terraform &&
                       ActiveDistrictCategory == "Flora" &&
-                      captured.Name == "Trees")
+                      (captured.Name == "Trees" || captured.Name == "Forest"))
           {
-            ComposeDistrictFloraModal();
+            if (captured.Name == "Forest") ComposeDistrictFloraCoverageModal();
+            else ComposeDistrictFloraModal();
             return;
           }
           if (ActiveDistrictCategory == "Sun" &&
@@ -1210,6 +1209,10 @@ namespace CityForgeV3.UI
                     ? "Brush away part of a river. Undo restores the edit."
                 : ActiveDistrictCategory == "Water" && captured.Name == "Select Water"
                     ? "Select a river, move it with the arrow keys, or remove it with Delete."
+                : ActiveDistrictCategory == "Flora" && captured.Name == "Forest"
+                    ? "Generate Sparse or Wooded tree coverage in this district only."
+                : ActiveDistrictCategory == "Flora" && captured.Name == "Trees"
+                    ? "Open tree and stone placement, or generate district tree coverage."
                 : captured.Name == "Hills" ? "Generate gentle rolling hills"
                 : $"{captured.Name} — interface preview; this district tool is not enabled yet"
         };
@@ -1484,6 +1487,7 @@ namespace CityForgeV3.UI
     private void EnsureDistrictWorld(RegionCityTile district)
     {
       if (district == null) return;
+      district.Climate = _openRegion?.Terrain?.Climate ?? RegionClimate.Temperate;
       var lotId = district.Founded ? district.LotId ?? "" : "";
       var compositionKey = DistrictCompositionKey(district);
       if (_districtWorld != null &&
@@ -1589,7 +1593,9 @@ namespace CityForgeV3.UI
           parts.Add($"flora:{flora.InstanceId}:{flora.FloraId}:" +
                     $"{flora.NormalizedX:0.0000}:" +
                     $"{flora.NormalizedZ:0.0000}:{flora.Scale:0.000}:" +
-                    $"{flora.RotationEighthTurns}:{flora.HarvestState}:{flora.HarvestDirection}:{flora.RemainingWood}");
+                    $"{flora.RotationEighthTurns}");
+      // Harvest state is presented incrementally; it cannot invalidate district
+      // geometry or walking obstacles. Undo/reload explicitly invalidate the world.
       if (parts.Count == 0) return district.LotId ?? "";
       return string.Join("|", parts);
     }
@@ -2619,7 +2625,7 @@ namespace CityForgeV3.UI
     private string _floraTreeFamily = FloraFamilies.Deciduous;
     private string _pendingDistrictTreeFamily = FloraFamilies.Deciduous;
     private void AddTreeFamilyTabs(VisualElement panel, System.Action refresh,
-        System.Action familySelected = null)
+        System.Action familySelected = null, System.Func<string, bool> familyAvailable = null)
     {
       var tabs = DocumentModalActions();
       foreach (var family in FloraFamilies.Names)
@@ -2631,24 +2637,26 @@ namespace CityForgeV3.UI
           familySelected?.Invoke();
           RemoveDocumentModal();
           refresh();
-        }, true, family == _floraTreeFamily ? "mode-selected" : "quiet");
+        }, familyAvailable?.Invoke(family) ?? true, family == _floraTreeFamily ? "mode-selected" : "quiet");
         button.name = "flora-family-" + family.ToLowerInvariant().Replace(" ", "-");
         tabs.Add(button);
       }
       panel.Add(tabs);
     }
+    private RegionClimate CurrentRegionClimate => _openRegion?.Terrain?.Climate ?? RegionClimate.Temperate;
+    private bool DistrictTreeFamilyAvailable(string family) => DistrictTrees.Any(tree =>
+        FloraFamilies.ForTree(tree.Id) == family && RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id));
     private void ComposeDistrictFloraModal()
     {
+      if (!DistrictTreeFamilyAvailable(_floraTreeFamily))
+        _floraTreeFamily = FloraFamilies.Names.First(DistrictTreeFamilyAvailable);
       var panel = CreateDocumentModal("DISTRICT FLORA",
           "Choose a family, then click or drag to plant. Release to finish a stroke. Tab rerolls the latest stroke within its family. Individual trees and stones can also be placed.");
       panel.AddToClassList("road-material-modal-panel");
       panel.AddToClassList("flora-modal-panel");
-      var categories = DocumentModalActions();
-      categories.Add(CfButton.Create("TREES", () => { SelectDistrictFloraLibrary(false); RemoveDocumentModal(); ComposeDistrictFloraModal(); }, true, !_districtStoneLibrary ? "mode-selected" : "quiet"));
-      categories.Add(CfButton.Create("STONES", () => { SelectDistrictFloraLibrary(true); RemoveDocumentModal(); ComposeDistrictFloraModal(); }, true, _districtStoneLibrary ? "mode-selected" : "quiet"));
-      panel.Add(categories);
+      AddDistrictFloraTabs(panel, _districtStoneLibrary ? "STONES" : "TREES");
       if (!_districtStoneLibrary) AddTreeFamilyTabs(panel, ComposeDistrictFloraModal,
-          () => SelectDistrictFloraLibrary(false));
+          () => SelectDistrictFloraLibrary(false), DistrictTreeFamilyAvailable);
       var random = DocumentModalActions();
       random.Add(CfButton.Create("PAINT FAMILY GROUPS", () =>
       {
@@ -2666,7 +2674,7 @@ namespace CityForgeV3.UI
       var grid = new VisualElement();
       grid.AddToClassList("road-material-grid");
       grid.style.flexShrink = 0f;
-      if (!_districtStoneLibrary) foreach (var tree in DistrictTrees.Where(tree => FloraFamilies.ForTree(tree.Id) == _floraTreeFamily).OrderBy(tree => tree.Name,
+      if (!_districtStoneLibrary) foreach (var tree in DistrictTrees.Where(tree => FloraFamilies.ForTree(tree.Id) == _floraTreeFamily && RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).OrderBy(tree => tree.Name,
                    StringComparer.OrdinalIgnoreCase))
       {
         var captured = tree;
@@ -2744,6 +2752,7 @@ namespace CityForgeV3.UI
         var id = string.IsNullOrWhiteSpace(_pendingDistrictFloraId)
             ? RandomDistrictTreeId(_pendingDistrictTreeFamily, "")
             : _pendingDistrictFloraId;
+        if (!StoneFloraCatalog.IsStone(id) && !RegionClimateRules.AllowsTree(CurrentRegionClimate, id)) continue;
         var candidate = normalized;
         var foundClearGround = false;
         for (var attempt = 0; attempt < 32; attempt++)
@@ -2861,10 +2870,10 @@ namespace CityForgeV3.UI
       return true;
     }
 
-    private static string RandomDistrictTreeId(string family, string excluding)
+    private string RandomDistrictTreeId(string family, string excluding)
     {
-      var choices = DistrictTrees.Where(tree => FloraFamilies.ForTree(tree.Id) == family && tree.Id != excluding).ToArray();
-      if (choices.Length == 0) return excluding;
+      var choices = DistrictTrees.Where(tree => FloraFamilies.ForTree(tree.Id) == family && tree.Id != excluding && RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).ToArray();
+      if (choices.Length == 0) return DistrictTrees.First(tree => RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).Id;
       return choices[UnityEngine.Random.Range(0, choices.Length)].Id;
     }
 

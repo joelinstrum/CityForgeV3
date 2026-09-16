@@ -37,8 +37,8 @@ namespace CityForgeV3.Tests
             site.Enabled=false;DistrictQuarry.Tick(d,10,_=>true);Assert.AreEqual(8,site.Elapsed);
             d=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));site=d.StoneSites[0];site.Enabled=true;
             DistrictQuarry.Tick(d,7,_=>true);Assert.AreEqual(0,site.CartBlocks);
-            DistrictQuarry.Tick(d,1,_=>true);Assert.AreEqual(1,site.CartBlocks);Assert.AreEqual(1,d.ResourceInventory.Stone);
-            DistrictQuarry.Tick(d,0,_=>true);Assert.AreEqual(1,d.ResourceInventory.Stone);
+            DistrictQuarry.Tick(d,1,_=>true);Assert.AreEqual(1,site.CartBlocks);Assert.AreEqual(0,d.ResourceInventory.Stone);
+            DistrictQuarry.Tick(d,0,_=>true);Assert.AreEqual(0,d.ResourceInventory.Stone);
         }
     }
 }

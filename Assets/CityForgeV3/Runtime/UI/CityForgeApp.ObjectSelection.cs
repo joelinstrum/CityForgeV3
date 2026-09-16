@@ -59,6 +59,8 @@ namespace CityForgeV3.UI
             var data = LotContentCatalog.Read(placement.LotId);
             var description = data == null ? "Placed lot" :
                 $"{LotTypeLabel(data.LotType)} · {data.LotWidthCells} × {data.LotDepthCells} cells · Facing {placement.RotationQuarterTurns * 90}° · Plop cost ${LotEconomy.CalculatePlopCost(data):N0}";
+            if (DistrictBusinessEconomy.IsBusiness(data) || DistrictBusinessEconomy.Rates(data) != null)
+                description += "\n" + DistrictBusinessEconomy.Describe(DistrictBusinessEconomy.Rates(data));
             target.SetInspector(description,
                 new DistrictSelectionAction("↶ LEFT 90°", () => TryRotatePlacedDistrictLot(district, placement, -1)),
                 new DistrictSelectionAction("RIGHT 90° ↷", () => TryRotatePlacedDistrictLot(district, placement, 1)));

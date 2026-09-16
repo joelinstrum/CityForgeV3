@@ -9,7 +9,7 @@ namespace CityForgeV3.UI
         private DistrictLaborNavigation _laborNavigation;
         private RegionCityTile _laborDistrict;
         private string _laborComposition;
-        private float _laborSaveTimer,_laborUiTimer;
+        private float _laborUiTimer;
         private DistrictLaborNavigation LaborNavigation(RegionCityTile d)
         {
             // Spatial edits update this key; avoid serializing the district every frame.
@@ -145,10 +145,6 @@ namespace CityForgeV3.UI
             var heading=nav.ParkingHeading(home);crew.HorseHeading=crew.BodyHeading=crew.FrontHeading=heading;
             SaveDistrictEdit();CancelLaborPlacement();Show(AppScreen.DistrictTerraform);return true;
         }
-        private void OnApplicationQuit()
-        {
-            if(_currentScreen==AppScreen.DistrictTerraform && _openRegion!=null)PersistDistrictRegion();
-        }
         private void TickDistrictLabor()
         {
             if(_root==null||_currentScreen!=AppScreen.DistrictTerraform||_districtWorld==null)return;
@@ -158,20 +154,23 @@ namespace CityForgeV3.UI
             if(running)
             {
                 var nav=LaborNavigation(d);var change=DistrictLabor.Tick(d,Mathf.Min(Time.deltaTime,.1f),nav.Route,nav.Walkable);
-                if(change.Changed.Count>0){_districtWorld.RefreshHarvestTrees(d,change.Changed);_districtWorld.PlayTreeFalls(d,change.Falling);_districtWorldCompositionKey=DistrictCompositionKey(d);}
-                _laborSaveTimer+=Time.deltaTime;
-                if(change.Durable){RefreshDistrictResourceBar(d);SaveDistrictEdit();_laborSaveTimer=0;}
-                else if(_laborSaveTimer>=5){PersistDistrictRegion();_laborSaveTimer=0;}
+                if(change.Changed.Count>0)
+                {
+                    _districtWorld.RefreshHarvestTrees(d,change.Changed);
+                    _districtWorld.PlayTreeFalls(d,change.Falling);
+                    // Harvesting changes neither spatial composition nor walking obstacles.
+                }
+                if(change.Durable)RefreshDistrictResourceBar(d);
             }
-            if(running&&DistrictWildlife.Tick(d,Mathf.Min(Time.deltaTime,.1f),LaborNavigation(d).Walkable))SaveDistrictEdit();
+            if(running)DistrictWildlife.Tick(d,Mathf.Min(Time.deltaTime,.1f),LaborNavigation(d).Walkable);
             _districtWorld.PresentWildlife(d,running);
-            if(running&&DistrictQuarry.Tick(d,Mathf.Min(Time.deltaTime,.1f),LaborNavigation(d).Walkable))SaveDistrictEdit();
+            if(running)DistrictQuarry.Tick(d,Mathf.Min(Time.deltaTime,.1f),LaborNavigation(d).Walkable);
             _districtWorld.PresentQuarries(d,running);
             _districtWorld.PresentBrickworks(d);
-            if(_districtWorld.TickQuarryDeliveries(d,running,Mathf.Min(Time.deltaTime,.1f)))SaveDistrictEdit();
-            if(running&&DistrictBrickworks.Tick(d,Mathf.Min(Time.deltaTime,.1f)))SaveDistrictEdit();
+            _districtWorld.TickQuarryDeliveries(d,running,Mathf.Min(Time.deltaTime,.1f));
+            if(running)DistrictBrickworks.Tick(d,Mathf.Min(Time.deltaTime,.1f));
             paid=s.PaidSlots>=s.AssignedAxemen;
-            if(_districtWorld.TickTimber(d,_lotWorld,running&&paid,Mathf.Min(Time.deltaTime,.05f)))SaveDistrictEdit();
+            _districtWorld.TickTimber(d,_lotWorld,running&&paid,Mathf.Min(Time.deltaTime,.05f));
             _districtWorld.PresentLabor(d,running&&paid);
             _laborUiTimer+=Time.unscaledDeltaTime;
             if(_laborUiTimer<.5f)return;_laborUiTimer=0;

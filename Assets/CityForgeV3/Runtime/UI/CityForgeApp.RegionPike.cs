@@ -32,7 +32,7 @@ namespace CityForgeV3.UI
             var toggle=screen.Q<Toggle>(river?"region-layer-rivers":"region-layer-transportation");
             toggle?.SetValueWithoutNotify(true);
             var glyph=toggle?.Q<Label>("check-glyph");if(glyph!=null)glyph.text="✓";
-            string drawingHint=river?(size.ToString().ToUpperInvariant()+" RIVER")+" · Click and drag. Release to save. Keep drawing to add or connect rivers. Esc to finish.":"NATIONAL PIKE · Click and drag to draw. Release to name your road.";
+            string drawingHint=river?(size.ToString().ToUpperInvariant()+" RIVER")+" · Click and drag. Release to apply. Keep drawing to add or connect rivers. Esc to finish.":"NATIONAL PIKE · Click and drag to draw. Release to name your road.";
             ApplyRegionMapLayers(screen,_openRegion.MapLayers);
             _drawingNationalPike=true;_pikeStroke=new RegionPikeStroke(_openRegion.Width,_openRegion.Height);
             _pikeOverlay=new VisualElement{name="region-pike-drawing",focusable=true};
@@ -114,17 +114,12 @@ namespace CityForgeV3.UI
                     var edits=NationalPikePlacement.Build(_openRegion,route);
                     foreach(var edit in edits){previous[edit.Key]=edit.Key.Roads;edit.Key.Roads=edit.Value;}
                     _openRegion.TransportRoutes.Add(route);
-#if UNITY_EDITOR
-                    RegionSaveStore.Save(_openRegion,_mapQaActive?System.IO.Path.Combine(System.IO.Path.GetTempPath(),"CityForgeMapLayersQa"):null);
-#else
-                    RegionSaveStore.Save(_openRegion);
-#endif
                 }
-                catch(Exception ex){foreach(var item in previous)item.Key.Roads=item.Value;_openRegion.TransportRoutes.Remove(route);error.text="Could not save this road: "+ex.Message;error.style.display=DisplayStyle.Flex;return;}
+                catch(Exception ex){foreach(var item in previous)item.Key.Roads=item.Value;_openRegion.TransportRoutes.Remove(route);error.text="Could not add this road: "+ex.Message;error.style.display=DisplayStyle.Flex;return;}
                 var layer=_root.Q<RegionTransportationMapLayer>("region-transportation-map-layer");layer?.RefreshRouteLabels();layer?.MarkDirtyRepaint();
                 CancelNationalPike();
             }
-            save=CfButton.Create("SAVE ROAD",Commit,true,"primary");save.name="region-pike-save";save.SetEnabled(false);
+            save=CfButton.Create("ADD ROAD",Commit,true,"primary");save.name="region-pike-save";save.SetEnabled(false);
             field.RegisterValueChangedCallback(e=>save.SetEnabled(!string.IsNullOrWhiteSpace(e.newValue)));
             field.RegisterCallback<KeyDownEvent>(e=>{if(e.keyCode==KeyCode.Return||e.keyCode==KeyCode.KeypadEnter){Commit();e.StopImmediatePropagation();}});
             actions.Add(save);actions.Add(CfButton.Create("DRAW AGAIN",()=>{CancelNationalPike();BeginNationalPike();},true,"quiet"));

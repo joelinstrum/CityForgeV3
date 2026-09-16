@@ -1,0 +1,3 @@
+PASS edits, undo, and 8 seconds of active simulation produce no save files
+PASS leaving district does not save; regional Save writes generated flora
+PASS district Save writes all districts and shows SAVED; quit autosave hook removed

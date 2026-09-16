@@ -5,16 +5,10 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
-        private float _behaviorSaveTimer;
         private void TickDistrictLotBehaviors()
         {
             if (_currentScreen != AppScreen.DistrictTerraform || _districtWorld == null) return;
             _districtWorld.SetLotBehaviorsPaused(_districtSimulationPaused);
-            var district = FindSelectedRegionTile();
-            if (district?.Lots == null || !district.Lots.Exists(p => p.Behaviors?.Count > 0)) return;
-            _behaviorSaveTimer += Time.unscaledDeltaTime;
-            if (_behaviorSaveTimer >= 5 && _openRegion != null)
-            { _behaviorSaveTimer = 0; PersistDistrictRegion(); }
         }
         private string _behaviorAnchorId = "";
         private bool _behaviorAnchorIsPickup;

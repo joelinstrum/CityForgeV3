@@ -1,0 +1,6 @@
+Trees=9953 shadows=9953 chunk renderers=1234 zoom=LOD4 screen=2070x1008
+batched running median=14.7746 p95=15.7309 max=110.026 draws=2551.1780952381 batches=2524.19333333333 rendered=4200
+batched panning median=14.5467 p95=15.7551 max=107.7392 draws=2552.89 batches=2525.78083333333 rendered=1200
+batched paused median=14.0486 p95=14.7975 max=89.9771 draws=2557 batches=2524 rendered=120
+individual paused median=82.3599 p95=86.7996 max=195.9998 draws=28309 batches=28276 rendered=120
+no flora median=11.9867 p95=15.3459 max=17.7756 draws=294 batches=261 rendered=120
