@@ -419,6 +419,7 @@ namespace CityForgeV3.UI
         regenerate.tooltip = "Create a new randomized city-border layout";
         header.Add(regenerate);
       }
+      AddRegionMapLayerMenu(screen, header);
       var terrain = CfButton.Create("TERRAIN", ComposeRegionTerrainModal, true, "quiet");
       terrain.name = "region-terrain-button";
       terrain.tooltip = "Choose terrain options for the whole region";
@@ -454,7 +455,7 @@ namespace CityForgeV3.UI
       // Keep all four rotated corners inside the scroll content, with room
       // around the perimeter; otherwise its northern corner is clipped at y=0.
       const float mapPadding = 160f;
-      const float projectionScaleY = 0.52f;
+      const float projectionScaleY = RegionMapProjection.VerticalScale;
       const float slabDepth = 22f;
       var rotatedExtent = (planeWidth + planeHeight) * Mathf.Sqrt(0.5f);
       var planeLeft = mapPadding + (rotatedExtent - planeWidth) * 0.5f;
@@ -478,6 +479,7 @@ namespace CityForgeV3.UI
       slab.style.top = planeTop + slabDepth;
       slab.style.width = planeWidth;
       slab.style.height = planeHeight;
+      RegionMapProjection.ApplyGround(slab, planeWidth, planeHeight);
       projection.Add(slab);
 
       var plane = new VisualElement { name = "region-map-plane" };
@@ -487,12 +489,8 @@ namespace CityForgeV3.UI
       plane.style.top = planeTop;
       plane.style.width = planeWidth;
       plane.style.height = planeHeight;
-      var grass = Resources.Load<Texture2D>(
-          DistrictWorldController.DefaultGrassResource);
-      if (grass != null)
-        AddRegionGrassTiles(plane, grass, planeWidth, planeHeight);
-      else
-        Debug.LogError($"Missing UI image resource: {DistrictWorldController.DefaultGrassResource}");
+      RegionMapProjection.ApplyGround(plane, planeWidth, planeHeight);
+      plane.Add(new RegionTopographyMapLayer(_openRegion, RegionMapUnitPixels));
       foreach (var tile in _openRegion.Tiles)
       {
         var captured = tile;
@@ -515,6 +513,15 @@ namespace CityForgeV3.UI
         plane.Add(button);
       }
       plane.Add(new RegionRiverMapLayer(_openRegion, RegionMapUnitPixels));
+      plane.Add(new RegionTransportationMapLayer(_openRegion, RegionMapUnitPixels));
+      var labels = new VisualElement { name = "region-place-labels", pickingMode = PickingMode.Ignore };
+      labels.style.position = Position.Absolute; labels.style.left = 0; labels.style.top = 0;
+      labels.style.width = planeWidth; labels.style.height = planeHeight;
+      plane.Add(labels);
+      var districtLabels = new VisualElement { name = "region-district-labels", pickingMode = PickingMode.Ignore };
+      districtLabels.style.position = Position.Absolute; districtLabels.style.left = 0; districtLabels.style.top = 0;
+      districtLabels.style.width = planeWidth; districtLabels.style.height = planeHeight;
+      plane.Add(districtLabels);
       foreach (var tile in _openRegion.Tiles)
       {
         var labelHost = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -523,8 +530,8 @@ namespace CityForgeV3.UI
         labelHost.style.top = tile.Y * RegionMapUnitPixels;
         labelHost.style.width = tile.Width * RegionMapUnitPixels;
         labelHost.style.height = tile.Height * RegionMapUnitPixels;
-        AddRegionPlaceLabel(labelHost, tile);
-        plane.Add(labelHost);
+        AddRegionPlaceLabel(labelHost, tile, _openRegion.Width, _openRegion.Height);
+        (tile.Designation == RegionPlaceDesignation.Town ? labels : districtLabels).Add(labelHost);
       }
       projection.Add(plane);
       map.Add(projection);
@@ -543,6 +550,7 @@ namespace CityForgeV3.UI
       screen.Add(card);
       header.BringToFront();
       card.BringToFront();
+      ApplyRegionMapLayers(screen, _openRegion.MapLayers);
       AttachLargeRegionHoverHelp(screen);
       _root.Add(screen);
       scroll.schedule.Execute(() =>
@@ -566,40 +574,37 @@ namespace CityForgeV3.UI
     }
 
     private static void AddRegionPlaceLabel(VisualElement tileElement,
-        RegionCityTile tile)
+        RegionCityTile tile, int regionWidth, int regionHeight)
     {
       if (tileElement == null || tile == null ||
           string.IsNullOrWhiteSpace(tile.Name)) return;
-      var marker = new VisualElement
-      {
-        name = $"region-place-marker-{tile.TileId}",
-        pickingMode = PickingMode.Ignore
-      };
-      marker.AddToClassList("region-place-marker");
+      var marker = RegionMapProjection.CreateLabelAnchor(regionWidth, regionHeight, out var content);
+      marker.name = $"region-place-marker-{tile.TileId}";
+      marker.style.left = Length.Percent(50);
+      marker.style.top = Length.Percent(50);
       var name = new Label(tile.Name.Trim())
       {
         name = $"region-place-name-{tile.TileId}",
         pickingMode = PickingMode.Ignore
       };
       name.AddToClassList("region-place-name");
+      name.AddToClassList(tile.Designation == RegionPlaceDesignation.Town
+          ? "region-town-name" : "region-district-name");
+      name.AddToClassList("region-horizontal-place-name");
+      content.Add(name);
       if (tile.Designation == RegionPlaceDesignation.Town)
       {
-        marker.AddToClassList("region-town-marker");
-        name.AddToClassList("region-town-name");
-        marker.Add(name);
         var dot = new VisualElement
         {
           name = $"region-town-dot-{tile.TileId}",
           pickingMode = PickingMode.Ignore
         };
         dot.AddToClassList("region-town-dot");
-        marker.Add(dot);
-      }
-      else
-      {
-        marker.AddToClassList("region-district-marker");
-        name.AddToClassList("region-district-name");
-        marker.Add(name);
+        dot.style.position = Position.Absolute;
+        dot.style.left = -3.5f;
+        dot.style.top = 4;
+        dot.style.marginTop = 0;
+        content.Add(dot);
       }
       tileElement.Add(marker);
     }
@@ -625,6 +630,8 @@ namespace CityForgeV3.UI
 
     private void PollRegionArrowKeys()
     {
+      if (_drawingNationalPike && Input.GetKeyDown(KeyCode.Escape)) { CancelNationalPike(); return; }
+      if (_pikePointer >= 0 || _pikeNaming) return;
       var delta = Vector2.zero;
       if (Input.GetKeyDown(KeyCode.LeftArrow)) delta.x = -140f;
       else if (Input.GetKeyDown(KeyCode.RightArrow)) delta.x = 140f;
@@ -727,6 +734,7 @@ namespace CityForgeV3.UI
       SelectSoleDistrictRiverIfNeeded(district);
       _districtWorld.ShowDistrictSelection(district,
           _districtSelection);
+      AttachDistrictRiverSculpt(screen, district);
       screen.RegisterCallback<PointerMoveEvent>(evt =>
       {
         if (_districtMarqueeActive)
@@ -872,6 +880,8 @@ namespace CityForgeV3.UI
         if (_districtRoadPointerDown)
         {
           _districtRoadPointerDown = false;
+          _districtWorld?.CommitSurfaceChanges();
+          _districtWorldCompositionKey = DistrictCompositionKey(district);
           SaveDistrictEdit();
         }
         RefreshSelectedDistrictLotOutline(district);
@@ -1038,6 +1048,8 @@ namespace CityForgeV3.UI
         }
         if (!_districtRoadPointerDown) return;
         _districtRoadPointerDown = false;
+        _districtWorld?.CommitSurfaceChanges();
+        _districtWorldCompositionKey = DistrictCompositionKey(district);
         SaveDistrictEdit();
       }, TrickleDown.TrickleDown);
       screen.RegisterCallback<PointerCaptureOutEvent>(evt =>
@@ -1130,6 +1142,8 @@ namespace CityForgeV3.UI
 
       var flyout = new VisualElement();
       flyout.AddToClassList("terraform-flyout");
+      bool waterMenu = _districtEditorMode == DistrictEditorMode.Terraform && ActiveDistrictCategory == "Water";
+      if (waterMenu) flyout.AddToClassList("terraform-flyout--water");
       if (_districtEditorMode == DistrictEditorMode.Builder)
         flyout.AddToClassList("terraform-flyout--builder");
       flyout.Add(StyledLabel(ActiveDistrictCategory.ToUpperInvariant(),
@@ -1145,6 +1159,7 @@ namespace CityForgeV3.UI
         var captured = tool;
         var button = new Button(() =>
         {
+          if (waterMenu && captured.Name == "Repair River") { RepairDistrictRivers(); return; }
           SelectDistrictTool(captured.Name);
           if (_districtEditorMode == DistrictEditorMode.Terraform && ActiveDistrictCategory == "Terrain" && captured.Name == "Hills")
           { ComposeDistrictHillsModal(); return; }
@@ -1153,13 +1168,6 @@ namespace CityForgeV3.UI
                       captured.Name == "Browse Lots")
           {
             ComposeDistrictLotBrowser();
-            return;
-          }
-          if (_districtEditorMode == DistrictEditorMode.Terraform &&
-                      ActiveDistrictCategory == "Water" &&
-                      captured.Name == "River")
-          {
-            ComposeDistrictRiverModal();
             return;
           }
           if (_districtEditorMode == DistrictEditorMode.Terraform &&
@@ -1179,23 +1187,63 @@ namespace CityForgeV3.UI
           Show(AppScreen.DistrictTerraform);
         })
         {
-          text = captured.Glyph,
+          text = waterMenu ? captured.Name : captured.Glyph,
           name = $"district-tool-{captured.Name.ToLowerInvariant().Replace(' ', '-')}",
           tooltip = ActiveDistrictCategory == "Sun"
                 ? $"Set district lighting to {captured.Name}"
                 : ActiveDistrictCategory == "Lots"
                     ? "Browse Lots — open every lot saved in the Lot Editor and choose one to place in this district."
-                : ActiveDistrictCategory == "Water" && captured.Name == "River"
-                    ? "Generate a curved river from one edge of the district to the opposite edge."
+                : waterMenu && captured.Name == "Repair River"
+                    ? "Repair all rivers in this district now. Smooth their general course while retaining width, depth and entry/exit points. Undo restores the edit."
+                : waterMenu && captured.Name == "Shape River"
+                    ? "Set a width or use the existing river width, then trace a replacement section. Release to rebuild."
+                : waterMenu && captured.Name == "Soften River"
+                    ? "Brush rough sections to soften bends."
+                : waterMenu && captured.Name == "Erase River"
+                    ? "Brush away part of a river. Undo restores the edit."
                 : ActiveDistrictCategory == "Water" && captured.Name == "Select Water"
                     ? "Select a river, move it with the arrow keys, or remove it with Delete."
                 : captured.Name == "Hills" ? "Generate gentle rolling hills"
                 : $"{captured.Name} — interface preview; this district tool is not enabled yet"
         };
         button.AddToClassList("terraform-tool-button");
+        if (waterMenu) button.AddToClassList("terraform-tool-button--water");
         if (ActiveDistrictTool == captured.Name)
           button.AddToClassList("terraform-tool-button--selected");
         flyout.Add(button);
+      }
+      if (waterMenu && ActiveDistrictTool == "Shape River")
+      {
+        var widthLabel = StyledLabel(_riverShapeWidth.HasValue ? $"RIVER WIDTH: {Mathf.RoundToInt(_riverShapeWidth.Value)} m" : "WIDTH: FROM RIVER", "terraform-flyout-title");
+        widthLabel.name = "river-locked-width"; flyout.Add(widthLabel);
+        var width = new Slider(20, 200)
+        { name = "river-shape-width", value = _riverShapeWidth ?? 80, showInputField = true };
+        width.AddToClassList("environment-lighting-slider");
+        width.style.width = 186; width.style.minWidth = 0; width.style.flexGrow = 0;
+        width.style.marginBottom = 8;
+        width.RegisterValueChangedCallback(e =>
+        {
+          _riverShapeWidth = Mathf.Clamp(e.newValue, 20, 200);
+          widthLabel.text = $"RIVER WIDTH: {Mathf.RoundToInt(_riverShapeWidth.Value)} m";
+        });
+        flyout.Add(width);
+        flyout.Add(StyledLabel("Adjust width, then trace a river and release. Width applies to the selected river; depth stays the same.", "inspector-note"));
+      }
+      else if (waterMenu && ActiveDistrictTool == "Repair River")
+      {
+        flyout.Add(StyledLabel("Click a river to repair rough bends. Undo restores the original.", "inspector-note"));
+      }
+      else if (waterMenu)
+      {
+        var radiusLabel = StyledLabel($"BRUSH RADIUS: {Mathf.RoundToInt(_riverSculptRadius)} m", "terraform-flyout-title");
+        flyout.Add(radiusLabel);
+        var radius = new Slider(20, 200)
+        { name = "river-sculpt-radius", value = _riverSculptRadius };
+        radius.AddToClassList("environment-lighting-slider");
+        radius.style.width = 186; radius.style.minWidth = 0; radius.style.flexGrow = 0;
+        radius.style.marginBottom = 8;
+        radius.RegisterValueChangedCallback(e => { _riverSculptRadius = e.newValue; radiusLabel.text = $"BRUSH RADIUS: {Mathf.RoundToInt(e.newValue)} m"; });
+        flyout.Add(radius);
       }
       var hud = new VisualElement();
       hud.AddToClassList("terraform-hud");
@@ -2387,7 +2435,7 @@ namespace CityForgeV3.UI
         category switch
         {
           "Select" => new[] { ("Select", "↖"), ("Move", "✥") },
-          "Water" => new[] { ("Select Water", "↖"), ("Lake", "●"), ("Pond", "○"), ("River", "〰"), ("Stream", "≈"), ("Coast", "◒"), ("Erase Water", "×") },
+          "Water" => new[] { ("Select Water", "↖"), ("Repair River", "✓"), ("Shape River", "↔"), ("Soften River", "~"), ("Erase River", "⌫") },
           "Flora" => new[] { ("Trees", "♣"), ("Forest", "♠"), ("Clear Flora", "⌫") },
           "Environment" => new[] { ("Clouds", "☁"), ("Mist", "≋"), ("Clear Skies", "○") },
           "Sun" => new[] { ("Morning", "◔"), ("Noon", "☀"), ("Afternoon", "◕"), ("Night", "●") },
@@ -2490,7 +2538,6 @@ namespace CityForgeV3.UI
         _pendingDistrictLotName = "";
         _pendingDistrictFloraId = "";
         _pendingDistrictFloraMode = 0;
-        _pendingDistrictRiver = null;
         _districtWorld?.HideLotPlacementGuide();
       }
       if (_districtEditorMode == DistrictEditorMode.Builder)
@@ -3070,7 +3117,7 @@ namespace CityForgeV3.UI
                   ShoreOffsetZ = lot.ShoreOffsetZ
                 }, LotContentCatalog.Read(lot.LotId), out _)) continue;
             lot.GridX = targetX; lot.GridZ = targetZ;
-            _districtWorld?.UpdatePlacedLotTransform(district, lot);
+            _districtWorld?.UpdatePlacedLotTransform(district, lot, deferSurfaceRefresh: true);
           }
           else if (selection.Kind == DistrictSelectionKind.Road)
           {
@@ -3083,7 +3130,7 @@ namespace CityForgeV3.UI
                 0, rows - 1);
           }
         }
-        _districtWorld?.RefreshRoads(district);
+        _districtWorld?.RefreshRoads(district, deferSurfaceRefresh: true);
       }
       if (floraChanged)
         _districtWorld?.RefreshFlora(district);
@@ -3163,6 +3210,7 @@ namespace CityForgeV3.UI
       _districtWorld.RemoveFloraPresentations(deletedFlora);
       _districtWorld.RefreshRoadCellsAndNeighbors(district, deletedRoadCells);
       if (removedRiver) _districtWorld.RefreshRivers(district, preservePresentations: true);
+      else if (deletedRoadCells.Count>0 || deletedBuildings.Count>0) _districtWorld.CommitSurfaceChanges();
       _selectedDistrictFloraInstanceId = "";
       _hasSelectedDistrictRoad = false;
       _laborNavigation = null;
@@ -3170,137 +3218,6 @@ namespace CityForgeV3.UI
       _districtWorld.ShowDistrictSelection(district, _districtSelection);
       RefreshSelectedObjectPanel();
       return true;
-    }
-
-    private void ComposeDistrictRiverModal()
-    {
-      var panel = CreateDocumentModal("GENERATE RIVER",
-          "Create a continuous river from one district edge to the opposite edge. The generator searches for a curved route that avoids placed lots.");
-      panel.name = "district-river-modal";
-
-      panel.Add(StyledLabel("FLOW DIRECTION", "inspector-note"));
-      var directions = DocumentModalActions();
-      AddRiverDirectionButton(directions, "S → N",
-          DistrictRiverDirection.SouthToNorth);
-      AddRiverDirectionButton(directions, "N → S",
-          DistrictRiverDirection.NorthToSouth);
-      AddRiverDirectionButton(directions, "W → E",
-          DistrictRiverDirection.WestToEast);
-      AddRiverDirectionButton(directions, "E → W",
-          DistrictRiverDirection.EastToWest);
-      panel.Add(directions);
-
-      var curvatureLabel = StyledLabel(
-          $"CURVATURE  {Mathf.RoundToInt(_districtRiverCurvature * 100f)}%",
-          "inspector-note");
-      panel.Add(curvatureLabel);
-      var curvature = new Slider(0f, 1f)
-      {
-        name = "district-river-curvature",
-        value = _districtRiverCurvature,
-        showInputField = false
-      };
-      curvature.AddToClassList("environment-lighting-slider");
-      curvature.RegisterValueChangedCallback(evt =>
-      {
-        _districtRiverCurvature = evt.newValue;
-        curvatureLabel.text =
-                  $"CURVATURE  {Mathf.RoundToInt(evt.newValue * 100f)}%";
-      });
-      panel.Add(curvature);
-
-      panel.Add(StyledLabel("RIVER PROFILE", "inspector-note"));
-      var profiles = DocumentModalActions();
-      AddRiverDepthButton(profiles, "SHALLOW · BROAD",
-          DistrictRiverDepth.Shallow);
-      AddRiverDepthButton(profiles, "DEEP · STEEP BANKS",
-          DistrictRiverDepth.Deep);
-      panel.Add(profiles);
-
-      var actions = DocumentModalActions();
-      actions.Add(CfButton.Create("GENERATE RIVER", () =>
-      {
-        var district = FindSelectedRegionTile();
-        if (district == null) return;
-        var result = DistrictRiverGenerator.Generate(district,
-                  _districtRiverDirection, _districtRiverCurvature,
-                  _districtRiverDepth, Environment.TickCount);
-        if (result == null) return;
-        if (result.IntersectedLotInstanceIds.Count > 0)
-          ComposeDistrictRiverWarning(district, result);
-        else
-          CommitDistrictRiver(district, result);
-      }, true, "primary"));
-      actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal,
-          true, "quiet"));
-      panel.Add(actions);
-    }
-
-    private void AddRiverDirectionButton(VisualElement row, string label,
-        DistrictRiverDirection direction)
-    {
-      var button = CfButton.Create(label, () =>
-      {
-        _districtRiverDirection = direction;
-        ComposeDistrictRiverModal();
-      }, true, _districtRiverDirection == direction ? "primary" : "quiet");
-      button.name = $"river-direction-{direction.ToString().ToLowerInvariant()}";
-      row.Add(button);
-    }
-
-    private void AddRiverDepthButton(VisualElement row, string label,
-        DistrictRiverDepth depth)
-    {
-      var button = CfButton.Create(label, () =>
-      {
-        _districtRiverDepth = depth;
-        ComposeDistrictRiverModal();
-      }, true, _districtRiverDepth == depth ? "primary" : "quiet");
-      button.name = $"river-depth-{depth.ToString().ToLowerInvariant()}";
-      row.Add(button);
-    }
-
-    private void ComposeDistrictRiverWarning(RegionCityTile district,
-        DistrictRiverGenerationResult result)
-    {
-      _pendingDistrictRiver = result;
-      var count = result.IntersectedLotInstanceIds.Count;
-      var panel = CreateDocumentModal("RIVER CREATION MAY DESTROY LOTS",
-          $"No clear route was found. Creating this river will remove {count} placed lot{(count == 1 ? "" : "s")} that cross its banks.");
-      panel.name = "district-river-warning-modal";
-      var actions = DocumentModalActions();
-      actions.Add(CfButton.Create("CREATE RIVER", () =>
-          CommitDistrictRiver(district, _pendingDistrictRiver),
-          true, "primary"));
-      actions.Add(CfButton.Create("CANCEL", () =>
-      {
-        _pendingDistrictRiver = null;
-        RemoveDocumentModal();
-      }, true, "quiet"));
-      panel.Add(actions);
-    }
-
-    private void CommitDistrictRiver(RegionCityTile district,
-        DistrictRiverGenerationResult result)
-    {
-      if (district == null || result?.River == null) return;
-      var removed = result.IntersectedLotInstanceIds;
-      if (removed.Count > 0 && district.Lots != null)
-        district.Lots.RemoveAll(lot => lot != null &&
-            removed.Contains(lot.InstanceId));
-      district.Rivers ??= new List<PlacedDistrictRiver>();
-      district.Rivers.Add(result.River);
-      _terraformCategory = "Water";
-      _terraformTool = "Select Water";
-      _districtSelection.Clear();
-      _districtSelection.Add(new DistrictSelectionRef(
-          DistrictSelectionKind.River, result.River.InstanceId));
-      _pendingDistrictRiver = null;
-      _selectedDistrictLotInstanceId = "";
-      SaveDistrictEdit();
-      _districtWorldCompositionKey = "";
-      RemoveDocumentModal();
-      Show(AppScreen.DistrictTerraform);
     }
 
     private void ComposeDistrictRoadFamilyModal()
@@ -3405,7 +3322,6 @@ namespace CityForgeV3.UI
               columns, rows, _builderTool, ref treasury)) return;
       district.Treasury = treasury;
       _districtWorld?.RefreshRoadAndNeighbors(district, x, z);
-      _districtWorldCompositionKey = DistrictCompositionKey(district);
       var money = _root?.Q<Label>("district-simulation-money");
       if (money != null) money.text = $"${district.Treasury:N0}";
     }
@@ -3429,6 +3345,7 @@ namespace CityForgeV3.UI
       _districtWorld?.HideLotPlacementGuide();
       _hasSelectedDistrictRoad = false;
       _districtWorldCompositionKey = DistrictCompositionKey(district);
+      _districtWorld?.CommitSurfaceChanges();
       SaveDistrictEdit();
       return true;
     }

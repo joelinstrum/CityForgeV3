@@ -267,6 +267,7 @@ namespace CityForgeV3.World
             ApplyCameraPose();
             BuildSun();
             _terrainDistrict = district;
+            _surfaceCache=new DistrictSurfaceCache();_surfaceChanges=_surfaceCache.Update(district);
             _elevation = new DistrictElevation(district);
             _buildingDistrict = true;
             BuildGround();
@@ -309,25 +310,43 @@ namespace CityForgeV3.World
 
         public void SetVisible(bool visible) => gameObject.SetActive(visible);
 
-        public void RefreshRoads(RegionCityTile district)
+        readonly Dictionary<Vector2Int,string> _roadVisualState=new();
+        public void RefreshRoads(RegionCityTile district,bool deferSurfaceRefresh=false)
         {
-            if (_content == null || district == null) return;
-            if (_roadArtworkRoot != null)
+            if(_content==null || district==null)return;
+            if(!deferSurfaceRefresh)RefreshElevation();
+            if(_roadArtworkRoot==null)
             {
-                var old = _roadArtworkRoot.gameObject;
-                if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
+                _roadArtworkRoot=new GameObject("District Roads").transform;_roadArtworkRoot.SetParent(_content,false);
+                _roadsByCell.Clear();_roadVisualState.Clear();
             }
-            RefreshElevation();
-            _roadArtworkRoot = new GameObject("District Roads").transform;
-            _roadArtworkRoot.SetParent(_content, false);
-            _roadsByCell.Clear();
-            foreach (var road in district.Roads ?? new List<PlacedRoadPiece>())
-                AddRoadPiece(road);
+            var present=new HashSet<Vector2Int>();
+            foreach(var road in district.Roads ?? new())
+            {
+                var cell=new Vector2Int(road.GridX,road.GridZ);present.Add(cell);
+                string state=JsonUtility.ToJson(road);
+                if(_roadsByCell.ContainsKey(cell) && _roadVisualState.TryGetValue(cell,out var old) && old==state)continue;
+                RemoveRoadVisual(cell);AddRoadPiece(road);
+            }
+            foreach(var cell in _roadsByCell.Keys.ToArray())if(!present.Contains(cell))RemoveRoadVisual(cell);
+        }
+        void RemoveRoadVisual(Vector2Int cell)
+        {
+            _roadVisualState.Remove(cell);
+            if(!_roadsByCell.TryGetValue(cell,out var prior))return;
+            _roadsByCell.Remove(cell);
+            if(prior==null)return;
+            var material=prior.GetComponent<Renderer>()?.sharedMaterial;
+            if(material!=null){if(Application.isPlaying)Destroy(material);else DestroyImmediate(material);}
+            prior.SetActive(false);if(Application.isPlaying)Destroy(prior);else DestroyImmediate(prior);
         }
 
         public void RefreshRivers(RegionCityTile district, bool preservePresentations = false)
         {
             if (_content == null || district == null) return;
+#if UNITY_EDITOR
+            var riverTimer=System.Diagnostics.Stopwatch.StartNew();
+#endif
             if (_riverRoot != null)
             {
                 var old = _riverRoot.gameObject;
@@ -343,15 +362,25 @@ namespace CityForgeV3.World
                      new List<PlacedDistrictRiver>())
                 BuildRiver(river);
             MergeRiverJunctions(district);
+            ClipRiversToDistrict();
             ApplyRiverGrassEdgeVisibility();
-            RefreshElevation(preservePresentations);
+#if UNITY_EDITOR
+            var meshMs=riverTimer.ElapsedMilliseconds;
+#endif
+            RefreshElevation(preservePresentations, rebuildDecals: false);
+#if UNITY_EDITOR
+            var terrainMs=riverTimer.ElapsedMilliseconds-meshMs;
+#endif
             if (_groundDecals == null)
             {
                 var decals = new GameObject("Default District Grass Decals");
                 decals.transform.SetParent(_content, false);
                 _groundDecals = decals.AddComponent<DistrictGroundDecals>();
             }
-            _groundDecals.Rebuild(this, district, _widthMeters, _depthMeters);
+            _groundDecals.Refresh(this, district, _widthMeters, _depthMeters, _surfaceChanges.Full?null:_surfaceChanges.Areas);
+#if UNITY_EDITOR
+            Debug.Log($"RIVER REFRESH mesh={meshMs}ms terrain={terrainMs}ms decals={riverTimer.ElapsedMilliseconds-meshMs-terrainMs}ms total={riverTimer.ElapsedMilliseconds}ms");
+#endif
         }
 
         public void RefreshFlora(RegionCityTile district,
@@ -846,6 +875,17 @@ namespace CityForgeV3.World
                 centerline.Add(new Vector2(
                     (point.X - 0.5f) * _widthMeters,
                     (point.Z - 0.5f) * _depthMeters));
+            // Carry the channel beyond any border crossing, then clip all water/bank
+            // triangles to the district rectangle. A perpendicular end-cap leaves a wedge.
+            void ExtendBorder(int index,int neighbor)
+            {
+                var point=centerline[index];var outward=(point-centerline[neighbor]).normalized;
+                float reach=0;float halfW=_widthMeters*.5f,halfD=_depthMeters*.5f;
+                if(Mathf.Abs(Mathf.Abs(point.x)-halfW)<.01f && Mathf.Abs(outward.x)>.0001f)reach=Mathf.Max(reach,river.WidthMeters/Mathf.Abs(outward.x));
+                if(Mathf.Abs(Mathf.Abs(point.y)-halfD)<.01f && Mathf.Abs(outward.y)>.0001f)reach=Mathf.Max(reach,river.WidthMeters/Mathf.Abs(outward.y));
+                if(reach>0)centerline[index]=point+outward*reach;
+            }
+            ExtendBorder(0,1);ExtendBorder(centerline.Count-1,centerline.Count-2);
             var deep = river.Depth == DistrictRiverDepth.Deep;
             var bedWidth = river.WidthMeters * (deep ? 1.08f : 1.28f);
             var edgeTexture = Resources.Load<Texture2D>(
@@ -906,8 +946,7 @@ namespace CityForgeV3.World
                     edgeTexture, 0.04f, 0.96f, 24f,
                     1f, 1f, 1,
                     $"Riverbed {sideName} Grass Edge — {river.InstanceId}",
-                    true, edgeVariants,
-                    StableStringHash(river.InstanceId) + side * 7919);
+                    true);
             }
 
             var waterTexture = Resources.Load<Texture2D>(
@@ -1007,6 +1046,10 @@ namespace CityForgeV3.World
                 }
             }
 
+            // Only segments whose channel bounds touch the query cell can contain water.
+            private readonly DistrictSpatialIndex<int> _segmentsByCell=new();
+            private readonly float[] _segmentLengths;
+            private readonly float[] _segmentStarts;
             private readonly List<Vector2> _points;
             public IReadOnlyList<Vector2> Points => _points;
             private readonly float _dirtOuterDistance;
@@ -1030,6 +1073,16 @@ namespace CityForgeV3.World
                 _terrainSurface = terrainSurface;
                 _depthScale = depthScale;
                 _steepBanks = steepBanks;
+                _segmentLengths=new float[Mathf.Max(0,_points.Count-1)];
+                _segmentStarts=new float[_segmentLengths.Length];
+                float along=0;
+                for(int i=0;i<_segmentLengths.Length;i++)
+                {
+                    _segmentStarts[i]=along;_segmentLengths[i]=Vector2.Distance(_points[i],_points[i+1]);along+=_segmentLengths[i];
+                    var min=Vector2.Min(_points[i],_points[i+1])-Vector2.one*halfWidth;
+                    var max=Vector2.Max(_points[i],_points[i+1])+Vector2.one*halfWidth;
+                    _segmentsByCell.Add(Rect.MinMaxRect(min.x,min.y,max.x,max.y),i);
+                }
             }
 
             public float BedElevation(float distance)
@@ -1058,11 +1111,13 @@ namespace CityForgeV3.World
                 var bestSigned = 0f;
                 var bestAlong = 0f;
                 var bestTangent = Vector2.up;
-                var traveled = 0f;
-                for (var i = 0; i < _points.Count - 1; i++)
+                var candidates=_segmentsByCell.Query(point);
+                if(candidates.Count==0)
+                    return new ClosestPoint(bestDistance,0,0,Vector2.up);
+                foreach(var i in candidates)
                 {
                     var segment = _points[i + 1] - _points[i];
-                    var length = segment.magnitude;
+                    var length = _segmentLengths[i];
                     if (length <= .0001f) continue;
                     var tangent = segment / length;
                     var t = Mathf.Clamp01(Vector2.Dot(point - _points[i],
@@ -1075,10 +1130,9 @@ namespace CityForgeV3.World
                         var normal = new Vector2(-tangent.y, tangent.x);
                         bestDistance = distance;
                         bestSigned = Vector2.Dot(offset, normal);
-                        bestAlong = traveled + length * t;
+                        bestAlong = _segmentStarts[i] + length * t;
                         bestTangent = tangent;
                     }
-                    traveled += length;
                 }
                 return new ClosestPoint(bestDistance, bestSigned, bestAlong,
                     bestTangent);
@@ -1110,13 +1164,7 @@ namespace CityForgeV3.World
             var normals = new List<Vector2>();
             var distances = new List<float>();
             var traveled = 0f;
-            Vector2 BankNormal(int i)
-            {
-                var prior = centerline[Mathf.Max(0, i - 1)];
-                var next = centerline[Mathf.Min(centerline.Count - 1, i + 1)];
-                var tangent = (next - prior).normalized;
-                return new Vector2(-tangent.y, tangent.x);
-            }
+            Vector2 BankNormal(int i) => RiverSectionOffset(centerline, i);
             var spacing = Mathf.Clamp(width * .12f, 2f, 8f);
             for (var segment = 0; segment < centerline.Count - 1; segment++)
             {
@@ -1139,6 +1187,7 @@ namespace CityForgeV3.World
             const int rows = 5;
             var vertices = new Vector3[centers.Count * rows];
             var uv = new Vector2[centers.Count * rows];
+            var flow = new Vector2[centers.Count * rows];
             var colors = new Color[centers.Count * rows];
             var triangles = new int[(centers.Count - 1) * 24];
             var halfWidth = width * 0.5f;
@@ -1163,19 +1212,14 @@ namespace CityForgeV3.World
                 vertices[row + 3] = new Vector3(
                     rightCenter.x, elevation, rightCenter.y);
                 vertices[row + 4] = new Vector3(right.x, elevation, right.y);
-                // River-relative mapping: U is accumulated centerline distance
-                // and V is physical distance across the channel. Both remain
-                // metre-scaled, so the texture tiles consistently without
-                // stretching while U provides a local downstream flow axis.
-                var along = distances[index] / worldTileSize;
-                uv[row] = new Vector2(along, leftWidth / worldTileSize);
-                uv[row + 1] = new Vector2(along,
-                    leftWidth * fadeScale / worldTileSize);
-                uv[row + 2] = new Vector2(along, 0f);
-                uv[row + 3] = new Vector2(along,
-                    -rightWidth * fadeScale / worldTileSize);
-                uv[row + 4] = new Vector2(along,
-                    -rightWidth / worldTileSize);
+                // District-space mapping stays continuous across bends, clipped
+                // triangles and separate river reaches, regardless of point density.
+                for (int column = 0; column < rows; column++)
+                {
+                    var position = vertices[row + column];
+                    uv[row + column] = new Vector2(position.x, position.z) / worldTileSize;
+                    flow[row + column] = new Vector2(normal.y, -normal.x).normalized;
+                }
                 var fadeCoordinate = Mathf.Clamp(_waterEdgeFadeWidth,
                     0.05f, 0.45f);
                 // Red stores continuous normalized depth: zero at either bank,
@@ -1204,6 +1248,7 @@ namespace CityForgeV3.World
                 indexFormat = vertices.Length > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             mesh.vertices = vertices;
             mesh.uv = uv;
+            mesh.uv2 = flow;
             mesh.colors = colors;
             mesh.triangles = triangles;
             mesh.RecalculateNormals();
@@ -1385,6 +1430,22 @@ namespace CityForgeV3.World
             renderer.receiveShadows = !name.Contains("Water");
         }
 
+        // Equal-width offset-line intersection. Averaging point positions biases
+        // the join toward the longer segment and folds banks near dense edit points.
+        public static Vector2 RiverSectionOffset(IReadOnlyList<Vector2> points, int index)
+        {
+            var incoming = index > 0 ? (points[index] - points[index - 1]).normalized : Vector2.zero;
+            var outgoing = index + 1 < points.Count ? (points[index + 1] - points[index]).normalized : Vector2.zero;
+            if (incoming.sqrMagnitude < .001f) incoming = outgoing;
+            if (outgoing.sqrMagnitude < .001f) outgoing = incoming;
+            var first = new Vector2(-incoming.y, incoming.x);
+            var second = new Vector2(-outgoing.y, outgoing.x);
+            var bisector = (first + second).normalized;
+            if (bisector.sqrMagnitude < .001f) return first;
+            // Bound pathological hairpins rather than creating unbounded spikes.
+            return bisector / Mathf.Max(.5f, Vector2.Dot(bisector, first));
+        }
+
         private void AddRiverBand(IReadOnlyList<Vector2> centerline,
             float innerDistance, float outerDistance,
             float innerElevation, float outerElevation, int side,
@@ -1402,11 +1463,7 @@ namespace CityForgeV3.World
             var traveled = 0f;
             for (var index = 0; index < centerline.Count; index++)
             {
-                var prior = centerline[Mathf.Max(0, index - 1)];
-                var next = centerline[Mathf.Min(centerline.Count - 1,
-                    index + 1)];
-                var tangent = (next - prior).normalized;
-                var normal = new Vector2(-tangent.y, tangent.x) * side;
+                var normal = RiverSectionOffset(centerline, index) * side;
                 if (index > 0)
                     traveled += Vector2.Distance(centerline[index - 1],
                         centerline[index]);
@@ -1486,6 +1543,10 @@ namespace CityForgeV3.World
                     color = Color.white,
                     mainTexture = bandTexture
                 };
+                if (material.HasProperty("_DistrictHalfSize"))
+                    material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));
+                if (material.HasProperty("_RiverWaterLevel"))
+                    material.SetFloat("_RiverWaterLevel", .184f-Mathf.Abs(_waterHeight));
                 if (material.HasProperty("_BaseColor"))
                     material.SetColor("_BaseColor", Color.white);
                 if (material.HasProperty("_BaseMap"))
@@ -1598,7 +1659,14 @@ namespace CityForgeV3.World
                 mainTexture = texture,
                 renderQueue = 3002
             };
-            if (package.Id != RoadPiecePackageCatalog.DirtRoadId &&
+            if (package.Id == RoadPiecePackageCatalog.NationalPikeDirtId)
+            {
+                material.SetFloat("_DirtTopology", (int)placed.Topology);
+                material.SetTexture("_DirtStraightTex", Resources.Load<Texture2D>(
+                    "CityForgeV3/Roads/NationalPikeDirtV1/straight"));
+            }
+            if (package.Id != RoadPiecePackageCatalog.NationalPikeDirtId &&
+                package.Id != RoadPiecePackageCatalog.DirtRoadId &&
                 package.Id != RoadPiecePackage.LegacyPackageId)
             {
                 var roadSurface = RoadMaterialCatalog.Resolve(placed.RoadMaterialId);
@@ -1616,6 +1684,7 @@ namespace CityForgeV3.World
                     placed.RoadMaterialId == "antique-brick" ? 1f : 0f);
             roadObject.GetComponent<Renderer>().sharedMaterial = material;
             _roadsByCell[new Vector2Int(placed.GridX, placed.GridZ)] = roadObject;
+            _roadVisualState[new Vector2Int(placed.GridX, placed.GridZ)] = JsonUtility.ToJson(placed);
             if (material.HasProperty("_TimeTint"))
                 material.SetColor("_TimeTint",
                     TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
@@ -1641,7 +1710,7 @@ namespace CityForgeV3.World
         }
 
         public bool UpdatePlacedLotTransform(RegionCityTile district,
-            PlacedDistrictLot placement, bool allowPlacementConflicts = false)
+            PlacedDistrictLot placement, bool allowPlacementConflicts = false, bool deferSurfaceRefresh = false)
         {
             if (district == null || placement == null ||
                 !_lotsByInstance.TryGetValue(placement.InstanceId,
@@ -1649,7 +1718,7 @@ namespace CityForgeV3.World
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
             if (!allowPlacementConflicts && !ValidateLotBoatPlacement(district, placement, data, out _)) return false;
-            RefreshElevation();
+            if(!deferSurfaceRefresh)RefreshElevation();
             var center = DistrictLotCenterMeters(district, placement, data);
             lot.transform.localPosition = new Vector3(center.x, 0.04f, center.y);
             lot.transform.localRotation = Quaternion.Euler(0f,

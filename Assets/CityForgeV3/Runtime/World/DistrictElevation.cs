@@ -19,6 +19,7 @@ namespace CityForgeV3.World
         public readonly int Columns, Rows;
         public readonly float[] Heights;
         private readonly List<Rect> pads = new();
+        readonly DistrictSpatialIndex<int> padIndex=new(),channelIndex=new();
         private readonly List<(Vector2 a, Vector2 b, float radius)> channels = new();
         private readonly List<Vector3> hills = new();
         private readonly float amplitude;
@@ -27,10 +28,11 @@ namespace CityForgeV3.World
         private readonly List<Vector4> peakShapes=new();
         private readonly List<Vector2Int> ridgeLinks=new();
         private readonly List<Vector2> preservedSites=new();
-        public DistrictElevation(RegionCityTile district)
+        public DistrictElevation(RegionCityTile district, float sampleSpacingMeters = 5f)
         {
             Width=DistrictScale.SizeMeters(district.Width);Depth=DistrictScale.SizeMeters(district.Height);
-            Columns=Mathf.Clamp(Mathf.CeilToInt(Width/5),2,512);Rows=Mathf.Clamp(Mathf.CeilToInt(Depth/5),2,512);
+            sampleSpacingMeters=Mathf.Max(5f,sampleSpacingMeters);
+            Columns=Mathf.Clamp(Mathf.CeilToInt(Width/sampleSpacingMeters),2,512);Rows=Mathf.Clamp(Mathf.CeilToInt(Depth/sampleSpacingMeters),2,512);
             Heights=new float[(Columns+1)*(Rows+1)];
             var settings=district.Hills;
             mountains=settings?.Mountains??false;
@@ -60,6 +62,14 @@ namespace CityForgeV3.World
                     ridgeLinks.Add(new Vector2Int(a,b));joined.Add(b);
                 }
             }
+            RefreshConstraints(district);
+            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+        }
+        public int LastUpdatedSampleCount {get;private set;}
+        readonly List<int> changedSamples=new();
+        void RefreshConstraints(RegionCityTile district)
+        {
+            pads.Clear();channels.Clear();padIndex.Clear();channelIndex.Clear();
             foreach(var road in district.Roads??new List<PlacedRoadPiece>())
                 if(road!=null)pads.Add(new Rect(-Width/2+road.GridX*DistrictScale.CellSizeMeters,-Depth/2+road.GridZ*DistrictScale.CellSizeMeters,DistrictScale.CellSizeMeters,DistrictScale.CellSizeMeters));
             foreach(var placed in district.Lots??new List<PlacedDistrictLot>())
@@ -79,7 +89,37 @@ namespace CityForgeV3.World
                     channels.Add((new Vector2((a.X-.5f)*Width,(a.Z-.5f)*Depth),new Vector2((b.X-.5f)*Width,(b.Z-.5f)*Depth),river.WidthMeters*.5f+25));
                 }
             }
-            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+            float fade=mountains?45:Mathf.Max(90,amplitude*4);
+            for(int i=0;i<pads.Count;i++)padIndex.Add(DistrictDirtyGrid.Expand(pads[i],12+fade),i);
+            for(int i=0;i<channels.Count;i++)
+            {
+                var c=channels[i];var min=Vector2.Min(c.a,c.b);var max=Vector2.Max(c.a,c.b);
+                channelIndex.Add(DistrictDirtyGrid.Expand(Rect.MinMaxRect(min.x,min.y,max.x,max.y),c.radius+fade),i);
+            }
+        }
+        public bool RefreshLocal(RegionCityTile district,IReadOnlyList<Rect> areas)
+        {
+            RefreshConstraints(district);changedSamples.Clear();LastUpdatedSampleCount=0;
+            var marked=new bool[Heights.Length];
+            foreach(var area in areas)
+            {
+                int x0=Mathf.Clamp(Mathf.FloorToInt((area.xMin/Width+.5f)*Columns),0,Columns),x1=Mathf.Clamp(Mathf.CeilToInt((area.xMax/Width+.5f)*Columns),0,Columns);
+                int z0=Mathf.Clamp(Mathf.FloorToInt((area.yMin/Depth+.5f)*Rows),0,Rows),z1=Mathf.Clamp(Mathf.CeilToInt((area.yMax/Depth+.5f)*Rows),0,Rows);
+                for(int z=z0;z<=z1;z++)for(int x=x0;x<=x1;x++)marked[z*(Columns+1)+x]=true;
+            }
+            for(int i=0;i<marked.Length;i++)if(marked[i])
+            {
+                LastUpdatedSampleCount++;int x=i%(Columns+1),z=i/(Columns+1);
+                float value=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+                if(value!=Heights[i]){Heights[i]=value;changedSamples.Add(i);}
+            }
+            return changedSamples.Count>0;
+        }
+        public void UpdateMesh(Mesh mesh)
+        {
+            var vertices=mesh.vertices;
+            foreach(int i in changedSamples){var v=vertices[i];v.y=Heights[i];vertices[i]=v;}
+            mesh.vertices=vertices;mesh.RecalculateNormals();mesh.RecalculateBounds();
         }
         private float Generate(Vector2 p)
         {
@@ -100,13 +140,15 @@ namespace CityForgeV3.World
                 h=Mathf.Lerp(range,h,preserve);
             }
             float clearance=Mathf.Min(Width/2-Mathf.Abs(p.x),Depth/2-Mathf.Abs(p.y));
-            foreach(var pad in pads)
+            foreach(var index in padIndex.Query(p))
             {
+                var pad=pads[index];
                 var delta=new Vector2(Mathf.Max(pad.xMin-p.x,0,p.x-pad.xMax),Mathf.Max(pad.yMin-p.y,0,p.y-pad.yMax));
                 clearance=Mathf.Min(clearance,delta.magnitude-12);
             }
-            foreach(var c in channels)
+            foreach(var index in channelIndex.Query(p))
             {
+                var c=channels[index];
                 var ab=c.b-c.a;float t=ab.sqrMagnitude<.001f?0:Mathf.Clamp01(Vector2.Dot(p-c.a,ab)/ab.sqrMagnitude);
                 clearance=Mathf.Min(clearance,Vector2.Distance(p,c.a+t*ab)-c.radius);
             }

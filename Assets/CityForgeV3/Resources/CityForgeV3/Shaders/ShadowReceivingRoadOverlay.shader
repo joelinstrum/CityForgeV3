@@ -2,6 +2,8 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
 {
     Properties
     {
+        _DirtTopology ("Calibrated Dirt Topology", Float) = -1
+        _DirtStraightTex ("Dirt Port Material", 2D) = "white" {}
         _MainTex ("Road Artwork", 2D) = "white" {}
         _RoadSurfaceTex ("Road Surface", 2D) = "gray" {}
         _SidewalkSurfaceTex ("Sidewalk Surface", 2D) = "gray" {}
@@ -45,6 +47,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             struct AppData { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
             struct Varyings { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
             sampler2D _MainTex;
+            #include "NationalPikeDirt.cginc"
             float4 _MainTex_ST;
             float _UseMaterialZones;
             Varyings vert(AppData input)
@@ -56,7 +59,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             }
             fixed4 frag(Varyings input) : SV_Target
             {
-                fixed4 artwork = tex2D(_MainTex, input.uv);
+                fixed4 artwork = RoadArtwork(input.uv);
                 clip(artwork.a - 0.02);
                 // Mask the complete visible road artwork, including sidewalks
                 // and antialiased material-zone edges. Restricting this pass to
@@ -88,6 +91,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             };
 
             sampler2D _MainTex;
+            #include "NationalPikeDirt.cginc"
             sampler2D _RoadSurfaceTex;
             sampler2D _SidewalkSurfaceTex;
             float4 _MainTex_ST;
@@ -115,7 +119,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
 
             fixed4 frag(Varyings input) : SV_Target
             {
-                fixed4 artwork = tex2D(_MainTex, input.uv) * _Color;
+                fixed4 artwork = RoadArtwork(input.uv) * _Color;
                 clip(artwork.a - 0.02);
                 fixed3 authoredColor = artwork.rgb;
                 #ifndef UNITY_COLORSPACE_GAMMA
@@ -218,6 +222,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             };
 
             sampler2D _MainTex;
+            #include "NationalPikeDirt.cginc"
             float4 _MainTex_ST;
             fixed4 _Color;
             fixed4 _TimeTint;
@@ -234,7 +239,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
 
             fixed4 frag(Varyings input) : SV_Target
             {
-                fixed4 artwork = tex2D(_MainTex, input.uv) * _Color;
+                fixed4 artwork = RoadArtwork(input.uv) * _Color;
                 clip(artwork.a - 0.02);
                 fixed attenuation = LIGHT_ATTENUATION(input);
                 fixed3 beam = artwork.rgb * _TimeTint.rgb *

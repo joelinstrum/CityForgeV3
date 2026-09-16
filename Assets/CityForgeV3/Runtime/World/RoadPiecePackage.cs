@@ -239,6 +239,7 @@ namespace CityForgeV3.World
         public const string AlleyId = "cityforge.base.road.alley.v1";
         public const string PedestrianStreetId =
             "cityforge.base.road.pedestrian-street.v1";
+        public const string NationalPikeDirtId = "cityforge.base.road.national-pike-dirt.v1";
         public const string DirtRoadId = "cityforge.base.road.dirt.v1";
         public const string DividedBoulevardId =
             "cityforge.base.road.divided-boulevard.v3";
@@ -253,6 +254,7 @@ namespace CityForgeV3.World
             "CityForgeV3/Roads/FlatColorV1/alley/road-package",
             "CityForgeV3/Roads/FlatColorV1/pedestrian-street/road-package",
             "CityForgeV3/Roads/DirtRoadV1/road-package",
+            "CityForgeV3/Roads/NationalPikeDirtV1/road-package",
             "CityForgeV3/Roads/FlatColorV3/divided-boulevard/road-package",
             "CityForgeV3/Roads/FlatColorV4/wide-two-lane-avenue/road-package",
             RoadPiecePackage.ManifestResourcePath
@@ -308,6 +310,7 @@ namespace CityForgeV3.World
     public sealed class PlacedRoadPiece
     {
         public string Id = "";
+        public string NationalPikeId = "";
         public string PackageId = RoadPiecePackage.LegacyPackageId;
         public string RoadMaterialId = "";
         public string SidewalkMaterialId = "";

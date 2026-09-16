@@ -79,11 +79,6 @@ namespace CityForgeV3.UI
     private Vector2Int _selectedDistrictRoadCell;
     private int _districtYear = 1788;
     private int _districtPopulation = 4300;
-    private DistrictRiverDirection _districtRiverDirection =
-        DistrictRiverDirection.SouthToNorth;
-    private DistrictRiverDepth _districtRiverDepth = DistrictRiverDepth.Shallow;
-    private float _districtRiverCurvature = 0.5f;
-    private DistrictRiverGenerationResult _pendingDistrictRiver;
     private string _pendingFounderBuildingId = "";
     private string _pendingDistrictLotId = "";
     private string _pendingDistrictLotName = "";
@@ -672,6 +667,7 @@ namespace CityForgeV3.UI
 
     private void Show(AppScreen screen)
     {
+      CancelNationalPike();
       CancelIndustryPlacement();CancelBrickworksPlacement();
       if (screen != AppScreen.DistrictTerraform) _districtNotice.Clear();
 #if UNITY_EDITOR
@@ -733,6 +729,8 @@ namespace CityForgeV3.UI
 
     private void OnKeyDown(KeyDownEvent evt)
     {
+      if (_drawingNationalPike && evt.keyCode == KeyCode.Escape)
+      { CancelNationalPike(); evt.StopImmediatePropagation(); return; }
       if(_placingBrickworks && (evt.keyCode==KeyCode.R||evt.keyCode==KeyCode.Escape))
       {evt.StopImmediatePropagation();return;}
       if (IndustryPlacementActive && evt.keyCode == KeyCode.Escape)
