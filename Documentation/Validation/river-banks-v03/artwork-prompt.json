@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "source": "BanksV2/shoreline-gravel.png",
+  "output": "BanksV3/open-gravel.png",
+  "prompt": "Edit this riverbank game texture, preserving its exact overhead style, palette, stone scale, top grassy meadow and bottom wet riverbed, wide 3:1 aspect and single composition. Remove about 75 percent of the grass fingers and all three prominent sedge tufts that descend into the central gravel. Replace those intrusions with naturally varied connected expanses of small rounded stones, fine gravel and a little exposed earth. Keep most grass confined to the upper 25–30 percent with a gently irregular edge. Allow just one small understated grassy intrusion off center, no evenly spaced scallops or repeating alternating grass/rock lobes. Preserve natural variety in stone sizes and the existing lighting. No panels, no text, no dividing lines, no water. This is a restrained revision of the existing accepted artwork, not a different art direction."
+}

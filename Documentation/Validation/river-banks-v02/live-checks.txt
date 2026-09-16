@@ -1,0 +1,8 @@
+2026-09-16T16:49:20.3142170Z Pine Ridge: PASS 20 bank bands, bend -0.664..0.664, textures/shader, border bounds, deterministic rebuild, saved data/cache unchanged
+2026-09-16T16:49:36.8928350Z City 042: PASS 10 bank bands, bend -0.307..0.307, textures/shader, border bounds, deterministic rebuild, saved data/cache unchanged
+2026-09-16T16:49:38.2566030Z City 042: PASS 10 bank bands, bend -0.261..0.261, textures/shader, border bounds, deterministic rebuild, saved data/cache unchanged
+2026-09-16T16:49:39.1859160Z City 042: PASS two Shape -> Repair cycles, width/depth, save/reload, repair undo
+2026-09-16T16:49:54.4135300Z City 051: PASS 10 bank bands, bend -0.098..0.098, textures/shader, border bounds, deterministic rebuild, saved data/cache unchanged
+2026-09-16T16:49:55.3977230Z City 051: PASS 10 bank bands, bend -0.094..0.094, textures/shader, border bounds, deterministic rebuild, saved data/cache unchanged
+2026-09-16T16:49:56.1271100Z City 051: PASS two Shape -> Repair cycles, width/depth, save/reload, repair undo
+Surface cache check: PASS. Fixture restored. All three user save hashes unchanged.

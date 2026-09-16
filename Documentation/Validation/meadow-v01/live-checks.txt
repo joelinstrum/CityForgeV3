@@ -1,0 +1,5 @@
+Final meadow shader: ShaderUtil no errors; texture loaded, mipmapped and repeating.
+Live bank-check: PASS unchanged saved geometry/cache, deterministic meshes.
+Flat and hilly surface-cache checks: PASS.
+Actual windowed Game-view closeup, bend and hill screenshots inspected.
+QA fixture restored; all three user save SHA256 hashes unchanged.

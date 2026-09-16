@@ -37,6 +37,7 @@ namespace CityForgeV3.UI
             if(!_mapQaActive)throw new Exception("Prepare isolated map fixture first");
             if(command=="restore")
             {_districtUndoQaSaveRoot=null;_openRegion=_mapQaReturn;_selectedRegionTileId=_mapQaTile;_regionMapScrollOffset=_mapQaScroll;_regionMapScrollInitialized=_mapQaScrollInitialized;_mapQaActive=false;Show(_mapQaScreen);return;}
+            if(command.StartsWith("bank-")){RiverBankQa(command);return;}
             if(command=="river-perf-prepare" || command=="river-gap-prepare")
             {
                 var candidates=Directory.GetFiles(RegionSaveStore.DefaultRoot,"*.json").Select(p=>JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(p))).ToList();
