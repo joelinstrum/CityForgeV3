@@ -11,40 +11,62 @@ namespace CityForgeV3.World
         private const float Spacing = 8f;
         private const int CellsPerChunk = 16;
         private const float Elevation = .17f; // Above district road artwork (.152).
-        private readonly List<Mesh> _meshes = new();
+        sealed class Chunk { public GameObject Object; public Mesh Mesh; public Renderer Renderer; public int Patches; }
+        readonly Dictionary<Vector2Int,Chunk> _chunks=new();
+        DistrictDirtyGrid _dirty;
+        string _districtId;
+        DistrictHillGroundOverlay _hillOverlay;
+        public int LastUpdatedChunkCount { get; private set; }
+        public int ChunkCount => _chunks.Count;
         private readonly List<Material> _materials = new();
-        private readonly List<Renderer> _renderers = new();
+
         private DistrictWorldController _world;
+        bool _presentationDirty=true,_lastEnabled;
+        Color _lastTint;
         public int PatchCount { get; private set; }
         public bool PresentationEnabled { get; set; } = true;
 
-        public void Rebuild(DistrictWorldController world, RegionCityTile district,
-            float width, float depth)
+        public void Rebuild(DistrictWorldController world, RegionCityTile district,float width,float depth)
+            => Refresh(world,district,width,depth,null);
+
+        public void Refresh(DistrictWorldController world,RegionCityTile district,float width,float depth,IReadOnlyList<Rect> changed)
         {
-            Release();
-            _world = world;
-            var shader = Shader.Find("CityForgeV3/SoftGroundDecal");
-            if (shader == null) return;
-            for (var i = 1; i <= 3; i++)
+            bool initialize=_dirty==null || _districtId!=district.TileId || _dirty.Bounds.width!=width || _dirty.Bounds.height!=depth;
+            if(initialize)
             {
-                var texture = Resources.Load<Texture2D>(
-                    $"CityForgeV3/Decals/Grass/leaves-0{i}");
-                if (texture == null) { Release(); return; }
-                _materials.Add(new Material(shader)
+                Release();_world=world;_districtId=district.TileId;
+                _dirty=new DistrictDirtyGrid(new Rect(-width/2,-depth/2,width,depth),Spacing*CellsPerChunk);
+                var shader=Shader.Find("CityForgeV3/SoftGroundDecal");if(shader==null)return;
+                for(int i=1;i<=3;i++)
                 {
-                    name = $"Default District Leaves {i}",
-                    mainTexture = texture,
-                    color = Color.white,
-                    renderQueue = 3003
-                });
+                    var texture=Resources.Load<Texture2D>($"CityForgeV3/Decals/Grass/leaves-0{i}");
+                    if(texture==null){Release();return;}
+                    _materials.Add(new Material(shader){name=$"Default District Leaves {i}",mainTexture=texture,color=Color.white,renderQueue=3003});
+                }
             }
-            uint seed = 2166136261;
-            foreach (var c in district.TileId ?? "") seed = unchecked((seed ^ c) * 16777619);
-            var columns = Mathf.CeilToInt(width / Spacing);
-            var rows = Mathf.CeilToInt(depth / Spacing);
-            for (var cz = 0; cz < rows; cz += CellsPerChunk)
-            for (var cx = 0; cx < columns; cx += CellsPerChunk)
+            if(initialize || changed==null)_dirty.MarkAll();
+            else foreach(var area in changed)_dirty.Mark(DistrictDirtyGrid.Expand(area,8));
+            var cells=_dirty.Consume();LastUpdatedChunkCount=cells.Count;
+            if(cells.Count>0)_presentationDirty=true;
+            uint seed=2166136261;foreach(var c in district.TileId??"")seed=unchecked((seed^c)*16777619);
+            int columns=Mathf.CeilToInt(width/Spacing),rows=Mathf.CeilToInt(depth/Spacing);
+            foreach(var key in cells)
             {
+                if(_chunks.TryGetValue(key,out var old))
+                {PatchCount-=old.Patches;old.Object.SetActive(false);Dispose(old.Object);Dispose(old.Mesh);_chunks.Remove(key);}
+                BuildChunk(key,world,width,depth,seed,columns,rows);
+            }
+            if(district.Hills!=null && district.Hills.HeightMeters>0)
+            {
+                if(_hillOverlay==null){var hills=new GameObject("Hill Surface Detail");hills.transform.SetParent(transform,false);_hillOverlay=hills.AddComponent<DistrictHillGroundOverlay>();}
+                _hillOverlay.Refresh(world,district,width,depth,initialize?null:changed);
+            }
+            else if(_hillOverlay!=null){Dispose(_hillOverlay.gameObject);_hillOverlay=null;}
+            LateUpdate();
+        }
+        void BuildChunk(Vector2Int key,DistrictWorldController world,float width,float depth,uint seed,int columns,int rows)
+        {
+            int cx=key.x*CellsPerChunk,cz=key.y*CellsPerChunk,patches=0;
                 var vertices = new List<Vector3>();
                 var uv = new List<Vector2>();
                 var triangles = new[] { new List<int>(), new List<int>(), new List<int>() };
@@ -77,15 +99,15 @@ namespace CityForgeV3.World
                     var indices = triangles[h % 3];
                     indices.Add(start); indices.Add(start+2); indices.Add(start+1);
                     indices.Add(start); indices.Add(start+3); indices.Add(start+2);
-                    PatchCount++;
+                    patches++;
                 }
-                if (vertices.Count == 0) continue;
+                if (vertices.Count == 0) return;
                 var mesh = new Mesh { name = $"District Leaves {cx},{cz}", subMeshCount = 3 };
                 mesh.SetVertices(vertices);
                 mesh.SetUVs(0, uv);
                 for (var i = 0; i < 3; i++) mesh.SetTriangles(triangles[i], i);
                 mesh.RecalculateBounds();
-                _meshes.Add(mesh);
+
                 var chunk = new GameObject(mesh.name);
                 chunk.transform.SetParent(transform, false);
                 chunk.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -93,14 +115,8 @@ namespace CityForgeV3.World
                 renderer.sharedMaterials = _materials.ToArray();
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
-                _renderers.Add(renderer);
-            }
-            if(district.Hills!=null && district.Hills.HeightMeters>0)
-            {
-                var hills=new GameObject("Hill Surface Detail");hills.transform.SetParent(transform,false);
-                hills.AddComponent<DistrictHillGroundOverlay>().Rebuild(world,district,width,depth);
-            }
-            LateUpdate();
+                _chunks[key]=new Chunk{Object=chunk,Mesh=mesh,Renderer=renderer,Patches=patches};
+                PatchCount+=patches;
         }
 
         private static uint Hash(uint value)
@@ -118,9 +134,12 @@ namespace CityForgeV3.World
             var alpha = 1f - Mathf.InverseLerp(80f, 180f, _world.WorldCamera.orthographicSize);
             var tint = LotWorldController.TextureTintForTimeOfDay(_world.TimeOfDay);
             tint.a = alpha;
+            bool enabled=PresentationEnabled && alpha>.001f;
+            if(!_presentationDirty && tint==_lastTint && enabled==_lastEnabled)return;
+            _presentationDirty=false;_lastTint=tint;_lastEnabled=enabled;
             foreach (var material in _materials) material.color = tint;
-            foreach (var renderer in _renderers)
-                renderer.enabled = PresentationEnabled && alpha > .001f;
+            foreach (var chunk in _chunks.Values)
+                chunk.Renderer.enabled = enabled;
         }
 
         private void Release()
@@ -131,9 +150,9 @@ namespace CityForgeV3.World
                 child.SetActive(false);
                 Dispose(child);
             }
-            foreach (var mesh in _meshes) Dispose(mesh);
+            foreach (var chunk in _chunks.Values) Dispose(chunk.Mesh);
             foreach (var material in _materials) Dispose(material);
-            _meshes.Clear(); _materials.Clear(); _renderers.Clear(); PatchCount = 0;
+            _chunks.Clear(); _materials.Clear(); PatchCount = 0; _dirty=null; _hillOverlay=null;
         }
         private static void Dispose(Object value)
         {

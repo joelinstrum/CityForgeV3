@@ -1,0 +1,70 @@
+{
+  "schema": "cityforge-v3-road-piece-package-v1",
+  "id": "cityforge.base.road.national-pike-dirt.v1",
+  "displayName": "National Pike Dirt Road",
+  "tileSizeMeters": 10.0,
+  "roadWidthMeters": 8,
+  "artworkWidthMeters": 10.0,
+  "artworkLengthMeters": 10.0,
+  "independentMarkings": false,
+  "traffic": {
+    "mode": "vehicle",
+    "direction": "two_way",
+    "laneCount": 2,
+    "driveSide": "right",
+    "laneOffsetMeters": 1.25,
+    "speedLimitMetersPerSecond": 3.5,
+    "minorApproachControl": "yield"
+  },
+  "source": "Built-in image generation, 2026-09-15. Original PNGs preserved; topology calibrated by NationalPikeDirt shader.",
+  "pieces": [
+    {
+      "id": "straight",
+      "topology": "Straight",
+      "resourcePath": "CityForgeV3/Roads/NationalPikeDirtV1/straight",
+      "ports": [
+        "North",
+        "South"
+      ]
+    },
+    {
+      "id": "corner",
+      "topology": "Corner",
+      "resourcePath": "CityForgeV3/Roads/NationalPikeDirtV1/corner",
+      "ports": [
+        "North",
+        "East"
+      ]
+    },
+    {
+      "id": "t-junction",
+      "topology": "TJunction",
+      "resourcePath": "CityForgeV3/Roads/NationalPikeDirtV1/t-junction",
+      "ports": [
+        "East",
+        "South",
+        "West"
+      ]
+    },
+    {
+      "id": "four-way",
+      "topology": "FourWay",
+      "resourcePath": "CityForgeV3/Roads/NationalPikeDirtV1/four-way",
+      "ports": [
+        "North",
+        "East",
+        "South",
+        "West"
+      ]
+    },
+    {
+      "id": "endpoint",
+      "topology": "Endpoint",
+      "resourcePath": "CityForgeV3/Roads/NationalPikeDirtV1/straight",
+      "ports": [
+        "North"
+      ],
+      "artworkStatus": "straight-source-rounded-end-mask"
+    }
+  ]
+}

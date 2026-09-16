@@ -8,6 +8,7 @@ namespace CityForgeV3.World
     public sealed class RegionRiverPath
     {
         public string Id;
+        public bool HandDrawn;
         public DistrictRiverDepth Depth;
         public float WidthMeters;
         // Region map units, shared by all districts; Z corresponds to tile.Y.
@@ -256,8 +257,14 @@ namespace CityForgeV3.World
 
         public static void Apply(RegionSaveData region, List<RegionRiverPath> paths)
         {
+            // Regeneration replaces generated rivers, retaining authored rivers.
+            var combined=new List<RegionRiverPath>(paths);
+            foreach(var existing in region.RiverPaths ?? new())
+                if(existing.HandDrawn && !combined.Exists(p=>p.Id==existing.Id))combined.Add(existing);
+            paths=combined;
             foreach(var tile in region.Tiles)
             {
+                if(tile.RiversEditedLocally)continue;
                 tile.Rivers ??= new List<PlacedDistrictRiver>();
                 tile.Rivers.RemoveAll(r=>r!=null&&!string.IsNullOrEmpty(r.RegionRiverId));
                 tile.Rivers.AddRange(Sections(tile,paths));

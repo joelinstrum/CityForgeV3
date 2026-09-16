@@ -15,6 +15,7 @@ namespace CityForgeV3.UI
             if (region == null) return;
             var saved = region.Terrain ?? new RegionTerrainSettings();
             var draft = saved.Copy();
+            draft.Flow = RegionRiverFlow.Varied;
             var category = "Rivers";
             bool busy = false, cancelled = false;
             var panel = CreateDocumentModal("REGION TERRAIN", "Choose terrain options for " + region.Name + ".");
@@ -35,15 +36,22 @@ namespace CityForgeV3.UI
             notice.name = "region-terrain-notice";
             notice.style.display = DisplayStyle.None;
             panel.Add(notice);
-            var flow = new EnumField("Main river direction", draft.Flow) { name = "region-river-flow" };
-            flow.RegisterValueChangedCallback(e => draft.Flow = (RegionRiverFlow)e.newValue);
-            panel.Add(flow);
-            flow.style.flexDirection = FlexDirection.Row;
-            flow.style.minHeight = 48;
-            flow.style.fontSize = 24;
-            var input = flow.Q<VisualElement>(className: "unity-base-field__input");
-            if (input != null) { input.style.flexGrow = 1; input.style.backgroundColor = new Color(.12f,.21f,.27f); input.style.paddingLeft = 12; }
-            flow.labelElement.style.minWidth = 270;
+            var drawingActions = new VisualElement();
+            drawingActions.style.flexDirection = FlexDirection.Row;
+            drawingActions.style.flexWrap = Wrap.Wrap;
+            var major = CfButton.Create("CREATE MAJOR RIVER", () => BeginRegionRiver(RegionRiverSize.Major), true, "primary");
+            major.name = "create-major-river"; drawingActions.Add(major);
+            var large = CfButton.Create("CREATE LARGE RIVER", () => BeginRegionRiver(RegionRiverSize.Large), true, "primary");
+            large.name = "create-large-river"; large.style.marginLeft = 12; drawingActions.Add(large);
+            var small = CfButton.Create("CREATE SMALL RIVER", () => BeginRegionRiver(RegionRiverSize.Small), true, "primary");
+            small.name = "create-small-river"; small.style.marginLeft = 12; drawingActions.Add(small);
+            var remove = CfButton.Create("REMOVE RIVERS", () =>
+            {
+                notice.style.display = DisplayStyle.Flex;
+                notice.text = RemoveRegionRivers(region) ?? "";
+            }, true, "quiet");
+            remove.name = "remove-region-rivers"; remove.style.marginLeft = 12; drawingActions.Add(remove);
+            panel.Add(drawingActions);
             var actions = DocumentModalActions();
             Button save = null;
             var cancel = CfButton.Create("CANCEL", () => { cancelled = true; RemoveDocumentModal(); }, true, "quiet");
@@ -57,7 +65,7 @@ namespace CityForgeV3.UI
             }
             void SetBusy(bool value)
             {
-                busy = value; tabs.SetEnabled(!value); content.SetEnabled(!value); save.SetEnabled(!value);
+                busy = value; drawingActions.SetEnabled(!value); tabs.SetEnabled(!value); content.SetEnabled(!value); save.SetEnabled(!value);
                 cancel.text = value ? "CANCEL GENERATION" : "CANCEL";
             }
             void GenerateFlora()
@@ -125,7 +133,8 @@ namespace CityForgeV3.UI
                 save.name = category == "Rivers" ? "generate-region-rivers" : category == "Flora" ? "generate-region-flora" : "save-region-climate";
                 save.text = category == "Flora" ? "GENERATE TREE COVERAGE" : category == "Climate" ? "APPLY CLIMATE" : "GENERATE RIVERS";
                 save.SetEnabled(category == "Rivers" || category == "Climate" || category == "Flora" && RegionClimateRules.AllowsForest(saved.Climate));
-                flow.style.display = category == "Rivers" ? DisplayStyle.Flex : DisplayStyle.None;
+                drawingActions.style.display = category == "Rivers" ? DisplayStyle.Flex : DisplayStyle.None;
+                save.style.display = category == "Rivers" || category == "Flora" || category == "Climate" ? DisplayStyle.Flex : DisplayStyle.None;
                 foreach (var button in tabs.Query<Button>().ToList())
                 {
                     bool active = button.text == category.ToUpperInvariant();
@@ -145,7 +154,7 @@ namespace CityForgeV3.UI
                         content.Add(button);
                     }
                     content.Add(StyledLabel(RegionClimateRules.Description(draft.Climate), "document-modal-copy"));
-                    content.Add(StyledLabel("Save the climate before generating tree coverage. Existing trees and buildings stay in place.", "inspector-note"));
+                    content.Add(StyledLabel("Apply the climate before generating tree coverage. Existing trees and buildings stay in place.", "inspector-note"));
                     return;
                 }
                 if (category == "Flora")
@@ -161,6 +170,12 @@ namespace CityForgeV3.UI
                     if (saved.Climate == RegionClimate.Tropical)
                         content.Add(StyledLabel("Tropical coverage uses tropical trees. Lumber crews currently harvest Cilician firs, available in Temperate and Mediterranean forests.", "inspector-note"));
                     return;
+                }
+                if (category == "Roads")
+                {
+                    content.Add(StyledLabel("Draw a road across your region, then give it a name.", "document-modal-copy"));
+                    var create = CfButton.Create("CREATE A NATIONAL PIKE", BeginNationalPike, true, "primary");
+                    create.name = "create-national-pike"; content.Add(create); return;
                 }
                 if (category != "Rivers")
                 {
@@ -180,6 +195,31 @@ namespace CityForgeV3.UI
                 button.style.whiteSpace = WhiteSpace.NoWrap; tabs.Add(button);
             }
             SelectCategory("Rivers");
+        }
+
+        private string RemoveRegionRivers(RegionSaveData region)
+        {
+            var previousPaths = region.RiverPaths;
+            var previousOverrides = region.Tiles.Select(tile => tile.RiversEditedLocally).ToList();
+            var previousRivers = region.Tiles.Select(tile => tile.Rivers).ToList();
+            try
+            {
+                region.RiverPaths = new List<RegionRiverPath>();
+                foreach (var tile in region.Tiles)
+                { tile.Rivers = new List<PlacedDistrictRiver>(); tile.RiversEditedLocally = false; }
+            }
+            catch (Exception exception)
+            {
+                region.RiverPaths = previousPaths;
+                for (var i = 0; i < region.Tiles.Count; i++) { region.Tiles[i].Rivers = previousRivers[i]; region.Tiles[i].RiversEditedLocally = previousOverrides[i]; }
+                return "Could not remove rivers: " + exception.Message;
+            }
+            _districtWorldCompositionKey = "";
+            var scroll = _root.Q<ScrollView>("region-map-scroll");
+            if (scroll != null) { _regionMapScrollOffset = scroll.scrollOffset; _regionMapScrollInitialized = true; }
+            RemoveDocumentModal();
+            Show(AppScreen.RegionEditor);
+            return null;
         }
 
         private string GenerateFreshRegionRivers(RegionSaveData region, RegionTerrainSettings draft)
@@ -223,7 +263,8 @@ namespace CityForgeV3.UI
         private void RegenerateRegionRivers()
         {
             if (_openRegion == null) return;
-            var error = GenerateFreshRegionRivers(_openRegion, _openRegion.Terrain ?? new RegionTerrainSettings());
+            var saved = _openRegion.Terrain ?? new RegionTerrainSettings();
+            var error = GenerateFreshRegionRivers(_openRegion, saved.Copy());
             if (error == null) return;
             var panel = CreateDocumentModal("RIVER LAYOUT", error);
             var actions = DocumentModalActions();

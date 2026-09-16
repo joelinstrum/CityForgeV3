@@ -69,7 +69,7 @@ namespace CityForgeV3.UI
             // Never restore objects out from under an unfinished pointer gesture.
             if (_lotNudge != null || _currentScreen != AppScreen.DistrictTerraform || _districtMarqueeActive ||
                 _districtSelectionDragActive || _districtFloraPainting ||
-                _districtFloraPointerDown || _districtRoadPointerDown) return false;
+                _districtFloraPointerDown || _districtRoadPointerDown || _riverSculptPointer >= 0) return false;
             var district = FindSelectedRegionTile();
             if (district == null || district != _districtUndoTile ||
                 _openRegion != _districtUndoRegion || !_districtUndo.TryUndo(out var snapshot)) return false;
