@@ -27,7 +27,7 @@ namespace CityForgeV3.UI
                 foreach(var river in tile.Rivers ?? new System.Collections.Generic.List<PlacedDistrictRiver>())
                 {
                     if(river?.Points == null || river.Points.Count < 2) continue;
-                    painter.lineWidth = river.Depth == DistrictRiverDepth.Deep ? 7f : 3f;
+                    painter.lineWidth = river.Depth == DistrictRiverDepth.Deep ? 7f * river.WidthMeters / 64f : 3f;
                     painter.BeginPath();
                     for(var i=0;i<river.Points.Count;i++)
                     {

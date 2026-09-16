@@ -188,7 +188,8 @@ namespace CityForgeV3.World
             RoadMaterialCatalog.Resolve(_selectedSidewalkMaterialId, true);
         public bool SelectedRoadSupportsMaterials => _roadPackage != null &&
             _roadPackage.Id != RoadPiecePackage.LegacyPackageId &&
-            _roadPackage.Id != RoadPiecePackageCatalog.DirtRoadId;
+            _roadPackage.Id != RoadPiecePackageCatalog.DirtRoadId &&
+            _roadPackage.Id != RoadPiecePackageCatalog.NationalPikeDirtId;
         public RoadPieceTopology SelectedRoadTopology { get; private set; } = RoadPieceTopology.Straight;
         public Vector2Int RoadCursorCell { get; private set; } = new(-1, -1);
         public int RoadRotationQuarterTurns { get; private set; }
@@ -4942,7 +4943,14 @@ namespace CityForgeV3.World
                 // drawing after them also prevents rectangular road holes.
                 renderQueue = 3002
             };
-            if (package.Id != RoadPiecePackage.LegacyPackageId &&
+            if (package.Id == RoadPiecePackageCatalog.NationalPikeDirtId)
+            {
+                material.SetFloat("_DirtTopology", (int)placed.Topology);
+                material.SetTexture("_DirtStraightTex", Resources.Load<Texture2D>(
+                    "CityForgeV3/Roads/NationalPikeDirtV1/straight"));
+            }
+            if (package.Id != RoadPiecePackageCatalog.NationalPikeDirtId &&
+                package.Id != RoadPiecePackage.LegacyPackageId &&
                 package.Id != RoadPiecePackageCatalog.DirtRoadId)
             {
                 material.SetFloat("_UseMaterialZones", 1f);

@@ -87,7 +87,7 @@ namespace CityForgeV3.World
     public static class DistrictRiverEditing
     {
         public static PlacedDistrictRiver FindAt(RegionCityTile district,
-            Vector2 normalizedPoint)
+            Vector2 normalizedPoint, float brushRadius = 0)
         {
             if (district?.Rivers == null) return null;
             var widthMeters = DistrictScale.SizeMeters(district.Width);
@@ -99,6 +99,7 @@ namespace CityForgeV3.World
                 if (river?.Points == null || river.Points.Count < 2) continue;
                 var hitRadius = river.WidthMeters *
                     (river.Depth == DistrictRiverDepth.Deep ? .54f : .64f);
+                hitRadius = Mathf.Max(hitRadius, brushRadius);
                 for (var index = 0; index < river.Points.Count - 1; index++)
                 {
                     var from = new Vector2(river.Points[index].X * widthMeters,
@@ -187,12 +188,14 @@ namespace CityForgeV3.World
         public List<DistrictLotNudge> LotNudges = new();
         public List<PlacedRoadPiece> Roads = new();
         public List<PlacedDistrictRiver> Rivers = new();
+        public bool RiversEditedLocally;
         public List<PlacedDistrictFlora> Flora = new();
         public int Treasury = 280000;
         public DistrictLaborState Labor = new();
         public DistrictWildlifeState Wildlife = new();
         public DistrictResourceInventory ResourceInventory = new();
         public DistrictHillSettings Hills = new();
+        public RegionBiome Biome = RegionBiome.Grassland;
         public bool StoneDepositsGenerated;
         public List<DistrictStoneSite> StoneSites = new();
         public List<DistrictBrickworksSite> Brickworks = new();
@@ -206,10 +209,13 @@ namespace CityForgeV3.World
         public string Schema = "cityforge-v3-region-v1";
         public string RegionId = "";
         public string Name = "Untitled Region";
+        public string EraId = LotEraCatalog.DefaultId;
         public int Width = 28;
         public int Height = 20;
         public string ModifiedUtc = "";
         public RegionTerrainSettings Terrain = new();
+        public RegionMapLayers MapLayers = new();
+        public List<RegionTransportRoute> TransportRoutes = new();
         public int RiverSeed;
         public List<RegionRiverPath> RiverPaths = new();
         public List<RegionCityTile> Tiles = new();

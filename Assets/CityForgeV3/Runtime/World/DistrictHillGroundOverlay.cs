@@ -9,25 +9,46 @@ namespace CityForgeV3.World
         public const string TexturePath="CityForgeV3/Decals/HillsV01/dry-grass-earth-v02";
         private const float Spacing=110f;
         private const int ChunkCells=3;
-        private readonly List<Mesh> meshes=new();
-        private readonly List<MeshRenderer> renderers=new();
+        sealed class Chunk { public GameObject Object; public Mesh Mesh; public MeshRenderer Renderer; public int Count; public float Signature,ReviewDistance; public Vector2 Review; }
+        readonly Dictionary<Vector2Int,Chunk> chunks=new();
+        DistrictDirtyGrid dirty;
+        public int LastUpdatedChunkCount {get;private set;}
         private Material material;
         private DistrictWorldController world;
         public bool PresentationEnabled {get;set;}=true;
         public int PatchCount {get;private set;}
         public Vector2 ReviewPoint {get;private set;}
         public float GeometrySignature {get;private set;}
-        public void Rebuild(DistrictWorldController host,RegionCityTile district,float width,float depth)
+        public void Rebuild(DistrictWorldController host,RegionCityTile district,float width,float depth)=>Refresh(host,district,width,depth,null);
+        public void Refresh(DistrictWorldController host,RegionCityTile district,float width,float depth,IReadOnlyList<Rect> changed)
         {
             world=host;
-            var texture=Resources.Load<Texture2D>(TexturePath);var shader=Shader.Find(district.Hills.Mountains ? "CityForgeV3/HillGroundOverlayForestV02" : "CityForgeV3/HillGroundOverlay");
-            if(texture==null||shader==null)return;
-            material=new Material(shader){name="Hill dry grass and earth",mainTexture=texture,renderQueue=3002};
+            var shader=Shader.Find(district.Hills.Mountains?"CityForgeV3/HillGroundOverlayForestV02":"CityForgeV3/HillGroundOverlay");
+            if(material==null || material.shader!=shader)
+            {
+                Dispose(material);var texture=Resources.Load<Texture2D>(TexturePath);if(texture==null || shader==null)return;
+                material=new Material(shader){name="Hill dry grass and earth",mainTexture=texture,renderQueue=3002};changed=null;
+            }
+            if(dirty==null || dirty.Bounds.width!=width || dirty.Bounds.height!=depth)
+            {dirty=new DistrictDirtyGrid(new Rect(-width/2,-depth/2,width,depth),Spacing*ChunkCells);changed=null;}
+            if(changed==null)dirty.MarkAll();else foreach(var area in changed)dirty.Mark(DistrictDirtyGrid.Expand(area,140));
             uint seed=2166136261;foreach(char c in district.TileId??"")seed=unchecked((seed^c)*16777619);
             seed=Hash(seed^unchecked((uint)district.Hills.Seed));
-            int cols=Mathf.CeilToInt(width/Spacing),rows=Mathf.CeilToInt(depth/Spacing);float reviewDistance=float.MaxValue;
-            for(int cz=0;cz<rows;cz+=ChunkCells)for(int cx=0;cx<cols;cx+=ChunkCells)
+            int cols=Mathf.CeilToInt(width/Spacing),rows=Mathf.CeilToInt(depth/Spacing);
+            var cells=dirty.Consume();LastUpdatedChunkCount=cells.Count;
+            foreach(var key in cells)
             {
+                if(chunks.TryGetValue(key,out var old)){old.Object.SetActive(false);Dispose(old.Object);Dispose(old.Mesh);chunks.Remove(key);}
+                BuildChunk(key,width,depth,seed,cols,rows);
+            }
+            PatchCount=0;GeometrySignature=0;float closest=float.MaxValue;
+            foreach(var chunk in chunks.Values){PatchCount+=chunk.Count;GeometrySignature+=chunk.Signature;if(chunk.ReviewDistance<closest){closest=chunk.ReviewDistance;ReviewPoint=chunk.Review;}}
+            LateUpdate();
+        }
+        void BuildChunk(Vector2Int key,float width,float depth,uint seed,int cols,int rows)
+        {
+            int cx=key.x*ChunkCells,cz=key.y*ChunkCells,patchCount=0;
+            float signature=0,reviewDistance=float.MaxValue;var reviewPoint=Vector2.zero;
                 var vertices=new List<Vector3>();var normals=new List<Vector3>();var uv=new List<Vector2>();var colors=new List<Color>();var triangles=new List<int>();
                 for(int z=cz;z<Mathf.Min(rows,cz+ChunkCells);z++)for(int x=cx;x<Mathf.Min(cols,cx+ChunkCells);x++)
                 {
@@ -55,26 +76,24 @@ namespace CityForgeV3.World
                         if(vx==divisions||vz==divisions)continue;
                         int i=start+vz*(divisions+1)+vx;triangles.Add(i);triangles.Add(i+divisions+1);triangles.Add(i+1);triangles.Add(i+1);triangles.Add(i+divisions+1);triangles.Add(i+divisions+2);
                     }
-                    PatchCount++;GeometrySignature+=px*.13f+pz*.17f+elevation*.19f;
+                    patchCount++;signature+=px*.13f+pz*.17f+elevation*.19f;
                     float distance=Vector2.Distance(new Vector2(px,pz),new Vector2(-100,0));
-                    if(elevation>8&&distance<reviewDistance){reviewDistance=distance;ReviewPoint=new Vector2(px,pz);}
+                    if(elevation>8&&distance<reviewDistance){reviewDistance=distance;reviewPoint=new Vector2(px,pz);}
                 }
-                if(vertices.Count==0)continue;
-                var mesh=new Mesh{name=$"Hill detail {cx},{cz}",indexFormat=IndexFormat.UInt32};mesh.SetVertices(vertices);mesh.SetNormals(normals);mesh.SetUVs(0,uv);mesh.SetColors(colors);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();meshes.Add(mesh);
+                if(vertices.Count==0)return;
+                var mesh=new Mesh{name=$"Hill detail {cx},{cz}",indexFormat=IndexFormat.UInt32};mesh.SetVertices(vertices);mesh.SetNormals(normals);mesh.SetUVs(0,uv);mesh.SetColors(colors);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();
                 var chunk=new GameObject(mesh.name);chunk.transform.SetParent(transform,false);chunk.AddComponent<MeshFilter>().sharedMesh=mesh;
-                var renderer=chunk.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.Off;renderer.receiveShadows=true;renderers.Add(renderer);
-            }
-            LateUpdate();
+                var renderer=chunk.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.Off;renderer.receiveShadows=true;chunks[key]=new Chunk{Object=chunk,Mesh=mesh,Renderer=renderer,Count=patchCount,Signature=signature,Review=reviewPoint,ReviewDistance=reviewDistance};
         }
         private void LateUpdate()
         {
             if(world==null||material==null)return;
             world.ConfigureHillOverlayLighting(material,.20f);
-            foreach(var renderer in renderers)renderer.enabled=PresentationEnabled;
+            foreach(var chunk in chunks.Values)chunk.Renderer.enabled=PresentationEnabled;
         }
         private static uint Hash(uint v){unchecked{v^=v>>16;v*=0x7feb352du;v^=v>>15;v*=0x846ca68bu;return v^(v>>16);}}
         private static float Unit(uint v)=>(v&65535)/65535f;
-        private void OnDestroy(){foreach(var mesh in meshes)Dispose(mesh);Dispose(material);}
+        private void OnDestroy(){foreach(var chunk in chunks.Values)Dispose(chunk.Mesh);Dispose(material);}
         private static void Dispose(Object obj){if(obj==null)return;if(Application.isPlaying)Destroy(obj);else DestroyImmediate(obj);}
     }
     public sealed partial class DistrictWorldController

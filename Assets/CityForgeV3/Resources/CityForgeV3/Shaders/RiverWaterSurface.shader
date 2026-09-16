@@ -47,6 +47,7 @@ Shader "CityForgeV3/RiverWaterSurface"
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
+                float2 flow : TEXCOORD1;
                 fixed4 color : COLOR;
             };
 
@@ -54,6 +55,7 @@ Shader "CityForgeV3/RiverWaterSurface"
             {
                 float4 position : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float2 flow : TEXCOORD3;
                 fixed4 color : COLOR;
                 float3 worldPosition : TEXCOORD1;
                 float3 worldNormal : TEXCOORD2;
@@ -89,6 +91,7 @@ Shader "CityForgeV3/RiverWaterSurface"
                 output.position = UnityObjectToClipPos(input.vertex);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 output.color = input.color;
+                output.flow = input.flow;
                 output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 return output;
@@ -96,24 +99,20 @@ Shader "CityForgeV3/RiverWaterSurface"
 
             fixed4 frag(Varyings input) : SV_Target
             {
-                // U is authored along the procedural centerline. Subtracting
-                // time moves the visible texture in the +U/downstream
-                // direction while every curved segment retains its local
-                // tangent direction.
-                float2 flowingUv = input.uv;
-                flowingUv.x -= _Time.y * _FlowSpeed;
-                // Two low-amplitude, differently phased UV bends keep the
-                // river-relative downstream motion but prevent the artwork
-                // from reading as one rigid sheet. This affects texture
-                // sampling only; the flat water mesh remains unchanged.
+                // Keep metre-scaled district UVs; advect along the local river
+                // tangent. Two fading phases prevent unlimited bend distortion.
+                float2 flow = input.flow / max(length(input.flow), 0.0001);
+                float phase = frac(_Time.y * _FlowSpeed * 0.25);
+                float phaseB = frac(phase + 0.5);
+                float blend = abs(phase * 2.0 - 1.0);
+                float2 flowingUv = input.uv - flow * phase * 4.0;
+                float2 flowingUvB = input.uv - flow * phaseB * 4.0;
                 float waveTime = _Time.y * _WaveSpeed;
-                float crossWarp = sin((input.uv.x * _WaveScale +
-                    input.uv.y * 0.31) * 6.2831853 + waveTime);
-                float alongWarp = sin((input.uv.y * (_WaveScale * 1.37) -
-                    input.uv.x * 0.19) * 6.2831853 - waveTime * 0.73);
-                flowingUv.y += crossWarp * _WaveDistortion;
-                flowingUv.x += alongWarp * _WaveDistortion * 0.45;
-                fixed4 water = tex2D(_MainTex, flowingUv) * _Color;
+                float alongWarp = sin(dot(input.uv, flow) * _WaveScale * 6.2831853 - waveTime);
+                flowingUv += flow * alongWarp * _WaveDistortion;
+                flowingUvB += flow * alongWarp * _WaveDistortion;
+                fixed4 water = lerp(tex2D(_MainTex, flowingUv),
+                    tex2D(_MainTex, flowingUvB), blend) * _Color;
                 float depthCoordinate = saturate(input.color.r);
                 float halfSoftness = max(0.01, _DepthBlendSoftness * 0.5);
                 float depthBlend = smoothstep(
@@ -166,11 +165,12 @@ Shader "CityForgeV3/RiverWaterSurface"
                 // scale so it does not lock to the base photograph. A spatial
                 // pulse lets individual crests form and dissolve, while the
                 // depth mask keeps whitecaps away from quiet bank water.
-                float2 whitecapUv = input.uv * _WhitecapTiling;
-                whitecapUv.x -= _Time.y * _FlowSpeed * _WhitecapSpeed;
-                whitecapUv.y += crossWarp * _WaveDistortion * 1.15;
-                whitecapUv.x += alongWarp * _WaveDistortion * 0.62;
-                fixed4 whitecap = tex2D(_WhitecapTex, whitecapUv);
+                float crestPhase = frac(_Time.y * _FlowSpeed * _WhitecapSpeed * 0.25);
+                float crestPhaseB = frac(crestPhase + 0.5);
+                float2 whitecapUv = input.uv * _WhitecapTiling - flow * crestPhase * 4.0;
+                float2 whitecapUvB = input.uv * _WhitecapTiling - flow * crestPhaseB * 4.0;
+                fixed4 whitecap = lerp(tex2D(_WhitecapTex, whitecapUv),
+                    tex2D(_WhitecapTex, whitecapUvB), abs(crestPhase * 2.0 - 1.0));
                 float authoredCrest = whitecap.a * dot(whitecap.rgb,
                     float3(0.2126, 0.7152, 0.0722));
                 // Each part of the authored foam has a complete lifetime:

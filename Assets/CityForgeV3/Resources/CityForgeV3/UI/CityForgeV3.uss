@@ -368,13 +368,16 @@
     position: absolute;
     left: 0;
     top: 0;
-    scale: 1 0.52;
+    scale: 1 0.3420201433;
     transform-origin: 0 0;
 }
 
 .region-map-plane {
     position: absolute;
-    rotate: 45deg;
+    /* Match the district camera: +X goes upper-right, +Z upper-left.
+       UI Y grows downward, so reflect it before the isometric rotation. */
+    rotate: -45deg;
+    scale: 1 -1;
     transform-origin: 50% 50%;
 }
 
@@ -385,7 +388,8 @@
 }
 
 .region-map-grass {
-    background-color: rgb(74, 104, 57);
+    /* Sampled from the default district grass texture; matches DefaultGrassColor. */
+    background-color: rgb(73, 89, 36);
     border-width: 6px;
     border-color: rgb(88, 96, 76);
     overflow: hidden;
@@ -3022,3 +3026,53 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
     min-width: 180px;
     white-space: nowrap;
 }
+
+/* Region map layers use a small anchored menu, with independent checkboxes. */
+.region-layers-control { position: relative; flex-shrink: 0; }
+.region-layers-menu {
+    position: absolute; top: 46px; right: 0; width: 268px;
+    padding: 12px; background-color: var(--cf-ink-900);
+    border-width: 1px; border-color: var(--cf-brass-400); border-radius: 6px;
+}
+.cf-check-toggle {
+    flex-direction: row-reverse; align-items: center;
+    min-height: 40px; color: var(--cf-paper-100); font-size: 17px;
+}
+.cf-check-toggle > .unity-toggle__label { flex-grow: 1; min-width: 0; margin-left: 10px; }
+.cf-check-toggle > .unity-base-field__input { flex-grow: 0; flex-shrink: 0; width: 28px; }
+.cf-check-toggle .unity-toggle__checkmark {
+    width: 24px; height: 24px; min-width: 24px; flex-shrink: 0;
+    background-color: var(--cf-ink-800); border-width: 1px;
+    border-color: var(--cf-brass-400); border-radius: 3px;
+}
+.cf-check-toggle-glyph { color: var(--cf-paper-100); font-size: 21px; -unity-text-align: middle-center; }
+.cf-check-toggle:hover { background-color: var(--cf-ink-700); }
+.region-layers-hint { color: var(--cf-paper-300); font-size: 12px; margin-left: 38px; margin-bottom: 4px; }
+.region-map--neutral { background-color: rgb(57, 66, 66); }
+.region-city-tile--map-hidden { border-color: transparent; background-color: transparent; }
+.region-city-tile--map-hidden:hover { border-color: rgba(230, 215, 135, 0.75); background-color: transparent; }
+
+.region-pike-toolbar {
+    position: absolute; left: 24px; top: 94px; flex-direction: row; align-items: center;
+    padding: 10px 16px; background-color: var(--cf-ink-900);
+    border-width: 1px; border-color: var(--cf-brass-400); border-radius: 6px;
+}
+.region-pike-hint { color: var(--cf-paper-100); font-size: 16px; margin-right: 18px; }
+.region-pike-pencil { position: absolute; color: var(--cf-brass-300); font-size: 34px; -unity-font-style: bold; }
+.region-pike-name { color: var(--cf-paper-100); font-size: 24px; margin-top: 16px; margin-bottom: 16px; }
+.region-pike-name > .unity-base-field__input { background-color: var(--cf-ink-700); color: var(--cf-paper-100); padding: 10px; }
+.region-road-map-label {
+    position: absolute; color: var(--cf-paper-100); font-size: 14px; white-space: nowrap;
+    background-color: rgba(19, 28, 35, 0.85); padding: 3px 8px; border-radius: 4px;
+    translate: -50% -100%;
+}
+.region-pike-toolbar .cf-button { white-space: nowrap; min-width: 140px; }
+
+/* Labels live in screen-aligned anchors, independent of the ground projection. */
+.region-horizontal-place-name {
+    position: absolute; left: 0; top: -4px; bottom: auto;
+    translate: -50% -100%;
+}
+
+.terraform-flyout--water { width: 210px; }
+.terraform-tool-button--water { width: 186px; height: 46px; font-size: 18px; }

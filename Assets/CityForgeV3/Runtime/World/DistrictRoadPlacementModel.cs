@@ -18,7 +18,7 @@ namespace CityForgeV3.World
         public static string PackageId(string family) =>
             family == AntiqueBrickFamily
                 ? RoadPiecePackageCatalog.TwoLaneSidewalkId
-                : RoadPiecePackageCatalog.DirtRoadId;
+                : RoadPiecePackageCatalog.NationalPikeDirtId;
 
         public static int CostPerTile(string family) =>
             family == AntiqueBrickFamily ? AntiqueBrickCostPerTile : 0;
@@ -82,6 +82,9 @@ namespace CityForgeV3.World
         public static void Repair(List<PlacedRoadPiece> roads)
         {
             if (roads == null) return;
+            var occupied = new HashSet<Vector2Int>();
+            foreach (var road in roads)
+                if (road != null) occupied.Add(new Vector2Int(road.GridX, road.GridZ));
             foreach (var road in roads)
             {
                 if (road == null) continue;
@@ -95,7 +98,7 @@ namespace CityForgeV3.World
                         RoadPiecePort.South => new Vector2Int(road.GridX, road.GridZ - 1),
                         _ => new Vector2Int(road.GridX - 1, road.GridZ)
                     };
-                    if (RoadPlacementModel.FindAt(roads, neighbor.x, neighbor.y) != null)
+                    if (occupied.Contains(neighbor))
                         desired.Add(port);
                 }
                 if (desired.Count == 0) desired.Add(RoadPiecePort.North);

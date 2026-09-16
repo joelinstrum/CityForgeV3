@@ -87,8 +87,8 @@ namespace CityForgeV3.World
         }
         struct Vertex
         {
-            public Vector3 P;public Vector2 UV;public Color C;
-            public static Vertex Lerp(Vertex a,Vertex b,float t)=>new(){P=Vector3.Lerp(a.P,b.P,t),UV=Vector2.Lerp(a.UV,b.UV,t),C=Color.Lerp(a.C,b.C,t)};
+            public Vector3 P;public Vector2 UV;public Vector2 Flow;public Color C;
+            public static Vertex Lerp(Vertex a,Vertex b,float t)=>new(){P=Vector3.Lerp(a.P,b.P,t),UV=Vector2.Lerp(a.UV,b.UV,t),Flow=Vector2.Lerp(a.Flow,b.Flow,t),C=Color.Lerp(a.C,b.C,t)};
         }
         static Vector2 XZ(Vector3 p)=>new(p.x,p.z);
         static float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
@@ -120,12 +120,38 @@ namespace CityForgeV3.World
             foreach(var v in p){min=Vector2.Min(min,XZ(v.P));max=Vector2.Max(max,XZ(v.P));}
             return Rect.MinMaxRect(min.x,min.y,max.x,max.y);
         }
+        public static void ClipToRect(Mesh mesh,Rect rect)
+        {
+            var original=mesh.vertices;var uv=mesh.uv;var flow=mesh.uv2;var colors=mesh.colors;
+            var vertices=new List<Vector3>();var tex=new List<Vector2>();var flows=new List<Vector2>();var tint=new List<Color>();
+            var submeshes=new List<int[]>();
+            var corners=new[]{new Vector2(rect.xMin,rect.yMin),new Vector2(rect.xMax,rect.yMin),new Vector2(rect.xMax,rect.yMax),new Vector2(rect.xMin,rect.yMax)};
+            for(int sub=0;sub<mesh.subMeshCount;sub++)
+            {
+                var output=new List<int>();var triangles=mesh.GetTriangles(sub);
+                for(int t=0;t<triangles.Length;t+=3)
+                {
+                    var polygon=new List<Vertex>();
+                    for(int k=0;k<3;k++){int index=triangles[t+k];polygon.Add(new Vertex{P=original[index],UV=uv.Length>index?uv[index]:Vector2.zero,Flow=flow.Length>index?flow[index]:Vector2.zero,C=colors.Length>index?colors[index]:Color.white});}
+                    for(int edge=0;edge<4;edge++)polygon=Half(polygon,corners[edge],corners[(edge+1)%4],true);
+                    int start=vertices.Count;
+                    foreach(var v in polygon){vertices.Add(v.P);tex.Add(v.UV);flows.Add(v.Flow);tint.Add(v.C);}
+                    for(int k=1;k<polygon.Count-1;k++){output.Add(start);output.Add(start+k);output.Add(start+k+1);}
+                }
+                submeshes.Add(output.ToArray());
+            }
+            mesh.Clear();mesh.indexFormat=vertices.Count>65535?IndexFormat.UInt32:IndexFormat.UInt16;
+            mesh.SetVertices(vertices);mesh.SetUVs(0,tex);mesh.SetUVs(1,flows);mesh.SetColors(tint);mesh.subMeshCount=submeshes.Count;
+            for(int i=0;i<submeshes.Count;i++)mesh.SetTriangles(submeshes[i],i);
+            mesh.RecalculateNormals();mesh.RecalculateBounds();
+        }
+
         public static void Subtract(Mesh mesh,List<Quad> masks,List<Quad> depthMasks)
         {
             if(masks.Count==0&&(depthMasks==null||depthMasks.Count==0))return;
             var cutIndex=new SpatialIndex(masks);var depthIndex=new SpatialIndex(depthMasks);
-            var original=mesh.vertices;var uv=mesh.uv;var colors=mesh.colors;
-            var vertices=new List<Vector3>();var tex=new List<Vector2>();var tint=new List<Color>();
+            var original=mesh.vertices;var uv=mesh.uv;var flow=mesh.uv2;var colors=mesh.colors;
+            var vertices=new List<Vector3>();var tex=new List<Vector2>();var flows=new List<Vector2>();var tint=new List<Color>();
             var submeshes=new List<int[]>();
             for(int sub=0;sub<mesh.subMeshCount;sub++)
             {
@@ -133,7 +159,7 @@ namespace CityForgeV3.World
                 for(int t=0;t<triangles.Length;t+=3)
                 {
                     var polygon=new List<Vertex>();
-                    for(int k=0;k<3;k++){int index=triangles[t+k];polygon.Add(new Vertex{P=original[index],UV=uv.Length>index?uv[index]:Vector2.zero,C=colors.Length>index?colors[index]:Color.white});}
+                    for(int k=0;k<3;k++){int index=triangles[t+k];polygon.Add(new Vertex{P=original[index],UV=uv.Length>index?uv[index]:Vector2.zero,Flow=flow.Length>index?flow[index]:Vector2.zero,C=colors.Length>index?colors[index]:Color.white});}
                     var bounds=Bounds(polygon);
                     var fragments=new List<List<Vertex>>{polygon};
                     foreach(var mask in cutIndex.Query(bounds))
@@ -161,7 +187,7 @@ namespace CityForgeV3.World
                         {
                             var color=v.C;
                             if(depthMasks!=null)color.r=Mathf.Max(color.r,depthIndex.Depth(XZ(v.P)));
-                            vertices.Add(v.P);tex.Add(v.UV);tint.Add(color);
+                            vertices.Add(v.P);tex.Add(v.UV);flows.Add(v.Flow);tint.Add(color);
                         }
                         for(int k=1;k<fragment.Count-1;k++)
                         {
@@ -173,7 +199,7 @@ namespace CityForgeV3.World
                 submeshes.Add(output.ToArray());
             }
             mesh.Clear();mesh.indexFormat=vertices.Count>65535?IndexFormat.UInt32:IndexFormat.UInt16;
-            mesh.SetVertices(vertices);mesh.SetUVs(0,tex);mesh.SetColors(tint);mesh.subMeshCount=submeshes.Count;
+            mesh.SetVertices(vertices);mesh.SetUVs(0,tex);mesh.SetUVs(1,flows);mesh.SetColors(tint);mesh.subMeshCount=submeshes.Count;
             for(int i=0;i<submeshes.Count;i++)mesh.SetTriangles(submeshes[i],i);
             mesh.RecalculateNormals();mesh.RecalculateBounds();
         }
