@@ -140,7 +140,7 @@ namespace CityForgeV3.World
                 crew.Elapsed = script.retrySeconds;
                 var route = returnRoute(crew, crew.WagonHome);
                 if (route == null) { crew.Status = "Waiting for a road back to the crew"; return false; }
-                crew.Route = route; crew.Destination = crew.WagonHome; crew.Phase = "returning"; crew.Elapsed = 0; crew.Status = "Returning to crew"; return true;
+                crew.Route = route; crew.Destination = route[route.Count-1]; crew.Phase = "returning"; crew.Elapsed = 0; crew.Status = "Returning to crew"; return true;
             }
             if (crew.Phase == "returning")
             {

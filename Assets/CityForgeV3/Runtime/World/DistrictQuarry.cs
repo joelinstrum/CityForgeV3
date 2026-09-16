@@ -51,7 +51,7 @@ namespace CityForgeV3.World
         public const int SeasonalPayroll = WorkerCount * WorkerWage;
         public const float TreeClearanceRadius = 20f;
         public const string ResourcePath="CityForgeV3/Industry/StoneQuarryV01/StoneQuarry";
-        public static Vector2 Point(RegionCityTile d,DistrictStoneSite p)=>new((p.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(p.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height));
+        public static Vector2 Point(RegionCityTile d,DistrictStoneSite p)=>new Vector2((p.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(p.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height))+(p.Built?DistrictLotNudge.GetOffset(d,DistrictSelectionKind.Entity,"quarry:"+p.Id):Vector2.zero);
         public static bool SiteClear(RegionCityTile d,Vector2 p,Func<Vector2,bool> walkable)
             => string.IsNullOrEmpty(SiteBlockReason(d, p, walkable));
         public static string SiteBlockReason(RegionCityTile d,Vector2 p,Func<Vector2,bool> walkable,float yaw=0)
@@ -115,6 +115,30 @@ namespace CityForgeV3.World
                 site.Script.loadingSeconds=16;
             }
             site.CraneLoadingVersion=1;return true;
+        }
+        public static string OperationalWarning(RegionCityTile district, DistrictStoneSite site)
+        {
+            if (!site.Built) return "";
+            if (!site.Enabled) return "Quarry paused. Resume it to mine and deliver stone.";
+            if (!WorkersPaid(district, site)) return "Workers are off duty. Pay the $500 wages to resume mining and deliveries.";
+            if (site.Phase == "returning")
+                return (site.DeliveryStatus ?? "").StartsWith("Return route blocked")
+                    ? "Wagon cannot return. Connect a road back to a tile near the quarry." : "";
+            if (district.Brickworks == null || district.Brickworks.Count == 0)
+                return "No Brickworks available. Build one and connect it to the quarry by road so the wagon can deliver stone.";
+            if (!district.Brickworks.Exists(b => b.Enabled))
+                return "All Brickworks are paused. Resume a Brickworks to accept stone deliveries.";
+            if ((site.DeliveryStatus ?? "").StartsWith("Bricksworks required"))
+                return "Stone delivery is blocked. Check that roads connect the quarry to an active Brickworks, with a road tile near each building. The wagon will retry automatically.";
+            return "";
+        }
+
+        public static string WorkStatus(RegionCityTile district, DistrictStoneSite site, bool running)
+        {
+            var reason = !site.Built ? "Stone deposit available" : !site.Enabled ? "Quarry paused" :
+                !WorkersPaid(district, site) ? "Workers off duty — $500 wages due" :
+                !running ? "Work paused" : Status(site);
+            return reason + $"\nCart: {site.CartBlocks}/{site.Script.cartCapacity} blocks";
         }
         public static string Status(DistrictStoneSite p)=>!p.Built?"Stone deposit available":!p.Enabled?"Paused":p.Phase=="loading"?"Loading stone into cart":!string.IsNullOrEmpty(p.DeliveryStatus)?p.DeliveryStatus:p.Phase=="full"?"Cart full — waiting for Brickworks":$"Mining block · {Mathf.Max(0,Mathf.CeilToInt(p.Script.miningSeconds-p.Elapsed))}s";
         public static bool Tick(RegionCityTile d,float dt,Func<Vector2,bool> walkable)

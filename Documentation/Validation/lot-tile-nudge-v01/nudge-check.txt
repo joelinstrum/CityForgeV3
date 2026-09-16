@@ -1,0 +1,1 @@
+PASS quarry whole assembly moves; fixed original tile edges; repeated drag cannot escape; cancel restores; resource remains; serialized offset and boundary survive; same presentation root. Shift=(5.20, 0.00, 8.11) bounds=(x:35.06, y:-11.55, width:19.74, height:23.44) tile=(x:30.00, y:-20.00, width:30.00, height:40.00)

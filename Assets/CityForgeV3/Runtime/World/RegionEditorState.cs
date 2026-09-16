@@ -184,6 +184,7 @@ namespace CityForgeV3.World
         public float FounderNormalizedX = 0.5f;
         public float FounderNormalizedY = 0.5f;
         public List<PlacedDistrictLot> Lots = new();
+        public List<DistrictLotNudge> LotNudges = new();
         public List<PlacedRoadPiece> Roads = new();
         public List<PlacedDistrictRiver> Rivers = new();
         public List<PlacedDistrictFlora> Flora = new();

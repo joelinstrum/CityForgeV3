@@ -1,0 +1,6 @@
+Quarry miner 1 floor gap=0.000
+strike gap=-0.078
+PASS rotation preserves rock contact
+Quarry miner 2 floor gap=0.000
+strike gap=0.007
+PASS rotation preserves rock contact

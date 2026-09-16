@@ -10,6 +10,31 @@ namespace CityForgeV3.Tests.EditMode
 {
     public class DistrictTimberTests
     {
+        [Test] public void SharedHarvestGridTracksPlantMoveDeleteAndReload()
+        {
+            var d=new RegionCityTile{Width=1,Height=1};
+            var t=new PlacedDistrictFlora{InstanceId="indexed",FloraId="cilician-fir"};d.Flora.Add(t);
+            var index=DistrictHarvestIndex.For(d);Assert.AreSame(index,DistrictHarvestIndex.For(d));
+            Assert.AreEqual(1,index.Nearby(Vector2.zero,10).Count());Assert.AreSame(t,index.Find(t.InstanceId));
+            t.NormalizedX=.9f;DistrictHarvestIndex.Changed(d,t);Assert.IsEmpty(index.Nearby(Vector2.zero,10));
+            t.NormalizedX=.5f;DistrictHarvestIndex.Changed(d,t);DistrictTreeHarvest.Fell(t,0);DistrictTreeHarvest.TakeWood(t,int.MaxValue);index.Update(t);
+            Assert.IsEmpty(index.Nearby(Vector2.zero,10));
+            var planted=new PlacedDistrictFlora{InstanceId="new",FloraId="cilician-fir"};d.Flora.Add(planted);DistrictHarvestIndex.Changed(d,planted);
+            Assert.AreSame(index,DistrictHarvestIndex.For(d));Assert.AreEqual(1,index.Nearby(Vector2.zero,10).Count());
+            d.Flora.Remove(planted);DistrictHarvestIndex.Removed(d,planted.InstanceId);Assert.IsNull(index.Find(planted.InstanceId));
+            var restored=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));Assert.IsEmpty(DistrictHarvestIndex.For(restored).Nearby(Vector2.zero,10));
+        }
+        [Test] public void HarvestRouteBudgetAndRetriesBoundBlockedWorkers()
+        {
+            var d=new RegionCityTile{Width=1,Height=1,Treasury=10000};var crew=DistrictTimber.Place(d,Vector2.zero,Vector2.zero,4,new());
+            for(int i=0;i<12;i++)d.Flora.Add(new(){InstanceId="tree-"+i,FloraId="cilician-fir",NormalizedX=.5f+(i+2)/640f});
+            int calls=0;var seen=new System.Collections.Generic.HashSet<Vector2>();
+            for(int i=0;i<100;i++){int before=calls;DistrictLabor.Tick(d,.1f,(a,p)=>{calls++;seen.Add(p);return null;},_=>true);Assert.LessOrEqual(calls-before,2);}
+            Assert.Greater(seen.Count,2,"Later searches must advance past unreachable nearest trees");
+            foreach(var worker in d.Labor.Workers){worker.Activity=AxemanActivity.Delivering;worker.Route=null;worker.Position=Vector2.one*10;worker.RouteRetry=0;}
+            calls=0;for(int i=0;i<10;i++)DistrictLabor.Tick(d,.1f,(_,_)=>{calls++;return null;},_=>true);
+            Assert.LessOrEqual(calls,4,"Each blocked return retries after a delay, not every tick");
+        }
         [Test] public void DropCreatesSeparateCrewsAtExactPointsAndChargesOnce()
         {
             var d=new RegionCityTile{Treasury=2000};
@@ -50,25 +75,26 @@ namespace CityForgeV3.Tests.EditMode
             DistrictTimber.Tick(d,c,10,_=>null,(_,_)=>null,(_,_)=>false);
             Assert.AreEqual("dispatch",c.Phase);Assert.AreEqual(3,c.CargoTrees);
         }
-        [Test] public void RoadRoutingRejectsDisconnectedCellsWaterAndOffRoadStart()
+        [Test] public void RoadRoutingUsesConnectedTilesAndShortBuildingApproach()
         {
             var d=new RegionCityTile{Width=1,Height=1};
             for(int x=30;x<=35;x++)d.Roads.Add(new(){GridX=x,GridZ=32});
             var nav=new DistrictTimberNavigation(d,_=>false);
             Assert.NotNull(nav.Route(new(-15,5),new(35,5)));
-            Assert.Null(nav.Route(new(-15,20),new(35,5)));
+            Assert.NotNull(nav.Route(new(-15,20),new(35,5)));
+            Assert.Null(nav.Route(new(-15,100),new(35,5)));
             d.Roads.RemoveAt(2);nav=new(d,_=>false);
             Assert.Null(nav.Route(new(-15,5),new(35,5)));
             d.Roads.Add(new(){GridX=32,GridZ=32});
             nav=new(d,p=>p.x>.5f&&p.x<.516f);
-            Assert.Null(nav.Route(new(-15,5),new(35,5)));
+            Assert.NotNull(nav.Route(new(-15,5),new(35,5)),"Existing road tiles define delivery access");
         }
         [Test] public void FindsNearestReachableMillNotNearestDisconnectedMill()
         {
             var d=new RegionCityTile{Width=1,Height=1};
             for(int x=30;x<=40;x++)d.Roads.Add(new(){GridX=x,GridZ=32});
             d.Lots.Add(new(){InstanceId="far",LotId="far",GridX=40,GridZ=33});
-            d.Lots.Add(new(){InstanceId="near-off-road",LotId="near",GridX=30,GridZ=28});
+            d.Lots.Add(new(){InstanceId="near-off-road",LotId="near",GridX=30,GridZ=26});
             var data=new LotSaveData{LotWidthCells=1,LotDepthCells=1,Buildings3D=new(){new(){AssetId="lumber-mill-v01"}}};
             var nav=new DistrictTimberNavigation(d,_=>false,_=>data);
             var targets=nav.Mills(new(-15,5));

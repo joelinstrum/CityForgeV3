@@ -8,10 +8,19 @@ namespace CityForgeV3.World
     public sealed class QuarryWorkerPresentation : MonoBehaviour
     {
         readonly Dictionary<Transform, Quaternion> rest = new();
-        Transform leftUpper, leftForearm, leftHand, rightUpper, rightForearm, rightHand, spine, pick;
-        Mesh headMesh;
-        float phase, offset;
-        bool working;
+        [SerializeField] Transform leftUpper, leftForearm, leftHand, rightUpper, rightForearm, rightHand, spine, pick;
+        [SerializeField] Mesh headMesh;
+        [SerializeField] float phase, offset;
+        [SerializeField] Quaternion[] restRotations;
+        [SerializeField] bool working;
+
+        void OnEnable()
+        {
+            var bones = new[]{spine,leftUpper,leftForearm,leftHand,rightUpper,rightForearm,rightHand};
+            if(restRotations==null||restRotations.Length!=bones.Length)return;
+            rest.Clear();
+            for(int i=0;i<bones.Length;i++)if(bones[i]!=null)rest[bones[i]]=restRotations[i];
+        }
         public float CyclePhase => Mathf.Repeat(phase + offset, 1);
         public Vector3 PickHeadPosition => pick.TransformPoint(new Vector3(0, .7f, .45f));
         public bool Working => working;
@@ -32,7 +41,9 @@ namespace CityForgeV3.World
                 if (renderer.name.Contains("Axeman_Axe")) renderer.enabled = false;
             leftUpper=Bone("L_Upperarm");leftForearm=Bone("L_Forearm");leftHand=Bone("L_Hand");
             rightUpper=Bone("R_Upperarm");rightForearm=Bone("R_Forearm");rightHand=Bone("R_Hand");spine=Bone("Spine01");
-            foreach (var bone in new[]{spine,leftUpper,leftForearm,leftHand,rightUpper,rightForearm,rightHand})rest[bone]=bone.localRotation;
+            var posedBones = new[]{spine,leftUpper,leftForearm,leftHand,rightUpper,rightForearm,rightHand};
+            restRotations=posedBones.Select(bone=>bone.localRotation).ToArray();
+            OnEnable();
             var owner=GetComponent<CharacterShadowMaterialOwner>();
             var wood=new Material(Shader.Find("Standard")){color=new Color(.30f,.16f,.065f)};
             wood.SetFloat("_Glossiness",.16f);owner.Add(wood);

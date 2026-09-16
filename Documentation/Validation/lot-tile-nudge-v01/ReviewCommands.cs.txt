@@ -1,0 +1,89 @@
+// Isolated Review helper command blocks; requires app/type/flags/Root from RegionConfluenceReview.
+ if(command=="nudge-check"){
+ EditorApplication.isPaused=false;Time.timeScale=1;app.QuarryQa("workers-prepare");
+ var d=(RegionCityTile)type.GetMethod("FindSelectedRegionTile",flags).Invoke(app,null);
+ var world=(DistrictWorldController)type.GetField("_districtWorld",flags).GetValue(app);
+ var root=(VisualElement)type.GetField("_root",flags).GetValue(app);
+ var screen=root.Q<VisualElement>(className:"district-terraform-screen");
+ var site=d.StoneSites.First(q=>q.Built);var id=new DistrictSelectionRef(DistrictSelectionKind.Entity,"quarry:"+site.Id);
+ var lot=world.ResolveSelectable(id);var original=lot.transform.position;
+ var children=lot.GetComponentsInChildren<Transform>();var positions=children.Select(t=>t.position).ToArray();
+ var originalX=site.NormalizedX;var originalZ=site.NormalizedZ;
+ world.NudgeBounds(lot,out var bounds);var tile=DistrictLotNudge.EnclosingTiles(bounds,DistrictScale.SizeMeters(d.Width),DistrictScale.SizeMeters(d.Height));
+ Vector2 Pixel(Vector2 point){var wp=world.ResourceWorldPoint(point);var v=world.WorldCamera.WorldToScreenPoint(wp);return new Vector2(v.x,Screen.height-v.y);}
+ var start=Pixel(bounds.center);var end=Pixel(bounds.center+new Vector2(100,100));
+ type.GetMethod("ComposeSelectedObject",flags).Invoke(app,new object[]{id});
+ type.GetMethod("BeginLotNudge",flags).Invoke(app,new object[]{screen,0,start});
+ type.GetMethod("UpdateLotNudge",flags).Invoke(app,new object[]{end});
+ if(d.LotNudges.Count!=1)throw new Exception("No saved nudge");
+ world.NudgeBounds(lot,out var moved);
+ if(Mathf.Abs(moved.xMax-tile.xMax)>.02f||Mathf.Abs(moved.yMax-tile.yMax)>.02f)throw new Exception("Did not reach fixed tile edge: "+moved+" vs "+tile);
+ var shift=lot.transform.position-original;
+ for(int i=0;i<children.Length;i++)if(Vector3.Distance(children[i].position-positions[i],shift)>.005f)throw new Exception("Assembly split: "+children[i].name);
+ type.GetMethod("EndLotNudge",flags).Invoke(app,new object[]{false});
+ if(site.NormalizedX!=originalX||site.NormalizedZ!=originalZ)throw new Exception("Moved resource");
+ var firstOffset=d.LotNudges[0].Offset;
+ type.GetMethod("BeginLotNudge",flags).Invoke(app,new object[]{screen,0,start});
+ type.GetMethod("UpdateLotNudge",flags).Invoke(app,new object[]{end});
+ type.GetMethod("EndLotNudge",flags).Invoke(app,new object[]{false});
+ if((firstOffset-d.LotNudges[0].Offset).magnitude>.005f)throw new Exception("Repeated drag escaped tiles");
+ type.GetMethod("BeginLotNudge",flags).Invoke(app,new object[]{screen,0,start});
+ type.GetMethod("UpdateLotNudge",flags).Invoke(app,new object[]{Pixel(bounds.center-new Vector2(100,100))});
+ type.GetMethod("EndLotNudge",flags).Invoke(app,new object[]{true});
+ if((firstOffset-d.LotNudges[0].Offset).magnitude>.005f)throw new Exception("Cancel did not restore");
+ var copy=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));
+ if((DistrictQuarry.Point(copy,copy.StoneSites.First(q=>q.Built))-DistrictQuarry.Point(d,site)).magnitude>.005f||copy.LotNudges[0].TileBounds!=tile)throw new Exception("Persistence mismatch");
+ if(world.ResolveSelectable(id)!=lot)throw new Exception("Rebuilt during drag");
+ File.WriteAllText(Root+"nudge-check.txt","PASS quarry whole assembly moves; fixed original tile edges; repeated drag cannot escape; cancel restores; resource remains; serialized offset and boundary survive; same presentation root. Shift="+shift+" bounds="+bounds+" tile="+tile);
+ world.WorldCamera.transform.position=lot.transform.position+new Vector3(35,28,-40);world.WorldCamera.transform.LookAt(lot.transform.position+Vector3.up*3);world.WorldCamera.orthographicSize=25;
+ world.ShowNudgeBoundary(tile);ScreenCapture.CaptureScreenshot(Root+"nudge-quarry.png");return;
+ }
+ if(command=="nudge-pointer-prepare"){
+ EditorApplication.isPaused=false;Time.timeScale=1;app.QuarryQa("workers-prepare");
+ var d=(RegionCityTile)type.GetMethod("FindSelectedRegionTile",flags).Invoke(app,null);
+ var ids=new[]{"drygoods","queen-anne","18thcenturychurch"};
+ for(int i=0;i<ids.Length;i++)d.Lots.Add(new PlacedDistrictLot{InstanceId="nudge-test-"+i,LotId=ids[i],GridX=8+i*15,GridZ=20});
+ type.GetField("_districtWorldCompositionKey",flags).SetValue(app,"");type.GetMethod("EnsureDistrictWorld",flags).Invoke(app,new object[]{d});
+ return;
+ }
+ if(command=="nudge-pointer-check"){
+ var d=(RegionCityTile)type.GetMethod("FindSelectedRegionTile",flags).Invoke(app,null);
+ var world=(DistrictWorldController)type.GetField("_districtWorld",flags).GetValue(app);
+ var doc=app.GetComponent<UIDocument>();var screen=doc.rootVisualElement.Q<VisualElement>(className:"district-terraform-screen");
+ var identities=d.Lots.Select(l=>new DistrictSelectionRef(DistrictSelectionKind.Lot,l.InstanceId)).ToList();
+ identities.Add(new DistrictSelectionRef(DistrictSelectionKind.Entity,"quarry:"+d.StoneSites.First(q=>q.Built).Id));
+ var lines=new System.Collections.Generic.List<string>();
+ foreach(var id in identities){
+ type.GetMethod("EndLotNudge",flags).Invoke(app,new object[]{true});
+ var target=world.ResolveSelectable(id);if(target==null)throw new Exception("Missing "+id.Id);
+ target.WorldBounds(out var wb);world.NudgeBounds(target,out var before);
+ world.SetPan(new Vector2(wb.center.x,wb.center.z));world.WorldCamera.orthographicSize=40;
+ var pixel=world.WorldCamera.WorldToScreenPoint(wb.center);
+ var appRoot=(VisualElement)type.GetField("_root",flags).GetValue(app);
+ var panel=new Vector2(pixel.x/Screen.width*appRoot.resolvedStyle.width,(1-pixel.y/Screen.height)*appRoot.resolvedStyle.height);
+ var tiles=DistrictLotNudge.EnclosingTiles(before,DistrictScale.SizeMeters(d.Width),DistrictScale.SizeMeters(d.Height));
+ world.TryLotDragPoint(new Vector2(pixel.x,Screen.height-pixel.y),out var dragStart);
+ var delta=new Vector2(tiles.xMax-before.xMax > before.xMin-tiles.xMin ? 100 : -100, tiles.yMax-before.yMax > before.yMin-tiles.yMin ? 100 : -100);
+ var ep=world.WorldCamera.WorldToScreenPoint(world.ResourceWorldPoint(dragStart+delta));
+ var endpoint=new Vector2(ep.x/Screen.width*appRoot.resolvedStyle.width,(1-ep.y/Screen.height)*appRoot.resolvedStyle.height);
+ var picked=world.FindSelectableAtScreenPoint(new Vector2(pixel.x,Screen.height-pixel.y),true);if(picked!=target)throw new Exception("Prepick mismatch "+picked?.Identity.Id+" wanted "+id.Id);
+ using(var e=PointerDownEvent.GetPooled(new Event{type=EventType.MouseDown,button=0,mousePosition=panel}))screen.SendEvent(e);
+ typeof(PointerCaptureHelper).GetMethod("ProcessPointerCapture",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic)?.Invoke(null,new object[]{screen.panel,0});
+ if(type.GetField("_lotNudge",flags).GetValue(app)==null)throw new Exception("Pointer did not begin "+id.Id);
+ using(var e=PointerMoveEvent.GetPooled(new Event{type=EventType.MouseDrag,button=0,mousePosition=endpoint}))screen.SendEvent(e);
+ File.WriteAllText(Root+"nudge-event-state.txt","after move record="+JsonUtility.ToJson(type.GetField("_lotNudge",flags).GetValue(app))+" offset="+string.Join(";",d.LotNudges.Select(n=>n.Offset.ToString())));
+ using(var e=PointerUpEvent.GetPooled(new Event{type=EventType.MouseUp,button=0,mousePosition=endpoint}))screen.SendEvent(e);
+ if(type.GetField("_lotNudge",flags).GetValue(app)!=null)throw new Exception("Capture retained pointer="+type.GetField("_nudgePointer",flags).GetValue(app));
+ var n=d.LotNudges.Find(n=>n.Id==id.Id);world.NudgeBounds(target,out var after);
+ if(n==null||n.Offset.magnitude<.01f)throw new Exception("Pointer did not move "+id.Id+" "+before+" endpoint="+endpoint+" panel="+panel);
+ if(after.xMin<n.TileBounds.xMin-.01f||after.yMin<n.TileBounds.yMin-.01f||after.xMax>n.TileBounds.xMax+.01f||after.yMax>n.TileBounds.yMax+.01f)throw new Exception("Escaped fixed bounds");
+ if(world.ResolveSelectable(id)!=target)throw new Exception("Rebuilt lot");
+ lines.Add(id.Id+" PASS pointer down/move/up; delta="+n.Offset+" contained; root retained");
+ }
+ var history=type.GetField("_districtUndo",flags).GetValue(app);lines.Add("undo entries="+history.GetType().GetProperty("Count").GetValue(history));
+ var expected=d.LotNudges.ToDictionary(n=>n.Id,n=>n.Offset);var locations=identities.ToDictionary(id=>id.Id,id=>world.ResolveSelectable(id).transform.position);
+ type.GetField("_districtWorldCompositionKey",flags).SetValue(app,"");type.GetMethod("EnsureDistrictWorld",flags).Invoke(app,new object[]{d});
+ foreach(var id in identities)if(Vector3.Distance(world.ResolveSelectable(id).transform.position,locations[id.Id])>.02f)throw new Exception("Rebuild lost offset "+id.Id);
+ lines.Add("PASS rebuild restores all four lot offsets");
+ File.WriteAllLines(Root+"nudge-pointer-check.txt",lines);return;
+ }

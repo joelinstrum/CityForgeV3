@@ -1745,6 +1745,18 @@ namespace CityForgeV3.World
             Mathf.Clamp(pan.x, -_widthMeters * 0.5f, _widthMeters * 0.5f),
             Mathf.Clamp(pan.y, -_depthMeters * 0.5f, _depthMeters * 0.5f));
 
+        public bool TryLotDragPoint(Vector2 pixel,out Vector2 point)
+        {
+            point=default;if(_camera==null||_content==null)return false;
+            var ray=_camera.ScreenPointToRay(new Vector3(pixel.x,Screen.height-pixel.y,0));
+            var plane=new Plane(_content.up,_content.TransformPoint(new Vector3(0,.04f,0)));
+            // Extrapolate the drag plane even when an off-screen orthographic ray starts below it.
+            float denominator=Vector3.Dot(plane.normal,ray.direction);
+            if(Mathf.Abs(denominator)<.00001f)return false;
+            float distance=-(Vector3.Dot(plane.normal,ray.origin)+plane.distance)/denominator;
+            var local=_content.InverseTransformPoint(ray.GetPoint(distance));point=new Vector2(local.x,local.z);return true;
+        }
+
         public bool TryGroundPoint(Vector2 panelPosition, out Vector2 normalized)
         {
             normalized = default;
@@ -2003,11 +2015,12 @@ namespace CityForgeV3.World
             var spanZ = DistrictScale.GridSpanForMeters(
                 lot.LotDepthCells * LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
             if ((placement.RotationQuarterTurns & 1) != 0) (spanX, spanZ) = (spanZ, spanX);
+            var nudge=DistrictLotNudge.GetOffset(district,DistrictSelectionKind.Lot,placement.InstanceId);
             return new Vector2(
                 -width * 0.5f + (placement.GridX + spanX * 0.5f) *
-                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetX,
+                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetX + nudge.x,
                 -depth * 0.5f + (placement.GridZ + spanZ * 0.5f) *
-                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
+                    LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ + nudge.y);
         }
 
         public static float OrthographicSize(DistrictZoomLevel level,

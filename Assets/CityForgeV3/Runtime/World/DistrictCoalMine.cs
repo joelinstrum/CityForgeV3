@@ -64,7 +64,8 @@ namespace CityForgeV3.World
                 EntranceGroundMeters=entry;
                 if(RearBurialMeters>=3.8f)break;
             }
-            transform.localPosition=new Vector3(seatedX,floor,seatedZ);
+            var nudge=world.SavedNudge(new DistrictSelectionRef(DistrictSelectionKind.Entity,"mine:"+deposit.Id));
+            transform.localPosition=new Vector3(seatedX+nudge.x,floor,seatedZ+nudge.y);
             transform.localRotation=rotation;
             var model=Instantiate(prefab,transform);model.name="Mine shed";
             FitRailApproach(model,world);

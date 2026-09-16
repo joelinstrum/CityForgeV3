@@ -30,6 +30,15 @@ namespace CityForgeV3.World
         public string Description { get; private set; }
         public IReadOnlyList<DistrictSelectionAction> Actions { get; private set; }
         public bool ShowInspector { get; private set; }
+        public Func<string> StatusText { get; private set; }
+        public Func<string> WarningText { get; private set; }
+        // Operational diagnostics are supplied by the owner, rendered by the shared inspector.
+        public DistrictSelectable WithWarnings(Func<string> warnings) { WarningText = warnings; return this; }
+        public Action<Vector2> Nudge { get; private set; }
+        public DistrictSelectable WithNudge(Action<Vector2> move) { Nudge=move;return this; }
+        public void NudgeBy(Vector2 delta)
+        { if(Nudge!=null)Nudge(delta);else transform.localPosition+=new Vector3(delta.x,0,delta.y); }
+        public DistrictSelectable WithStatus(Func<string> status) { StatusText = status; return this; }
         public Action DeleteBuilding { get; private set; }
         public bool PreservesResource { get; private set; }
         public Action RefreshAfterDeletion { get; private set; }
@@ -86,6 +95,23 @@ namespace CityForgeV3.World
 
     public sealed partial class DistrictWorldController
     {
+        public Vector2 SavedNudge(DistrictSelectionRef identity) => DistrictLotNudge.GetOffset(_terrainDistrict,identity.Kind,identity.Id);
+        public bool NudgeBounds(DistrictSelectable target,out Rect bounds)
+        {
+            bounds=default;if(_content==null||target==null||!target.WorldBounds(out var b))return false;
+            var min=new Vector2(float.PositiveInfinity,float.PositiveInfinity);var max=-min;
+            for(int i=0;i<8;i++){
+                var v=_content.InverseTransformPoint(new Vector3((i&1)==0?b.min.x:b.max.x,(i&2)==0?b.min.y:b.max.y,(i&4)==0?b.min.z:b.max.z));
+                min=Vector2.Min(min,new Vector2(v.x,v.z));max=Vector2.Max(max,new Vector2(v.x,v.z));}
+            bounds=Rect.MinMaxRect(min.x,min.y,max.x,max.y);return true;
+        }
+        public void ShowNudgeBoundary(Rect rect)
+        {
+            float cell=DistrictScale.CellSizeMeters;
+            ShowLotOutline(Mathf.RoundToInt((rect.xMin+_widthMeters/2)/cell),Mathf.RoundToInt((rect.yMin+_depthMeters/2)/cell),Mathf.RoundToInt(rect.width/cell),Mathf.RoundToInt(rect.height/cell),true);
+            _lotOutlineRenderer.startWidth = _lotOutlineRenderer.endWidth = .09f;
+        }
+
         public void RemoveFloraPresentations(IEnumerable<string> ids)
         {
             foreach (var id in ids)

@@ -9,7 +9,7 @@ namespace CityForgeV3.World
         Transform quarryRoot;LotWorldController quarryFactory;
         readonly Dictionary<string,QuarryView> quarryViews=new();
         sealed class QuarryView
-        {public Transform Root,Transfer;public HorseCarriageController Wagon;public QuarryCranePresentation Crane;public List<Transform> Blocks=new();public List<QuarryWorkerPresentation> Workers=new();public DistrictStoneSite Site;public DistrictQuarryNavigation Navigation;public List<Vector2> Route;public float Retry;public int NavigationKey;}
+        {public Transform Root,Transfer;public HorseCarriageController Wagon;public QuarryCranePresentation Crane;public List<Transform> Blocks=new();public List<QuarryWorkerPresentation> Workers=new();public DistrictStoneSite Site;public DistrictQuarryNavigation Navigation;public List<Vector2> Route;public float Retry;public int NavigationKey;public bool Running;}
         public void EnsureStoneDeposits(RegionCityTile d)
         {var nav=new DistrictLaborNavigation(d,IsUnderRiverWater);DistrictQuarry.Ensure(d,nav.Walkable);}
         public string QuarrySiteBlockReason(RegionCityTile d,DistrictStoneSite site)
@@ -61,10 +61,11 @@ namespace CityForgeV3.World
                         {
                             var miner=CreateAxemanVisual(v.Root,"Quarry miner "+(worker+1));
                             if(miner==null)continue;
-                            miner.transform.localPosition=new Vector3(-3+worker*5,0,-13);
+                            // Interior stations measured against the imported quarry's existing rock ledges.
+                            // Local coordinates keep the miners and their strike direction attached when rotated.
+                            miner.transform.localPosition=worker==0 ? new Vector3(-1.1f,.375f,0) : new Vector3(.1f,.365f,6);
+                            miner.transform.localRotation=Quaternion.Euler(0,270,0);
                             var motion=miner.AddComponent<QuarryWorkerPresentation>();motion.Initialize(worker*.43f);v.Workers.Add(motion);
-                            var face=StoneBlock(v.Root,stone,"Working stone face "+(worker+1));
-                            face.localPosition=new Vector3(-3+worker*5,.65f,-11.7f);face.localScale=new Vector3(1.65f,1.3f,1.1f);
                         }
                         if(quarryFactory==null){var helper=new GameObject("Quarry vehicle factory");helper.transform.SetParent(_content,false);helper.SetActive(false);quarryFactory=helper.AddComponent<LotWorldController>();}
                         var team=quarryFactory.CreateHorseCarriagePresentation("Quarry stone cart",1,LotWorldController.HorseForestryWagonPropId,TimberGround);
@@ -92,9 +93,26 @@ namespace CityForgeV3.World
                                 (v.Wagon == null || !r.transform.IsChildOf(v.Wagon.transform)) &&
                                 r.GetComponentInParent<QuarryWorkerPresentation>() == null),
                             new DistrictSelectionAction("↶ LEFT 90°", () => Rotate(-90)),
-                            new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => DistrictQuarry.Demolish(site), true, () => PresentQuarries(d));
+                            new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => DistrictQuarry.Demolish(site), true, () => PresentQuarries(d))
+                            .WithStatus(() => DistrictQuarry.WorkStatus(d, site, v.Running))
+                            .WithWarnings(() => DistrictQuarry.OperationalWarning(d, site))
+                            .WithNudge(delta =>
+                            {
+                                bool away = site.Phase == "delivering" || site.Phase == "unloading" || site.Phase == "returning";
+                                var wagonPosition = v.Wagon != null ? v.Wagon.transform.position : Vector3.zero;
+                                v.Root.localPosition += new Vector3(delta.x, 0, delta.y);
+                                if (v.Wagon != null)
+                                {
+                                    if (away) v.Wagon.transform.position = wagonPosition;
+                                    SaveQuarryWagonPose(site, v.Wagon);
+                                }
+                                v.Navigation = null; v.Route = null; v.Retry = 0;
+                                site.DeliveryRoute = null;
+                                if (site.Phase == "returning") site.DeliveryDestination = DistrictBrickworks.QuarryHome(d, site);
+                            });
                     }
                 }
+                v.Running=running;
                 foreach(var worker in v.Workers)worker.SetWorking(running&&site.Enabled&&DistrictQuarry.WorkersPaid(d,site)&&site.Phase=="mining");
                 if(v.Wagon==null)continue;
                 for(int i=0;i<v.Blocks.Count;i++)v.Blocks[i].gameObject.SetActive(i<site.CartBlocks);

@@ -65,6 +65,8 @@ namespace CityForgeV3.UI
         }
         private void SaveAndPresentHarvest(RegionCityTile district, HashSet<string> falling, HashSet<string> changed = null)
         {
+            foreach(var id in (falling??new HashSet<string>()).Concat(changed??new HashSet<string>()))
+                DistrictHarvestIndex.Changed(district,FindDistrictFlora(district,id));
             // Store the durable end state immediately. Loading mid-fall never replays/yields twice.
             SaveDistrictEdit();
             RefreshDistrictResourceBar(district);

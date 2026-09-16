@@ -15,16 +15,41 @@ namespace CityForgeV3.World
     }
     public static class DistrictBrickworks
     {
+        public static string OperationalWarning(RegionCityTile district, DistrictBrickworksSite site)
+        {
+            if (!site.Enabled) return "Brickworks paused. Resume it to accept deliveries and process stone.";
+            if (site.StoneInput > 0) return "";
+            var quarries = district.StoneSites.Where(q => q.Built).ToArray();
+            if (quarries.Length == 0) return "No stone supply. Build a quarry and connect it to this Brickworks by road.";
+            if (!quarries.Any(q => q.Enabled && DistrictQuarry.WorkersPaid(district, q)))
+                return "No working quarry. Resume quarry operations and check worker wages to restore stone deliveries.";
+            // Do not attribute an unrelated quarry's failed route to this building.
+            if (quarries.Any(q => q.DeliveryTargetId == site.Id && !string.IsNullOrEmpty(DistrictQuarry.OperationalWarning(district, q))))
+                return "A supplying quarry has a delivery problem. Select that quarry to check its road access and worker status.";
+            return "";
+        }
+        public static string WorkStatus(DistrictBrickworksSite site) =>
+            (site.Enabled ? (site.StoneInput > 0 ? "Processing stone" : "Waiting for stone delivery") : "Brickworks paused") +
+            $"\nStone waiting: {site.StoneInput} tons · Bricks produced: {site.BricksProduced}";
+
         public const string ResourcePath="CityForgeV3/Industry/BrickworksV01/Brickworks";
         // Keep the rendered asset, placement bounds and wagon access in the same scale contract.
         public const float PresentationScale=2f;
         public const float HalfWidth=10f*PresentationScale,HalfDepth=12.5f*PresentationScale;
         public const float SecondsPerTon=30,UnloadSeconds=8;
         public static bool Unlocked(RegionCityTile d)=>d?.StoneSites?.Any(s=>s.Built)==true;
-        public static Vector2 Point(RegionCityTile d,DistrictBrickworksSite s)=>new((s.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(s.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height));
+        public static Vector2 Point(RegionCityTile d,DistrictBrickworksSite s)=>new Vector2((s.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(s.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height))+DistrictLotNudge.GetOffset(d,DistrictSelectionKind.Entity,"brickworks:"+s.Id);
         public static Vector2 Offset(Vector2 center,float yaw,Vector2 offset)
         {var p=Quaternion.Euler(0,yaw,0)*new Vector3(offset.x,0,offset.y);return center+new Vector2(p.x,p.z);}
         public static Vector2 ReceivingPoint(RegionCityTile d,DistrictBrickworksSite s)=>Offset(Point(d,s),s.Yaw,new Vector2(0,24*PresentationScale));
+        // Road-facing receiving bays. Keep convoy clearance outside the scaled footprint.
+        public static IEnumerable<Vector2> ReceivingPoints(RegionCityTile d,DistrictBrickworksSite s)
+        {
+            yield return ReceivingPoint(d,s); // Preserve the original bay for existing routes.
+            var center=Point(d,s);
+            foreach(var offset in new[]{new Vector2(0,-HalfDepth-10),new Vector2(HalfWidth+10,0),new Vector2(-HalfWidth-10,0)})
+                yield return Offset(center,s.Yaw,offset);
+        }
         public static Vector2 QuarryHome(RegionCityTile d,DistrictStoneSite s)=>Offset(DistrictQuarry.Point(d,s),s.Yaw,DistrictQuarry.WagonHomeOffset);
         public static bool Contains(RegionCityTile d,DistrictBrickworksSite s,Vector2 p,float margin=0)
         {var v=Quaternion.Euler(0,-s.Yaw,0)*new Vector3(p.x-Point(d,s).x,0,p.y-Point(d,s).y);return Mathf.Abs(v.x)<HalfWidth+margin&&Mathf.Abs(v.z)<HalfDepth+margin;}

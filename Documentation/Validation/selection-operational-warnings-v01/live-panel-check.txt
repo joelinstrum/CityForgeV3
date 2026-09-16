@@ -1,0 +1,2 @@
+PASS shared selected-object panel displays live quarry warning: ATTENTION
+Stone delivery is blocked. Check that roads connect the quarry to an active Brickworks, with clear entrances and wagon turning space. The wagon will retry automatically.

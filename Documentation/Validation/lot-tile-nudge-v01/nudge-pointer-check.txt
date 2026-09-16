@@ -1,0 +1,6 @@
+nudge-test-0 PASS pointer down/move/up; delta=(0.00, -9.69) contained; root retained
+nudge-test-1 PASS pointer down/move/up; delta=(8.48, -9.96) contained; root retained
+nudge-test-2 PASS pointer down/move/up; delta=(8.91, 8.54) contained; root retained
+quarry:right-stone PASS pointer down/move/up; delta=(5.20, -8.45) contained; root retained
+undo entries=5
+PASS rebuild restores all four lot offsets
