@@ -39,7 +39,9 @@ namespace CityForgeV3.World
                 RegisterSelectable(root, new DistrictSelectionRef(DistrictSelectionKind.Entity, "brickworks:" + b.Id),
                     "BRICKWORKS", "Rotate the Brickworks. Placement or delivery conflicts are reported below.", true, null,
                     new DistrictSelectionAction("↶ LEFT 90°", () => Rotate(-90)),
-                    new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => d.Brickworks.Remove(b), refresh: () => PresentBrickworks(d));
+                    new DistrictSelectionAction("RIGHT 90° ↷", () => Rotate(90))).WithBuildingDeletion(() => d.Brickworks.Remove(b), refresh: () => PresentBrickworks(d))
+                    .WithStatus(() => DistrictBrickworks.WorkStatus(b))
+                    .WithWarnings(() => DistrictBrickworks.OperationalWarning(d, b));
             }
         }
         public void ShowBrickworksPlacement(RegionCityTile d,DistrictBrickworksSite site)
@@ -58,65 +60,15 @@ namespace CityForgeV3.World
         public void HideBrickworksPlacement(){if(brickworksGhost!=null)brickworksGhost.SetActive(false);}
         bool PlanQuarryRoute(QuarryView view,DistrictStoneSite site,List<Vector2> route,DistrictQuarryNavigation nav)
         {
-            if(route==null||route.Count==0)return false;
-            bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
-            // First try a complete smooth convoy path; the road graph supplies longer routes around obstacles.
-            Vector3? heading=site.Phase=="returning"?_content.TransformDirection(Quaternion.Euler(0,site.Yaw,0)*Vector3.forward):null;
-            var direct=view.Wagon.Plan(new[]{TimberWorld(route.Last())},Clear,heading);
-            if(direct!=null){view.Wagon.SetRoute(direct);view.Route=route;return true;}
-            // Try joining farther along the first road: a sideways driveway needs a gradual approach.
-            var starts=new List<List<Vector3>>{new()};var joins=new List<int>{0};
-            for(int join=1;join<Mathf.Min(route.Count,9);join++)
-            {
-                int next=join+1;while(next<route.Count&&(route[next]-route[join]).sqrMagnitude<.01f)next++;
-                var direction=next<route.Count?route[next]-route[join]:Vector2.zero;
-                var prefix=view.Wagon.Plan(new[]{TimberWorld(route[join])},Clear,direction.sqrMagnitude>.01f?_content.TransformDirection(new Vector3(direction.x,0,direction.y)):(Vector3?)null);
-                if(prefix!=null){starts.Add(prefix);joins.Add(join);}
-            }
-            for(int candidate=0;candidate<starts.Count;candidate++)
-            {
-                int join=joins[candidate];
-                if(!heading.HasValue)
-                {
-                    var path=new List<Vector3>(starts[candidate]);path.AddRange(RoundedRoadRoute(route.Skip(join).ToList()));
-                    if(!view.Wagon.RouteClear(path,Clear))continue;
-                    view.Wagon.SetRoute(path);view.Route=route;return true;
-                }
-                // Plan a forward arrival into the loading bay, then validate the entire convoy from its real pose.
-                for(int cut=route.Count-2;cut>=Mathf.Max(join+1,route.Count-7);cut--)
-                {
-                    var incoming=route[cut]-route[cut-1];if(incoming.sqrMagnitude<.01f)continue;
-                    var suffix=QuarryArrival(view.Wagon,TimberWorld(route[cut]),incoming,TimberWorld(route.Last()),heading.Value,Clear);
-                    if(suffix==null)continue;
-                    var path=new List<Vector3>(starts[candidate]);path.AddRange(RoundedRoadRoute(route.Skip(join).Take(cut-join+1).ToList()));path.AddRange(suffix);
-                    if(!view.Wagon.RouteClear(path,Clear))continue;
-                    view.Wagon.SetRoute(path);view.Route=route;return true;
-                }
-            }
-            return false;
-        }
-        List<Vector3> QuarryArrival(HorseCarriageController wagon,Vector3 from,Vector2 direction,Vector3 goal,Vector3 heading,System.Func<Vector3,Vector3,bool> clear)
-        {
-            var motion=wagon.CaptureMotion();var headPosition=wagon.transform.position;var headRotation=wagon.transform.rotation;
-            var bodyPosition=wagon.Carriage.position;var bodyRotation=wagon.Carriage.rotation;var frontPosition=wagon.Forecarriage.position;var frontRotation=wagon.Forecarriage.rotation;
-            try
-            {
-                wagon.transform.position=from;
-                float yaw=Mathf.Atan2(direction.x,direction.y)*Mathf.Rad2Deg+_content.eulerAngles.y-wagon.transform.parent.eulerAngles.y;
-                wagon.RestoreHeadings(yaw,yaw,yaw);
-                return wagon.Plan(new[]{goal},clear,heading);
-            }
-            finally
-            {
-                wagon.transform.SetPositionAndRotation(headPosition,headRotation);wagon.Carriage.SetPositionAndRotation(bodyPosition,bodyRotation);wagon.Forecarriage.SetPositionAndRotation(frontPosition,frontRotation);wagon.RestoreMotion(motion);
-            }
+            if(!SetRoadDeliveryRoute(view.Wagon,route))return false;
+            view.Route=route;site.DeliveryDestination=route.Last();return true;
         }
 
 #if UNITY_EDITOR
         public string DiagnoseQuarryDelivery(RegionCityTile d,DistrictStoneSite site)
         {
             var nav=new DistrictQuarryNavigation(d,site,IsUnderRiverWater);var view=quarryViews[site.Id];var result="";
-            bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
+            bool Clear(Vector3 a,Vector3 b)=>RoadDeliveryClear(a,b);
             result+="head clear="+Clear(view.Wagon.transform.position,view.Wagon.transform.position)+" axle clear="+Clear(view.Wagon.Carriage.position,view.Wagon.Carriage.position)+"\n";
             foreach(var target in nav.Destinations(site.WagonPosition))
             {
@@ -140,9 +92,8 @@ namespace CityForgeV3.World
             unchecked
             {
                 foreach(var road in d.Roads??new())navigationKey=navigationKey*31+road.GridX*397+road.GridZ;
-                foreach(var tree in d.Flora??new())navigationKey=navigationKey*31+tree.NormalizedX.GetHashCode()+tree.NormalizedZ.GetHashCode()+(int)tree.HarvestState;
-                foreach(var q in d.StoneSites??new())navigationKey=navigationKey*31+q.Yaw.GetHashCode();
-                foreach(var b in d.Brickworks??new())navigationKey=navigationKey*31+b.Id.GetHashCode()+b.NormalizedX.GetHashCode()+b.NormalizedZ.GetHashCode()+b.Yaw.GetHashCode();
+                foreach(var q in d.StoneSites??new())navigationKey=navigationKey*31+q.Yaw.GetHashCode()+DistrictQuarry.Point(d,q).GetHashCode();
+                foreach(var b in d.Brickworks??new())navigationKey=navigationKey*31+b.Id.GetHashCode()+b.NormalizedX.GetHashCode()+b.NormalizedZ.GetHashCode()+b.Yaw.GetHashCode()+DistrictBrickworks.Point(d,b).GetHashCode();
             }
             foreach(var site in d.StoneSites.Where(s=>s.Built&&s.Enabled))
             {
@@ -150,7 +101,7 @@ namespace CityForgeV3.World
                 if(site.Phase!="full"&&site.Phase!="delivering"&&site.Phase!="unloading"&&site.Phase!="returning")continue;
                 if(view.Navigation==null||view.NavigationKey!=navigationKey)
                 {view.Navigation=new DistrictQuarryNavigation(d,site,IsUnderRiverWater);view.NavigationKey=navigationKey;view.Route=null;view.Retry=0;}
-                var nav=view.Navigation;
+                var nav=view.Navigation;nav.BeginQuery();
                 if(!site.HasWagonPose)SaveQuarryWagonPose(site,view.Wagon);
                 changed|=DistrictQuarryDelivery.Tick(d,site,dt,
                     s=>{
@@ -163,10 +114,10 @@ namespace CityForgeV3.World
                             view.Retry-=dt;if(view.Retry>0)return false;view.Retry=3;
                             var fresh=nav.Route(s.WagonPosition,s.DeliveryDestination);
                             if(!PlanQuarryRoute(view,s,fresh,nav))
-                            {s.DeliveryStatus=s.Phase=="returning"?"Return route blocked — clear the road and quarry access":"Bricksworks required — clear the road and wagon turning space.";return false;}
+                            {s.DeliveryStatus=s.Phase=="returning"?"Return route blocked — clear the road connection to the quarry":"Bricksworks required — clear the road connection.";return false;}
                             s.DeliveryRoute=fresh;view.Route=fresh;s.DeliveryStatus=s.Phase=="returning"?"Returning to quarry":"Delivering stone to Brickworks";
                         }
-                        bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
+                        bool Clear(Vector3 a,Vector3 b)=>RoadDeliveryClear(a,b);
                         view.Wagon.Step(dt,p=>{
                             var local=TimberLocal(p);float distance=Vector2.Distance(local,DistrictQuarry.Point(d,site));
                             return TimberGround(p)+.28f*(1-Mathf.InverseLerp(13,20,distance));

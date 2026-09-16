@@ -7,7 +7,7 @@ namespace CityForgeV3.UI
     {
         bool RotateSelectedDistrictObject(int direction)
         {
-            if (_placingBrickworks || IndustryPlacementActive || !string.IsNullOrEmpty(_pendingDistrictLotId) || _districtSelection.Count != 1) return false;
+            if (_lotNudge != null || _placingBrickworks || IndustryPlacementActive || !string.IsNullOrEmpty(_pendingDistrictLotId) || _districtSelection.Count != 1) return false;
             var identity = _districtSelection[0];
             var target = _districtWorld?.ResolveSelectable(identity);
             if (target == null) return false;
@@ -101,6 +101,33 @@ namespace CityForgeV3.UI
             panel.Add(StyledLabel(identity.Kind == DistrictSelectionKind.Lot ? "SELECTED LOT" : "SELECTED OBJECT", "district-lot-info-kicker"));
             panel.Add(StyledLabel(target.Title, "district-lot-info-name"));
             panel.Add(StyledLabel(target.Description, "district-lot-info-meta"));
+            if (target.StatusText != null)
+            {
+                var status = StyledLabel(target.StatusText(), "district-lot-info-hint");
+                status.name = "selected-object-status";
+                panel.Add(status);
+                // UI Toolkit suspends this schedule when the selection panel detaches.
+                status.schedule.Execute(() =>
+                {
+                    if (target != null && target.StatusText != null) status.text = target.StatusText();
+                }).Every(500);
+            }
+            if (target.WarningText != null)
+            {
+                var diagnostics = StyledLabel("", "district-lot-info-hint");
+                diagnostics.name = "selected-object-warning";
+                diagnostics.style.color = new Color(1f, .77f, .35f);
+                diagnostics.style.whiteSpace = WhiteSpace.Normal;
+                panel.Add(diagnostics);
+                void RefreshWarnings()
+                {
+                    var text = target != null ? target.WarningText?.Invoke() : "";
+                    diagnostics.text = string.IsNullOrEmpty(text) ? "" : "ATTENTION\n" + text;
+                    diagnostics.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
+                }
+                RefreshWarnings();
+                diagnostics.schedule.Execute(RefreshWarnings).Every(500);
+            }
             var message = StyledLabel(_selectionWarnings.TryGetValue(SelectionWarningKey(identity), out var warning) ? warning : "", "district-lot-info-hint");
             message.name = "selection-action-message";
             var actions = new VisualElement();
@@ -138,7 +165,7 @@ namespace CityForgeV3.UI
                 delete.name = "delete-selected-building";
                 panel.Add(delete);
             }
-            panel.Add(StyledLabel("Click another object to inspect it. Click empty land to clear selection.", "district-lot-info-hint"));
+            panel.Add(StyledLabel("Drag this lot within its outlined tiles. Click empty land to clear selection.", "district-lot-info-hint"));
             panel.Add(CfButton.Create("CLEAR SELECTION", ClearSelectedObject, true, "quiet"));
             return panel;
         }

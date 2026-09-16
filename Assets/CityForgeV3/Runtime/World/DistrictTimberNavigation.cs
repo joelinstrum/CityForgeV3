@@ -83,33 +83,21 @@ namespace CityForgeV3.World
             if (result.Count > 1 && Segment(from, result[1])) result.RemoveAt(0);
             return result;
         }
-        public List<Vector2> Route(Vector2 from, Vector2 to) => Trace(Search(from), from, to);
+        public List<Vector2> Route(Vector2 from, Vector2 to) => new DistrictRoadDelivery(district).Route(from,to);
         public List<TimberDestination> Mills(Vector2 from)
         {
-            var previous = Search(from); var result = new List<TimberDestination>();
-            if (previous == null) return result;
-            foreach (var placed in district.Lots ?? new())
+            var roads=new DistrictRoadDelivery(district);var result=new List<TimberDestination>();
+            foreach(var placed in district.Lots??new())
             {
-                var data = readLot(placed.LotId);
-                if (data == null || !(data.Buildings3D?.Any(b => b.AssetId == "lumber-mill-v01") ?? false)) continue;
-                var center = DistrictWorldController.DistrictLotCenterMeters(district, placed, data);
-                float x = data.LotWidthCells * 10, z = data.LotDepthCells * 10;
-                if (placed.RotationQuarterTurns % 2 != 0) (x, z) = (z, x);
-                var rect = new Rect(center.x - x / 2, center.y - z / 2, x, z);
-                foreach (var cell in previous.Keys)
-                {
-                    var p = Center(cell);
-                    var gap = Vector2.Distance(p, new Vector2(Mathf.Clamp(p.x, rect.xMin, rect.xMax), Mathf.Clamp(p.y, rect.yMin, rect.yMax)));
-                    // A road may enter the lot as a driveway. Keep the dry,
-                    // connected road checks, but do not exclude interior stops.
-                    if (gap > 6) continue;
-                    var route = Trace(previous, from, p); if (route == null) continue;
-                    float distance = 0; var last = from;
-                    foreach (var point in route) { distance += Vector2.Distance(last, point); last = point; }
-                    result.Add(new TimberDestination { MillId = placed.InstanceId, Point = p, Route = route, Distance = distance });
-                }
+                var data=readLot(placed.LotId);
+                if(data==null||!(data.Buildings3D?.Any(b=>b.AssetId=="lumber-mill-v01")??false))continue;
+                var center=DistrictWorldController.DistrictLotCenterMeters(district,placed,data);
+                float x=data.LotWidthCells*10,z=data.LotDepthCells*10;
+                if(placed.RotationQuarterTurns%2!=0)(x,z)=(z,x);
+                var route=roads.Route(from,new Rect(center.x-x/2,center.y-z/2,x,z));
+                if(route!=null)result.Add(new(){MillId=placed.InstanceId,Point=route.Last(),Route=route,Distance=route.Count*10});
             }
-            return result.OrderBy(r => r.Distance).ToList();
+            return result.OrderBy(r=>r.Distance).ToList();
         }
     }
 }

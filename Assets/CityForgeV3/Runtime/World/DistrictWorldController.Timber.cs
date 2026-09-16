@@ -12,6 +12,7 @@ namespace CityForgeV3.World
             public Transform Cargo;
             public List<Vector2> Route;
             public float Retry;
+            public int RoadKey;
         }
         readonly Dictionary<string, TimberView> timberViews = new();
         Transform timberRoot;
@@ -101,67 +102,12 @@ namespace CityForgeV3.World
             }
             Line(last,points[points.Count-1]);return result;
         }
-        // Use both sides of a road for a forward turnaround, rather than
-        // starting a full-diameter U-turn at the center line. Every candidate
-        // still has to pass the complete articulated convoy's clearance check.
-        List<Vector3> TimberTurnaround(TimberView view, List<Vector2> route,
-            System.Func<Vector3,Vector3,bool> clear)
-        {
-            var start=view.Wagon.transform.position;start.y=0;
-            var forward=view.Wagon.transform.forward;forward.y=0;forward.Normalize();
-            var goal=TimberWorld(route[Mathf.Min(1,route.Count-1)]);goal.y=0;
-            if(Vector3.Dot((goal-start).normalized,forward)>-.5f)return null;
-            var right=Vector3.Cross(Vector3.up,forward);
-            var radius=view.Wagon.Definition.TurningRadius;
-            foreach(float approach in new[]{12f,10f,14f,8f,16f})
-            foreach(float side in new[]{-1f,1f})
-            {
-                var points=new List<Vector3>{start};
-                void Curve(Vector3 a,Vector3 b,Vector3 c,Vector3 d)
-                {
-                    int count=Mathf.CeilToInt((Vector3.Distance(a,b)+Vector3.Distance(b,c)+Vector3.Distance(c,d))/.1f);
-                    for(int n=1;n<=count;n++){float t=(float)n/count,u=1-t;points.Add(u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d);}
-                }
-                var entry=start+forward*approach-right*side*radius;
-                Curve(start,start+forward*approach*.4f,entry-forward*approach*.4f,entry);
-                var center=entry+right*side*radius;
-                for(int n=1;n<=120;n++){
-                    float angle=Mathf.PI*n/120f;
-                    points.Add(center-right*side*radius*Mathf.Cos(angle)+forward*radius*Mathf.Sin(angle));
-                }
-                var exit=center+right*side*radius;
-                float length=Vector3.Distance(exit,goal);
-                Curve(exit,exit-forward*length*.4f,goal+forward*length*.4f,goal);
-                points.AddRange(RoundedRoadRoute(route.Skip(Mathf.Min(1,route.Count-1)).ToList()));
-                if(view.Wagon.RouteClear(points,clear))return points;
-            }
-            return null;
-        }
         bool PlanTimber(TimberView view, DistrictTimberCrew crew, List<Vector2> route, DistrictTimberNavigation nav)
         {
-            if (route == null || route.Count == 0) return false;
-            bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
-            var points = new List<Vector2> { crew.WagonPosition }; points.AddRange(route);
-            var path = RoundedRoadRoute(points);
-            // Straight initial travel needs no joining arc. For a return trip,
-            // the accepted wagon planner supplies a forward U-turn on the road.
-            if (!view.Wagon.RouteClear(path,Clear))
-            {
-                var joinIndex = Mathf.Min(1,route.Count-1);
-                var direction = route.Count>joinIndex+1 ? route[joinIndex+1]-route[joinIndex] : route[joinIndex]-crew.WagonPosition;
-                var join = view.Wagon.Plan(new[]{TimberWorld(route[joinIndex])},Clear,
-                    direction.sqrMagnitude>.01f ? (Vector3?)_content.TransformDirection(new Vector3(direction.x,0,direction.y)) : null);
-                if (join != null)
-                {
-                    join.AddRange(RoundedRoadRoute(route.Skip(joinIndex).ToList()));
-                    path=view.Wagon.RouteClear(join,Clear)?join:null;
-                }
-                else path=null;
-                path ??= TimberTurnaround(view,route,Clear);
-                if(path==null)return false;
-            }
-            view.Wagon.SetRoute(path);view.Route=route;return true;
+            if(!SetRoadDeliveryRoute(view.Wagon,route))return false;
+            view.Route=route;crew.Destination=route.Last();return true;
         }
+
 #if UNITY_EDITOR
         public string DiagnoseTimber(RegionCityTile d)
         {
@@ -173,7 +119,7 @@ namespace CityForgeV3.World
                 if(!timberViews.TryGetValue(c.Id,out var v))continue;
                 foreach(var t in targets){
                     var points=new List<Vector2>{c.WagonPosition};points.AddRange(t.Route);
-                    bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
+                    bool Clear(Vector3 a,Vector3 b)=>RoadDeliveryClear(a,b);
                     var ok=v.Wagon.RouteClear(RoundedRoadRoute(points),Clear);
                     report+=$"Mill {t.MillId} end={t.Point} distance={t.Distance} clear={ok} route={string.Join(";",t.Route)}\n";
                 }
@@ -203,6 +149,8 @@ namespace CityForgeV3.World
             {if(timberViews[id].Wagon!=null)Destroy(timberViews[id].Wagon.gameObject);timberViews.Remove(id);}
             if (crews.Count == 0) return false;
             var nav=new DistrictTimberNavigation(district,IsUnderRiverWater);
+            int roadKey=17;
+            unchecked{foreach(var road in district.Roads??new())roadKey=roadKey*31+road.GridX*397+road.GridZ;}
             bool durable=false;
             foreach(var crew in crews)
             {
@@ -221,6 +169,7 @@ namespace CityForgeV3.World
                         if(item.name.StartsWith("Cargo_Log_"))item.SetParent(view.Cargo,true);
                     timberViews[crew.Id]=view;
                 }
+                if(view.RoadKey!=roadKey){view.RoadKey=roadKey;view.Route=null;view.Retry=0;}
                 view.Wagon.Fast=crew.Script.fastWagon;
                 if(running && crew.Enabled)
                 {
@@ -228,18 +177,18 @@ namespace CityForgeV3.World
                         c=>{
                             foreach(var target in nav.Mills(c.WagonPosition))
                                 if(PlanTimber(view,c,target.Route,nav))return target;
-                            c.Status="Waiting for connected roads and wagon turning room";return null;
+                            c.Status="Waiting for a road connection to a Lumber Mill";return null;
                         },
                         (c,to)=>{var route=nav.Route(c.WagonPosition,to);return PlanTimber(view,c,route,nav)?route:null;},
                         (c,step)=>{
-                            bool Clear(Vector3 a,Vector3 b)=>nav.Segment(TimberLocal(a),TimberLocal(b));
+                            bool Clear(Vector3 a,Vector3 b)=>RoadDeliveryClear(a,b);
                             if(!ReferenceEquals(view.Route,c.Route)||view.Wagon.WasBlocked)
                             {
                                 view.Retry-=step;
                                 if(view.Retry>0)return false;
                                 view.Retry=c.Script.retrySeconds;
                                 var fresh=nav.Route(c.WagonPosition,c.Destination);
-                                if(!PlanTimber(view,c,fresh,nav)){c.Status="Road blocked or no wagon turning room";return false;}
+                                if(!PlanTimber(view,c,fresh,nav)){c.Status="No road connection to the destination";return false;}
                                 c.Route=fresh;view.Route=fresh;c.Status=c.Phase=="returning"?"Returning to crew":"Delivering timber by road";
                             }
                             view.Wagon.Step(step,TimberGround,Clear);

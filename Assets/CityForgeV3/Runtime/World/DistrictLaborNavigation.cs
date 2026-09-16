@@ -47,7 +47,7 @@ namespace CityForgeV3.World
             if(Segment(from,to))return new(){to};
             int start=Id(from),end=Id(to);if(!Segment(from,Point(start))||!Segment(Point(end),to))return null;
             var prev=new Dictionary<int,int>{{start,-1}};var queue=new Queue<int>();queue.Enqueue(start);
-            while(queue.Count>0)
+            while(queue.Count>0 && prev.Count<4096)
             {
                 int id=queue.Dequeue();if(id==end)break;
                 foreach(int next in new[]{id-1,id+1,id-columns,id+columns})

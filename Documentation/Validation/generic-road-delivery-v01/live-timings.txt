@@ -1,0 +1,9 @@
+stone-city-043-1 navigation build ms=0.10
+destinations=0 ms=0.07
+destinations=0 ms=0.01
+destinations=0 ms=0.01
+debug-stone-f624fbbfb71049a9a073f567f45d4a28 navigation build ms=0.01
+destinations=1 ms=0.43
+destinations=1 ms=0.03
+destinations=1 ms=0.02
+region save ms=26.38

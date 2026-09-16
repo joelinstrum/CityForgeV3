@@ -729,6 +729,7 @@ namespace CityForgeV3.UI
           _districtSelection);
       screen.RegisterCallback<PointerMoveEvent>(evt =>
       {
+        if (_lotNudge != null) { UpdateLotNudge(DistrictCameraPoint(evt.position)); evt.StopImmediatePropagation(); return; }
         if (_districtMarqueeActive)
         {
           if (evt.pointerId == _districtSelectionPointerId)
@@ -812,6 +813,7 @@ namespace CityForgeV3.UI
             {
               moving.NormalizedX = candidate.x;
               moving.NormalizedZ = candidate.y;
+              DistrictHarvestIndex.Changed(district,moving);
               _districtWorld.MoveDistrictFlora(moving);
             }
           }
@@ -893,6 +895,7 @@ namespace CityForgeV3.UI
         if ((target == screen || target?.ClassListContains("district-terraform-viewport") == true) &&
             TryInspectDistrictObject(DistrictCameraPoint(evt.position)))
         {
+          BeginLotNudge(screen, evt.pointerId, DistrictCameraPoint(evt.position));
           evt.StopImmediatePropagation();
           return;
         }
@@ -1014,6 +1017,7 @@ namespace CityForgeV3.UI
       }, TrickleDown.TrickleDown);
       screen.RegisterCallback<PointerUpEvent>(evt =>
       {
+        if (_lotNudge != null && evt.pointerId == _nudgePointer) { UpdateLotNudge(DistrictCameraPoint(evt.position)); EndLotNudge(false); evt.StopImmediatePropagation(); return; }
         if (_districtMarqueeActive)
         {
           if (evt.button == 0 && evt.pointerId == _districtSelectionPointerId)
@@ -1042,16 +1046,19 @@ namespace CityForgeV3.UI
       }, TrickleDown.TrickleDown);
       screen.RegisterCallback<PointerCaptureOutEvent>(evt =>
       {
+        if (_lotNudge != null && evt.pointerId == _nudgePointer) EndLotNudge(true);
         if (_districtMarqueeActive && evt.pointerId == _districtSelectionPointerId)
           CancelDistrictSelectionPointer();
       });
       screen.RegisterCallback<PointerCancelEvent>(evt =>
       {
+        if (_lotNudge != null && evt.pointerId == _nudgePointer) EndLotNudge(true);
         if (_districtMarqueeActive && evt.pointerId == _districtSelectionPointerId)
           CancelDistrictSelectionPointer();
       });
       screen.RegisterCallback<DetachFromPanelEvent>(_ =>
       {
+        if (_nudgeSurface == screen) EndLotNudge(true);
         if (_districtSelectionSurface == screen) CancelDistrictSelectionPointer();
       });
 
@@ -1461,7 +1468,7 @@ namespace CityForgeV3.UI
 
     private bool DistrictWorldNeedsBuild(RegionCityTile district)
     {
-      if (district == null) return false;
+      if (district == null || _lotNudge != null) return false;
       var lotId = district.Founded ? district.LotId ?? "" : "";
       return _districtWorld == null ||
              _districtWorld.WorldCamera == null ||
@@ -1507,6 +1514,7 @@ namespace CityForgeV3.UI
     {
       if (district == null) return "";
       var parts = new List<string>();
+      foreach (var nudge in district.LotNudges ?? new()) parts.Add("nudge:" + JsonUtility.ToJson(nudge));
       parts.Add("hills:" + JsonUtility.ToJson(district.Hills));
       foreach(var works in district.Brickworks??new List<DistrictBrickworksSite>())parts.Add($"brickworks:{works.Id}:{works.NormalizedX}:{works.NormalizedZ}:{works.Yaw}");
       foreach (var site in district.StoneSites ?? new List<DistrictStoneSite>()) parts.Add($"stone:{site.Id}:{site.Built}:{site.NormalizedX}:{site.NormalizedZ}:{site.Yaw}");
@@ -2159,6 +2167,7 @@ namespace CityForgeV3.UI
 
     private void PollTerraformViewKeys()
     {
+      if (_lotNudge != null) { if (Input.GetKeyDown(KeyCode.Escape)) EndLotNudge(true); return; }
       if(_placingBrickworks)
       {
         if(Input.GetKeyDown(KeyCode.Escape)){CancelBrickworksPlacement();return;}
@@ -2726,6 +2735,7 @@ namespace CityForgeV3.UI
           RotationEighthTurns = UnityEngine.Random.Range(0, 8)
         };
         district.Flora.Add(last);
+        DistrictHarvestIndex.Changed(district,last);
       }
       if (last == null)
       {
@@ -2791,6 +2801,7 @@ namespace CityForgeV3.UI
       {
         if (tree?.GroupId != _activeDistrictRandomFloraGroupId) continue;
         tree.FloraId = RandomDistrictTreeId(FloraFamilies.ForTree(tree.FloraId), tree.FloraId);
+        DistrictHarvestIndex.Changed(district,tree);
         tree.Scale = UnityEngine.Random.Range(.86f, 1.16f);
         tree.RotationEighthTurns = UnityEngine.Random.Range(0, 8);
         changed = true;
@@ -3031,6 +3042,7 @@ namespace CityForgeV3.UI
           if (flora == null) continue;
           flora.NormalizedX = Mathf.Clamp01(flora.NormalizedX + delta.x);
           flora.NormalizedZ = Mathf.Clamp01(flora.NormalizedZ + delta.y);
+          DistrictHarvestIndex.Changed(district,flora);
           floraChanged = true;
         }
         else if (selection.Kind == DistrictSelectionKind.River)
@@ -3094,6 +3106,7 @@ namespace CityForgeV3.UI
     private int _districtDeleteFrame = -1;
     private bool DeleteDistrictSelection()
     {
+      if (_lotNudge != null) return false;
       // UI Toolkit and input polling can report the same physical key.
       if (_districtDeleteFrame == Time.frameCount) return true;
       if (_districtMarqueeActive) return false;
@@ -3130,6 +3143,7 @@ namespace CityForgeV3.UI
       var removedRiver = false;
       foreach (var selection in _districtSelection)
       {
+        district.LotNudges?.RemoveAll(n => n.Kind == selection.Kind && n.Id == selection.Id);
         switch (selection.Kind)
         {
           case DistrictSelectionKind.Entity:
@@ -3138,6 +3152,7 @@ namespace CityForgeV3.UI
           case DistrictSelectionKind.Flora:
             district.Flora?.RemoveAll(item => item != null &&
                 item.InstanceId == selection.Id);
+            DistrictHarvestIndex.Removed(district,selection.Id);
             break;
           case DistrictSelectionKind.Lot:
             district.Lots?.RemoveAll(item => item != null &&

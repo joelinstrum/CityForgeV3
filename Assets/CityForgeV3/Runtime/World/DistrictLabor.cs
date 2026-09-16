@@ -28,6 +28,8 @@ namespace CityForgeV3.World
         public int Cargo;
         public bool CargoAlreadyCredited;
         public List<Vector2> Route = new();
+        [NonSerialized] public float RouteRetry;
+        [NonSerialized] public int SearchOffset;
     }
     [Serializable] public sealed class DistrictLaborState
     {
@@ -82,6 +84,7 @@ namespace CityForgeV3.World
             }
             if(!s.CampPlaced)return changes;
             if(s.PaidSlots<s.AssignedAxemen)return changes;
+            var index=DistrictHarvestIndex.For(d);int routeBudget=2;
             var claimed=new HashSet<string>(s.Workers.Where(w=>!string.IsNullOrEmpty(w.TreeId)).Select(w=>w.TreeId));
             foreach(var w in s.Workers.ToArray())
             {
@@ -93,12 +96,17 @@ namespace CityForgeV3.World
                 if(alarmBefore)changes.Durable=true;
                 var home=crew?.Camp??s.Camp;
                 bool retiring=w.Slot>=s.AssignedAxemen;
-                var tree=d.Flora?.Find(t=>t.InstanceId==w.TreeId);
+                w.RouteRetry=Mathf.Max(0,w.RouteRetry-dt);
+                var tree=index.Find(w.TreeId);
                 if(retiring && w.Activity!=AxemanActivity.Returning)
-                {claimed.Remove(w.TreeId);w.TreeId="";w.Route=route(w.Position,home);w.Activity=AxemanActivity.Returning;changes.Durable=true;}
+                {claimed.Remove(w.TreeId);w.TreeId="";w.Route=null;w.Activity=AxemanActivity.Returning;changes.Durable=true;}
                 if(w.Activity is AxemanActivity.Returning or AxemanActivity.Delivering)
                 {
-                    if(w.Route==null || w.Route.Count==0 && Vector2.Distance(w.Position,home)>.1f)w.Route=route(w.Position,home);
+                    if(w.Route==null || w.Route.Count==0 && Vector2.Distance(w.Position,home)>.1f)
+                    {
+                        if(w.RouteRetry>0||routeBudget<=0)continue;
+                        routeBudget--;w.RouteRetry=2f+(w.Slot%7)*.13f;w.Route=route(w.Position,home);
+                    }
                     if(!Move(w,home,dt,walkable))continue;
                     // Returning axemen contribute raw trees, never spendable lumber.
                     w.Cargo=0;w.CargoAlreadyCredited=false;
@@ -111,11 +119,16 @@ namespace CityForgeV3.World
                 {claimed.Remove(w.TreeId);w.TreeId="";w.Activity=AxemanActivity.Waiting;w.Progress=0;}
                 if(w.Activity==AxemanActivity.Waiting)
                 {
-                    w.Progress-=dt;if(w.Progress>0)continue;w.Progress=2;
-                    foreach(var candidate in (d.Flora??new()).Where(t=>t!=null && (crew==null || Vector2.Distance(TreePoint(d,t),crew.Camp)<=crew.Script.harvestRadiusMeters) && !claimed.Contains(t.InstanceId) && (DistrictTreeHarvest.CanFell(t) || t.FloraId=="cilician-fir" && t.HarvestState==DistrictTreeHarvestState.Fallen && t.RemainingWood>0)).OrderBy(t=>(TreePoint(d,t)-w.Position).sqrMagnitude))
+                    w.Progress-=dt;if(w.Progress>0||routeBudget<=0)continue;w.Progress=2f+(w.Slot%7)*.13f;
+                    var center=crew?.Camp??s.Camp;var radius=crew?.Script.harvestRadiusMeters??100f;
+                    var candidates=index.Nearby(center,radius).Where(t=>!claimed.Contains(t.InstanceId)).OrderBy(t=>(TreePoint(d,t)-w.Position).sqrMagnitude).ToList();
+                    if(w.SearchOffset>=candidates.Count)w.SearchOffset=0;
+                    foreach(var candidate in candidates.Skip(w.SearchOffset))
                     {
+                        if(routeBudget<=0)break;
                         var point=TreePoint(d,candidate);var approach=(w.Position-point).normalized;if(approach.sqrMagnitude<.1f)approach=Vector2.down;
-                        var path=route(w.Position,point+approach*1.1f);if(path==null)continue;
+                        routeBudget--;w.SearchOffset++;var path=route(w.Position,point+approach*1.1f);if(path==null)continue;
+                        w.SearchOffset=0;
                         w.TreeId=candidate.InstanceId;claimed.Add(w.TreeId);w.Route=path;w.Activity=AxemanActivity.Walking;w.Progress=0;break;
                     }
                     continue;
@@ -137,14 +150,14 @@ namespace CityForgeV3.World
                     w.Progress+=dt;
                     if(tree.HarvestState==DistrictTreeHarvestState.Fallen || w.Progress>=ChopDuration)
                     {
-                        if(DistrictTreeHarvest.FellForTransport(d,tree,0)){changes.Changed.Add(tree.InstanceId);changes.Falling.Add(tree.InstanceId);}
+                        if(DistrictTreeHarvest.FellForTransport(d,tree,0)){changes.Changed.Add(tree.InstanceId);changes.Falling.Add(tree.InstanceId);index.Update(tree);}
                         w.Activity=AxemanActivity.WaitingForFall;w.Progress=0;changes.Durable=true;
                     }
                 }
                 else if(w.Activity==AxemanActivity.WaitingForFall)
                 {
                     w.Progress+=dt;if(w.Progress<1.7f)continue;
-                    w.CargoAlreadyCredited=tree.WoodCredited;var taken=DistrictTreeHarvest.TakeWood(tree,int.MaxValue);w.Cargo+=taken;if(taken>0)w.CargoTrees++;changes.Changed.Add(tree.InstanceId);claimed.Remove(w.TreeId);w.TreeId="";w.Route=route(w.Position,home);w.Activity=AxemanActivity.Delivering;w.Progress=0;changes.Durable=true;
+                    w.CargoAlreadyCredited=tree.WoodCredited;var taken=DistrictTreeHarvest.TakeWood(tree,int.MaxValue);w.Cargo+=taken;if(taken>0)w.CargoTrees++;changes.Changed.Add(tree.InstanceId);index.Update(tree);claimed.Remove(w.TreeId);w.TreeId="";w.Route=null;w.RouteRetry=0;w.Activity=AxemanActivity.Delivering;w.Progress=0;changes.Durable=true;
                 }
             }
             return changes;

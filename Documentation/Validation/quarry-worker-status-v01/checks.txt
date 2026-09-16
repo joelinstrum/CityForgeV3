@@ -1,0 +1,3 @@
+PASS two working miners: pickaxe positions and animation phases advance across real Unity frames; full cart stops mining. Waiting for status refresh.
+PASS selected-object status updates live: Bricksworks required — build a Brickworks and connect a clear wagon route by road.
+Cart: 4/4 blocks

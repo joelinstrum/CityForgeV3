@@ -153,7 +153,7 @@ namespace CityForgeV3.UI
         {
             if(_root==null||_currentScreen!=AppScreen.DistrictTerraform||_districtWorld==null)return;
             var d=FindSelectedRegionTile();if(d==null)return;var s=DistrictLabor.State(d);
-            bool running=!_districtSimulationPaused&&!_placingBrickworks&&!HarvestInputBusy&&_root.Q<VisualElement>("document-modal")==null&&_districtWorld.LaborAssetReady;
+            bool running=_lotNudge==null&&!_districtSimulationPaused&&!_placingBrickworks&&!HarvestInputBusy&&_root.Q<VisualElement>("document-modal")==null&&_districtWorld.LaborAssetReady;
             bool paid=s.PaidSlots>=s.AssignedAxemen;
             if(running)
             {
