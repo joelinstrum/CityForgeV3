@@ -1,0 +1,5 @@
+PASS Forest tool opens coverage; Desert disables both choices and generation
+PASS Coverage / Trees / Stones library navigation
+PASS cancel leaves target untouched
+PASS Wooded generate/save/reload: 530 trees; neighbor and regional settings unchanged
+PASS actual district Undo restores exact prior trees/settings and preserves neighbor

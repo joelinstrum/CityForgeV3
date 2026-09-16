@@ -1,0 +1,5 @@
+PASS full region generation and save/reload
+Region: 28 x 20, districts: 66, trees: 291132
+Generation CPU total: 495.34 ms; max district step: 18.84 ms; median step: 6.41 ms
+Save: 1477.81 ms; reload: 1282.64 ms; bytes: 183900548
+Largest district: 4 x 4, trees: 8786; harvest index build + 100m query: 3.99 ms; candidates: 15

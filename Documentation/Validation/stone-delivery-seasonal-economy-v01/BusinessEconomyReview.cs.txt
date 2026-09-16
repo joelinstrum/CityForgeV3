@@ -1,0 +1,61 @@
+#if UNITY_EDITOR
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+using CityForgeV3.World;
+using CityForgeV3.UI;
+[InitializeOnLoad] public static class BusinessEconomyReview
+{
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static BusinessEconomyReview(){EditorApplication.update+=Poll;}
+ static void Poll()
+ {
+  if(EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+  if(File.Exists(Root+"business-restart.request"))
+  {
+   File.Delete(Root+"business-restart.request");
+   SessionState.SetInt("BusinessReviewRestart",1);EditorApplication.isPlaying=false;return;
+  }
+  if(SessionState.GetInt("BusinessReviewRestart",0)==1&&!EditorApplication.isPlayingOrWillChangePlaymode)
+  {SessionState.SetInt("BusinessReviewRestart",2);EditorApplication.isPlaying=true;return;}
+  if(SessionState.GetInt("BusinessReviewRestart",0)==2&&Application.isPlaying&&UnityEngine.Object.FindFirstObjectByType<CityForgeApp>()!=null)
+  {SessionState.SetInt("BusinessReviewRestart",0);File.WriteAllText(Root+"confluence.command","district9");return;}
+  if(EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Root+"business-review.request"))return;
+  File.Delete(Root+"business-review.request");
+  var lines=new System.Collections.Generic.List<string>();
+  foreach(var name in new[]{"DistrictBusinessEconomyTests","DistrictBrickworksTests","DistrictQuarryTests","QuarryCraneTests","DistrictLaborTests","DistrictTimberTests","DistrictWoodResourceTests"})
+  {
+   var type=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll").GetTypes().FirstOrDefault(t=>t.Name==name);
+   if(type==null){lines.Add("FAIL missing fixture "+name);continue;}
+   foreach(var method in type.GetMethods())
+   {
+    var attributes=method.GetCustomAttributes(false);
+    var cases=attributes.Where(a=>a.GetType().Name=="TestCaseAttribute").ToArray();
+    if(cases.Length==0&&!attributes.Any(a=>a.GetType().Name=="TestAttribute"))continue;
+    var args=cases.Length==0?new[]{Array.Empty<object>()}:cases.Select(a=>(object[])a.GetType().GetProperty("Arguments").GetValue(a)).ToArray();
+    foreach(var values in args)try{method.Invoke(Activator.CreateInstance(type),values);lines.Add("PASS "+name+"."+method.Name+" "+string.Join(",",values));}
+    catch(Exception e){lines.Add("FAIL "+name+"."+method.Name+" "+(e.InnerException??e));}
+   }
+  }
+  File.WriteAllLines(Root+"business-review-tests.txt",lines);
+  try
+  {
+   var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();
+   var flags=BindingFlags.Instance|BindingFlags.NonPublic;var type=app.GetType();
+   var district=(RegionCityTile)type.GetMethod("FindSelectedRegionTile",flags).Invoke(app,null);
+   var works=district.Brickworks.First();
+   type.GetMethod("ComposeSelectedObject",flags).Invoke(app,new object[]{new DistrictSelectionRef(DistrictSelectionKind.Entity,"brickworks:"+works.Id)});
+   var root=(VisualElement)type.GetField("_root",flags).GetValue(app);
+   var panel=root.Q<VisualElement>("selected-object-panel");
+   var text=string.Join("\n",panel.Query<Label>().ToList().Select(l=>l.text));
+   if(!text.Contains("Seasonal Cost: $1,500")||!text.Contains("Employees: 10")||!text.Contains("Average stone converted:"))throw new Exception(text);
+   File.WriteAllText(Root+"business-review-panel.txt","PASS actual Brickworks inspector\n"+text);
+   root.schedule.Execute(()=>ScreenCapture.CaptureScreenshot(Root+"business-review.png")).ExecuteLater(1000);
+  }catch(Exception e){File.WriteAllText(Root+"business-review-panel.txt",e.ToString());}
+ }
+}
+#endif

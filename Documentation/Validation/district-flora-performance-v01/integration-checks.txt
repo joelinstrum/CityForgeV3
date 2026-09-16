@@ -1,0 +1,4 @@
+PASS single-tree refresh leaves other shadow untouched and reuses sprite; elapsed ms=4.0106
+Compact full-region save ms=105.4381
+PASS save/reload tree count=32650 bytes=10966661
+PASS simulation checkpoint coalesces changes and resets after saving

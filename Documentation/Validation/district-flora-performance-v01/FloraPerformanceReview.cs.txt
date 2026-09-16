@@ -1,0 +1,58 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Collections;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.UI;
+using CityForgeV3.World;
+[InitializeOnLoad] public static class FloraPerformanceReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static FloraPerformanceReview(){EditorApplication.update+=Poll;}
+ static void Poll(){if(EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Root+"flora-performance.request"))return;
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(app==null)return;
+ var f=BindingFlags.Instance|BindingFlags.NonPublic;
+ var world=(DistrictWorldController)app.GetType().GetField("_districtWorld",f).GetValue(app);if(world==null)return;
+ File.WriteAllText(Root+"flora-performance-state.txt", "playing="+Application.isPlaying+" paused="+EditorApplication.isPaused+" active="+world.gameObject.activeInHierarchy+" frame="+Time.frameCount);
+ EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView")).Focus();Application.runInBackground=true;EditorApplication.isPaused=false;
+ File.Delete(Root+"flora-performance.request");foreach(var probe in UnityEngine.Object.FindObjectsByType<FloraFrameProbe>(FindObjectsSortMode.None)) UnityEngine.Object.DestroyImmediate(probe);var next=app.gameObject.AddComponent<FloraFrameProbe>();next.App=app;next.World=world;
+ }
+}
+public class FloraFrameProbe:MonoBehaviour {
+ public CityForgeApp App; public DistrictWorldController World;
+ IEnumerator Start(){
+ File.AppendAllText("/Users/joelinstrum/dev/CityForge-Regions-Review/flora-performance-state.txt"," START");
+ for(int warm=0;warm<30;warm++)yield return null;
+ var flags=BindingFlags.Instance|BindingFlags.NonPublic;var type=App.GetType();
+ var paused=type.GetField("_districtSimulationPaused",flags);var original=(bool)paused.GetValue(App);
+ var world=World;var root=(Transform)world.GetType().GetField("_districtFloraRoot",flags).GetValue(world);
+
+ var trees=root.GetComponentsInChildren<SpriteRenderer>();
+ var shadows=root.GetComponentsInChildren<MeshRenderer>().Where(r=>r.name=="District Flora Shadow").ToArray();
+ var batches=root.GetComponentsInChildren<MeshRenderer>().Where(r=>r.name=="Flora batch"||r.name=="Flora shadow batch").ToArray();
+ var originals=trees.Cast<Renderer>().Concat(shadows).ToArray();var forced=originals.Select(r=>r.forceRenderingOff).ToArray();
+ var output=new System.Text.StringBuilder();output.AppendLine("Trees="+trees.Length+" shadows="+shadows.Length+" chunk renderers="+batches.Length+" zoom="+world.ZoomLevel+" screen="+Screen.width+"x"+Screen.height);
+ foreach(var mode in new[]{"batched running","batched panning","batched paused","individual paused","no flora"}){
+ paused.SetValue(App,mode!="batched running"&&mode!="batched panning");
+ if(mode=="individual paused"){
+ batches=root.GetComponentsInChildren<MeshRenderer>().Where(r=>r.name=="Flora batch"||r.name=="Flora shadow batch").ToArray();
+ originals=root.GetComponentsInChildren<Renderer>().Where(r=>r is SpriteRenderer||r.name=="District Flora Shadow").ToArray();forced=originals.Select(r=>r.forceRenderingOff).ToArray();
+ foreach(var r in batches)r.enabled=false;foreach(var r in originals)r.forceRenderingOff=false;}
+ if(mode=="no flora")root.gameObject.SetActive(false);
+ for(int i=0;i<10;i++)yield return null;
+ if(mode=="batched paused"||mode=="individual paused")ScreenCapture.CaptureScreenshot("/Users/joelinstrum/dev/CityForge-Regions-Review/flora-"+mode.Replace(" ","-")+".png");
+ var samples=new System.Collections.Generic.List<double>();double draws=0,batchCount=0;var rendered=Time.renderedFrameCount;var watch=System.Diagnostics.Stopwatch.StartNew();
+ var frames=mode=="batched running"?4200:mode=="batched panning"?1200:120;
+ var originalPan=(Vector2)type.GetField("_terraformPanOffset",flags).GetValue(App);
+ for(int i=0;i<frames;i++){if(mode=="batched panning")world.SetPan(originalPan+new Vector2(Mathf.Sin(i*.012f)*200,Mathf.Cos(i*.012f)*150));yield return null;samples.Add(watch.Elapsed.TotalMilliseconds);watch.Restart();draws+=UnityStats.drawCalls;batchCount+=UnityStats.batches;}
+ if(mode=="batched panning")world.SetPan(originalPan);
+ samples.Sort();output.AppendLine(mode+" median="+samples[frames/2]+" p95="+samples[(int)(frames*.95)]+" max="+samples.Last()+" draws="+draws/frames+" batches="+batchCount/frames+" rendered="+(Time.renderedFrameCount-rendered));
+ File.WriteAllText("/Users/joelinstrum/dev/CityForge-Regions-Review/flora-performance.txt",output.ToString());
+ }
+ root.gameObject.SetActive(true);foreach(var r in batches)if(r!=null)r.enabled=true;
+ for(int i=0;i<originals.Length;i++)if(originals[i]!=null)originals[i].forceRenderingOff=forced[i];paused.SetValue(App,original);
+
+ File.WriteAllText("/Users/joelinstrum/dev/CityForge-Regions-Review/flora-performance.txt",output.ToString());Destroy(this);
+ }
+}

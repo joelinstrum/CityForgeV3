@@ -1,0 +1,229 @@
+#if UNITY_EDITOR
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+using CityForgeV3.World;
+using CityForgeV3.UI;
+[InitializeOnLoad] public static class RegionFloraReview
+{
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ static RegionFloraGeneration job; static RegionSaveData stress; static List<double> timings; static double total;
+ static RegionFloraReview(){EditorApplication.update+=Poll;}
+ static void Poll()
+ {
+  if(EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+  if(job!=null){StressStep();return;}
+  var path=Root+"region-flora-review.request";if(!File.Exists(path))return;
+  var command=File.ReadAllText(path).Trim();File.Delete(path);
+  try
+  {
+   if(command=="tests")RunTests();
+   if(command=="stress")
+   {
+    stress=RegionSaveStore.Create("Flora stress fixture",28,20);
+    RegionRiverGenerator.Apply(stress,RegionRiverGenerator.Generate(stress,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Many,Streams=RegionWaterAmount.Many},159));
+    job=new RegionFloraGeneration(stress,RegionTreeCoverage.Wooded,9527);timings=new();total=0;
+   }
+   if(command=="ui")Ui();
+   if(command=="ui-generate")UiGenerate();
+   if(command=="district-ui")DistrictUi();
+  }
+  catch(Exception e){File.WriteAllText(Root+"region-flora-review-error.txt",e.ToString());}
+ }
+ static void RunTests()
+ {
+  var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var lines=new List<string>();
+  foreach(var name in new[]{"DistrictFloraCoverageTests","RegionFloraGeneratorTests","RegionTerrainMenuTests","RegionRiverGeneratorTests","RegionRiverNetworkTests","RegionDeletionTests"})
+  {
+   var type=asm.GetTypes().FirstOrDefault(t=>t.Name==name);if(type==null){lines.Add("FAIL missing fixture "+name);continue;}
+   foreach(var method in type.GetMethods())
+   {
+    var attrs=method.GetCustomAttributes(false);var cases=attrs.Where(a=>a.GetType().Name=="TestCaseAttribute").ToArray();
+    if(cases.Length==0&&!attrs.Any(a=>a.GetType().Name=="TestAttribute"))continue;
+    var args=cases.Length==0?new[]{Array.Empty<object>()}:cases.Select(a=>(object[])a.GetType().GetProperty("Arguments").GetValue(a)).ToArray();
+    foreach(var values in args)
+    {
+     var fixture=Activator.CreateInstance(type);
+     try
+     {
+      foreach(var setup in type.GetMethods().Where(m=>m.GetCustomAttributes(false).Any(a=>a.GetType().Name=="SetUpAttribute")))setup.Invoke(fixture,null);
+      method.Invoke(fixture,values);lines.Add("PASS "+name+"."+method.Name+" "+string.Join(",",values));
+     }
+     catch(Exception e){lines.Add("FAIL "+name+"."+method.Name+" "+(e.InnerException??e));}
+     finally{foreach(var cleanup in type.GetMethods().Where(m=>m.GetCustomAttributes(false).Any(a=>a.GetType().Name=="TearDownAttribute")))cleanup.Invoke(fixture,null);}
+    }
+   }
+  }
+  File.WriteAllLines(Root+"region-flora-tests.txt",lines);
+ }
+ static void StressStep()
+ {
+  try
+  {
+   var watch=System.Diagnostics.Stopwatch.StartNew();job.Step();watch.Stop();timings.Add(watch.Elapsed.TotalMilliseconds);total+=watch.Elapsed.TotalMilliseconds;
+   if(!job.Ready)return;
+   job.Commit(_=>{});
+   var path=Root+"ReviewScratch/FloraStress";
+   watch.Restart();var save=RegionSaveStore.Save(stress,path);watch.Stop();var saveMs=watch.Elapsed.TotalMilliseconds;
+   watch.Restart();var loaded=RegionSaveStore.Load(stress.RegionId,path);watch.Stop();var loadMs=watch.Elapsed.TotalMilliseconds;
+   var count=loaded.Tiles.Sum(d=>d.Flora.Count);if(count!=job.TreeCount)throw new Exception("Stress reload count mismatch");
+   var largest=loaded.Tiles.OrderByDescending(d=>d.Flora.Count).First();
+   watch.Restart();var index=DistrictHarvestIndex.For(largest);var near=index.Nearby(Vector2.zero,100).Count();watch.Stop();
+   var lines=new[]{"PASS full region generation and save/reload",$"Region: 28 x 20, districts: {stress.Tiles.Count}, trees: {job.TreeCount}",
+    $"Generation CPU total: {total:0.00} ms; max district step: {timings.Max():0.00} ms; median step: {timings.OrderBy(v=>v).ElementAt(timings.Count/2):0.00} ms",
+    $"Save: {saveMs:0.00} ms; reload: {loadMs:0.00} ms; bytes: {new FileInfo(save).Length}",
+    $"Largest district: {largest.Width} x {largest.Height}, trees: {largest.Flora.Count}; harvest index build + 100m query: {watch.Elapsed.TotalMilliseconds:0.00} ms; candidates: {near}"};
+   File.WriteAllLines(Root+"region-flora-stress.txt",lines);
+   File.Delete(save);job=null;stress=null;
+  }
+  catch(Exception e){job=null;stress=null;File.WriteAllText(Root+"region-flora-review-error.txt",e.ToString());}
+ }
+ static void Submit(Button button)
+ {
+  if(button==null)throw new Exception("Missing button");
+  using(var e=NavigationSubmitEvent.GetPooled()){e.target=button;button.SendEvent(e);}
+ }
+ static void DistrictUi()
+ {
+  var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();var type=app.GetType();
+  var root=(VisualElement)type.GetField("_root",Flags).GetValue(app);
+  var regionField=type.GetField("_openRegion",Flags);var selectedField=type.GetField("_selectedRegionTileId",Flags);var saveField=type.GetField("_districtUndoQaSaveRoot",Flags);
+  var old=regionField.GetValue(app);var oldTile=selectedField.GetValue(app);var oldSave=saveField.GetValue(app);
+  var pausedField=type.GetField("_districtSimulationPaused",Flags);var wasPaused=pausedField.GetValue(app);
+  var a=new RegionCityTile{TileId="forest-a",Name="Coverage fixture A",Width=1,Height=1};
+  var b=new RegionCityTile{TileId="forest-b",Name="Untouched B",Width=1,Height=1};
+  a.Flora.Add(new PlacedDistrictFlora{InstanceId="manual-a",FloraId="maple",NormalizedX=.1f,NormalizedZ=.1f});
+  b.Flora.Add(new PlacedDistrictFlora{InstanceId="manual-b",FloraId="oak",NormalizedX=.2f,NormalizedZ=.2f});
+  var region=new RegionSaveData{RegionId="district-flora-ui-"+Guid.NewGuid().ToString("N"),Name="District flora fixture",Width=8,Height=8,Tiles=new(){a,b},Terrain=new RegionTerrainSettings{Climate=RegionClimate.Desert}};
+  var folder=Root+"ReviewScratch/DistrictFlora";var lines=new List<string>();
+  var neighbor=JsonUtility.ToJson(b);var settings=JsonUtility.ToJson(region.Terrain);
+  Action modal=()=>type.GetMethod("ComposeDistrictFloraCoverageModal",Flags).Invoke(app,null);
+  var show=type.GetMethod("Show",Flags);var screen=Enum.Parse(show.GetParameters()[0].ParameterType,"DistrictTerraform");
+  void Restore()
+  {
+   regionField.SetValue(app,old);saveField.SetValue(app,oldSave);pausedField.SetValue(app,wasPaused);
+   type.GetField("_districtWorldCompositionKey",Flags).SetValue(app,"");
+   type.GetMethod("SelectRegionTile",Flags).Invoke(app,new[]{oldTile});pausedField.SetValue(app,wasPaused);
+   root.schedule.Execute(()=>
+   {
+    type.GetMethod("SelectDistrictCategory",Flags).Invoke(app,new object[]{"Flora"});
+    type.GetMethod("SelectDistrictTool",Flags).Invoke(app,new object[]{"Forest"});
+    show.Invoke(app,new[]{screen});modal();
+    root.schedule.Execute(()=>ScreenCapture.CaptureScreenshot(Root+"district-flora-menu.png")).ExecuteLater(500);
+   }).ExecuteLater(1500);
+   var path=Path.Combine(folder,region.RegionId+".json");if(File.Exists(path))File.Delete(path);
+  }
+  void Fail(Exception e){File.WriteAllText(Root+"district-flora-ui.txt","FAIL "+e);Restore();}
+  regionField.SetValue(app,region);saveField.SetValue(app,folder);pausedField.SetValue(app,true);
+  type.GetMethod("SelectRegionTile",Flags).Invoke(app,new object[]{a.TileId});pausedField.SetValue(app,true);
+  root.schedule.Execute(()=>
+  {
+   try
+   {
+    type.GetMethod("SelectDistrictCategory",Flags).Invoke(app,new object[]{"Flora"});show.Invoke(app,new[]{screen});
+    Submit(root.Q<Button>("district-tool-forest"));
+    if(root.Q<VisualElement>("district-flora-coverage-modal")==null)throw new Exception("Forest tool did not open coverage");
+    if(root.Q<Button>("district-flora-sparse").enabledSelf||root.Q<Button>("district-flora-wooded").enabledSelf||root.Q<Button>("generate-district-flora").enabledSelf)throw new Exception("Desert options enabled");
+    lines.Add("PASS Forest tool opens coverage; Desert disables both choices and generation");
+    region.Terrain.Climate=RegionClimate.Mediterranean;settings=JsonUtility.ToJson(region.Terrain);modal();
+    Submit(root.Q<Button>("district-flora-tab-trees"));Submit(root.Q<Button>("district-flora-tab-stones"));Submit(root.Q<Button>("district-flora-tab-coverage"));
+    lines.Add("PASS Coverage / Trees / Stones library navigation");
+    var before=JsonUtility.ToJson(a);
+    Submit(root.Q<Button>("district-flora-wooded"));Submit(root.Q<Button>("generate-district-flora"));Submit(root.Q<Button>("cancel-district-flora-coverage"));
+    if(before!=JsonUtility.ToJson(a))throw new Exception("Cancel mutated target");
+    lines.Add("PASS cancel leaves target untouched");
+    modal();Submit(root.Q<Button>("district-flora-wooded"));Submit(root.Q<Button>("generate-district-flora"));
+    int tries=0;
+    void Check()
+    {
+     if(root.Q<VisualElement>("district-flora-coverage-modal")!=null&&tries++<100){root.schedule.Execute(Check).ExecuteLater(100);return;}
+     try
+     {
+      if(a.Flora.Count<300)throw new Exception("No wooded coverage generated");
+      var copy=RegionSaveStore.Load(region.RegionId,folder);
+      if(copy==null||copy.Tiles[0].Flora.Count!=a.Flora.Count||copy.Tiles[0].TreeCoverage!=RegionTreeCoverage.Wooded)throw new Exception("Target reload failed");
+      if(JsonUtility.ToJson(b)!=neighbor||JsonUtility.ToJson(region.Terrain)!=settings)throw new Exception("Generation changed neighbor or region settings");
+      lines.Add($"PASS Wooded generate/save/reload: {a.Flora.Count} trees; neighbor and regional settings unchanged");
+      if(!(bool)type.GetMethod("UndoDistrictEdit",Flags).Invoke(app,null))throw new Exception("Undo rejected");
+      if(JsonUtility.ToJson(a)!=before||JsonUtility.ToJson(b)!=neighbor){File.WriteAllText(Root+"district-flora-undo-before.json",before);File.WriteAllText(Root+"district-flora-undo-after.json",JsonUtility.ToJson(a));throw new Exception("Undo did not restore exact district snapshot");}
+      lines.Add("PASS actual district Undo restores exact prior trees/settings and preserves neighbor");
+      File.WriteAllLines(Root+"district-flora-ui.txt",lines);Restore();
+     }catch(Exception e){Fail(e);}
+    }
+    root.schedule.Execute(Check).ExecuteLater(100);
+   }catch(Exception e){Fail(e);}
+  }).ExecuteLater(1500);
+ }
+ static void UiGenerate()
+ {
+  var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();var type=app.GetType();
+  var root=(VisualElement)type.GetField("_root",Flags).GetValue(app);
+  var old=(RegionSaveData)type.GetField("_openRegion",Flags).GetValue(app);
+  var region=new RegionSaveData{RegionId="flora-ui-generation-"+Guid.NewGuid().ToString("N"),Name="Flora generation fixture",Width=8,Height=8,
+   Tiles=new(){new RegionCityTile{TileId="forest",Name="Forest",Width=2,Height=2}}};
+  var show=type.GetMethod("Show",Flags);var screen=Enum.Parse(show.GetParameters()[0].ParameterType,"RegionEditor");
+  Action modal=()=>type.GetMethod("ComposeRegionTerrainModal",Flags).Invoke(app,null);
+  type.GetField("_openRegion",Flags).SetValue(app,region);show.Invoke(app,new[]{screen});modal();
+  Submit(root.Q<Button>("region-terrain-flora"));Submit(root.Q<Button>("region-flora-wooded"));Submit(root.Q<Button>("generate-region-flora"));
+  int attempts=0;
+  void Check()
+  {
+   if(root.Q<VisualElement>("region-terrain-modal")!=null&&attempts++<100){root.schedule.Execute(Check).ExecuteLater(100);return;}
+   try
+   {
+    if(region.Tiles[0].Flora.Count<1500)throw new Exception("Scheduled generation did not finish: "+region.Tiles[0].Flora.Count);
+    var loaded=RegionSaveStore.Load(region.RegionId);if(loaded==null||loaded.Tiles[0].Flora.Count!=region.Tiles[0].Flora.Count)throw new Exception("UI-generated trees did not persist");
+    File.AppendAllText(Root+"region-flora-ui.txt",$"PASS scheduled Wooded generation, auto-save and reload: {loaded.Tiles[0].Flora.Count} trees\n");
+   }
+   catch(Exception e){File.WriteAllText(Root+"region-flora-review-error.txt",e.ToString());}
+   finally
+   {
+    if(File.Exists(Path.Combine(RegionSaveStore.DefaultRoot,region.RegionId+".json")))RegionSaveStore.Delete(region.RegionId);
+    type.GetField("_openRegion",Flags).SetValue(app,old);show.Invoke(app,new[]{screen});modal();Submit(root.Q<Button>("region-terrain-flora"));
+    root.schedule.Execute(()=>ScreenCapture.CaptureScreenshot(Root+"region-flora-menu.png")).ExecuteLater(500);
+   }
+  }
+  root.schedule.Execute(Check).ExecuteLater(100);
+ }
+ static void Ui()
+ {
+  var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();var type=app.GetType();
+  var root=(VisualElement)type.GetField("_root",Flags).GetValue(app);
+  if(root==null)throw new Exception("Restart isolated Play mode before UI checks");
+  var old=(RegionSaveData)type.GetField("_openRegion",Flags).GetValue(app);
+  var region=RegionSaveStore.Create("Flora UI fixture",8,8);region.Terrain.Climate=RegionClimate.Desert;
+  var oldTile=type.GetField("_selectedRegionTileId",Flags).GetValue(app);
+  type.GetField("_openRegion",Flags).SetValue(app,region);
+  var show=type.GetMethod("Show",Flags);var regionScreen=Enum.Parse(show.GetParameters()[0].ParameterType,"RegionEditor");
+  Action modal=()=>type.GetMethod("ComposeRegionTerrainModal",Flags).Invoke(app,null);
+  try
+  {
+   show.Invoke(app,new[]{regionScreen});modal();
+   Submit(root.Q<Button>("region-terrain-flora"));
+   if(root.Q<Button>("region-flora-sparse").enabledSelf||root.Q<Button>("region-flora-wooded").enabledSelf||root.Q<Button>("generate-region-flora").enabledSelf)throw new Exception("Desert coverage not disabled");
+   Submit(root.Q<Button>("region-terrain-climate"));Submit(root.Q<Button>("region-climate-mediterranean"));Submit(root.Q<Button>("save-region-climate"));
+   if(region.Terrain.Climate!=RegionClimate.Mediterranean)throw new Exception("Climate not applied");
+   var saved=RegionSaveStore.Load(region.RegionId);if(saved.Terrain.Climate!=RegionClimate.Mediterranean)throw new Exception("Climate not persisted");
+   modal();Submit(root.Q<Button>("region-terrain-flora"));Submit(root.Q<Button>("region-flora-wooded"));
+   if(!root.Q<Button>("generate-region-flora").enabledSelf)throw new Exception("Wooded not enabled");
+   // Generation is intentionally not committed to the user's region; this fixture is disposable.
+   Submit(root.Q<Button>("generate-region-flora"));Submit(root.Q<Button>("cancel-region-terrain-options"));
+   if(region.Tiles.Any(d=>d.Flora.Count!=0))throw new Exception("Cancel mutated region");
+   File.WriteAllText(Root+"region-flora-ui.txt","PASS Desert disables Sparse, Wooded and Generate\nPASS Mediterranean climate button saves/reloads\nPASS Wooded enables generation\nPASS cancel leaves fixture trees untouched\n");
+  }
+  finally
+  {
+   if(File.Exists(Path.Combine(RegionSaveStore.DefaultRoot,region.RegionId+".json")))RegionSaveStore.Delete(region.RegionId);
+   type.GetField("_openRegion",Flags).SetValue(app,old);type.GetField("_selectedRegionTileId",Flags).SetValue(app,oldTile);
+   show.Invoke(app,new[]{regionScreen});modal();Submit(root.Q<Button>("region-terrain-climate"));
+   root.schedule.Execute(()=>ScreenCapture.CaptureScreenshot(Root+"region-climate-menu.png")).ExecuteLater(500);
+  }
+ }
+}
+#endif

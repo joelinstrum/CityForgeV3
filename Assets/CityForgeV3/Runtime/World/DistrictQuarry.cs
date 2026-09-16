@@ -87,7 +87,7 @@ namespace CityForgeV3.World
             UpgradeCraneLoading(p);
             var center=Point(d,p);
             d.Flora?.RemoveAll(tree=>tree!=null && Vector2.Distance(DistrictLabor.TreePoint(d,tree),center)<TreeClearanceRadius);
-            p.Built=true;p.Enabled=true;p.Phase="mining";p.Elapsed=0;p.CartBlocks=0;p.CargoStoneTons=0;p.DeliveryVersion=1;p.HasWagonPose=false;p.DeliveryRoute=null;p.DeliveryStatus="";
+            p.Built=true;p.Enabled=true;p.Phase="mining";p.Elapsed=0;p.CartBlocks=0;p.CargoStoneTons=0;p.DeliveryVersion=2;p.HasWagonPose=false;p.DeliveryRoute=null;p.DeliveryStatus="";
             return true;
         }
         public static int WagesDue(RegionCityTile d,DistrictStoneSite site)
@@ -138,9 +138,22 @@ namespace CityForgeV3.World
             var reason = !site.Built ? "Stone deposit available" : !site.Enabled ? "Quarry paused" :
                 !WorkersPaid(district, site) ? "Workers off duty — $500 wages due" :
                 !running ? "Work paused" : Status(site);
-            return reason + $"\nCart: {site.CartBlocks}/{site.Script.cartCapacity} blocks";
+            return DistrictBusinessEconomy.Describe(new BusinessRates { SeasonalCost = SeasonalPayroll, Employees = WorkerCount }) + "\n" + reason + $"\nCart: {site.CartBlocks}/{site.Script.cartCapacity} blocks";
         }
         public static string Status(DistrictStoneSite p)=>!p.Built?"Stone deposit available":!p.Enabled?"Paused":p.Phase=="loading"?"Loading stone into cart":!string.IsNullOrEmpty(p.DeliveryStatus)?p.DeliveryStatus:p.Phase=="full"?"Cart full — waiting for Brickworks":$"Mining block · {Mathf.Max(0,Mathf.CeilToInt(p.Script.miningSeconds-p.Elapsed))}s";
+        // Old saves included loaded wagon cargo in the shared inventory. Reclassify it
+        // once as in-transit material; leave delivered stock and unrelated stone intact.
+        public static bool UpgradeDeliveryInventory(RegionCityTile d, DistrictStoneSite site)
+        {
+            if (site.DeliveryVersion >= 2) return false;
+            site.Script ??= new();
+            if (site.DeliveryVersion == 0)
+                site.CargoStoneTons = (int)Math.Min(int.MaxValue, (long)site.CartBlocks * site.Script.stoneTonsPerBlock);
+            d.ResourceInventory ??= new();
+            d.ResourceInventory.Stone = Math.Max(0, d.ResourceInventory.Stone - Math.Max(0, site.CargoStoneTons));
+            site.DeliveryVersion = 2;
+            return true;
+        }
         public static bool Tick(RegionCityTile d,float dt,Func<Vector2,bool> walkable)
         {
             if(dt<=0||float.IsNaN(dt)||float.IsInfinity(dt))return false;
@@ -149,7 +162,7 @@ namespace CityForgeV3.World
             {
                 if(!p.Built)continue;
                 changed|=UpgradeCraneLoading(p);
-                if(p.DeliveryVersion==0){p.CargoStoneTons=(int)Math.Min(int.MaxValue,(long)p.CartBlocks*p.Script.stoneTonsPerBlock);p.DeliveryVersion=1;changed=true;}
+                changed |= UpgradeDeliveryInventory(d, p);
                 if(!p.Enabled||!WorkersPaid(d,p)||!walkable(Point(d,p))||p.Phase=="full"||p.Phase=="delivering"||p.Phase=="unloading"||p.Phase=="returning")continue;
                 p.Script??=new();var s=p.Script;float left=dt;
                 for(int steps=0;left>0&&steps<256;steps++)
@@ -164,7 +177,6 @@ namespace CityForgeV3.World
                     {
                         p.CargoStoneTons=(int)Math.Min(int.MaxValue,(long)p.CargoStoneTons+s.stoneTonsPerBlock);
                         p.CartBlocks++;p.BlocksLoaded=(int)Math.Min(int.MaxValue,(long)p.BlocksLoaded+1);
-                        d.ResourceInventory.Stone=(int)Math.Min(int.MaxValue,(long)d.ResourceInventory.Stone+s.stoneTonsPerBlock);
                         p.Phase=p.CartBlocks>=s.cartCapacity?"full":"mining";
                         if(p.Phase=="full")break;
                     }

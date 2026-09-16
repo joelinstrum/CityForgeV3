@@ -1,0 +1,13 @@
+PASS actual Brickworks inspector
+SELECTED OBJECT
+BRICKWORKS
+Rotate the Brickworks. Placement or delivery conflicts are reported below.
+Seasonal Cost: $1,500
+Seasonal Revenue: $0
+Employees: 10
+Waiting for stone delivery
+Stone waiting: 0 tons · Bricks produced: 88 tons
+Average stone converted: No deliveries yet
+
+
+Drag this lot within its outlined tiles. Click empty land to clear selection.

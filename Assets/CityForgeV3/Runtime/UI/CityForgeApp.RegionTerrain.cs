@@ -14,7 +14,9 @@ namespace CityForgeV3.UI
             var region = _openRegion;
             if (region == null) return;
             var saved = region.Terrain ?? new RegionTerrainSettings();
-            var draft = new RegionTerrainSettings { DeepRivers = saved.DeepRivers, Streams = saved.Streams, Flow = saved.Flow };
+            var draft = saved.Copy();
+            var category = "Rivers";
+            bool busy = false, cancelled = false;
             var panel = CreateDocumentModal("REGION TERRAIN", "Choose terrain options for " + region.Name + ".");
             panel.name = "region-terrain-modal";
             panel.style.width = 1080;
@@ -24,70 +26,158 @@ namespace CityForgeV3.UI
             tabs.style.flexDirection = FlexDirection.Row;
             tabs.style.flexWrap = Wrap.Wrap;
             panel.Add(tabs);
-            var content = new ScrollView();
-            content.name = "region-terrain-options";
+            var content = new ScrollView { name = "region-terrain-options" };
             content.style.minHeight = 230;
             content.style.flexShrink = 1;
             content.style.marginTop = 18;
             panel.Add(content);
             var notice = StyledLabel("", "inspector-note");
+            notice.name = "region-terrain-notice";
+            notice.style.display = DisplayStyle.None;
             panel.Add(notice);
-            var flow = new EnumField("Main river direction", draft.Flow);
-            flow.name = "region-river-flow";
+            var flow = new EnumField("Main river direction", draft.Flow) { name = "region-river-flow" };
             flow.RegisterValueChangedCallback(e => draft.Flow = (RegionRiverFlow)e.newValue);
             panel.Add(flow);
-            foreach (var field in new VisualElement[] {flow})
-            {
-                field.style.flexDirection = FlexDirection.Row;
-                field.style.minHeight = 48;
-                field.style.fontSize = 24;
-                var input = field.Q<VisualElement>(className: "unity-base-field__input");
-                if (input != null) { input.style.flexGrow = 1; input.style.backgroundColor = new Color(.12f,.21f,.27f); input.style.paddingLeft = 12; }
-            }
+            flow.style.flexDirection = FlexDirection.Row;
+            flow.style.minHeight = 48;
+            flow.style.fontSize = 24;
+            var input = flow.Q<VisualElement>(className: "unity-base-field__input");
+            if (input != null) { input.style.flexGrow = 1; input.style.backgroundColor = new Color(.12f,.21f,.27f); input.style.paddingLeft = 12; }
             flow.labelElement.style.minWidth = 270;
             var actions = DocumentModalActions();
-            var save = CfButton.Create("GENERATE RIVERS", () =>
-            {
-                notice.text = GenerateFreshRegionRivers(region, draft) ?? "";
-            }, true, "primary");
-            save.name = "generate-region-rivers";
-            actions.Add(save);
-            var cancel = CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet");
+            Button save = null;
+            var cancel = CfButton.Create("CANCEL", () => { cancelled = true; RemoveDocumentModal(); }, true, "quiet");
             cancel.name = "cancel-region-terrain-options";
-            actions.Add(cancel);
-            panel.Add(actions);
-
-            void SelectCategory(string category)
+            void Finish()
             {
-                content.Clear();
-                save.SetEnabled(category == "Rivers");
-                flow.style.display = category == "Rivers" ? DisplayStyle.Flex : DisplayStyle.None;
-                notice.text = "";
-                foreach (var button in tabs.Query<Button>().ToList())
-                    button.EnableInClassList("cf-button--primary", button.text == category.ToUpperInvariant());
-                content.Add(StyledLabel(category.ToUpperInvariant(), "document-modal-title"));
-                if (category != "Rivers")
+                _districtWorldCompositionKey = "";
+                var scroll = _root.Q<ScrollView>("region-map-scroll");
+                if (scroll != null) _regionMapScrollOffset = scroll.scrollOffset;
+                RemoveDocumentModal(); Show(AppScreen.RegionEditor);
+            }
+            void SetBusy(bool value)
+            {
+                busy = value; tabs.SetEnabled(!value); content.SetEnabled(!value); save.SetEnabled(!value);
+                cancel.text = value ? "CANCEL GENERATION" : "CANCEL";
+            }
+            void GenerateFlora()
+            {
+                var seed = RegionRiverGenerator.FreshSeed(saved.FloraSeed);
+                var generation = new RegionFloraGeneration(region, draft.TreeCoverage, seed);
+                SetBusy(true);
+                void Step()
                 {
-                    content.Add(StyledLabel(category + " options will be added in a later pass.", "document-modal-copy"));
+                    if (cancelled || panel.panel == null || _openRegion != region) return;
+                    try
+                    {
+                        generation.Step();
+                        notice.text = $"Generating tree coverage… {generation.Completed}/{region.Tiles.Count} districts · {generation.TreeCount:N0} trees";
+                        if (generation.Ready)
+                        {
+                            notice.text = $"Applying {generation.TreeCount:N0} trees…";
+                            panel.schedule.Execute(() =>
+                            {
+                                if (cancelled || panel.panel == null || _openRegion != region) return;
+                                try { generation.Commit(_ => { }); Finish(); }
+                                catch (Exception e) { SetBusy(false); notice.text = "Could not apply tree coverage: " + e.Message; }
+                            }).ExecuteLater(20);
+                        }
+                        else panel.schedule.Execute(Step).ExecuteLater(1);
+                    }
+                    catch (Exception e) { SetBusy(false); notice.text = "Could not generate tree coverage: " + e.Message; }
+                }
+                panel.schedule.Execute(Step).ExecuteLater(1);
+            }
+            save = CfButton.Create("GENERATE RIVERS", () =>
+            {
+                if (busy) return;
+                notice.style.display = DisplayStyle.Flex;
+                if (category == "Rivers")
+                {
+                    var rivers = saved.Copy(); rivers.DeepRivers = draft.DeepRivers; rivers.Streams = draft.Streams; rivers.Flow = draft.Flow;
+                    notice.text = GenerateFreshRegionRivers(region, rivers) ?? "";
+                }
+                else if (category == "Flora")
+                {
+                    try { GenerateFlora(); } catch (Exception e) { notice.text = e.Message; }
+                }
+                else if (category == "Climate")
+                {
+                    var previous = region.Terrain; var modified = region.ModifiedUtc;
+                    try
+                    {
+                        region.Terrain = saved.Copy(); region.Terrain.Climate = draft.Climate;
+                        if (!RegionClimateRules.AllowsForest(draft.Climate)) region.Terrain.TreeCoverage = RegionTreeCoverage.None;
+                        RegionClimateRules.Apply(region); Finish();
+                    }
+                    catch (Exception e)
+                    {
+                        region.Terrain = previous; region.ModifiedUtc = modified; RegionClimateRules.Apply(region);
+                        notice.text = "Could not apply climate: " + e.Message;
+                    }
+                }
+            }, true, "primary");
+            actions.Add(save); actions.Add(cancel); panel.Add(actions);
+
+            void SelectCategory(string selected)
+            {
+                category = selected; content.Clear(); notice.text = ""; notice.style.display = DisplayStyle.None;
+                save.name = category == "Rivers" ? "generate-region-rivers" : category == "Flora" ? "generate-region-flora" : "save-region-climate";
+                save.text = category == "Flora" ? "GENERATE TREE COVERAGE" : category == "Climate" ? "APPLY CLIMATE" : "GENERATE RIVERS";
+                save.SetEnabled(category == "Rivers" || category == "Climate" || category == "Flora" && RegionClimateRules.AllowsForest(saved.Climate));
+                flow.style.display = category == "Rivers" ? DisplayStyle.Flex : DisplayStyle.None;
+                foreach (var button in tabs.Query<Button>().ToList())
+                {
+                    bool active = button.text == category.ToUpperInvariant();
+                    button.EnableInClassList("cf-button--primary", active);
+                    button.EnableInClassList("cf-button--quiet", !active);
+                }
+                content.Add(StyledLabel(category.ToUpperInvariant(), "document-modal-title"));
+                if (category == "Climate")
+                {
+                    foreach (RegionClimate climate in Enum.GetValues(typeof(RegionClimate)))
+                    {
+                        var choice = climate;
+                        var button = CfButton.Create(climate.ToString().ToUpperInvariant(), () => { draft.Climate = choice; SelectCategory("Climate"); }, true,
+                            draft.Climate == climate ? "primary" : "secondary");
+                        button.style.width = Length.Percent(100); button.style.whiteSpace = WhiteSpace.NoWrap; button.style.fontSize = 18;
+                        button.name = "region-climate-" + climate.ToString().ToLowerInvariant();
+                        content.Add(button);
+                    }
+                    content.Add(StyledLabel(RegionClimateRules.Description(draft.Climate), "document-modal-copy"));
+                    content.Add(StyledLabel("Save the climate before generating tree coverage. Existing trees and buildings stay in place.", "inspector-note"));
                     return;
                 }
+                if (category == "Flora")
+                {
+                    content.Add(StyledLabel("Climate: " + saved.Climate + $" · {region.Tiles.Count} districts · {region.Tiles.Sum(tile => tile.Flora?.Count ?? 0):N0} existing trees", "document-modal-copy"));
+                    bool enabled = RegionClimateRules.AllowsForest(saved.Climate);
+                    AddFloraCoverageChoices(content, "region-flora", saved.Climate, draft.TreeCoverage,
+                        value => { draft.TreeCoverage = value; SelectCategory("Flora"); });
+                    save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None);
+                    content.Add(StyledLabel(enabled
+                        ? "Generate tree coverage across all districts. Sparse leaves open land; Wooded creates dense forest. Roads, water and buildings stay clear. Regeneration replaces this tool’s standing trees; planted trees and harvested trees stay."
+                        : "Sparse and Wooded are unavailable in Desert. Choose and apply another climate to generate tree coverage.", "document-modal-copy"));
+                    if (saved.Climate == RegionClimate.Tropical)
+                        content.Add(StyledLabel("Tropical coverage uses tropical trees. Lumber crews currently harvest Cilician firs, available in Temperate and Mediterranean forests.", "inspector-note"));
+                    return;
+                }
+                if (category != "Rivers")
+                {
+                    content.Add(StyledLabel(category + " options will be added in a later pass.", "document-modal-copy")); return;
+                }
                 content.Add(StyledLabel("Choose one amount per type. Leave both unchecked for none.", "document-modal-copy"));
-                AddRegionWaterChoices(content, "deep-rivers", "A few deep rivers", "Many deep rivers", draft.DeepRivers,
-                    value => draft.DeepRivers = value);
-                AddRegionWaterChoices(content, "streams", "A few streams", "Many streams", draft.Streams,
-                    value => draft.Streams = value);
+                AddRegionWaterChoices(content, "deep-rivers", "A few deep rivers", "Many deep rivers", draft.DeepRivers, value => draft.DeepRivers = value);
+                AddRegionWaterChoices(content, "streams", "A few streams", "Many streams", draft.Streams, value => draft.Streams = value);
                 content.Add(StyledLabel("Few: 2 deep rivers or 4 streams. Many: 5 deep rivers or 10 streams. Rivers and streams form connected branches with varied bends. Generation replaces this tool’s rivers; manually placed rivers stay. Each generation chooses a fresh placement.", "inspector-note"));
             }
-            foreach (var category in new[] { "Rivers", "Shorefront", "Roads", "Mountains", "Hills" })
+            foreach (var name in new[] { "Rivers", "Flora", "Climate", "Shorefront", "Roads", "Mountains", "Hills" })
             {
-                var captured = category;
-                var button = CfButton.Create(category.ToUpperInvariant(), () => SelectCategory(captured), true, "quiet");
-                button.name = "region-terrain-" + category.ToLowerInvariant();
-                button.style.marginRight = 8;
-                button.style.minWidth = 174;
-                button.style.fontSize = 22;
-                button.style.whiteSpace = WhiteSpace.NoWrap;
-                tabs.Add(button);
+                var captured = name;
+                var button = CfButton.Create(name.ToUpperInvariant(), () => SelectCategory(captured), true, "quiet");
+                button.name = "region-terrain-" + name.ToLowerInvariant();
+                button.style.marginRight = 8; button.style.width = 174; button.style.fontSize = 18;
+                button.style.whiteSpace = WhiteSpace.NoWrap; tabs.Add(button);
             }
             SelectCategory("Rivers");
         }
@@ -107,13 +197,12 @@ namespace CityForgeV3.UI
                 {
                     return "This layout crosses a building in " + conflict + ". Try regenerating again or choosing fewer rivers.";
                 }
-                // Use fresh lists so a failed save can restore the complete old layout.
+                // Use fresh lists so a failed generation can restore the complete old layout.
                 foreach (var tile in region.Tiles)
                     tile.Rivers = new List<PlacedDistrictRiver>(tile.Rivers ?? new List<PlacedDistrictRiver>());
                 RegionRiverGenerator.Apply(region, paths);
                 region.Terrain = draft;
                 region.RiverSeed = newSeed;
-                RegionSaveStore.Save(region);
             }
             catch (Exception exception)
             {

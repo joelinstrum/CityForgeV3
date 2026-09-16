@@ -13,7 +13,7 @@ namespace CityForgeV3.UI
         {
             bool unlocked=DistrictBrickworks.Unlocked(d);
             scroll.Add(ComposeIndustryCard("brickworks","BRICKWORKS","CityForgeV3/Industry/BrickworksV01/MenuThumbnail",
-                unlocked?"Receives quarry wagons by road. Converts 1 t stone into 1 t bricks every 30 seconds.":"Requires a placed Stone Quarry.",
+                unlocked?"Receives quarry wagons by road. Converts each delivered load immediately: 1 t stone becomes 1 t bricks.":"Requires a placed Stone Quarry.",
                 "ADD BRICKWORKS",BeginBrickworksPlacement,unlocked&&Resources.Load<GameObject>(DistrictBrickworks.ResourcePath)!=null,
                 ComposeBrickworksManagement,(d.Brickworks?.Count??0)>0));
         }

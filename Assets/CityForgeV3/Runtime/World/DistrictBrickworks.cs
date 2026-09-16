@@ -11,6 +11,8 @@ namespace CityForgeV3.World
         public float NormalizedX,NormalizedZ,Yaw;
         public bool Enabled=true;
         public int StoneInput,BricksProduced;
+        public int CompletedDeliveries;
+        public long DeliveredStoneTons;
         public float Elapsed;
     }
     public static class DistrictBrickworks
@@ -29,14 +31,16 @@ namespace CityForgeV3.World
             return "";
         }
         public static string WorkStatus(DistrictBrickworksSite site) =>
+            DistrictBusinessEconomy.Describe(DistrictBusinessEconomy.ProductionRates) + "\n" +
             (site.Enabled ? (site.StoneInput > 0 ? "Processing stone" : "Waiting for stone delivery") : "Brickworks paused") +
-            $"\nStone waiting: {site.StoneInput} tons · Bricks produced: {site.BricksProduced}";
+            $"\nStone waiting: {site.StoneInput} tons · Bricks produced: {site.BricksProduced} tons" +
+            $"\nAverage stone converted: {(site.CompletedDeliveries > 0 ? ((double)site.DeliveredStoneTons / site.CompletedDeliveries).ToString("0.##") + " t/delivery" : "No deliveries yet")}";
 
         public const string ResourcePath="CityForgeV3/Industry/BrickworksV01/Brickworks";
         // Keep the rendered asset, placement bounds and wagon access in the same scale contract.
         public const float PresentationScale=2f;
         public const float HalfWidth=10f*PresentationScale,HalfDepth=12.5f*PresentationScale;
-        public const float SecondsPerTon=30,UnloadSeconds=8;
+        public const float UnloadSeconds=8;
         public static bool Unlocked(RegionCityTile d)=>d?.StoneSites?.Any(s=>s.Built)==true;
         public static Vector2 Point(RegionCityTile d,DistrictBrickworksSite s)=>new Vector2((s.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(s.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height))+DistrictLotNudge.GetOffset(d,DistrictSelectionKind.Entity,"brickworks:"+s.Id);
         public static Vector2 Offset(Vector2 center,float yaw,Vector2 offset)
@@ -75,18 +79,24 @@ namespace CityForgeV3.World
             d.Brickworks??=new();d.Brickworks.Add(s);
             d.Flora?.RemoveAll(f=>Contains(d,s,DistrictLabor.TreePoint(d,f),3));return true;
         }
+        public static bool ConvertAvailableStone(RegionCityTile d, DistrictBrickworksSite b)
+        {
+            d.ResourceInventory ??= new();
+            if (!b.Enabled || b.StoneInput <= 0 || d.ResourceInventory.Stone <= 0) return false;
+            int count = Math.Min(Math.Min(b.StoneInput, d.ResourceInventory.Stone), int.MaxValue - d.ResourceInventory.Bricks);
+            if (count <= 0) return false;
+            b.StoneInput -= count; d.ResourceInventory.Stone -= count; d.ResourceInventory.Bricks += count;
+            b.BricksProduced = (int)Math.Min(int.MaxValue, (long)b.BricksProduced + count);
+            b.Elapsed = 0;
+            return true;
+        }
         public static bool Tick(RegionCityTile d,float dt)
         {
             if(dt<=0||float.IsNaN(dt)||float.IsInfinity(dt))return false;
             d.ResourceInventory??=new();bool changed=false;
             foreach(var b in d.Brickworks??new())
             {
-                if(!b.Enabled||b.StoneInput<=0||d.ResourceInventory.Stone<=0||d.ResourceInventory.Bricks==int.MaxValue)continue;
-                b.Elapsed+=dt;
-                int count=(int)Math.Min(Math.Min(b.StoneInput,d.ResourceInventory.Stone),Math.Min(int.MaxValue-d.ResourceInventory.Bricks,Math.Floor(b.Elapsed/SecondsPerTon)));
-                if(count==0)continue;
-                b.Elapsed-=count*SecondsPerTon;b.StoneInput-=count;d.ResourceInventory.Stone-=count;d.ResourceInventory.Bricks+=count;
-                b.BricksProduced=(int)Math.Min(int.MaxValue,(long)b.BricksProduced+count);if(b.StoneInput==0)b.Elapsed=0;changed=true;
+                changed |= ConvertAvailableStone(d, b);
             }
             return changed;
         }
@@ -98,6 +108,7 @@ namespace CityForgeV3.World
         public static bool Tick(RegionCityTile d,DistrictStoneSite s,float dt,Func<DistrictStoneSite,QuarryDeliveryDestination> find,Func<DistrictStoneSite,bool> move)
         {
             if(dt<=0||float.IsNaN(dt)||float.IsInfinity(dt)||!s.Built||!s.Enabled||!DistrictQuarry.WorkersPaid(d,s))return false;
+            DistrictQuarry.UpgradeDeliveryInventory(d, s);
             if(s.Phase=="full")
             {
                 if(s.Elapsed<s.Script.fullCartSeconds){s.Elapsed=Mathf.Min(s.Script.fullCartSeconds,s.Elapsed+dt);return false;}
@@ -122,8 +133,21 @@ namespace CityForgeV3.World
             if(s.Phase!="unloading")return false;
             s.Elapsed+=dt;if(s.Elapsed< DistrictBrickworks.UnloadSeconds)return false;
             var works=d.Brickworks.First(b=>b.Id==s.DeliveryTargetId);
-            // Stone was credited at quarry loading. Delivery reserves that same material for firing.
-            works.StoneInput=(int)Math.Min(int.MaxValue,(long)works.StoneInput+s.CargoStoneTons);
+            d.ResourceInventory ??= new();
+            // Retain cargo if either inventory cannot accept the entire load.
+            int cargo = Math.Max(0, s.CargoStoneTons);
+            if ((long)d.ResourceInventory.Stone + cargo > int.MaxValue ||
+                (long)works.StoneInput + cargo > int.MaxValue ||
+                (long)d.ResourceInventory.Bricks + works.StoneInput + cargo > int.MaxValue)
+            { s.DeliveryStatus = "Unloading blocked — resource inventory is full"; return false; }
+            d.ResourceInventory.Stone += cargo;
+            works.StoneInput += cargo;
+            DistrictBrickworks.ConvertAvailableStone(d, works);
+            if (cargo > 0)
+            {
+                works.CompletedDeliveries = (int)Math.Min(int.MaxValue, (long)works.CompletedDeliveries + 1);
+                works.DeliveredStoneTons += cargo;
+            }
             s.CargoStoneTons=0;s.CartBlocks=0;s.Elapsed=0;s.Phase="returning";s.DeliveryDestination=DistrictBrickworks.QuarryHome(d,s);s.DeliveryRoute=null;
             s.DeliveryStatus="Returning to quarry";return true;
         }

@@ -71,15 +71,17 @@ namespace CityForgeV3.World
         public static string SeasonName(int index) => new[]{"Summer","Autumn","Winter","Spring"}[Math.Max(0,index)%4];
         public static DistrictLaborChanges Tick(RegionCityTile d,float dt,Func<Vector2,Vector2,List<Vector2>> route,Func<Vector2,bool> walkable)
         {
-            var changes=new DistrictLaborChanges();var s=State(d);if(dt<=0 || (!s.CampPlaced && DistrictWildlife.State(d).Marksmen.Count==0 && !(d.StoneSites?.Any(q=>q.Built)??false)))return changes;
+            var changes=new DistrictLaborChanges();var s=State(d);if(dt<=0 || !float.IsFinite(dt))return changes;
+            changes.Durable |= DistrictBusinessEconomy.SettleSeason(d);
             s.SeasonSeconds+=dt;
-            if(s.SeasonSeconds>=SeasonDuration)
+            while(s.SeasonSeconds>=SeasonDuration)
             {
                 s.SeasonSeconds-=SeasonDuration;s.SeasonIndex++;s.PaidSlots=0;
                 var due=(long)s.AssignedAxemen*Wage;
                 if(due<=d.Treasury){d.Treasury-=(int)due;s.PaidSlots=s.AssignedAxemen;}
                 DistrictWildlife.RenewWages(d);
                 DistrictQuarry.PayWages(d);
+                DistrictBusinessEconomy.SettleSeason(d);
                 changes.Durable=true;
             }
             if(!s.CampPlaced)return changes;

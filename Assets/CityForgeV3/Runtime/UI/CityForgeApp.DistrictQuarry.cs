@@ -44,7 +44,7 @@ namespace CityForgeV3.UI
                     actions.Add(CfButton.Create("REMOVE",()=>SetQuarry(site,false),true,"quiet"));
                 }
                 row.Add(actions);
-                row.Add(new Label($"{site.Script.miningSeconds:0.#} seconds/block · {site.Script.loadingSeconds:0.#} second crane load · {site.Script.stoneTonsPerBlock} t credited when loaded"));
+                row.Add(new Label($"{site.Script.miningSeconds:0.#} seconds/block · {site.Script.loadingSeconds:0.#} second crane load · {site.Script.stoneTonsPerBlock} t per block · credited and converted on delivery"));
                 if(!site.Built&&!_districtWorld.QuarrySiteClear(d,site))row.Add(new Label("Move nearby roads or lots; the quarry needs dry, level ground."));
                 scroll.Add(row);
             }

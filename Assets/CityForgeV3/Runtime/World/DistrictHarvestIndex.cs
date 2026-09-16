@@ -54,18 +54,21 @@ namespace CityForgeV3.World
         {
             if(tree==null||string.IsNullOrEmpty(tree.InstanceId))return;
             Remove(tree.InstanceId);byId[tree.InstanceId]=tree;
-            if(!Available(tree))return;
+            // Keep all flora indexed; harvest queries filter availability,
+            // while wildlife can query non-harvestable mountain species too.
             var cell=Cell(DistrictLabor.TreePoint(district,tree));
             if(!cells.TryGetValue(cell,out var ids))cells[cell]=ids=new();
             ids.Add(tree.InstanceId);membership[tree.InstanceId]=cell;
         }
         public PlacedDistrictFlora Find(string id)=>id!=null&&byId.TryGetValue(id,out var tree)?tree:null;
-        public IEnumerable<PlacedDistrictFlora> Nearby(Vector2 center,float radius)
+        public IEnumerable<PlacedDistrictFlora> Nearby(Vector2 center,float radius) =>
+            NearbyFlora(center,radius).Where(Available);
+        public IEnumerable<PlacedDistrictFlora> NearbyFlora(Vector2 center,float radius)
         {
             var min=Cell(center-Vector2.one*radius);var max=Cell(center+Vector2.one*radius);
             for(int z=min.y;z<=max.y;z++)for(int x=min.x;x<=max.x;x++)
                 if(cells.TryGetValue(new Vector2Int(x,z),out var ids))foreach(var id in ids)
-                {var tree=byId[id];if(Available(tree)&&(DistrictLabor.TreePoint(district,tree)-center).sqrMagnitude<=radius*radius)yield return tree;}
+                {var tree=byId[id];if((DistrictLabor.TreePoint(district,tree)-center).sqrMagnitude<=radius*radius)yield return tree;}
         }
     }
 }

@@ -214,8 +214,8 @@ namespace CityForgeV3.UI
      DistrictQuarry.Tick(d,1,_=>true);if(d.ResourceInventory.Stone!=before)throw new Exception("Mining credited early");
      DistrictQuarry.Tick(d,2,_=>true);SaveDistrictEdit();var loaded=RegionSaveStore.Load(_openRegion.RegionId,_districtUndoQaSaveRoot).Tiles.Find(t=>t.TileId==d.TileId);
      if(JsonUtility.ToJson(loaded.StoneSites)!=JsonUtility.ToJson(d.StoneSites))throw new Exception("Reload changed progress");
-     DistrictQuarry.Tick(d,2,_=>true);if(d.ResourceInventory.Stone!=before+1)throw new Exception("Wrong load credit");
-     _districtWorld.PresentQuarries(d);File.WriteAllText(dir+"live-loading.txt","PASS mining no credit; mid-load save/reload; first loaded block credits1; paused render");
+     DistrictQuarry.Tick(d,2,_=>true);if(d.ResourceInventory.Stone!=before)throw new Exception("Loading must keep stone in transit");
+     _districtWorld.PresentQuarries(d);File.WriteAllText(dir+"live-loading.txt","PASS mining no credit; mid-load save/reload; loaded block stays in transit; paused render");
     }
     if(command=="full"){site.CartBlocks=4;site.Phase="full";site.Elapsed=0;SetDistrictSimulationPaused(true);_districtWorld.PresentQuarries(d);}
     if(command=="rotate"){site.Yaw=(site.Yaw+90)%360;_districtWorldCompositionKey="";EnsureDistrictWorld(d);Show(AppScreen.DistrictTerraform);FocusQuarry(site);}

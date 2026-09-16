@@ -156,6 +156,7 @@ namespace CityForgeV3.World
         public int HarvestDirection;
         public int RemainingWood;
         public bool WoodCredited;
+        public bool GeneratedByRegion;
     }
 
     public enum RegionPlaceDesignation
@@ -167,6 +168,9 @@ namespace CityForgeV3.World
     [Serializable]
     public sealed class RegionCityTile
     {
+        [NonSerialized] public RegionClimate Climate;
+        public RegionTreeCoverage TreeCoverage;
+        public int FloraSeed;
         public string TileId = "";
         public string Name = "";
         public RegionPlaceDesignation Designation =
@@ -189,6 +193,8 @@ namespace CityForgeV3.World
         public List<PlacedDistrictRiver> Rivers = new();
         public List<PlacedDistrictFlora> Flora = new();
         public int Treasury = 280000;
+        public bool BusinessEconomyInitialized;
+        public int BusinessSettledSeason;
         public DistrictLaborState Labor = new();
         public DistrictWildlifeState Wildlife = new();
         public DistrictResourceInventory ResourceInventory = new();
@@ -316,7 +322,15 @@ namespace CityForgeV3.World
             root ??= DefaultRoot;
             Directory.CreateDirectory(root);
             var path = Path.Combine(root, $"{data.RegionId}.json");
-            File.WriteAllText(path, JsonUtility.ToJson(data, true));
+            var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                // Whitespace multiplies large forest saves without adding save data.
+                File.WriteAllText(temporary, JsonUtility.ToJson(data));
+                if (File.Exists(path)) File.Replace(temporary, path, null);
+                else File.Move(temporary, path);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
             return path;
         }
 
@@ -325,9 +339,10 @@ namespace CityForgeV3.World
             if (string.IsNullOrWhiteSpace(regionId)) return null;
             root ??= DefaultRoot;
             var path = Path.Combine(root, $"{regionId}.json");
-            return File.Exists(path)
-                ? JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(path))
-                : null;
+            if (!File.Exists(path)) return null;
+            var data = JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(path));
+            if (data != null) RegionClimateRules.Apply(data);
+            return data;
         }
 
         public static bool Delete(string regionId, string root = null)

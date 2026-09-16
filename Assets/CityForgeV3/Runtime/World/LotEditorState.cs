@@ -227,6 +227,7 @@ namespace CityForgeV3.World
         public string ModifiedUtc = "";
         public List<string> RequiredPackageIds = new();
         public int BasePlopCost;
+        public BusinessRates BusinessRates;
         public int LotSizeMeters = 20;
         public int LotWidthCells = 2;
         public int LotDepthCells = 2;
@@ -279,6 +280,7 @@ namespace CityForgeV3.World
                 ModifiedUtc = ModifiedUtc,
                 RequiredPackageIds = RequiredPackageIds,
                 BasePlopCost = BasePlopCost,
+                BusinessRates = BusinessRates?.Copy(),
                 LotType = LotType,
                 EraId = EraId,
                 AvailableEraIds = AvailableEraIds,

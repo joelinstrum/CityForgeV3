@@ -1,0 +1,5 @@
+PASS Desert disables Sparse, Wooded and Generate
+PASS Mediterranean climate button saves/reloads
+PASS Wooded enables generation
+PASS cancel leaves fixture trees untouched
+PASS scheduled Wooded generation, auto-save and reload: 2212 trees

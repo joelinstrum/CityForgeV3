@@ -75,7 +75,7 @@ namespace CityForgeV3.World
             // no-depth-write contract for flora and billboard buildings is preserved.
             foreach(var material in materials)material.renderQueue=1998;
             world.RegisterSelectable(gameObject, new DistrictSelectionRef(DistrictSelectionKind.Entity, "mine:" + deposit.Id),
-                "COAL MINE", "This mine follows the mountain slope; its orientation is fixed to preserve the entrance and rail approach.").WithBuildingDeletion(() => deposit.MineBuilt=false, true, world.RefreshCoalBuildings);
+                "COAL MINE", "This mine follows the mountain slope; its orientation is fixed to preserve the entrance and rail approach.").WithBuildingDeletion(() => deposit.MineBuilt=false, true, world.RefreshCoalBuildings).WithStatus(() => DistrictBusinessEconomy.Describe(null));
         }
         private void FitRailApproach(GameObject model,DistrictWorldController world)
         {

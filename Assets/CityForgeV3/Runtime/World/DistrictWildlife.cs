@@ -60,7 +60,13 @@ namespace CityForgeV3.World
             {
                 s.NextSighting=240+(s.SightingCount*73%181);
                 var trees=d.Flora.Where(MountainTree).Select(t=>DistrictLabor.TreePoint(d,t)).ToList();
-                var candidates=trees.Where(p=>walkable(p)&&trees.Count(q=>(q-p).sqrMagnitude<625)>=3 && !s.Marksmen.Any(m=>m.WagesPaid&&Vector2.Distance(m.Position,p)<ShotRadius)).ToList();
+                var index=DistrictHarvestIndex.For(d);
+                // A sighting needs just three nearby mountain trees, not an
+                // all-pairs density count across the entire forest.
+                var candidates=trees.Where(p=>walkable(p)&&
+                    index.NearbyFlora(p,25).Where(MountainTree)
+                        .Where(t=>(DistrictLabor.TreePoint(d,t)-p).sqrMagnitude<625).Take(3).Count()>=3 &&
+                    !s.Marksmen.Any(m=>m.WagesPaid&&Vector2.Distance(m.Position,p)<ShotRadius)).ToList();
                 if(candidates.Count>0)
                 {
                     // Prefer woods near active forestry so sightings affect the work area.
