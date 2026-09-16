@@ -1,0 +1,43 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.World;
+using CityForgeV3.UI;
+[InitializeOnLoad] public static class BarnIntakeReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic;
+ static readonly string[] Ids={"dirt-path-straight","dirt-path-curve","dirt-path-tee","dirt-path-cross"};
+ static BarnIntakeReview(){EditorApplication.update+=Poll;}
+ static void Poll(){var path=Root+"barn.request";if(!File.Exists(path)||EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+ var cmd=File.ReadAllText(path).Trim();if(cmd=="tests"&&EditorApplication.isPlayingOrWillChangePlaymode)return;
+ if(cmd=="show"&&!EditorApplication.isPlaying){EditorApplication.isPlaying=true;return;}
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(cmd=="show"&&app==null)return;File.Delete(path);
+ try{
+ if(cmd=="tests"){
+ var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var type=asm.GetTypes().First(x=>x.Name=="NewEnglandBarnPropTests");
+ foreach(var method in type.GetMethods().Where(x=>x.DeclaringType==type))method.Invoke(Activator.CreateInstance(type),null);
+ var checkOwner=new GameObject("Existing prop pass checks");try{
+ var checkWorld=checkOwner.AddComponent<LotWorldController>();
+ foreach(var id in new[]{"wrought-iron-fence-straight-v01",LotWorldController.PicketFencePropId}){
+ var prop=checkWorld.CreatePropPresentation(id,"Existing prop",1);try{
+ var model=prop.GetChild(0);
+ foreach(var name in new[]{"Committed Prop Depth Prepass","Projected Prop Silhouette","Wet Street Prop Reflection"}){
+ var pass=prop.Find(name);if(pass==null||Quaternion.Angle(model.localRotation,pass.localRotation)>.001f)throw new Exception("Existing prop pass mismatch: "+id);
+ }
+ }finally{UnityEngine.Object.DestroyImmediate(prop.gameObject);}
+ }
+ }finally{UnityEngine.Object.DestroyImmediate(checkOwner);}
+ File.WriteAllText(Root+"barn-results.txt","PASS barn model, textures, grounding, scale, render-pass orientation, thumbnail, placement, rotation, and session round-trip.\nPASS existing iron fence and picket fence render-pass alignment.\n");
+ }
+ if(cmd=="show"){
+ var type=app.GetType();if((bool)type.GetField("_hasOpenLot",F).GetValue(app)||type.GetField("_openRegion",F).GetValue(app)!=null)throw new Exception("Live work exists; did not replace it.");
+ type.GetMethod("EnsureLotWorld",F).Invoke(app,null);var world=(LotWorldController)type.GetField("_lotWorld",F).GetValue(app);world.NewEmptyLot("New England Barn — Review",LotType.Residential,4,4);world.ConfigureLot("New England Barn — Review",LotType.Residential,4,4);world.SetBaseTexture("grass-lush");world.PlacePropForQa(LotWorldController.NewEnglandBarnPropId,0,0);
+ type.GetField("_hasOpenLot",F).SetValue(app,true);var cat=type.GetField("_lotEditorCategory",F);cat.SetValue(app,Enum.Parse(cat.FieldType,"Props"));type.GetField("_lotEditorCategoryExpanded",F).SetValue(app,true);
+ var show=type.GetMethod("Show",F);show.Invoke(app,new[]{Enum.Parse(show.GetParameters()[0].ParameterType,"LotEditor")});world.SetQaOrthographicSize(15);type.GetMethod("OpenPropsModal",F).Invoke(app,null);
+ }
+ }catch(Exception e){File.WriteAllText(Root+"barn-error.txt",e.ToString());}
+ }
+}

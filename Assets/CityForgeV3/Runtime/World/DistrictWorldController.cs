@@ -388,6 +388,7 @@ namespace CityForgeV3.World
             string selectedInstanceId = "")
         {
             if (_content == null || district == null) return;
+            DistrictHarvestIndex.For(district); // Warm at load/bulk-edit boundaries, never on each small edit.
             _floraClimate = district.Climate;
             _floraBatches = null;
             if (_districtFloraRoot != null)
@@ -1754,6 +1755,11 @@ namespace CityForgeV3.World
                 DistrictLotCenterMeters(district, placement, data),
                 placement.RotationQuarterTurns, placement.InstanceId, true);
             if (lot == null) return false;
+            var size = new Vector2(data.LotWidthCells, data.LotDepthCells) * LotMetricScale.MajorGridMeters;
+            if ((placement.RotationQuarterTurns & 1) != 0) size = new Vector2(size.y, size.x);
+            var center = DistrictLotCenterMeters(district, placement, data);
+            var cleared = DistrictHarvestIndex.For(district).ClearFootprint(new Rect(center - size * .5f, size));
+            RemoveFloraPresentations(cleared);
             lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);
@@ -2018,6 +2024,7 @@ namespace CityForgeV3.World
         {
             if (_camera == null) return;
             _zoomLevel = level;
+            ApplyDistrictGrassZoomScale();
             _camera.orthographicSize = OrthographicSize(level,
                 _widthMeters, _depthMeters, _camera.aspect);
             foreach (var lot in _lots)
@@ -2381,6 +2388,10 @@ namespace CityForgeV3.World
             _lots.Clear();
             _lotsByInstance.Clear();
             _roadsByCell.Clear();
+            _roadVisualState.Clear();
+            // Destroy is deferred in Play Mode. RefreshRoads must not attach
+            // replacement roads to the old, inactive root awaiting destruction.
+            _roadArtworkRoot = null;
             _riverSurfaces.Clear();
             _districtFloraPresentations.Clear();
             _districtSelectionRoot = null;

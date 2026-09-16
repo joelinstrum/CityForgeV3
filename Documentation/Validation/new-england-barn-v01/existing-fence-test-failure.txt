@@ -1,0 +1,12 @@
+System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation. ---> UnityEngine.MissingReferenceException: The object of type 'UnityEngine.MeshRenderer' has been destroyed but you are still trying to access it.
+Your script should either check if it is null or you should not destroy the object.
+  at UnityEngine.Object+MarshalledUnityObject.TryThrowEditorNullExceptionObject (UnityEngine.Object unityObj, System.String parameterName) [0x00064] in /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/UnityEngineObject.bindings.cs:870
+  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00010] in /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/BindingsHelpers.cs:61
+  at UnityEngine.Renderer.get_bounds () [0x00006] in <5895af2907a043a797a0fa0cc2734e49>:0
+  at CityForgeV3.Tests.UiFoundationTests.OptimizedWroughtIronFenceIsAPlaceablePersistentThreeDimensionalProp () [0x00291] in /Users/joelinstrum/dev/CityForge-Regions-Review/Assets/Tests/EditMode/UiFoundationTests.cs:4442
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <4570bcde6c5a4c41a23abdcc31fcd6b0>:0
+   --- End of inner exception stack trace ---
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x00083] in <4570bcde6c5a4c41a23abdcc31fcd6b0>:0
+  at System.Reflection.MethodBase.Invoke (System.Object obj, System.Object[] parameters) [0x00000] in <4570bcde6c5a4c41a23abdcc31fcd6b0>:0
+  at BarnIntakeReview.Poll () [0x0018a] in /Users/joelinstrum/dev/CityForge-Regions-Review/Assets/Editor/BarnIntakeReview.cs:23

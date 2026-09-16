@@ -1,0 +1,3 @@
+PASS existing grass/overlay persistence test.
+PASS all four textures resolve by ID.
+PASS all four pieces paint, rotate, and round-trip through session serialization.

@@ -20,7 +20,7 @@ public static class PropThumbnailBuilder
         LotWorldController.OrnateBenchPropId, LotWorldController.WoodenPalisadePropId,
         LotWorldController.MedievalWellPropId, LotWorldController.WoodenPalisadeGatePropId,
         LotWorldController.MedievalTorchPropId, LotWorldController.Hedge3DPropId,
-        LotWorldController.PumpkinJackOLanternPropId
+        LotWorldController.PumpkinJackOLanternPropId, LotWorldController.NewEnglandBarnPropId
     };
     [MenuItem("City Forge/Props/Render Library Thumbnails")]
     static void Build() => CharacterThumbnailBuilder.BuildLibrary(Ids,

@@ -1,0 +1,42 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.World;
+using CityForgeV3.UI;
+[InitializeOnLoad] public static class DirtPathOverlayReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic;
+ static readonly string[] Ids={"dirt-path-straight","dirt-path-curve","dirt-path-tee","dirt-path-cross"};
+ static DirtPathOverlayReview(){EditorApplication.update+=Poll;}
+ static void Poll(){var path=Root+"dirt-path.request";if(!File.Exists(path)||EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+ var cmd=File.ReadAllText(path).Trim();if(cmd=="tests"&&EditorApplication.isPlayingOrWillChangePlaymode)return;
+ if(cmd=="show"&&!EditorApplication.isPlaying){EditorApplication.isPlaying=true;return;}
+ var app=UnityEngine.Object.FindFirstObjectByType<CityForgeApp>();if(cmd=="show"&&app==null)return;File.Delete(path);
+ try{
+ if(cmd=="tests"){
+ var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var type=asm.GetTypes().First(x=>x.Name=="UiFoundationTests");type.GetMethod("LegacyGrassBasesAndUrbanOverlaysApplyAndPersist").Invoke(Activator.CreateInstance(type),null);
+ var go=new GameObject("Dirt path fixture");try{
+ var world=go.AddComponent<LotWorldController>();world.Build();world.NewEmptyLot("Dirt path fixture",LotType.Residential,4,4);world.ConfigureLot("Dirt path fixture",LotType.Residential,4,4);world.SetOverlayEditorContext(true);
+ for(int i=0;i<Ids.Length;i++){
+ var option=LotWorldController.ResolveOverlayTexture(Ids[i]);if(option.Id!=Ids[i])throw new Exception("ID fell back");
+ var texture=Resources.Load<Texture2D>(option.ResourcePath);if(texture==null||texture.width<=0||texture.height<=0)throw new Exception("Missing/wrong-sized texture");
+ world.BeginOverlayPaintAtCell(Ids[i],i,1);world.EndOverlayPaint();if(!world.RotateSelectedOverlayTexture(1))throw new Exception("Rotation failed");}
+ var rotations=world.Session.Data.OverlayTextures.Select(x=>x.RotationQuarterTurns).ToArray();
+ var restored=new LotEditorSession();restored.Restore(world.Session.Serialize());
+ for(int i=0;i<Ids.Length;i++)if(restored.Data.OverlayTextures[i].TextureId!=Ids[i]||restored.Data.OverlayTextures[i].RotationQuarterTurns!=rotations[i])throw new Exception("Round-trip mismatch at "+i+" got "+restored.Data.OverlayTextures[i].TextureId+" rotation="+restored.Data.OverlayTextures[i].RotationQuarterTurns+" wanted="+Ids[i]+"/"+rotations[i]);
+ File.WriteAllText(Root+"dirt-path-results.txt","PASS existing grass/overlay persistence test.\nPASS all four textures resolve by ID.\nPASS all four pieces paint, rotate, and round-trip through session serialization.\n");
+ }finally{UnityEngine.Object.DestroyImmediate(go);}
+ }
+ if(cmd=="show"){
+ var type=app.GetType();if((bool)type.GetField("_hasOpenLot",F).GetValue(app)||type.GetField("_openRegion",F).GetValue(app)!=null)throw new Exception("Live work exists; did not replace it.");
+ type.GetMethod("EnsureLotWorld",F).Invoke(app,null);var world=(LotWorldController)type.GetField("_lotWorld",F).GetValue(app);world.NewEmptyLot("Dirt Path Overlays — Review",LotType.Residential,4,4);world.ConfigureLot("Dirt Path Overlays — Review",LotType.Residential,4,4);world.SetBaseTexture("grass-lush");world.SetOverlayEditorContext(true);
+ for(int i=0;i<4;i++){world.BeginOverlayPaintAtCell(Ids[i],i,1);world.EndOverlayPaint();}world.ClearOverlayTextureSelection();
+ type.GetField("_hasOpenLot",F).SetValue(app,true);var cat=type.GetField("_lotEditorCategory",F);cat.SetValue(app,Enum.Parse(cat.FieldType,"OverlayTextures"));type.GetField("_lotEditorCategoryExpanded",F).SetValue(app,true);
+ var show=type.GetMethod("Show",F);show.Invoke(app,new[]{Enum.Parse(show.GetParameters()[0].ParameterType,"LotEditor")});world.SetQaOrthographicSize(25);
+ }
+ }catch(Exception e){File.WriteAllText(Root+"dirt-path-error.txt",e.ToString());}
+ }
+}

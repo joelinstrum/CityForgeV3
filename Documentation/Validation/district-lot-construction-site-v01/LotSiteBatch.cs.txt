@@ -1,0 +1,11 @@
+using System;using System.IO;using System.Linq;using System.Reflection;using UnityEditor;
+public static class LotSiteBatch {
+ public static void Run(){var output="/tmp/cityforge-lot-site/results.txt";try{
+ var asm=Assembly.LoadFrom("Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");int count=0;
+ foreach(var name in new[]{"DistrictLotSiteTests","DistrictTimberTests","DistrictWildlifeSpatialTests","DeterministicSelectionTests"}){
+ var type=asm.GetTypes().First(x=>x.Name==name);
+ foreach(var method in type.GetMethods().Where(x=>x.DeclaringType==type&&x.GetParameters().Length==0)){
+ method.Invoke(Activator.CreateInstance(type),null);count++;File.AppendAllText(output,"PASS "+name+"."+method.Name+"\n");}}
+ File.AppendAllText(output,"TOTAL "+count+" passed\n");EditorApplication.Exit(0);
+ }catch(Exception e){File.AppendAllText(output,e.ToString());EditorApplication.Exit(1);}}
+}

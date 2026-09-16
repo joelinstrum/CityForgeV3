@@ -2583,7 +2583,8 @@ namespace CityForgeV3.UI
         _districtEditorMode == DistrictEditorMode.Builder &&
         _builderCategory == "Roads" &&
         (_builderTool == DistrictRoadPlacementModel.DirtFamily ||
-         _builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily);
+         _builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily ||
+         _builderTool == DistrictRoadPlacementModel.PikeDirtFamily);
 
     private static readonly (string Id, string Name)[] DistrictTrees =
     {
@@ -3206,9 +3207,7 @@ namespace CityForgeV3.UI
             _districtWorld.ResolveSelectable(selection).DeleteBuilding();
             break;
           case DistrictSelectionKind.Flora:
-            district.Flora?.RemoveAll(item => item != null &&
-                item.InstanceId == selection.Id);
-            DistrictHarvestIndex.Removed(district,selection.Id);
+            DistrictHarvestIndex.For(district).RemoveFlora(selection.Id);
             break;
           case DistrictSelectionKind.Lot:
             district.Lots?.RemoveAll(item => item != null &&
@@ -3265,6 +3264,10 @@ namespace CityForgeV3.UI
           DistrictRoadPlacementModel.AntiqueBrickFamily,
           "$25 PER TILE",
           "CityForgeV3/Materials/RoadsChatGPTV1/brick-antique");
+      AddDistrictRoadFamilyCard(list,
+          DistrictRoadPlacementModel.PikeDirtFamily,
+          "FREE PER TILE",
+          "CityForgeV3/Roads/NationalPikeDirtV1/straight");
       panel.Add(list);
       var actions = new VisualElement();
       actions.AddToClassList("district-road-family-actions");

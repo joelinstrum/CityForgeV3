@@ -34,6 +34,20 @@ namespace CityForgeV3.World
         {
             foreach (var cell in cells.Keys) RebuildCell(cell);
         }
+        readonly HashSet<(Vector2Int, Sprite)> dirtyCells = new();
+        int changeDepth;
+        public void BeginChanges() => changeDepth++;
+        public void EndChanges()
+        {
+            if (changeDepth == 0 || --changeDepth != 0) return;
+            foreach (var cell in dirtyCells) RebuildCell(cell);
+            dirtyCells.Clear();
+        }
+        void QueueCellRebuild((Vector2Int, Sprite) cell)
+        {
+            if (changeDepth > 0) dirtyCells.Add(cell); else RebuildCell(cell);
+        }
+
         public void Add(SpriteRenderer tree)
         {
             if (tree == null || tree.sprite == null || membership.ContainsKey(tree)) return;
@@ -41,7 +55,7 @@ namespace CityForgeV3.World
             var cell = (new Vector2Int(Mathf.FloorToInt(p.x / CellSize), Mathf.FloorToInt(p.z / CellSize)), tree.sprite);
             if (!cells.TryGetValue(cell, out var list)) cells[cell] = list = new();
             list.Add(tree); membership[tree] = cell;
-            RebuildCell(cell);
+            QueueCellRebuild(cell);
         }
         public void Remove(SpriteRenderer tree)
         {
@@ -50,7 +64,7 @@ namespace CityForgeV3.World
             tree.forceRenderingOff = false;
             var shadow = Shadow(tree);
             if (shadow != null) shadow.forceRenderingOff = false;
-            RebuildCell(cell);
+            QueueCellRebuild(cell);
         }
         private static MeshRenderer Shadow(SpriteRenderer tree) =>
             tree.transform.Find("District Flora Shadow")?.GetComponent<MeshRenderer>();
