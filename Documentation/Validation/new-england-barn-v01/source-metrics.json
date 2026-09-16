@@ -1,0 +1,72 @@
+{
+  "boundsMin": [
+    -0.39709481596946716,
+    -0.4912109971046448,
+    -2.1493525181881523e-08
+  ],
+  "boundsMax": [
+    0.3952637016773224,
+    0.49221813678741455,
+    0.6844482421875
+  ],
+  "dimensions": [
+    0.7923585176467896,
+    0.9834291338920593,
+    0.6844482421875
+  ],
+  "objects": [
+    {
+      "name": "tripo_node_52715d3f",
+      "vertices": 8596,
+      "polygons": 17419,
+      "triangles": 17419,
+      "materials": [
+        "tripo_mat_52715d3f"
+      ]
+    }
+  ],
+  "materials": {
+    "tripo_mat_52715d3f": [
+      {
+        "node": "Image Texture",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Assets/CityForgeV3/Resources/CityForgeV3/Props/Agriculture/NewEnglandBarnV01/Source/tripo_convert_52715d3f-e9d3-4480-9666-c4e58055ca25.fbm/tripo_image_52715d3f_0.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Base Color"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.001",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Assets/CityForgeV3/Resources/CityForgeV3/Props/Agriculture/NewEnglandBarnV01/Source/tripo_convert_52715d3f-e9d3-4480-9666-c4e58055ca25.fbm/tripo_image_52715d3f_2.jpg",
+        "links": [
+          [
+            "Normal Map",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.002",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Assets/CityForgeV3/Resources/CityForgeV3/Props/Agriculture/NewEnglandBarnV01/Source/tripo_convert_52715d3f-e9d3-4480-9666-c4e58055ca25.fbm/tripo_image_52715d3f-e9d3-4480-9666-c4e58055ca25_0_Roughness.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Roughness"
+          ]
+        ]
+      },
+      {
+        "node": "Image Texture.003",
+        "image": "/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Assets/CityForgeV3/Resources/CityForgeV3/Props/Agriculture/NewEnglandBarnV01/Source/tripo_convert_52715d3f-e9d3-4480-9666-c4e58055ca25.fbm/tripo_image_52715d3f-e9d3-4480-9666-c4e58055ca25_0_Metallic.jpg",
+        "links": [
+          [
+            "Principled BSDF",
+            "Metallic"
+          ]
+        ]
+      }
+    ]
+  }
+}

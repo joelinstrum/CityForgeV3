@@ -1,0 +1,16 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+[InitializeOnLoad] public static class LotSavedViewReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static LotSavedViewReview(){EditorApplication.update+=Poll;}
+ static void Poll(){if(EditorApplication.isPlayingOrWillChangePlaymode||EditorApplication.isCompiling||EditorApplication.isUpdating||!File.Exists(Root+"saved-view.request"))return;File.Delete(Root+"saved-view.request");
+ try{var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var type=asm.GetTypes().First(x=>x.Name=="LotSavedViewTests");var obj=Activator.CreateInstance(type);
+ foreach(var top in new[]{false,true})type.GetMethod("SavedViewSurvivesFreshWorldLoadAndNextPan").Invoke(obj,new object[]{top});
+ type.GetMethod("LegacyLotWithoutViewLoadsWithDeterministicDefault").Invoke(obj,null);
+ var continuity=asm.GetTypes().First(x=>x.Name=="LotPlacementCameraContinuityTests");foreach(var native in new[]{false,true})foreach(var hand in new[]{false,true})continuity.GetMethod("PlacementThenPanKeepsCurrentCameraBasis").Invoke(Activator.CreateInstance(continuity),new object[]{native,hand});
+ File.WriteAllText(Root+"saved-view-results.txt","PASS 2 save/load view round-trips (oblique/top-down), legacy fallback, and 4 placement/pan continuity cases.\n");
+ }catch(Exception e){File.WriteAllText(Root+"saved-view-error.txt",e.ToString());}}
+}

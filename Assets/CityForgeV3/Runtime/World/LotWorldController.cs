@@ -2674,7 +2674,6 @@ namespace CityForgeV3.World
             if (_camera == null || (horizontal == 0 && vertical == 0)) return;
             const float stepMeters = 5f;
             PanCameraInScreenPlane(horizontal * stepMeters, vertical * stepMeters);
-            ApplyCameraFacing(true);
         }
 
         public void PanCameraViewport(Vector2 screenDelta, Vector2 viewportSize)
@@ -2690,7 +2689,6 @@ namespace CityForgeV3.World
             PanCameraInScreenPlane(
                 screenDelta.x * metersPerPixel,
                 -screenDelta.y * metersPerPixel);
-            ApplyCameraFacing(true);
         }
 
         private void PanCameraInScreenPlane(float screenRight, float screenUp)
@@ -2707,7 +2705,15 @@ namespace CityForgeV3.World
                 -LotWidthMeters * 0.5f, LotWidthMeters * 0.5f);
             var upOffset = Mathf.Clamp(Vector3.Dot(next, cameraUp),
                 -LotDepthMeters * 0.5f, LotDepthMeters * 0.5f);
+            var previousPan = _cameraPanWorld;
             _cameraPanWorld = cameraRight * rightOffset + cameraUp * upOffset;
+            // Placement preserves the actual camera pose, while the selected
+            // package / first native building can change ApplyCameraFacing's
+            // default basis. A pan must translate that pose, not reconstruct it.
+            _camera.transform.position += _cameraPanWorld - previousPan;
+            AlignBuildingPresentationsToCamera();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
         }
 
         public void SetCameraPanInteraction(bool active)
@@ -3084,8 +3090,27 @@ namespace CityForgeV3.World
             NotifyStateChanged();
         }
 
-        public string SaveLot()
+        public string SaveLot() => SaveLot(null);
+
+        public string SaveLot(string root)
         {
+            // Capture only on explicit save; ordinary camera motion does not
+            // serialize the lot or write progress to disk.
+            _session.Data.EditorView = new LotEditorViewState
+            {
+                Valid = _camera != null,
+                Position = _camera != null ? _camera.transform.position : Vector3.zero,
+                Rotation = _camera != null ? _camera.transform.rotation : Quaternion.identity,
+                OrthographicSize = _camera != null ? _camera.orthographicSize : 0f,
+                PanWorld = _cameraPanWorld,
+                Facing = _facing,
+                OrbitOctant = _cameraOrbitOctant,
+                ZoomLevel = ZoomLevel,
+                TopDown = TopDownViewEnabled,
+                TopDownWorldZScreenDirection = _topDownWorldZScreenDirection,
+                InspectionMode = InspectionMode,
+                InspectionModeBeforeTopDown = _inspectionModeBeforeTopDown
+            };
             var requirements = new List<string> { _vehicleType.Id };
             foreach (var road in _session.Data.RoadPieces ?? new List<PlacedRoadPiece>())
             {
@@ -3097,8 +3122,8 @@ namespace CityForgeV3.World
                 if (!string.IsNullOrWhiteSpace(building.BuildingId) &&
                     !requirements.Contains(building.BuildingId))
                     requirements.Add(building.BuildingId);
-            var path = LotSaveStore.Save(_session, requirements);
-            CaptureLotPreview();
+            var path = LotSaveStore.Save(_session, requirements, root);
+            CaptureLotPreview(root);
             NotifyStateChanged();
             return path;
         }
@@ -3258,6 +3283,16 @@ namespace CityForgeV3.World
             {
                 _buildingDragActive = false;
                 _buildingFocusFreezeActive = false;
+                var view = _session.Data.EditorView;
+                var savedView = view != null && view.Valid && view.OrthographicSize > 0f;
+                _facing = savedView ? view.Facing : 0;
+                _cameraOrbitOctant = savedView ? view.OrbitOctant : 0;
+                _cameraPanWorld = savedView ? view.PanWorld : Vector3.zero;
+                ZoomLevel = savedView ? view.ZoomLevel : LotZoomLevel.Lot;
+                TopDownViewEnabled = savedView && view.TopDown;
+                _topDownWorldZScreenDirection = savedView ? view.TopDownWorldZScreenDirection : Vector2.up;
+                InspectionMode = savedView ? view.InspectionMode : BuildingInspectionMode.Artwork;
+                _inspectionModeBeforeTopDown = savedView ? view.InspectionModeBeforeTopDown : BuildingInspectionMode.Artwork;
                 // Restore changes the data dimensions, but the existing world
                 // was built at the previous lot size. Rebuild every piece of
                 // size-dependent presentation without mutating the restored
@@ -3272,6 +3307,17 @@ namespace CityForgeV3.World
                 ApplyCameraFacing();
             }
             ApplySessionState();
+            var restoredView = _session.Data.EditorView;
+            if (loaded && restoredView != null && restoredView.Valid &&
+                restoredView.OrthographicSize > 0f && _camera != null)
+            {
+                _camera.transform.SetPositionAndRotation(restoredView.Position, restoredView.Rotation);
+                _camera.orthographicSize = restoredView.OrthographicSize;
+                ApplyPresentationFacing();
+                AlignBuildingPresentationsToCamera();
+                AlignFloraToCamera();
+                UpdatePresentationDepthOrdering();
+            }
             NotifyStateChanged();
             return loaded;
         }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 namespace CityForgeV3.World
 {
     public sealed partial class DistrictWorldController
@@ -50,14 +51,34 @@ namespace CityForgeV3.World
             }
             else if(heightChanged)
             {
-                // A removed river changes relief, but existing trees retain their instances.
-                foreach (var placed in _terrainDistrict.Flora)
-                    if (_districtFloraPresentations.TryGetValue(placed.InstanceId, out var renderer) && renderer != null)
-                    {
-                        renderer.transform.localPosition = DistrictFloraPosition(placed);
-                        renderer.sortingOrder = DistrictFloraSortingOrder(renderer.transform.localPosition);
-                    }
-                UpdateDistrictFloraShadows();
+                // Bulk terrain edits may touch everything. Local pads/river
+                // edits query only the changed areas through the shared index.
+                var affected = new HashSet<PlacedDistrictFlora>();
+                if (_surfaceChanges.Full)
+                    foreach (var tree in _terrainDistrict.Flora) affected.Add(tree);
+                else
+                {
+                    var index = DistrictHarvestIndex.For(_terrainDistrict);
+                    foreach (var area in _surfaceChanges.Areas)
+                        foreach (var tree in index.NearbyFlora(area.center, area.size.magnitude * .5f))
+                            if (area.Contains(DistrictLabor.TreePoint(_terrainDistrict, tree))) affected.Add(tree);
+                }
+                var changed = new List<SpriteRenderer>(affected.Count);
+                _floraBatches?.BeginChanges();
+                try
+                {
+                    foreach (var placed in affected)
+                        if (placed != null && _districtFloraPresentations.TryGetValue(placed.InstanceId, out var renderer) && renderer != null)
+                        {
+                            _floraBatches?.Remove(renderer);
+                            renderer.transform.localPosition = DistrictFloraPosition(placed);
+                            renderer.sortingOrder = DistrictFloraSortingOrder(renderer.transform.localPosition);
+                            changed.Add(renderer);
+                        }
+                    UpdateDistrictFloraShadowsFor(changed);
+                    foreach (var renderer in changed) _floraBatches?.Add(renderer);
+                }
+                finally { _floraBatches?.EndChanges(); }
             }
             if(rebuildDecals)_groundDecals?.Refresh(this,_terrainDistrict,_widthMeters,_depthMeters,_surfaceChanges.Full?null:_surfaceChanges.Areas);
             if(heightChanged && _grid!=null){var oldGrid=_grid.gameObject;oldGrid.SetActive(false);if(Application.isPlaying)Destroy(oldGrid);else DestroyImmediate(oldGrid);BuildGrid();}

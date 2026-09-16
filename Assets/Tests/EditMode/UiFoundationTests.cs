@@ -7931,19 +7931,20 @@ namespace CityForgeV3.Tests
         [Test]
         public void LegacyGrassBasesAndUrbanOverlaysApplyAndPersist()
         {
-            Assert.That(LotWorldController.GrassBaseTextures.Count, Is.EqualTo(7));
+            Assert.That(LotWorldController.GrassBaseTextures.Count, Is.EqualTo(8));
             foreach (var option in LotWorldController.GrassBaseTextures)
                 Assert.That(Resources.Load<Texture2D>(option.ResourcePath), Is.Not.Null,
                     $"Missing legacy grass texture {option.Id}");
             Assert.That(Resources.Load<Texture2D>(
                 LotWorldController.BrickWalkwayOverlay.ResourcePath), Is.Not.Null);
-            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(8));
+            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(12));
             Assert.That(LotWorldController.OverlayTextures.Any(option =>
                 option.Id == "brick-walkway"), Is.False);
             foreach (var id in new[]
                      {
                          "brick-sidewalk-straight", "brick-sidewalk-corner",
-                         "brick-sidewalk-t-junction"
+                         "brick-sidewalk-t-junction", "dirt-path-straight",
+                         "dirt-path-curve", "dirt-path-tee", "dirt-path-cross"
                      })
             {
                 var brickSidewalk = LotWorldController.ResolveOverlayTexture(id);
@@ -7994,8 +7995,9 @@ namespace CityForgeV3.Tests
                 Assert.That(restored.Data.OverlayTextures[0].TextureId,
                     Is.EqualTo("brick-walkway"));
                 Assert.That(Find(root.transform, "Overlay — brick-walkway"), Is.Not.Null);
-                Assert.That(world.PlaceOverlayTextureFromPanel("concrete-sidewalk",
-                    new Vector2(170f, 170f), new Vector2(1000f, 1000f)), Is.True);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell("concrete-sidewalk", 0, 0), Is.True);
+                world.EndOverlayPaint();
                 Assert.That(world.Session.Data.OverlayTextures[1].TextureId,
                     Is.EqualTo("concrete-sidewalk"));
                 Assert.That(Find(root.transform, "Overlay — concrete-sidewalk"), Is.Not.Null);

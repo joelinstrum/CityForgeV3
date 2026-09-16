@@ -1,0 +1,2 @@
+Restored in-memory Testy / District 9. Farm=farm-lot-2; cleared=4; dirt visible=True; pending=1. Same lot instance, treasury unchanged; no save written.
+Completion: dirt visible=False; pending=0

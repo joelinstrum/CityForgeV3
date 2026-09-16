@@ -1,0 +1,22 @@
+[
+  {
+    "source": "/Users/joelinstrum/Downloads/overlays/dirt-path/dirt-path-straight.png",
+    "runtime": "Assets/CityForgeV3/Resources/CityForgeV3/LotTextures/DirtPathV01/dirt-path-straight.png",
+    "sha256": "0afb549f56ec829a9df367853bfde2d14ae9e7841eab1cfa025a4f0f1d0bea1a"
+  },
+  {
+    "source": "/Users/joelinstrum/Downloads/overlays/dirt-path/dirth-path-curve.png",
+    "runtime": "Assets/CityForgeV3/Resources/CityForgeV3/LotTextures/DirtPathV01/dirt-path-curve.png",
+    "sha256": "70e82da0fdb9dbc7057cfcfade33e0bccfbe65228c7afe8a6f34bed4dbbc60ec"
+  },
+  {
+    "source": "/Users/joelinstrum/Downloads/overlays/dirt-path/dirt-path-cross.png",
+    "runtime": "Assets/CityForgeV3/Resources/CityForgeV3/LotTextures/DirtPathV01/dirt-path-cross.png",
+    "sha256": "9a8dad8fef1b12aea3271d5fa3075d348717344eb197a15c19fa1657ae762d9f"
+  },
+  {
+    "source": "/Users/joelinstrum/Downloads/overlays/dirt-path/dirt-path-tee.png",
+    "runtime": "Assets/CityForgeV3/Resources/CityForgeV3/LotTextures/DirtPathV01/dirt-path-tee.png",
+    "sha256": "b8e1809ddc95aa437947756b6df3a9d6354690a53e34b274d35c0be214592e7a"
+  }
+]

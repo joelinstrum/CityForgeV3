@@ -1666,10 +1666,6 @@ namespace CityForgeV3.UI
         if (evt.button == 0 && !ShouldPrioritizeToolPlacement(
                       _lotEditorCategory, _placementFloraId,
                       _placementPropId) &&
-                  (_lotWorld.ActiveObjectSelection ==
-                       LotObjectSelectionKind.None ||
-                   _lotWorld.ActiveObjectSelection ==
-                       LotObjectSelectionKind.Building) &&
                   !(_lotEditorCategory == LotEditorCategory.Props &&
                     !string.IsNullOrWhiteSpace(_placementBuildingPropId)) &&
                   !(_lotEditorCategory == LotEditorCategory.Effects &&
@@ -2809,7 +2805,7 @@ namespace CityForgeV3.UI
         grid.AddToClassList("building-card-grid");
         var visibleBuildingCount = 0;
         foreach (var entry in BuildingContentCatalog.ForLotEditor(
-                     _buildingUseCategory))
+                     _buildingUseCategory, _lotWorld.CurrentEraId))
         {
           var captured = entry;
           var card = new Button(() =>
@@ -4025,13 +4021,7 @@ namespace CityForgeV3.UI
           zoomRow.Add(CfButton.Create("− ZOOM", () => StepZoom(1), _lotWorld.ZoomLevel != LotZoomLevel.Neighborhood));
           zoomRow.Add(CfButton.Create("ZOOM +", () => StepZoom(-1), _lotWorld.ZoomLevel != LotZoomLevel.Detail));
           inspector.Add(zoomRow);
-          var cameraRow = new VisualElement();
-          cameraRow.AddToClassList("inspector-actions");
-          cameraRow.Add(CfButton.Create("↺ ROTATE", () => RotateLot(-1), true));
-          cameraRow.Add(CfButton.Create("ROTATE ↻", () => RotateLot(1), true));
-          inspector.Add(cameraRow);
-          inspector.Add(StyledLabel("LOT VIEW ANGLE", "inspector-note"));
-          inspector.Add(BuildLotOrbitDial());
+          AddLotRotationControls(inspector);
           inspector.Add(CfButton.Create("REGISTRATION [D]", ToggleRegistrationDiagnostics, _lotWorld.HasBuilding, _lotWorld.RegistrationDiagnosticsVisible ? "mode-selected" : "quiet"));
           inspector.Add(Property("ZOOM", _lotWorld.ZoomLevel.ToString().ToUpperInvariant()));
           inspector.Add(Property("GRID", "1 M MINOR • 10 M MAJOR"));
@@ -4108,13 +4098,17 @@ namespace CityForgeV3.UI
             inspector.Add(Property("ACTIVE",
                 string.IsNullOrWhiteSpace(_placementPropId)
                     ? "NONE"
+                    : _placementPropId == LotWorldController.NewEnglandBarnPropId
+                        ? "NEW ENGLAND BARN"
                     : _placementPropId == LotWorldController.Hedge3DPropId
                         ? "3D HEDGE"
                     : _placementPropId == "wrought-iron-fence-corner-v01"
                         ? "WROUGHT-IRON CORNER"
                         : "WROUGHT-IRON FENCE"));
             inspector.Add(Property("FAMILY",
-                _placementPropId == LotWorldController.Hedge3DPropId
+                _placementPropId == LotWorldController.NewEnglandBarnPropId
+                    ? "AGRICULTURE"
+                    : _placementPropId == LotWorldController.Hedge3DPropId
                     ? "FLORA PROPS" : "FENCES & GATES"));
             inspector.Add(Property("POSITIONING", "1 PIXEL • ARROW KEYS"));
             inspector.Add(CfButton.Create("CHOOSE PROP…",
@@ -4253,6 +4247,7 @@ namespace CityForgeV3.UI
               $"{_lotWorld.LotWidthMeters} × {_lotWorld.LotDepthMeters} M"));
           inspector.Add(Property("AREA",
               $"{_lotWorld.LotWidthMeters * _lotWorld.LotDepthMeters:N0} M²"));
+          AddLotRotationControls(inspector);
         }
       }
       if (!string.IsNullOrWhiteSpace(_lotStatus))
@@ -5214,6 +5209,8 @@ namespace CityForgeV3.UI
       AddPropLibraryCard(lights, "SIMPLE STREET LAMP", LotWorldController.SimpleStreetLamppostPropId, "Lights at evening and night");
       var furniture = Group("STREET FURNITURE");
       AddPropLibraryCard(furniture, "ORNATE BENCH", LotWorldController.OrnateBenchPropId, "Period garden and street seating");
+      var agriculture = Group("AGRICULTURE");
+      AddPropLibraryCard(agriculture, "NEW ENGLAND BARN", LotWorldController.NewEnglandBarnPropId, "Traditional timber barn");
       var fortress = Group("FORTRESS");
       AddPropLibraryCard(fortress, "WOODEN PALISADE", LotWorldController.WoodenPalisadePropId, "Timber wall • repeat to make a row");
       AddPropLibraryCard(fortress, "MEDIEVAL WELL", LotWorldController.MedievalWellPropId, "Stone well");
@@ -5466,6 +5463,17 @@ namespace CityForgeV3.UI
     {
       _lotWorld.Rotate(direction);
       Show(AppScreen.LotEditor);
+    }
+
+    private void AddLotRotationControls(VisualElement panel)
+    {
+      panel.Add(StyledLabel("LOT VIEW ANGLE", "inspector-note"));
+      var actions = new VisualElement();
+      actions.AddToClassList("inspector-actions");
+      actions.Add(CfButton.Create("↺ ROTATE", () => RotateLot(-1), true));
+      actions.Add(CfButton.Create("ROTATE ↻", () => RotateLot(1), true));
+      panel.Add(actions);
+      panel.Add(BuildLotOrbitDial());
     }
 
     private VisualElement BuildLotOrbitDial()

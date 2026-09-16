@@ -1,0 +1,36 @@
+{
+  "sourceArchive": "/Users/joelinstrum/Downloads/buildings/New England Farm 2/new-england-farmhouse.zip",
+  "archiveSHA256": "c1543d697c1e70530ec22ef33dc14abd9bc0fc6e2b097ce42cd88abd1fbb5db7",
+  "files": [
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbx",
+      "bytes": 778092,
+      "sha256": "94d97ad24ec2e7845f020c7a128a72da7c7a076e31a16af3934a1c272b06ff58"
+    },
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22-3566-484b-a685-c971607adfc8_0_Metallic.jpg",
+      "bytes": 1717064,
+      "sha256": "5ffc74c21a0ece95bce55e5d3f705bb5db25b4120c39d5cfa961e0072ed05149"
+    },
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22-3566-484b-a685-c971607adfc8_0_Roughness.jpg",
+      "bytes": 1574146,
+      "sha256": "a90971d7db77b20252b60dceb4bba92c9396ac32cf947653c80fb90bbd1ce85f"
+    },
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22_1.jpg",
+      "bytes": 835965,
+      "sha256": "4b19a031715ffb67a0a4beffcb8574ffbfff202626a9d6bfb65f8351bd6c5430"
+    },
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22_0.jpg",
+      "bytes": 2195642,
+      "sha256": "baa2c54d7bfe1f355f88ffcb462b36ba9daedb16813844d9934952c7939857af"
+    },
+    {
+      "path": "tripo_convert_6e4dde22-3566-484b-a685-c971607adfc8.fbm/tripo_image_6e4dde22_2.jpg",
+      "bytes": 781373,
+      "sha256": "403ac9bb06d1a6c50d552be08ba6346b7877990ffed566cfb4d30a23baa60ef8"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+PASS 2 save/load view round-trips (oblique/top-down), legacy fallback, and 4 placement/pan continuity cases.

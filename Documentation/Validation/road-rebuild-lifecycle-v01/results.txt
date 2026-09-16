@@ -1,0 +1,4 @@
+PASS repeated Play Mode rebuilds retain all 52 road objects after deferred destruction.
+PASS root active and parented to current district content.
+PASS district data unchanged; no save writes.
+PASS lifecycle regression test.

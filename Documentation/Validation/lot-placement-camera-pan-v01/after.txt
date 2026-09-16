@@ -1,0 +1,11 @@
+PASS native=True hand=True
+PASS native=True hand=False
+PASS native=False hand=True
+PASS native=False hand=False
+PASS ArrowPan_MovesLotOnScreenInPrintedArrowDirection 1,0,1,0
+PASS ArrowPan_MovesLotOnScreenInPrintedArrowDirection -1,0,-1,0
+PASS ArrowPan_MovesLotOnScreenInPrintedArrowDirection 0,1,0,1
+PASS ArrowPan_MovesLotOnScreenInPrintedArrowDirection 0,-1,0,-1
+PASS RepeatedVerticalPan_DoesNotChangeBuildingCameraDepth
+PASS AddingFirst3DBuildingNeverChangesCurrentCameraRotation
+PASS OpeningBuildings3DWorkspaceAndPlacingFirstBuildingPreservesCamera

@@ -46,6 +46,8 @@ namespace CityForgeV3.World
         public string category;
         public string subcategory;
         public string description;
+        // Omitted/empty preserves unrestricted availability for existing content.
+        public string[] eraIds;
         public string modelResourcePath;
         public string thumbnailResourcePath;
         public string provider = "resources";
@@ -155,23 +157,33 @@ namespace CityForgeV3.World
         }
 
         public static IReadOnlyList<BuildingContentEntry> ForLotEditor(
-            BuildingUseCategory category)
+            BuildingUseCategory category, string eraId = null)
         {
             EnsureLoaded();
             var result = new List<BuildingContentEntry>();
             foreach (var entry in _all)
-                if (!entry.hideFromLotEditor && Category(entry) == category) result.Add(entry);
+                if (!entry.hideFromLotEditor && Category(entry) == category && IsAvailableInEra(entry, eraId)) result.Add(entry);
             return result;
         }
 
         public static IReadOnlyList<BuildingContentEntry> ForDistrictBuilder(
-            BuildingUseCategory category)
+            BuildingUseCategory category, string eraId = null)
         {
             EnsureLoaded();
             var result = new List<BuildingContentEntry>();
             foreach (var entry in _all)
-                if (!entry.hideFromDistrictBuilder && Category(entry) == category) result.Add(entry);
+                if (!entry.hideFromDistrictBuilder && Category(entry) == category && IsAvailableInEra(entry, eraId)) result.Add(entry);
             return result;
+        }
+
+        public static bool IsAvailableInEra(BuildingContentEntry entry, string eraId)
+        {
+            if (entry == null) return false;
+            if (string.IsNullOrWhiteSpace(eraId) || entry.eraIds == null || entry.eraIds.Length == 0)
+                return true;
+            foreach (var allowed in entry.eraIds)
+                if (string.Equals(allowed, eraId, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         public static GameObject LoadModel(BuildingContentEntry entry) =>

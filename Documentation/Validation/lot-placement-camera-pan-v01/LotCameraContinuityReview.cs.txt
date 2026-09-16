@@ -1,0 +1,24 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Collections.Generic;
+using UnityEditor;
+[InitializeOnLoad] public static class LotCameraContinuityReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static LotCameraContinuityReview(){EditorApplication.update+=Poll;}
+ static void Poll(){var request=Root+"lot-camera-tests.request";if(!File.Exists(request)||EditorApplication.isCompiling||EditorApplication.isUpdating||EditorApplication.isPlayingOrWillChangePlaymode)return;
+ var suffix=File.ReadAllText(request).Trim();File.Delete(request);var lines=new List<string>();
+ try{var asm=Assembly.LoadFrom(Root+"Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll");var type=asm.GetType("LotPlacementCameraContinuityTests");
+ foreach(bool native in new[]{true,false})foreach(bool hand in new[]{true,false}){
+ try{type.GetMethod("PlacementThenPanKeepsCurrentCameraBasis").Invoke(Activator.CreateInstance(type),new object[]{native,hand});lines.Add("PASS native="+native+" hand="+hand);}
+ catch(Exception e){lines.Add("FAIL native="+native+" hand="+hand+" "+(e.InnerException??e));}}
+
+ foreach(var spec in new[]{new[]{"CameraPanHandToolTests","ArrowPan_MovesLotOnScreenInPrintedArrowDirection"},new[]{"CameraPanHandToolTests","RepeatedVerticalPan_DoesNotChangeBuildingCameraDepth"},new[]{"UiFoundationTests","AddingFirst3DBuildingNeverChangesCurrentCameraRotation"},new[]{"UiFoundationTests","OpeningBuildings3DWorkspaceAndPlacingFirstBuildingPreservesCamera"}}){
+ var fixture=Array.Find(asm.GetTypes(),x=>x.Name==spec[0]);var method=fixture.GetMethod(spec[1]);
+ var cases=spec[1].StartsWith("ArrowPan")?new[]{new object[]{1,0,1,0},new object[]{-1,0,-1,0},new object[]{0,1,0,1},new object[]{0,-1,0,-1}}:new[]{Array.Empty<object>()};
+ foreach(var args in cases)try{method.Invoke(Activator.CreateInstance(fixture),args);lines.Add("PASS "+spec[1]+" "+string.Join(",",args));}catch(Exception e){lines.Add("FAIL "+spec[1]+" "+(e.InnerException??e));}
+ }
+ }catch(Exception e){lines.Add(e.ToString());}
+ File.WriteAllLines(Root+"lot-camera-tests-"+suffix+".txt",lines);
+ }
+}
