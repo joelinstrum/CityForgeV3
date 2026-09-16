@@ -127,6 +127,7 @@ namespace CityForgeV3.World
         private Camera _camera;
         private Light _sun;
         private Transform _content;
+        private DistrictCloudLayer _clouds;
         private Transform _grid;
         private Transform _roadArtworkRoot;
         private Transform _riverRoot;
@@ -302,6 +303,11 @@ namespace CityForgeV3.World
                     AddLot(founderLot, center, 0, "legacy-founder");
                 }
             }
+            var cloudObject = new GameObject("District distant clouds");
+            cloudObject.transform.SetParent(_content, false);
+            _clouds = cloudObject.AddComponent<DistrictCloudLayer>();
+            _clouds.Initialize(_widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0,
+                _camera.transform.rotation, _groundRenderer.GetComponent<MeshFilter>());
             _buildingDistrict = false;
             SetZoom(DistrictZoom.DefaultLevel);
             SetTimeOfDay(district.TimeOfDay);
@@ -389,6 +395,7 @@ namespace CityForgeV3.World
         {
             if (_content == null || district == null) return;
             _floraClimate = district.Climate;
+            _clouds = null;
             _floraBatches = null;
             if (_districtFloraRoot != null)
             {
@@ -2018,6 +2025,7 @@ namespace CityForgeV3.World
         {
             if (_camera == null) return;
             _zoomLevel = level;
+            _clouds?.SetZoom(level);
             _camera.orthographicSize = OrthographicSize(level,
                 _widthMeters, _depthMeters, _camera.aspect);
             foreach (var lot in _lots)
@@ -2108,6 +2116,7 @@ namespace CityForgeV3.World
             if (_camera != null)
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
+            _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
             UpdateDistrictFloraShadows();
         }
 
@@ -2155,9 +2164,9 @@ namespace CityForgeV3.World
             {
                 DistrictZoomLevel.LOD1 => 44f,
                 DistrictZoomLevel.LOD2 => 132f,
-                DistrictZoomLevel.LOD3 => fullFit * 0.70f,
-                DistrictZoomLevel.LOD4 => fullFit,
-                DistrictZoomLevel.LOD5Billboard => fullFit * 1.35f,
+                DistrictZoomLevel.LOD3 => fullFit * 0.378f,
+                DistrictZoomLevel.LOD4 => fullFit * 0.675f,
+                DistrictZoomLevel.LOD5Billboard => fullFit,
                 _ => fullFit
             };
         }
@@ -2370,12 +2379,13 @@ namespace CityForgeV3.World
                 DistrictZoomLevel.LOD1 => 180f,
                 DistrictZoomLevel.LOD2 => 480f,
                 DistrictZoomLevel.LOD3 => 1600f,
-                DistrictZoomLevel.LOD4 => 2400f,
-                _ => 3200f
+                DistrictZoomLevel.LOD4 => 1800f,
+                _ => 2400f
             };
 
         private void ClearWorld()
         {
+            _clouds = null;
             _floraBatches = null;
             _groundDecals = null;
             _lots.Clear();

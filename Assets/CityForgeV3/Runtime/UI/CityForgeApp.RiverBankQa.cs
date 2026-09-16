@@ -9,8 +9,131 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
+        System.Collections.IEnumerator ProfileClouds(bool close = false)
+        {
+            RiverBankQa("bank-clouds");
+            if(close) { _terraformZoomLevel=DistrictZoomLevel.LOD0; _districtWorld.SetZoom(_terraformZoomLevel); }
+            var layer=_districtWorld.GetComponentInChildren<DistrictCloudLayer>(true);
+            var renderers=layer.GetComponentsInChildren<Renderer>(true);
+            var district=FindSelectedRegionTile();
+            string path=close ? "/tmp/cityforge-cloud-profile-close.txt" : "/tmp/cityforge-cloud-profile.txt";
+            File.WriteAllText(path,$"{DateTime.UtcNow:o} {district.Name}; flora={district.Flora.Count}; lots={district.Lots.Count}; two cloud slots; two renderers\n");
+            try
+            {
+                for(int pass=0;pass<2;pass++)
+                {
+                    for(int r=0;r<renderers.Length;r++) renderers[r].enabled=pass==1 && (r==1 || !close);
+                    for(int warm=0;warm<45;warm++)yield return null;
+                    var frames=new float[120];long draws=0,triangles=0;
+                    for(int i=0;i<frames.Length;i++)
+                    {
+                        yield return null;frames[i]=Time.unscaledDeltaTime*1000;
+                        draws+=UnityEditor.UnityStats.drawCalls;triangles+=UnityEditor.UnityStats.triangles;
+                    }
+                    Array.Sort(frames);
+                    File.AppendAllText(path,$"clouds={(pass==1)} median frame={frames[60]:F2}ms p95={frames[114]:F2}ms mean draws={draws/120f:F1} triangles={triangles/120f:F0}\n");
+                }
+                long allocated=GC.GetAllocatedBytesForCurrentThread();
+                var watch=System.Diagnostics.Stopwatch.StartNew();
+                for(int i=0;i<10000;i++)layer.SetZoom(DistrictZoomLevel.LOD5Billboard);
+                watch.Stop();allocated=GC.GetAllocatedBytesForCurrentThread()-allocated;
+                File.AppendAllText(path,$"10000 unchanged cloud zoom calls: {watch.Elapsed.TotalMilliseconds:F3}ms, {allocated} bytes (includes Stopwatch allocation).\nDONE\n");
+            }
+            finally{foreach(var r in renderers)if(r!=null)r.enabled=true;layer.SetZoom(_terraformZoomLevel);}
+        }
+        System.Collections.IEnumerator ProfileHillMeadow(Material material)
+        {
+            string path="/tmp/cityforge-hill-profile.txt";
+            var district=FindSelectedRegionTile();
+            File.WriteAllText(path,$"{DateTime.UtcNow:o} {district.Name}; flora={district.Flora.Count}; lots={district.Lots.Count}\n");
+            try
+            {
+                for(int pass=0;pass<2;pass++)
+                {
+                    if(pass==0)material.DisableKeyword("HILL_MEADOW");else material.EnableKeyword("HILL_MEADOW");
+                    for(int warm=0;warm<45;warm++)yield return null;
+                    var frames=new float[120];long draws=0,triangles=0;
+                    for(int i=0;i<120;i++)
+                    {
+                        yield return null;frames[i]=Time.unscaledDeltaTime*1000;
+                        draws+=UnityEditor.UnityStats.drawCalls;triangles+=UnityEditor.UnityStats.triangles;
+                    }
+                    Array.Sort(frames);
+                    File.AppendAllText(path,$"hill meadow={pass==1} median={frames[60]:F2}ms p95={frames[114]:F2}ms draws={draws/120f:F1} triangles={triangles/120f:F0}\n");
+                }
+                File.AppendAllText(path,"DONE\n");
+            }
+            finally{if(material!=null)material.EnableKeyword("HILL_MEADOW");}
+        }
         void RiverBankQa(string command)
         {
+            if(command.StartsWith("bank-hill-"))
+            {
+                var ground=_districtWorld.GetComponentsInChildren<MeshRenderer>().First(r=>r.name.StartsWith("District Ground"));
+                var material=ground.sharedMaterial;
+                if(command=="bank-hill-before")material.DisableKeyword("HILL_MEADOW");
+                else if(command=="bank-hill-after")material.EnableKeyword("HILL_MEADOW");
+                else if(command=="bank-hill-profile")StartCoroutine(ProfileHillMeadow(material));
+                else if(command=="bank-hill-view")
+                {
+                    var overlay=_districtWorld.GetComponentInChildren<DistrictHillGroundOverlay>();
+                    _terraformPanOffset=overlay!=null?overlay.ReviewPoint:Vector2.zero;
+                    _terraformZoomLevel=DistrictZoomLevel.LOD2;_districtEdgePanDirection=Vector2Int.zero;
+                    _districtWorld.SetPan(_terraformPanOffset);_districtWorld.SetZoom(_terraformZoomLevel);
+                }
+                else throw new Exception("Unknown hill command");
+                return;
+            }
+            if (command == "bank-cloud-clock")
+            {
+                var layer = _districtWorld.GetComponentInChildren<DistrictCloudLayer>(true);
+                var materials = layer.GetComponentsInChildren<Renderer>(true).Select(r=>r.sharedMaterial).ToArray();
+                var bodyMotion=materials[0].GetVectorArray("_CloudMotion");
+                var shadowMotion=materials[1].GetVectorArray("_CloudMotion");
+                if(!bodyMotion.SequenceEqual(shadowMotion)) throw new Exception("Cloud/shadow motion differs");
+                File.AppendAllText("/tmp/cityforge-cloud-clock.txt", $"{DateTime.UtcNow:o} real={Time.realtimeSinceStartupAsDouble} scale={Time.timeScale} slot0={bodyMotion[0].ToString("F3")} slot1={bodyMotion[1].ToString("F3")} shadows identical\n");
+                return;
+            }
+            if (command == "bank-cloud-dense")
+            {
+                var region = Directory.GetFiles(RegionSaveStore.DefaultRoot,"*.json")
+                    .Select(p => JsonUtility.FromJson<RegionSaveData>(File.ReadAllText(p)))
+                    .OrderByDescending(r => r.Tiles.Sum(t => t.Flora.Count)).First();
+                region.RegionId = "cloud-review"; _openRegion = region;
+                _districtUndoQaSaveRoot = Path.Combine(Path.GetTempPath(),"CityForgeCloudQa");
+                SelectRegionTile(region.Tiles.OrderByDescending(t=>t.Flora.Count).First().TileId);
+                return;
+            }
+            if (command == "bank-cloud-profile" || command == "bank-cloud-profile-close")
+            {
+                StartCoroutine(ProfileClouds(command.EndsWith("-close"))); return;
+            }
+            if (command == "bank-cloud-check")
+            {
+                var layer = _districtWorld.GetComponentInChildren<DistrictCloudLayer>(true);
+                if(layer == null) throw new Exception("Missing clouds");
+                var shader = Shader.Find("CityForgeV3/DistantClouds");
+                if(shader == null || UnityEditor.ShaderUtil.ShaderHasError(shader)) throw new Exception("Cloud shader errors");
+                var before = JsonUtility.ToJson(FindSelectedRegionTile());
+                var meshes = layer.GetComponentsInChildren<MeshFilter>(true).Select(m=>m.sharedMesh).ToArray();
+                for(int i=0;i<=5;i++)
+                {
+                    _districtWorld.SetZoom((DistrictZoomLevel)i);
+                    var renderers=layer.GetComponentsInChildren<MeshRenderer>(true);
+                    if(!layer.gameObject.activeSelf || renderers[0].enabled != (i>=4) || !renderers[1].enabled) throw new Exception("Cloud/shadow visibility at LOD"+i);
+                }
+                if(before != JsonUtility.ToJson(FindSelectedRegionTile())) throw new Exception("Cloud zoom changed district data");
+                if(!meshes.SequenceEqual(layer.GetComponentsInChildren<MeshFilter>(true).Select(m=>m.sharedMesh))) throw new Exception("Cloud zoom rebuilt meshes");
+                _terraformZoomLevel=DistrictZoomLevel.LOD5Billboard;
+                File.AppendAllText("/tmp/cityforge-cloud-checks.txt", DateTime.UtcNow.ToString("o")+" PASS all six zoom stops; unchanged meshes and district; shader compiled\n");
+                return;
+            }
+            if (command == "bank-clouds")
+            {
+                _districtEdgePanDirection=Vector2Int.zero;
+                _terraformPanOffset=Vector2.zero;_terraformZoomLevel=DistrictZoomLevel.LOD5Billboard;
+                _districtWorld.SetPan(_terraformPanOffset);_districtWorld.SetZoom(_terraformZoomLevel);return;
+            }
             if (command == "bank-fixture")
             {
                 var tile = _openRegion.Tiles[0];
