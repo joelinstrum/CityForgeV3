@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Create a seamless square ground texture for a realistic isometric city-building game: ONE continuous natural olive-green meadow, directly overhead orthographic view, no perspective. 2048x2048. Represents a 40 metre by 40 metre area covering sixteen 10-metre game lots, NOT a tile atlas or grid. Match a natural riverbank meadow: rich fine tangled short grass, varied olive and moss greens, scattered tiny yellow wildflowers, a few irregular small broadleaf rosettes, sparse pinhead pale pebbles and occasional subdued earth showing through thin grass. Organic quiet variation at several scales, no regular rows or repeated clumps, no prominent isolated landmarks. Grass coverage about 95 percent. Consistent warm olive palette, avoid neon green, flat artificial lawn, yellow straw or big bare patches. Fine blades and small plants must read at game zoom, with soft diffuse daylight and subtle contact shading. Entire image is grassland, no river, no rocks larger than tiny pebbles, no shoreline, no path, no horizon, no text or frame. All four edges tile seamlessly with each opposite edge. A coherent richly textured meadow surface like the user's riverbank grass reference.",
+  "output": "Assets/CityForgeV3/Resources/CityForgeV3/Terrain/MeadowV01/meadow-4x4.png",
+  "worldSizeMetres": 40
+}

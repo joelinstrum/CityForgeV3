@@ -1,0 +1,126 @@
+Shader "CityForgeV3/MeadowGroundSurface"
+{
+    Properties
+    {
+        _Color ("Color", Color) = (1, 1, 1, 1)
+        _MainTex ("Surface Texture", 2D) = "white" {}
+        _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
+        _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
+        _TerrainReliefStrength ("Terrain Relief Strength", Range(0, 2)) = 1.8
+    }
+
+    SubShader
+    {
+        Tags { "Queue" = "Geometry-1" "RenderType" = "Opaque" }
+        // This shader is also used by horizontal overlay quads. Unity's Quad
+        // primitive winding can face downward after its ground rotation, so
+        // back-face culling made painted brick/concrete tiles disappear.
+        Cull Off
+
+        Pass
+        {
+            Tags { "LightMode" = "ForwardBase" }
+            // The lot is a background receiver. Writing its depth clips the
+            // below-pivot pixels of camera-facing architecture at ground level.
+            ZWrite Off
+            Blend SrcAlpha OneMinusSrcAlpha
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma target 3.5
+            #pragma multi_compile_fwdbase
+            #include "UnityCG.cginc"
+            #include "Lighting.cginc"
+            #include "AutoLight.cginc"
+
+            struct AppData
+            {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct VertexToFragment
+            {
+                float4 pos : SV_POSITION;
+                float3 worldNormal : TEXCOORD0;
+                SHADOW_COORDS(1)
+                float2 uv : TEXCOORD2;
+            };
+
+            fixed4 _Color;
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float _AmbientFloor;
+            float4 _TerrainSunDirection;
+            float _TerrainReliefStrength;
+
+            VertexToFragment vert(AppData input)
+            {
+                VertexToFragment output;
+                output.pos = UnityObjectToClipPos(input.vertex);
+                output.worldNormal = UnityObjectToWorldNormal(input.normal);
+                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                TRANSFER_SHADOW(output);
+                return output;
+            }
+
+            float2 MeadowOffset(float2 cell)
+            {
+                // Integer hashing stays identical across neighbouring pixels;
+                // large sine hashes can acquire visible precision noise on Metal.
+                uint h = (uint)(int)cell.x * 73856093u ^ (uint)(int)cell.y * 19349663u;
+                h ^= h >> 16; h *= 2246822519u; h ^= h >> 13;
+                uint k = h * 3266489917u; k ^= k >> 16;
+                return float2(h & 65535u, k & 65535u) / 65536.0;
+            }
+            fixed4 Meadow(float2 uv)
+            {
+                // The source covers 40m. Neighbouring compositions receive
+                // stable offsets and overlap smoothly, independent of lots.
+                float2 cell = floor(uv);
+                float2 weight = smoothstep(.15, .85, frac(uv));
+                float2 dx = ddx(uv), dy = ddy(uv);
+                fixed4 a = tex2Dgrad(_MainTex, uv + MeadowOffset(cell), dx, dy);
+                fixed4 b = tex2Dgrad(_MainTex, uv + MeadowOffset(cell + float2(1,0)), dx, dy);
+                fixed4 c = tex2Dgrad(_MainTex, uv + MeadowOffset(cell + float2(0,1)), dx, dy);
+                fixed4 d = tex2Dgrad(_MainTex, uv + MeadowOffset(cell + 1), dx, dy);
+                return lerp(lerp(a,b,weight.x),lerp(c,d,weight.x),weight.y);
+            }
+
+            fixed4 frag(VertexToFragment input) : SV_Target
+            {
+                fixed shadow = SHADOW_ATTENUATION(input);
+                fixed3 normal = normalize(input.worldNormal);
+                fixed3 lightDirection = normalize(_TerrainSunDirection.xyz);
+                fixed diffuse = saturate(dot(normal, lightDirection));
+                // The former max(floor, diffuse * shadow) made low-angle sun
+                // shadows impossible: Morning/Afternoon diffuse was below the
+                // floor for both lit and shadowed pixels. Treat ambient as the
+                // stable minimum and let directional light supply the range
+                // above it. A shadow now removes that directional contribution
+                // without crushing the receiver below its ambient floor.
+                fixed illumination = lerp(
+                    _AmbientFloor, 1.0h, diffuse * shadow);
+                // Broad sculpted hills have shallow normals, so Lambert alone
+                // barely separates their two shoulders after the authored
+                // ambient floor is applied. Reinforce only the horizontal
+                // relief component: the slope facing the active world sun is
+                // lifted, while the opposite slope receives a restrained
+                // directional shade. Flat ground remains unchanged.
+                fixed2 horizontalSun = normalize(lightDirection.xz + fixed2(0.0001h, 0.0001h));
+                fixed reliefFacing = dot(normal.xz, horizontalSun);
+                fixed relief = clamp(reliefFacing * _TerrainReliefStrength,
+                    -0.42h, 0.28h);
+                illumination = saturate(illumination * (1.0h + relief));
+                fixed4 surface = Meadow(input.uv);
+                return fixed4(surface.rgb * _Color.rgb * illumination,
+                    surface.a * _Color.a);
+            }
+            ENDCG
+        }
+
+        UsePass "Legacy Shaders/VertexLit/SHADOWCASTER"
+    }
+}

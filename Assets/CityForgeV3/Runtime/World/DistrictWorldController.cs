@@ -38,9 +38,8 @@ namespace CityForgeV3.World
     {
         public const string DefaultGrassResource =
             "CityForgeV3/Art/Regions/default-grass-texture";
-        // The entered district again uses the established default grass. The
-        // four newer authored variants remain in Resources for optional use.
-        public const string DistrictGrassResource = DefaultGrassResource;
+        // A single meadow composition covers four by four 10-metre lots.
+        public const string DistrictGrassResource = "CityForgeV3/Terrain/MeadowV01/meadow-4x4";
         public const string RiverBedResource =
             "CityForgeV3/Water/River/river-bed";
         public const string RiverBedBorderResource =
@@ -69,7 +68,7 @@ namespace CityForgeV3.World
         private const float RiverBedTextureWorldSizeMeters = 48f;
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
-        public const float DistrictGrassTextureWorldSizeMeters = 5f;
+        public const float DistrictGrassTextureWorldSizeMeters = 40f;
         private const float HostedLotFacingOffsetDegrees = 180f;
 
         [Header("River Water")]
@@ -896,6 +895,9 @@ namespace CityForgeV3.World
                 .ToArray();
             if (edgeVariants.Length > 0) edgeTexture = edgeVariants[0];
             var dirtTexture = Resources.Load<Texture2D>(RiverBedDirtResource);
+            var bankTexture = Resources.Load<Texture2D>(RiverBankAppearance.ShorelineResourceRoot + "shoreline") ?? Resources.Load<Texture2D>(RiverBankAppearance.ResourceRoot + "grass-pebbles");
+            var bankAppearance = bankTexture != null
+                ? new RiverBankAppearance(centerline, river.WidthMeters) { ShoreDistance = bedWidth * .5f } : null;
             var halfWidth = bedWidth * 0.5f;
             var edgeWidth = Mathf.Min(
                 deep ? RiverBedTransitionWidthMeters * .55f
@@ -923,30 +925,40 @@ namespace CityForgeV3.World
                 // outward in stages so this reads as a river valley, not a V-cut.
                 AddRiverBand(centerline, 0f, centerEnd,
                     RiverElevation(3.15f), RiverElevation(3.15f), side,
-                    dirtTexture, 0.04f, 0.25f, 48f,
+                    bankTexture != null ? bankTexture : dirtTexture,
+                    0.04f, 0.25f, 48f,
                     1f, 1f, 0,
-                    $"Riverbed {sideName} Broad Center — {river.InstanceId}");
+                    $"Riverbed {sideName} Broad Center — {river.InstanceId}",
+                    bankAppearance: bankAppearance);
                 AddRiverBand(centerline, centerEnd, darkBedEnd,
                     RiverElevation(3.15f), RiverElevation(2.35f), side,
-                    dirtTexture, 0.25f, 0.48f, 48f,
+                    bankTexture != null ? bankTexture : dirtTexture,
+                    0.25f, 0.48f, 48f,
                     1f, 1f, 0,
-                    $"Riverbed {sideName} Dark Bed — {river.InstanceId}");
+                    $"Riverbed {sideName} Dark Bed — {river.InstanceId}",
+                    bankAppearance: bankAppearance);
                 AddRiverBand(centerline, darkBedEnd, lowerBankEnd,
                     RiverElevation(2.35f), RiverElevation(0.95f), side,
-                    dirtTexture, 0.48f, 0.72f, 48f,
+                    bankTexture != null ? bankTexture : dirtTexture,
+                    0.48f, 0.72f, 48f,
                     1f, 1f, 0,
-                    $"Riverbed {sideName} Lower Bank — {river.InstanceId}");
+                    $"Riverbed {sideName} Lower Bank — {river.InstanceId}",
+                    bankAppearance: bankAppearance);
                 AddRiverBand(centerline, lowerBankEnd, upperBankEnd,
                     RiverElevation(0.95f), RiverElevation(0.20f), side,
-                    dirtTexture, 0.72f, 0.96f, 48f,
+                    bankTexture != null ? bankTexture : dirtTexture,
+                    0.72f, 0.96f, 48f,
                     1f, 1f, 0,
-                    $"Riverbed {sideName} Upper Bank — {river.InstanceId}");
+                    $"Riverbed {sideName} Upper Bank — {river.InstanceId}",
+                    bankAppearance: bankAppearance);
                 AddRiverBand(centerline, upperBankEnd, halfWidth,
                     RiverElevation(0.20f), terrainSurface + 0.002f, side,
-                    edgeTexture, 0.04f, 0.96f, 24f,
+                    bankTexture != null ? bankTexture : edgeTexture,
+                    0.04f, 0.96f, 24f,
                     1f, 1f, 1,
                     $"Riverbed {sideName} Grass Edge — {river.InstanceId}",
-                    true);
+                    hideAtFarZoom: bankAppearance == null,
+                    bankAppearance: bankAppearance);
             }
 
             var waterTexture = Resources.Load<Texture2D>(
@@ -1452,13 +1464,15 @@ namespace CityForgeV3.World
             Texture2D texture, float innerTextureV, float outerTextureV,
             float repeatLengthMeters, float innerAlpha, float outerAlpha,
             int sortingOrder, string name, bool hideAtFarZoom = false,
-            Texture2D[] textureVariants = null, int variantSeed = 0)
+            Texture2D[] textureVariants = null, int variantSeed = 0,
+            RiverBankAppearance bankAppearance = null)
         {
             if (texture == null || centerline == null || centerline.Count < 2)
                 return;
             var vertices = new Vector3[centerline.Count * 2];
             var uv = new Vector2[centerline.Count * 2];
             var colors = new Color[centerline.Count * 2];
+            var bankWeights = bankAppearance != null ? new Vector2[vertices.Length] : null;
             var triangles = new int[(centerline.Count - 1) * 6];
             var traveled = 0f;
             for (var index = 0; index < centerline.Count; index++)
@@ -1478,6 +1492,17 @@ namespace CityForgeV3.World
                 uv[index * 2 + 1] = new Vector2(along, outerTextureV);
                 colors[index * 2] = new Color(1f, 1f, 1f, innerAlpha);
                 colors[index * 2 + 1] = new Color(1f, 1f, 1f, outerAlpha);
+                if (bankWeights != null)
+                {
+                    // Positive is the inside of the bend on this bank. UV2 is
+                    // interpolated by the existing border/junction clipping.
+                    var weight = new Vector2(bankAppearance.Bend[index] * side, traveled / RiverBankAppearance.DetailMeters + (side < 0 ? .37f : 0f));
+                    bankWeights[index * 2] = bankWeights[index * 2 + 1] = weight;
+                    // One complete shoreline composition spans 48 metres along
+                    // the channel, independent of lots and mesh segments.
+                    uv[index * 2].y = (innerDistance - bankAppearance.ShoreDistance + 13.333333f) / 16f;
+                    uv[index * 2 + 1].y = (outerDistance - bankAppearance.ShoreDistance + 13.333333f) / 16f;
+                }
                 if (index >= centerline.Count - 1) continue;
                 var triangle = index * 6;
                 var vertex = index * 2;
@@ -1496,6 +1521,7 @@ namespace CityForgeV3.World
             mesh.vertices = vertices;
             mesh.uv = uv;
             mesh.colors = colors;
+            if (bankWeights != null) mesh.uv2 = bankWeights;
             var activeTextures = textureVariants?
                 .Where(candidate => candidate != null).ToArray();
             if (activeTextures != null && activeTextures.Length > 1)
@@ -1531,7 +1557,8 @@ namespace CityForgeV3.World
             var item = new GameObject(name);
             item.transform.SetParent(_riverRoot, false);
             item.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var shader = Shader.Find("CityForgeV3/RiverBedSurface") ??
+            var shader = Shader.Find(bankAppearance != null
+                ? "CityForgeV3/RiverBankSurface" : "CityForgeV3/RiverBedSurface") ??
                          Shader.Find("Standard");
             Material CreateBandMaterial(Texture2D bandTexture, int variant)
             {
@@ -1543,6 +1570,14 @@ namespace CityForgeV3.World
                     color = Color.white,
                     mainTexture = bandTexture
                 };
+                if (bankAppearance != null)
+                {
+                    material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
+                    material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
+                        RiverBankAppearance.ResourceRoot + "inside-gravel") ?? bandTexture);
+                    material.SetTexture("_EarthTex", Resources.Load<Texture2D>(
+                        "CityForgeV3/Water/River/BanksV3/open-gravel") ?? bandTexture);
+                }
                 if (material.HasProperty("_DistrictHalfSize"))
                     material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));
                 if (material.HasProperty("_RiverWaterLevel"))
@@ -2176,7 +2211,7 @@ namespace CityForgeV3.World
 
             var renderer = ground.GetComponent<MeshRenderer>();
             _groundRenderer = renderer;
-            var shader = Shader.Find("CityForgeV3/ShadowReceivingLotSurface") ??
+            var shader = Shader.Find("CityForgeV3/MeadowGroundSurface") ??
                          Shader.Find("Universal Render Pipeline/Lit") ??
                          Shader.Find("Standard");
             var material = new Material(shader)

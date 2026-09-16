@@ -18,6 +18,11 @@ public static class RegionMapLayersReview
         try
         {
             if(command=="refresh")AssetDatabase.Refresh();
+            else if(command=="windowed-game")
+            {
+                var view=EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView"));
+                view.maximized=false;view.Focus();view.Repaint();
+            }
             else if(command=="pike-art")NationalPikeArtReview.Capture();
             else if(command=="play")EditorApplication.isPlaying=true;
             else if(command=="stop")EditorApplication.isPlaying=false;
@@ -25,7 +30,7 @@ public static class RegionMapLayersReview
             {
                 if(EditorApplication.isPlaying)throw new InvalidOperationException("Stop Play Mode before running EditMode tests.");
                 runner=ScriptableObject.CreateInstance<TestRunnerApi>();runner.RegisterCallbacks(new Results());
-                runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{".*(DistrictSurfaceCacheTests|DistrictRiverSculptTests|RegionRiverDrawingTests|RegionMapOrientationTests|NationalPikePlacementTests|DistrictRoadPlacementTests|RegionPikeStrokeTests|RegionMapLayersTests|RegionRiverNetworkTests|RegionTerrainMenuTests|DistrictElevationTests).*"}}));
+                runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{".*(RiverBankAppearanceTests|DistrictSurfaceCacheTests|DistrictRiverSculptTests|RegionRiverDrawingTests|RegionMapOrientationTests|NationalPikePlacementTests|DistrictRoadPlacementTests|RegionPikeStrokeTests|RegionMapLayersTests|RegionRiverNetworkTests|RegionTerrainMenuTests|DistrictElevationTests).*"}}));
             }
             else UnityEngine.Object.FindFirstObjectByType<CityForgeApp>().RegionMapLayersQa(command);
             File.WriteAllText("/tmp/cityforge-map-layers-result.txt","OK "+command);
