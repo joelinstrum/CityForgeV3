@@ -48,7 +48,7 @@ namespace CityForgeV3.Tests.EditMode
             LotSaveData Read(string id) { reads++; return id == "mill" ? mill : shop; }
             DistrictBusinessEconomy.SettleSeason(d, Read);
             DistrictBusinessEconomy.SettleSeason(d, Read);
-            Assert.AreEqual(0, reads);
+            Assert.AreEqual(2, reads, "Warm once at initialization; no reads on repeated settlement calls");
             d.Labor.SeasonIndex++;
             DistrictBusinessEconomy.SettleSeason(d, Read);
             Assert.AreEqual(-300, d.Treasury, "Expenses remain accounted for even when cash runs out");

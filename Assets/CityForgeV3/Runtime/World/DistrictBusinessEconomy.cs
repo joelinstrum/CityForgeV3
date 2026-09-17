@@ -30,10 +30,11 @@ namespace CityForgeV3.World
             : $"Seasonal Cost: ${Math.Max(0, rates.SeasonalCost):N0}\nSeasonal Revenue: ${Math.Max(0, rates.SeasonalRevenue):N0}\nEmployees: {Math.Max(0, rates.Employees):N0}";
 
         // Settle at season boundaries, not on load or selection. Content is read only
-        // once per boundary, never per simulation tick. Existing saves start now.
+        // at load boundaries, then maintained on lot changes. Existing saves start now.
         public static bool SettleSeason(RegionCityTile district, Func<string, LotSaveData> readLot = null)
         {
             int season = DistrictLabor.State(district).SeasonIndex;
+            DistrictLotSimulation.For(district, readLot);
             if (!district.BusinessEconomyInitialized)
             {
                 district.BusinessEconomyInitialized = true;
@@ -41,14 +42,8 @@ namespace CityForgeV3.World
                 return true;
             }
             if (district.BusinessSettledSeason >= season) return false;
-            readLot ??= LotContentCatalog.Read;
-            long balance = 0;
-            void Add(BusinessRates rates)
-            {
-                if (rates != null) balance += (long)Math.Max(0, rates.SeasonalRevenue) - Math.Max(0, rates.SeasonalCost);
-            }
-            foreach (var lot in district.Lots) Add(Rates(readLot(lot.LotId)));
-            foreach (var works in district.Brickworks) Add(ProductionRates);
+            var sim = DistrictLotSimulation.For(district, readLot);
+            long balance = sim.Net - (long)(district.Brickworks?.Count ?? 0) * ProductionRates.SeasonalCost;
             // Retained employees incur costs even when a building is paused.
             // A negative treasury preserves the expense instead of silently waiving it.
             district.Treasury = (int)Math.Clamp((long)district.Treasury + balance, int.MinValue, int.MaxValue);

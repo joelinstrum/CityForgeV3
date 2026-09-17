@@ -59,7 +59,7 @@ namespace CityForgeV3.UI
     {
      _districtWorld.TickQuarryDeliveries(district,true,.1f);DistrictBrickworks.Tick(district,.1f);_districtWorld.PresentQuarries(district,false);
     }
-    RefreshBrickworksWarnings(district);
+    RefreshSelectedObjectPanel();
    }
    if(command=="reload")
    {
@@ -71,9 +71,9 @@ namespace CityForgeV3.UI
    {
     district.Brickworks[0].Enabled=false;
     for(int i=0;i<100;i++)_districtWorld.TickQuarryDeliveries(district,true,.1f);
-    RefreshBrickworksWarnings(district);
+    RefreshSelectedObjectPanel();
     if(!site.DeliveryStatus.StartsWith("Bricksworks required")||site.CartBlocks!=4)throw new Exception("Missing Brickworks must retain cargo and warn");
-    File.WriteAllText(dir+"missing.txt","PASS: full cargo retained and temporary Bricksworks required warning shown");district.Brickworks[0].Enabled=true;site.DeliveryRetry=0;
+    File.WriteAllText(dir+"missing.txt","PASS: full cargo retained and Brickworks required status available in selected-object inspector");district.Brickworks[0].Enabled=true;site.DeliveryRetry=0;
    }
    if(command=="check")
    {

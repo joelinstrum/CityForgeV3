@@ -261,6 +261,7 @@ namespace CityForgeV3.World
         {
             ClearWorld();
             if (district == null) return;
+            DistrictLotSimulation.Rebuild(district);
             _widthMeters = DistrictScale.SizeMeters(district.Width);
             _depthMeters = DistrictScale.SizeMeters(district.Height);
             _content = new GameObject("District World Content").transform;
@@ -1792,6 +1793,7 @@ namespace CityForgeV3.World
             var center = DistrictLotCenterMeters(district, placement, data);
             var cleared = DistrictHarvestIndex.For(district).ClearFootprint(new Rect(center - size * .5f, size));
             RemoveFloraPresentations(cleared);
+            DistrictLotSimulation.For(district).Add(placement.InstanceId, data);
             lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);
@@ -2046,6 +2048,8 @@ namespace CityForgeV3.World
             _lotOutlineRenderer.endColor = _lotOutlineRenderer.startColor;
             _lotOutline.SetActive(true);
         }
+
+        public bool HasRoadAtCell(int x, int z) => _roadsByCell.ContainsKey(new Vector2Int(x, z));
 
         public void HideLotOutline()
         {

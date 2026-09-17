@@ -78,7 +78,6 @@ namespace CityForgeV3.UI
     private bool _hasSelectedDistrictRoad;
     private Vector2Int _selectedDistrictRoadCell;
     private int _districtYear = 1788;
-    private int _districtPopulation = 4300;
     private string _pendingFounderBuildingId = "";
     private string _pendingDistrictLotId = "";
     private string _pendingDistrictLotName = "";
@@ -2523,6 +2522,7 @@ namespace CityForgeV3.UI
       var toolRailScroll = new ScrollView(ScrollViewMode.Vertical);
       toolRailScroll.AddToClassList("tool-rail-scroll");
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Main, "main", "Main"));
+      toolRailScroll.Add(CreateLotStatsButton());
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Buildings3D,
           "buildings", "Buildings"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Roads, "roads-car-v74", "Roads"));
@@ -6172,6 +6172,7 @@ namespace CityForgeV3.UI
     private void SaveLot()
     {
       var path = _lotWorld.SaveLot();
+      DistrictLotSimulation.SavedDefinitionChanged(FindSelectedRegionTile(), _lotWorld.Session.Data);
       _lotStatus = $"Saved {_lotWorld.CurrentLotName} • {System.IO.Path.GetFileName(path)}";
       Show(AppScreen.LotEditor);
     }
@@ -6213,6 +6214,7 @@ namespace CityForgeV3.UI
       if (save)
       {
         _lotWorld.SaveLot();
+        DistrictLotSimulation.SavedDefinitionChanged(FindSelectedRegionTile(), _lotWorld.Session.Data);
       }
       RemoveDocumentModal();
       action?.Invoke();
@@ -6795,6 +6797,8 @@ namespace CityForgeV3.UI
       RemoveDocumentModal();
       var overlay = new VisualElement { name = "document-modal" };
       overlay.AddToClassList("document-modal");
+      if (_currentScreen == AppScreen.RegionEditor || _currentScreen == AppScreen.DistrictTerraform)
+        overlay.AddToClassList("cf-map-modal");
       overlay.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
       overlay.RegisterCallback<PointerUpEvent>(evt => evt.StopPropagation());
       overlay.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());

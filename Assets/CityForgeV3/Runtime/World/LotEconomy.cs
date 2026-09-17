@@ -39,6 +39,7 @@ namespace CityForgeV3.World
             var totals = new Dictionary<string, float>(
                 StringComparer.OrdinalIgnoreCase);
             if (lot == null) return totals;
+            Add(lot.Stats?.ConstructionResources, totals);
             foreach (var placed in lot.Buildings3D ?? new List<PlacedBuilding3D>())
             {
                 var building = BuildingContentCatalog.Find(placed?.AssetId);

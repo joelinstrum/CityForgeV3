@@ -1,0 +1,26 @@
+OK district
+OK district
+OK district
+OK region
+OK region
+OK district
+Whole screen 20 updates: 893.7151ms 0 allocated bytes
+Local palette 20 updates: 50.3414ms 0 allocated bytes
+OK compare
+PASS local palette updates retained screen/world/transforms; 1000 fixed HUD refreshes=134.7423ms flora=9951
+OK check
+OK click:district-mode-builder
+OK select-lot
+OK district
+Selected STONE QUARRY panel=False
+OK select-lot
+OK frames
+180 editor frames: median=6.732497ms p95=16.8578ms max=24.68192ms drawcalls avg=440.388888888889 range=439..517
+OK district
+Selected Lumber Mill Dock Operations v01 panel=True
+OK select-lot
+OK region
+OK click:region-tool-climate
+OK region
+OK click:region-tool-climate
+OK district

@@ -1,0 +1,3 @@
+Loaded latest manually saved Testy, District 9; no save written. Lots=3 population=0
+Opened economy tab.
+Opened services tab.

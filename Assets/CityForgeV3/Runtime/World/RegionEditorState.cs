@@ -197,6 +197,7 @@ namespace CityForgeV3.World
         public int Treasury = 280000;
         public bool BusinessEconomyInitialized;
         public int BusinessSettledSeason;
+        public DistrictPopulationState Population = new();
         public DistrictLaborState Labor = new();
         public DistrictWildlifeState Wildlife = new();
         public DistrictResourceInventory ResourceInventory = new();

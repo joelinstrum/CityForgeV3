@@ -73,6 +73,7 @@ namespace CityForgeV3.World
         {
             var changes=new DistrictLaborChanges();var s=State(d);if(dt<=0 || !float.IsFinite(dt))return changes;
             changes.Durable |= DistrictBusinessEconomy.SettleSeason(d);
+            changes.Durable |= DistrictLotSimulation.For(d).AdvanceSeason(s.SeasonIndex);
             s.SeasonSeconds+=dt;
             while(s.SeasonSeconds>=SeasonDuration)
             {
@@ -82,6 +83,7 @@ namespace CityForgeV3.World
                 DistrictWildlife.RenewWages(d);
                 DistrictQuarry.PayWages(d);
                 DistrictBusinessEconomy.SettleSeason(d);
+                DistrictLotSimulation.For(d).AdvanceSeason(s.SeasonIndex);
                 changes.Durable=true;
             }
             if(!s.CampPlaced)return changes;
