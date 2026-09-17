@@ -1,0 +1,12 @@
+2026-09-17T01:31:05.8021740Z Little River Bend 1280x1280m original=2947
+generate=7.50ms allocation=0B
+pass=0 records=1973 clusters=0 harvestable=590 refresh=430.99ms allocation=0B
+pass=0 median=8.03ms p95=16.27ms max=19.87ms draws=861.0 triangles=3725503
+generate=4.71ms allocation=0B
+pass=1 records=477 clusters=333 harvestable=100 refresh=393.36ms allocation=0B
+pass=1 median=8.12ms p95=18.13ms max=26.74ms draws=740.0 triangles=3353793
+generate=6.31ms allocation=0B
+pass=2 records=1360 clusters=1007 harvestable=309 refresh=526.11ms allocation=0B
+pass=2 median=12.76ms p95=28.46ms max=34.77ms draws=945.0 triangles=4553295
+PASS: clusters batched, terrain cache retained, separate fir falls and yields wood, cluster objects retained.
+Fixture flora restored. DONE

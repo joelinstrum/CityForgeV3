@@ -1,0 +1,4 @@
+2026-09-16T21:32:55.1970240Z Little River Bend; flora=2947; lots=1
+hill meadow=False median=13.38ms p95=32.89ms draws=677.0 triangles=6292775
+hill meadow=True median=17.86ms p95=40.55ms draws=677.0 triangles=6292775
+DONE

@@ -1,0 +1,4 @@
+2026-09-16T22:53:18.1956510Z Little River Bend flora=2947
+clear median=4.91 p95=12.28 draws=332.0
+rain median=5.69 p95=12.26 draws=334.0; rain start=5.01s end=15.01s
+PASS complete cover before rain; mist lingers without drops then clears; unchanged district. DONE

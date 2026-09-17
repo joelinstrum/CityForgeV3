@@ -1,0 +1,28 @@
+City 042: 3 rivers, 280 points, refresh 392 ms
+sculpt-shape: updated 107/400 decoration chunks, one cache commit
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+sculpt-erase: updated 131/400 decoration chunks, one cache commit
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+sculpt-shape: updated 107/400 decoration chunks, one cache commit
+sculpt-erase: updated 131/400 decoration chunks, one cache commit
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-roads: PASS deferred surface commit, retained road objects, no-op refresh
+sculpt-shape: updated 107/400 decoration chunks, one cache commit
+sculpt-shape: updated 107/400 decoration chunks, one cache commit
+City 042: 1 rivers, 272 points, refresh 22 ms
+City 051: 1 rivers, 144 points, refresh 12 ms
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-roads: PASS deferred surface commit, retained road objects, no-op refresh
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+sculpt-shape: updated 107/400 decoration chunks, one cache commit
+sculpt-erase: updated 76/400 decoration chunks, one cache commit
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence
+surface-cache-check: PASS no-op retention and full-rebuild geometry equivalence

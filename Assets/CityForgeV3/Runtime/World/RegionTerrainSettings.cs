@@ -3,7 +3,7 @@ using System;
 namespace CityForgeV3.World
 {
     public enum RegionClimate { Temperate, Desert, Tropical, Mediterranean }
-    public enum RegionTreeCoverage { None, Sparse, Wooded }
+    public enum RegionTreeCoverage { None = 0, Sparse = 1, Wooded = 2, Heavy = 3 }
 
     public enum RegionWaterAmount { None, Few, Many }
 

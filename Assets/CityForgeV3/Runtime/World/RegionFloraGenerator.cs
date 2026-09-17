@@ -8,9 +8,7 @@ namespace CityForgeV3.World
     // Pure spatial generation. No scene objects, rendering, navigation searches or forest scans per candidate.
     public static class RegionFloraGenerator
     {
-        static readonly string[] Temperate = { "maple", "oak", "vendor-red-maple", "vendor-oregon-ash", "cilician-fir", "cilician-fir" };
         static readonly string[] Tropical = { "date-palm", "camphor-tree", "eucalyptus-robusta-a", "eucalyptus-robusta-b", "angel-oak-spanish-moss" };
-        static readonly string[] Mediterranean = { "maple", "oak", "cilician-fir", "cilician-fir", "date-palm", "camphor-tree", "eucalyptus-robusta-a" };
         public static bool Retain(PlacedDistrictFlora tree) => tree != null &&
             (!tree.GeneratedByRegion || tree.HarvestState != DistrictTreeHarvestState.Standing || tree.WoodCredited);
 
@@ -27,12 +25,21 @@ namespace CityForgeV3.World
             foreach (var tree in result) retainedIds.Add(tree.InstanceId);
             var mask = new PlantingMask(district, readLot ?? LotContentCatalog.Read);
             foreach (var tree in result)
-                mask.Block(new Vector2(tree.NormalizedX * mask.Width, tree.NormalizedZ * mask.Depth), 8, 8);
+            {
+                float radius = ForestClusterCatalog.IsCluster(tree.FloraId)
+                    ? ForestClusterCatalog.ClearanceMeters * Mathf.Clamp(tree.Scale, .65f, 1.45f) : 8;
+                mask.Block(new Vector2(tree.NormalizedX * mask.Width, tree.NormalizedZ * mask.Depth), radius, radius);
+            }
             uint hash = unchecked((uint)seed);
             foreach (char c in district.TileId ?? "") hash = unchecked((hash ^ c) * 16777619);
             var random = new System.Random(unchecked((int)hash));
-            var palette = climate == RegionClimate.Tropical ? Tropical : climate == RegionClimate.Mediterranean ? Mediterranean : Temperate;
+            bool clusters = climate != RegionClimate.Tropical;
             float spacing = coverage == RegionTreeCoverage.Sparse ? 64 : 24;
+            // Four times fewer candidate records; each mixed cluster depicts five
+            // trees. One in five placements remains an individually harvestable fir.
+            if (clusters) spacing *= 2;
+            // Area density is inverse spacing squared; retain existing Medium exactly.
+            if (coverage == RegionTreeCoverage.Heavy) spacing /= Mathf.Sqrt(3f);
             float chance = coverage == RegionTreeCoverage.Sparse ? .35f : .78f;
             int index = 0;
             for (float z = spacing / 2; z < mask.Depth - spacing / 4; z += spacing)
@@ -41,14 +48,20 @@ namespace CityForgeV3.World
                 var point = new Vector2(x + ((float)random.NextDouble() - .5f) * spacing * .6f,
                     z + ((float)random.NextDouble() - .5f) * spacing * .6f);
                 var id = $"region-flora-{seed:x8}-{district.TileId}-{index++}";
-                if (random.NextDouble() > chance || mask.Blocked(point) || retainedIds.Contains(id)) continue;
+                if (random.NextDouble() > chance || retainedIds.Contains(id)) continue;
+                string floraId = clusters
+                    ? (random.Next(5) == 0 ? "cilician-fir" : ForestClusterCatalog.Id(random.Next(ForestClusterCatalog.VariantCount)))
+                    : Tropical[random.Next(Tropical.Length)];
+                float scale = .86f + (float)random.NextDouble() * .3f;
+                float clearance = ForestClusterCatalog.IsCluster(floraId) ? ForestClusterCatalog.ClearanceMeters * scale : 0;
+                if (mask.Blocked(point, clearance)) continue;
                 result.Add(new PlacedDistrictFlora
                 {
                     InstanceId = id,
                     GroupId = $"region-flora-{seed:x8}", GeneratedByRegion = true,
-                    FloraId = palette[random.Next(palette.Length)],
+                    FloraId = floraId,
                     NormalizedX = point.x / mask.Width, NormalizedZ = point.y / mask.Depth,
-                    Scale = .86f + (float)random.NextDouble() * .3f,
+                    Scale = scale,
                     RotationEighthTurns = random.Next(8)
                 });
             }
@@ -124,8 +137,18 @@ namespace CityForgeV3.World
                 int minZ = Mathf.Max(0, Mathf.FloorToInt(rect.yMin / Cell)), maxZ = Mathf.Min(rows - 1, Mathf.FloorToInt(rect.yMax / Cell));
                 for (int z = minZ; z <= maxZ; z++) for (int x = minX; x <= maxX; x++) visit(x, z);
             }
-            public bool Blocked(Vector2 p) => p.x < 5 || p.y < 5 || p.x >= Width - 5 || p.y >= Depth - 5 ||
-                occupied[Mathf.FloorToInt(p.y / Cell) * columns + Mathf.FloorToInt(p.x / Cell)];
+            public bool Blocked(Vector2 p, float radius)
+            {
+                if (p.x - radius < 5 || p.y - radius < 5 || p.x + radius >= Width - 5 || p.y + radius >= Depth - 5) return true;
+                // Bounded local footprint query (at most 6 x 6 cells for generated
+                // clusters), never a scan through district flora or constraints.
+                int minX = Mathf.FloorToInt((p.x - radius) / Cell), maxX = Mathf.FloorToInt((p.x + radius) / Cell);
+                int minZ = Mathf.FloorToInt((p.y - radius) / Cell), maxZ = Mathf.FloorToInt((p.y + radius) / Cell);
+                for (int z = minZ; z <= maxZ; z++)
+                    for (int x = minX; x <= maxX; x++)
+                        if (occupied[z * columns + x]) return true;
+                return false;
+            }
         }
     }
 

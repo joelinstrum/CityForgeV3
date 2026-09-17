@@ -1600,6 +1600,7 @@ namespace CityForgeV3.World
         public static string ResolveFloraResourcePath(string floraId,
             SeasonPreset season)
         {
+            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.ResourcePath(floraId);
             if (floraId == "fraser-fir-snowy" && season != SeasonPreset.Winter)
                 floraId = "fraser-fir-small";
             if (StoneFloraCatalog.IsStone(floraId)) return StoneFloraCatalog.ResourcePath(floraId);
@@ -1715,6 +1716,7 @@ namespace CityForgeV3.World
         public static float FloraPixelsPerUnit(string floraId,
             string textureName)
         {
+            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.PixelsPerUnit;
             var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId);
             if(repairPpu>0f)return repairPpu;
             if (PlaneUkFloraPresentation.IsTree(floraId) && floraId!="angel-oak-spanish-moss") return 512f / 18f;
@@ -1755,6 +1757,7 @@ namespace CityForgeV3.World
         }
 
         public static Vector2 FloraPivot(string textureName) =>
+            ForestClusterCatalog.IsTexture(textureName) ? ForestClusterCatalog.Pivot :
             FloraTreeRepairs.TryPivot(textureName,out var repairedPivot) ? repairedPivot :
             textureName != null && textureName.StartsWith("plane-") ? new Vector2(.5f, .22307235f) :
             textureName switch
