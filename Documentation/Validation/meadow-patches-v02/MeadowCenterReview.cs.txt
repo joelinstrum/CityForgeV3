@@ -1,0 +1,31 @@
+using System;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using CityForgeV3.World;
+[InitializeOnLoad] public static class MeadowCenterReview {
+ const string Root="/Users/joelinstrum/dev/CityForge-Regions-Review/";
+ static MeadowCenterReview(){EditorApplication.update+=Poll;}
+ static void Poll(){
+ if(Application.dataPath!=Root+"Assets"||EditorApplication.isCompiling||EditorApplication.isUpdating)return;
+ var path=Root+"meadow-center.request";if(!File.Exists(path))return;
+ var label=File.ReadAllText(path).Trim();File.Delete(path);
+ try{
+ var world=UnityEngine.Object.FindFirstObjectByType<DistrictWorldController>();
+ if(!EditorApplication.isPlaying||world==null)throw new Exception("District not running");
+ var mat=((Renderer)typeof(DistrictWorldController).GetField("_groundRenderer",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(world)).sharedMaterial;
+ foreach(var m in ShaderUtil.GetShaderMessages(mat.shader))if(m.severity==UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error)throw new Exception(m.message);
+ if(!mat.IsKeywordEnabled("MEADOW_PATCHES"))throw new Exception("Patches disabled");
+ var cam=world.WorldCamera;var size=cam.orthographicSize;var target=cam.targetTexture;var active=RenderTexture.active;
+ var rt=new RenderTexture(2070,1008,24);var tex=new Texture2D(2070,1008,TextureFormat.RGB24,false);
+ try {
+ foreach(var view in new[]{"overview","close"}){
+ cam.orthographicSize=view=="overview"?size:55;cam.targetTexture=rt;cam.Render();RenderTexture.active=rt;
+ tex.ReadPixels(new Rect(0,0,2070,1008),0,0);tex.Apply();File.WriteAllBytes(Root+"meadow-center-"+label+"-"+view+".png",tex.EncodeToPNG());
+ }
+ File.WriteAllText(Root+"meadow-center-result.txt","OK "+label+" shader="+mat.shader.name+" supported="+mat.shader.isSupported+" originalZoom="+size+" strength="+mat.GetFloat("_MeadowPatchStrength")+" camera="+cam.transform.position);
+ }finally{cam.orthographicSize=size;cam.targetTexture=target;RenderTexture.active=active;UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(tex);}
+ }catch(Exception e){File.WriteAllText(Root+"meadow-center-result.txt",e.ToString());}
+ }
+}

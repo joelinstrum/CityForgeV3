@@ -1,0 +1,1 @@
+OK after shader=CityForgeV3/MeadowGroundSurface supported=True originalZoom=696.7296 strength=1 camera=(-1196.03, 615.64, -1196.03)

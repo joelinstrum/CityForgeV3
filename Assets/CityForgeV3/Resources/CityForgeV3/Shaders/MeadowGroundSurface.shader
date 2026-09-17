@@ -7,6 +7,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _MainTex ("Surface Texture", 2D) = "white" {}
         _HillTex ("Thin crest meadow", 2D) = "white" {}
         _HillHeight ("Hill height metres", Float) = 45
+        _MeadowPatchStrength ("Meadow patch strength", Range(0,1)) = 0
         _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
         _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
         _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
@@ -35,6 +36,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             #pragma target 3.5
             #pragma multi_compile_fwdbase
             #pragma multi_compile_local __ HILL_MEADOW
+            #pragma multi_compile_local __ MEADOW_PATCHES
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
@@ -54,11 +56,13 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 uv : TEXCOORD2;
                 float elevation : TEXCOORD3;
                 float2 hillVariation : TEXCOORD4;
+                float2 meadowMetres : TEXCOORD5;
             };
 
             fixed4 _Color;
             sampler2D _MainTex, _HillTex;
             float _HillHeight;
+            float _MeadowPatchStrength;
             float _DistantMeadow;
             float _GrassHueShift;
             float4 _MainTex_ST;
@@ -76,7 +80,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 output.elevation = input.vertex.y;
                 output.hillVariation=0;
-                #if defined(HILL_MEADOW)
+                output.meadowMetres=input.vertex.xz;
+                #if defined(HILL_MEADOW) || defined(MEADOW_PATCHES)
                 // Broad hill colour stays anchored when near-zoom grass detail changes.
                 float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
@@ -119,7 +124,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 return lerp(lerp(MeadowOffset(cell).x,MeadowOffset(cell+float2(1,0)).x,f.x),
                     lerp(MeadowOffset(cell+float2(0,1)).x,MeadowOffset(cell+1).x,f.x),f.y);
             }
-            fixed3 HillMeadow(float2 uv, float elevation, float3 normal, fixed3 meadow, float2 variation)
+            fixed3 HillMeadow(float2 uv, float elevation, float3 normal, fixed3 meadow, float2 variation, fixed3 thin)
             {
                 float broad=variation.x, patches=variation.y;
                 float hill=smoothstep(.5,4,elevation);
@@ -129,7 +134,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float crest=smoothstep(.12,.60,height+(broad-.5)*.26);
                 float wear=smoothstep(.06,.35,slope)*smoothstep(.36,.72,patches)*.65;
                 float mixWeight=saturate(crest*.68+wear)*hill;
-                fixed3 thin=Meadow(_HillTex,uv*.8).rgb;
                 fixed3 color=lerp(meadow,thin,mixWeight);
                 // Preserve the approved meadow palette: vary brightness, never tint hills green.
                 // The lighter crest artwork supplies its own natural colour variation.
@@ -180,9 +184,27 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 illumination = saturate(illumination * (1.0h + relief));
                 fixed4 surface = Meadow(_MainTex,input.uv);
                 #if defined(HILL_MEADOW)
-                surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation);
+                fixed3 thin=Meadow(_HillTex,input.uv*.8).rgb;
+                surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation,thin);
+                #elif defined(MEADOW_PATCHES)
+                // One extra sample on flat ground. Broad masking hides repetition;
+                // mipmapped world-space detail never changes scale with camera zoom.
+                float2 patchUV=input.meadowMetres/40.0;
+                fixed3 thin=tex2Dgrad(_HillTex,patchUV,ddx(patchUV),ddy(patchUV)).rgb;
                 #endif
                 if (_GrassHueShift > 0) surface.rgb=ShiftGrassHue(surface.rgb);
+                #if defined(MEADOW_PATCHES)
+                // Soft 28–110m fields span many tiles. No camera/time/lot input,
+                // no extra mesh or material layer over roads and riverbanks.
+                float field=input.hillVariation.x*.72+input.hillVariation.y*.28;
+                float dryMask=smoothstep(.51,.77,field);
+                // Lift straw centers without widening patches or hardening their edges.
+                float dry=(.52*dryMask+.10*dryMask*dryMask*dryMask)*_MeadowPatchStrength;
+                float lush=(1-smoothstep(.23,.49,field))*.30*_MeadowPatchStrength;
+                surface.rgb*=lerp(fixed3(1,1,1),fixed3(.92,1.025,.91),lush);
+                // Apply after the hue study so straw retains its warm colour.
+                surface.rgb=lerp(surface.rgb,thin*fixed3(1.045,1.0,.94),dry);
+                #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);
             }
