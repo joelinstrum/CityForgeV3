@@ -22,6 +22,9 @@ namespace CityForgeV3.World
             float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
             var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
             if (material.mainTextureScale != scale) material.mainTextureScale = scale;
+            float distant = _zoomLevel == DistrictZoomLevel.LOD5Billboard ? 1f : 0f;
+            if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
+                material.SetFloat("_DistantMeadow", distant);
         }
 
         private void ConfigureMountainGroundMaterial()
@@ -40,11 +43,13 @@ namespace CityForgeV3.World
             material.mainTextureScale = new Vector2(_widthMeters / grassMetres, _depthMeters / grassMetres);
             if (!mountains)
             {
+                material.SetFloat("_GrassHueShift", .035f); // Reversible forest-green colour study; original artwork unchanged.
                 var hillGrass=Resources.Load<Texture2D>("CityForgeV3/Terrain/HillsV01/crest-meadow-4x4");
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0 && hillGrass!=null;
                 material.SetTexture("_HillTex",hillGrass);
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
                 if(hills) material.EnableKeyword("HILL_MEADOW"); else material.DisableKeyword("HILL_MEADOW");
+                ApplyDistrictGrassZoomScale();
                 return;
             }
             material.DisableKeyword("HILL_MEADOW");

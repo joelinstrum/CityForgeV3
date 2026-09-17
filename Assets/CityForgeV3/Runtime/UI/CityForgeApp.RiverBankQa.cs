@@ -65,8 +65,71 @@ namespace CityForgeV3.UI
             }
             finally{if(material!=null)material.EnableKeyword("HILL_MEADOW");}
         }
+        System.Collections.IEnumerator ReviewDistrictStorm(bool snow = false)
+        {
+            var district=FindSelectedRegionTile();
+            bool previousPaused=_districtSimulationPaused;
+            SetDistrictSimulationPaused(true);
+            try
+            {
+            var before=JsonUtility.ToJson(district);
+            string path=snow ? "/tmp/cityforge-snow-check.txt" : "/tmp/cityforge-storm-check.txt";
+            File.WriteAllText(path,DateTime.UtcNow.ToString("o")+" "+district.Name+" flora="+district.Flora.Count+"\n");
+            var frames=new float[120];long draws=0;
+            for(int i=0;i<120;i++){yield return null;frames[i]=Time.unscaledDeltaTime*1000;draws+=UnityEditor.UnityStats.drawCalls;}
+            Array.Sort(frames);
+            File.AppendAllText(path,$"clear median={frames[60]:F2} p95={frames[114]:F2} draws={draws/120f:F1}\n");
+            _districtEditorMode=DistrictEditorMode.Terraform;
+            _terraformCategory="Environment"; SelectDistrictTool(snow ? "Snow" : "Rain");
+            var storm=_districtWorld.GetComponentInChildren<DistrictRainStorm>();
+            double start=Time.realtimeSinceStartupAsDouble;
+            bool captured=false, mistCaptured=false, meltCaptured=false;int sample=0;draws=0;float rainStart=-1,rainEnd=-1;
+            while(Time.realtimeSinceStartupAsDouble-start<(snow ? 32 : 21))
+            {
+                yield return null;
+                float elapsed=(float)(Time.realtimeSinceStartupAsDouble-start);
+                if(storm.RainIntensity>0 && storm.Coverage<.999f)throw new Exception("Rain before full cloud cover");
+                if(storm.CurrentPhase==DistrictRainStorm.Phase.Raining || storm.CurrentPhase==DistrictRainStorm.Phase.Snowing)
+                {
+                    if(rainStart<0)rainStart=elapsed;
+                    if(sample<120){frames[sample++]=Time.unscaledDeltaTime*1000;draws+=UnityEditor.UnityStats.drawCalls;}
+                    if(!captured && elapsed>7){RiverBankQa("bank-capture");captured=true;}
+                }
+                else if(rainStart>=0 && rainEnd<0)rainEnd=elapsed;
+                if((storm.CurrentPhase==DistrictRainStorm.Phase.Clearing || storm.CurrentPhase==DistrictRainStorm.Phase.Settled) && elapsed>17 && !mistCaptured)
+                {
+                    if(storm.RainIntensity!=0 || storm.MistIntensity<=0)throw new Exception("Mist did not linger after rain");
+                    if(snow && storm.SnowAccumulation!=1)throw new Exception("Snow did not remain on ground");
+                    RiverBankQa("bank-capture");mistCaptured=true;
+                }
+                if(snow && elapsed>27 && !meltCaptured)
+                {
+                    if(storm.RainIntensity!=0 || storm.SnowAccumulation<=0 || storm.SnowAccumulation>=1)throw new Exception("Snow did not melt gradually");
+                    RiverBankQa("bank-capture");meltCaptured=true;
+                }
+            }
+            if(storm.CurrentPhase!=DistrictRainStorm.Phase.Clear || !captured || !mistCaptured || storm.MistIntensity!=0)throw new Exception("Storm did not finish");
+            if(snow && (!meltCaptured || storm.SnowAccumulation!=0))throw new Exception("Snow cover did not clear");
+            if(before!=JsonUtility.ToJson(district))throw new Exception("Weather mutated district data");
+            Array.Sort(frames);
+            File.AppendAllText(path,$"rain median={frames[60]:F2} p95={frames[114]:F2} draws={draws/Mathf.Max(1f,sample):F1}; rain start={rainStart:F2}s end={rainEnd:F2}s\nPASS complete cover before rain; mist lingers without drops then clears; unchanged district. DONE\n");
+            }
+            finally { SetDistrictSimulationPaused(previousPaused); }
+        }
         void RiverBankQa(string command)
         {
+            if(command.StartsWith("bank-grass-hue-"))
+            {
+                var ground=_districtWorld.GetComponentsInChildren<MeshRenderer>().First(r=>r.name.StartsWith("District Ground"));
+                float hue=command.EndsWith("original") ? 0 : command.EndsWith("deep") ? .055f : .035f;
+                ground.sharedMaterial.SetFloat("_GrassHueShift",hue);
+                if(UnityEditor.ShaderUtil.ShaderHasError(ground.sharedMaterial.shader))throw new Exception("Meadow shader error");
+                return;
+            }
+            if(command=="bank-snow-review"){StartCoroutine(ReviewDistrictStorm(true));return;}
+            if(command=="bank-storm-review"){StartCoroutine(ReviewDistrictStorm());return;}
+            if(command=="bank-storm-start"){_districtWorld.StartRainStorm();return;}
+            if(command=="bank-storm-clear"){_districtWorld.ClearRainStorm();return;}
             if(command.StartsWith("bank-hill-"))
             {
                 var ground=_districtWorld.GetComponentsInChildren<MeshRenderer>().First(r=>r.name.StartsWith("District Ground"));

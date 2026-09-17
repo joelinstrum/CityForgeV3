@@ -5,6 +5,83 @@ namespace CityForgeV3.Tests
 {
     public sealed class DistrictCloudLayerTests
     {
+        [Test]
+        public void SnowFallsTenSecondsHoldsTenAndMeltsFive()
+        {
+            Assert.That(DistrictRainStorm.EvaluateSnow(-1),Is.EqualTo(Vector2.zero));
+            var falling=DistrictRainStorm.EvaluateSnow(5);
+            Assert.That(falling.x,Is.GreaterThan(0));Assert.That(falling.y,Is.EqualTo(.5f).Within(.001f));
+            foreach(float time in new[]{10f,15f,20f})
+                Assert.That(DistrictRainStorm.EvaluateSnow(time),Is.EqualTo(new Vector2(0,1)));
+            Assert.That(DistrictRainStorm.EvaluateSnow(22.5f),Is.EqualTo(new Vector2(0,.5f)));
+            Assert.That(DistrictRainStorm.EvaluateSnow(25),Is.EqualTo(Vector2.zero));
+            Assert.That(DistrictRainStorm.EvaluateSnow(30),Is.EqualTo(Vector2.zero));
+        }
+        [Test]
+        public void SnowCoverReusesTerrainAndSwitchingWeatherResetsIt()
+        {
+            var go=new GameObject("Snow test");var eye=new GameObject("Snow camera");var terrain=new GameObject("Snow terrain");var mesh=new Mesh();
+            try
+            {
+                var source=terrain.AddComponent<MeshFilter>();source.sharedMesh=mesh;
+                var storm=go.AddComponent<DistrictRainStorm>();storm.Initialize(eye.AddComponent<Camera>(),640,640,0,null,source);
+                storm.Begin(true);
+                var cover=go.transform.Find("Temporary district snow cover");
+                Assert.That(cover.GetComponent<MeshFilter>().sharedMesh,Is.SameAs(mesh));
+                storm.Begin();storm.Clear();
+                Assert.That(storm.SnowAccumulation,Is.Zero);
+                Assert.That(cover.GetComponent<MeshRenderer>().enabled,Is.False);
+                Assert.That(go.GetComponentsInChildren<MeshRenderer>(true).Length,Is.EqualTo(3));
+                Assert.That(UnityEditor.ShaderUtil.ShaderHasError(Shader.Find("CityForgeV3/DistrictSnowCover")),Is.False);
+            }
+            finally{Object.DestroyImmediate(go);Object.DestroyImmediate(eye);Object.DestroyImmediate(terrain);Object.DestroyImmediate(mesh);}
+        }
+        [Test]
+        public void RainMistBuildsDuringRainAndLingersAfterDropsStop()
+        {
+            Assert.That(DistrictRainStorm.EvaluateMist(4.9f),Is.Zero);
+            Assert.That(DistrictRainStorm.EvaluateMist(5),Is.Zero);
+            Assert.That(DistrictRainStorm.EvaluateMist(6),Is.InRange(.01f,.99f));
+            Assert.That(DistrictRainStorm.EvaluateMist(7),Is.EqualTo(1));
+            Assert.That(DistrictRainStorm.Evaluate(15).y,Is.Zero);
+            Assert.That(DistrictRainStorm.EvaluateMist(15),Is.EqualTo(1));
+            Assert.That(DistrictRainStorm.EvaluateMist(17),Is.EqualTo(.5f).Within(.001f));
+            Assert.That(DistrictRainStorm.EvaluateMist(19),Is.Zero);
+            Assert.That(DistrictRainStorm.EvaluateMist(25),Is.Zero);
+        }
+        [Test]
+        public void StormRainWaitsForCompleteCoverAndEndsAfterTenSeconds()
+        {
+            for(float time=0;time<5;time+=.1f)
+                Assert.That(DistrictRainStorm.Evaluate(time).y, Is.Zero);
+            for(float time=5.1f;time<15;time+=.1f)
+            {
+                var state=DistrictRainStorm.Evaluate(time);
+                Assert.That(state.x,Is.EqualTo(1));
+                Assert.That(state.y,Is.GreaterThan(0));
+            }
+            Assert.That(DistrictRainStorm.Evaluate(15).y,Is.Zero);
+            Assert.That(DistrictRainStorm.Evaluate(17).x,Is.InRange(.01f,.99f));
+            Assert.That(DistrictRainStorm.Evaluate(19),Is.EqualTo(Vector2.zero));
+        }
+        [Test]
+        public void StormCancelRestartReusesPresentation()
+        {
+            var go=new GameObject("Storm test"); var eye=new GameObject("Storm camera");
+            try
+            {
+                var storm=go.AddComponent<DistrictRainStorm>();
+                storm.Initialize(eye.AddComponent<Camera>(),640,640,0,null);
+                storm.Begin(); Assert.That(storm.CurrentPhase,Is.EqualTo(DistrictRainStorm.Phase.Gathering));
+                storm.Clear(); Assert.That(storm.CurrentPhase,Is.EqualTo(DistrictRainStorm.Phase.Clear));
+                storm.Begin(); storm.Clear();
+                Assert.That(go.GetComponentsInChildren<MeshRenderer>(true).Length,Is.EqualTo(2));
+                Assert.That(storm.CurrentPhase,Is.EqualTo(DistrictRainStorm.Phase.Clear));
+                foreach(var r in go.GetComponentsInChildren<MeshRenderer>(true))Assert.That(r.enabled,Is.False);
+                Assert.That(UnityEditor.ShaderUtil.ShaderHasError(Shader.Find("CityForgeV3/DistrictStorm")),Is.False);
+            }
+            finally { Object.DestroyImmediate(go); Object.DestroyImmediate(eye); }
+        }
         [TestCase(0,false)] [TestCase(1,false)] [TestCase(2,false)]
         [TestCase(3,false)] [TestCase(4,true)] [TestCase(5,true)]
         public void CloudsOnlyAtTwoFarthestZooms(int zoom,bool visible)

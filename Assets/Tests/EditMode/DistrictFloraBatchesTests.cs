@@ -26,6 +26,27 @@ public class DistrictFloraBatchesTests
         return r;
     }
     MeshRenderer[] Batches() => root.GetComponentsInChildren<MeshRenderer>().Where(r => r.name == "Flora batch").ToArray();
+    [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(4)]
+    public void ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(int variant)
+    {
+        texture.name = ForestClusterCatalog.Id(variant) + "-summer";
+        var tree = Tree(0); tree.transform.rotation = Quaternion.Euler(35, 45, 0);
+        var item = new GameObject("District Flora Shadow"); item.transform.SetParent(tree.transform, false);
+        var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
+        item.AddComponent<DistrictFloraShadowMesh>();
+        var shadow = item.AddComponent<MeshRenderer>();
+        var contacts = new System.Collections.Generic.List<Vector3>();
+        Assert.True(ForestClusterShadows.Update(tree, shadow, new Vector3(.3f,-1,.2f).normalized,
+            _ => 0, foot => { contacts.Add(foot); foot.y = 0; return foot; }));
+        Assert.AreEqual(5, contacts.Distinct().Count());
+        Assert.True(mesh.colors.Any(c => c.r == 0), "Feathered canopy boundary");
+        Assert.True(mesh.colors.Any(c => c.r > .5f), "Visible shadow interior");
+        Assert.True(mesh.vertices.All(v => Mathf.Abs(shadow.transform.TransformPoint(v).y - .031f) < .001f));
+        var first = mesh.vertices;
+        ForestClusterShadows.Update(tree, shadow, new Vector3(-.3f,-1,-.2f).normalized,
+            _ => 0, foot => { foot.y = 0; return foot; });
+        Assert.AreNotEqual(first[6], mesh.vertices[6], "Canopies follow the sun");
+    }
     [Test] public void NearbyCopiesShareOneMeshAndRemainPickable()
     {
         var a = Tree(10); var b = Tree(20); var batches = root.AddComponent<DistrictFloraBatches>(); batches.Build(new[] { a, b });

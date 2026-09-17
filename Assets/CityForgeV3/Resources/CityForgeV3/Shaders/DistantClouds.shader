@@ -6,7 +6,7 @@ Shader "CityForgeV3/DistantClouds"
   _AlternateTex ("Wispy cloud artwork",2D)="white"{}
   _Color ("Cloud light",Color)=(1,1,1,1)
   _Shadow ("Ground projection",Float)=0
-  _ShadowStrength ("Shadow strength",Float)=.13
+  _ShadowStrength ("Shadow strength",Float)=.34
   _DistrictSize ("District metres",Vector)=(640,640,0,0)
  }
  SubShader
@@ -48,10 +48,10 @@ Shader "CityForgeV3/DistantClouds"
       float2 uv=(i.local-center-float2(35,20))/_Clouds[c].zw+.5;
       if(c==1) uv.x=1-uv.x;
       float inside=step(0,uv.x)*step(uv.x,1)*step(0,uv.y)*step(uv.y,1);
-      float a = c%2 == 0 ? tex2Dlod(_MainTex,float4(saturate(uv),0,4)).a : tex2Dlod(_AlternateTex,float4(saturate(uv),0,4)).a;
+      float a = c%2 == 0 ? tex2Dlod(_MainTex,float4(saturate(uv),0,6)).a : tex2Dlod(_AlternateTex,float4(saturate(uv),0,6)).a;
       density+=a*inside*motion.z;
      }
-     return fixed4(.20,.24,.30,saturate(density)*_ShadowStrength);
+     return fixed4(.055,.075,.10,saturate(density)*_ShadowStrength);
     }
     fixed4 cloud=i.variant<.5 ? tex2D(_MainTex,i.uv) : tex2D(_AlternateTex,i.uv);
     // Coarse coverage feathers the silhouette while preserving opaque interior detail.

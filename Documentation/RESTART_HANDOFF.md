@@ -235,3 +235,123 @@ User likes the lighter crest art but questioned the different green. Ordinary hi
 - Hill broad colour noise now uses terrain-local metres, so near-zoom grass UV scaling does not shift hill wear/colour regions. Crest texture detail inherits the same zoom scaling as default meadow; lighter artwork and neutral brightness treatment remain.
 - Fresh Unity EditMode run: 78 passed, 0 failed, finished 2026-09-16 22:14:58 UTC. Live isolated hills passed all six grass scales, retained hill artwork/mesh identity and district data; bank shader, cloud visibility, and surface cache checks passed. Actual Game view captures reviewed. Fixture state restored; no progress saved.
 - Validation: `Documentation/Validation/main-grass-cloud-hill-merge/`. No new performance benchmark for this uniform/vertex-coordinate integration; prior hill shader cost remains documented in HILL_MEADOW.md.
+
+### September 16 — stronger cloud shadows and far meadow filtering
+
+Cloud daytime shadow strength .13 -> .34, night .035 -> .065, darker neutral shadow RGB (.055,.075,.10). Alpha mask uses mip6 instead of mip4 for broader soft edges. Two cloud motion slots, all-zoom shadows and cloud visibility unchanged.
+
+Farthest zoom LOD5Billboard alone sets _DistantMeadow=1 on ordinary meadow. Existing four texture samples use a minimum 1/8-source gradient footprint to average artwork before the offset-cell blend and suppress its distant diamond lattice. Closer zoom texture scale/detail and mountain materials remain unchanged. No added texture fetches, draws, meshes or district scans; no new performance benchmark.
+
+78 targeted tests passed at 22:22:07 UTC. After final shadow feathering, live shader and all-six-zoom cloud checks passed. Actual windowed Game-view far capture QA/RiverBanks/Pine-Ridge-222516695.png shows soft pronounced shadows and reduced meadow repetition. Also reviewed isolated saved dense district; temporary state restored without saving. Changes uncommitted for user visual review.
+
+### September 16 — district rain sequence
+
+Environment cloud icon now offers Rain and Clear Skies, replacing nonfunctional
+Clouds/Mist previews. Rain gathers a continuous overcast for 5 real-time seconds,
+rains for 10 seconds only at full coverage, then clears for 4 seconds. Repeat
+Rain restarts; Clear Skies and leaving the district cancel. No persistence or
+regional-climate changes. Overcast visible at the two farthest zooms; rain and
+shading at all zooms. Uses a projected feathered canopy, existing cumulus art,
+and procedural pale streaks, two fixed renderers sharing one quad. No lot rain
+collision/reflection scans, terrain rebuilds or worker changes.
+
+80 targeted tests passed fresh 22:45:09 UTC; live paused dense saved copy checked
+5.01s rain start, 15.01s end, automatic clear and unchanged district JSON. Final
+far/close Game-view captures inspected. Fixture restored without saving. Cost
+and rendering limitations: Documentation/DISTRICT_RAIN.md; evidence under
+Documentation/Validation/district-rain-v01. Still uncommitted with previous
+stronger-shadow/distant-grass changes. QA commands bank-storm-start,
+bank-storm-clear, bank-storm-review; the latter runs a ~23s coroutine, restores
+simulation pause in finally, and writes /tmp/cityforge-storm-check.txt. Wait for
+DONE before changing its fixture.
+
+### September 16 — rain mist
+
+User approved the district rain and requested lot-style mist. Added a separate
+MistIntensity envelope: builds during the first 2s of rain, holds through the
+last drops, fades during the 4s clearing phase. Existing rain shader composites
+lot fog RGB (.72,.73,.72), max opacity .28, behind streaks; no extra draw or
+texture sample. Clear Skies/scene exit retain immediate cancellation.
+
+81 tests passed at 22:52:12 UTC. Live close-zoom dense saved-copy cycle confirmed
+mist after rain stops, zero mist on completion and unchanged district JSON.
+Actual Game-view captures 225325833 (rain/mist) and 225335836 (mist fading, no
+drops) under QA/RiverBanks/Little-River-Bend-*.png inspected. Short editor sample
+clear/rain medians 4.91/5.69ms, p95 12.28/12.26ms; this measures the whole storm,
+not isolated incremental mist cost. Fixture restored without Save. Evidence:
+Documentation/Validation/district-rain-mist-v01. Changes remain uncommitted.
+
+### September 16 — temporary district snow test
+
+Added Snow to Environment. Same 5s cloud gathering, then exactly 25s from
+first snowfall: 10s falling/accumulating, 10s settled, 5s melting. Snowfall uses
+round drifting flakes in the existing storm pass. Snow cover uses one extra
+renderer referencing the existing terrain mesh, with slope-aware material and
+no terrain/data edits. Mist clears after snowfall; settled ground snow persists
+independently. Weather switching, Clear Skies and scene exit reset all cover.
+This is explicitly temporary test functionality; no roof/tree snow added.
+
+83 tests passed fresh 23:01:49 UTC. Full live cycle on isolated dense save copy
+verified cover gating, accumulation/hold/melt/cleanup and unchanged JSON. Three
+Game-view captures inspected; fixture restored without Save. Profile and
+limitations in Documentation/DISTRICT_RAIN.md; results under
+Documentation/Validation/district-snow-v01. All weather work still uncommitted.
+
+### September 16 — reversible meadow hue study
+
+User loves default texture but wants a few shades toward forest green, hue only.
+Added _GrassHueShift to MeadowGroundSurface, default0 so other shader consumers
+retain their palette. Ordinary district ground opts into .035 turns (~12.6deg
+maximum), weighted to yellow/green pixels; brown soil and neutral pebbles largely
+excluded. HSV value/saturation stay unchanged. Applies after hill artwork blend
+to keep hills consistent. Original PNG, bank materials and mountain material
+unchanged. Set value0 to revert, .055 is the stronger comparison. No extra
+texture sample or draw; added shader arithmetic not separately benchmarked.
+
+Actual same-camera Game-view original/.035/.055 captures inspected and copied to
+QA/GrassHueStudy/{original,forest,stronger}.png. Live shader/bank checks passed;
+isolated hill fixture checked and restored without Save. Current .035 preview
+is enabled for user review, uncommitted. No additional tests for this reversible
+visual adjustment. QA bank-grass-hue-{original,forest,deep} switches material.
+
+### September 16 — mixed forest cluster integration
+
+Forest coverage now places five summer mixed-cluster variants in Temperate and
+Mediterranean climates, with a 20% candidate chance of a separate harvestable
+Cilician fir. One cluster is one saved/selectable flora record; cluster artwork
+firs are scenery. Wooded spacing48m, Sparse128m; bounded 16m-times-scale cluster
+clearance. Tropical individual trees and Desert restriction retained. Regenerate
+explicitly to replace existing generated standing forests; manual and harvested
+trees survive, Save remains manual, undo supported. No worker code changed.
+
+Runtime art derived from approved V03 summer, with baked shadows removed using
+image_gen. Sun-driven projected shadows and shared flora batches reused.
+Seasonal studies are not yet wired into district seasons (summer still active).
+RefreshFlora no longer loses the cloud-layer reference. Full detail, art lineage,
+validation limits and benchmark: Documentation/FOREST_CLUSTERS.md. QA bridge
+forest-tests; prepare → bank-cloud-dense → forest-review → wait DONE at
+/tmp/cityforge-forest-clusters.txt → restore. Forest review restores original flora
+itself; restore also returns the prior screen. Frozen editor-only generator is
+for comparable before/after QA only. Same saved district layout/seed comparison:
+1973→477 records, frame median17.84→15.82ms, draws855→724. User saves untouched.
+All this work remains uncommitted on feature/distant-clouds.
+
+Final checks: forest EditMode suite 24/24 passed (2026-09-17 01:01:40–01:01:43 UTC);
+regional regression suite 83/83 passed (01:09:54–01:10:00 UTC). Fresh XML reports
+are saved in Documentation/Validation/forest-clusters-v01/.
+
+### September 16 — three coverage levels and cluster shadow contacts
+
+Shared district/region UI now offers Heavy, Medium, Light. Existing enum Sparse=1
+and Wooded=2 retained for saves (display Light/Medium); Heavy=3 uses spacing/sqrt3.
+Medium preserves previous density, Heavy measured3.04x new placements in saved
+Little River Bend copy. ForestClusterShadows gives five authored trunk/canopy
+proxies per summer variant, ground contacts via five bounded terrain raycasts per
+cluster at build/update only, shared batches retained. Canopy shapes approximate;
+steep terrain can stretch projections. Individual fir harvesting unchanged.
+30 forest tests passed01:30:31 UTC, live dense QA passed and fixture restored.
+New validation evidence: Documentation/Validation/forest-coverage-v02; profile and
+limits in FOREST_CLUSTERS.md. Explicit Heavy refresh526ms, median frame12.76ms
+versus Medium393ms/8.12ms in short Editor sample. User saves untouched. Uncommitted.
+
+Regional regression suite83/83 passed fresh 2026-09-17 01:33:22Z; XML archived beside forest30/30 results.

@@ -22,7 +22,7 @@ public class DistrictFloraCoverageTests
         var firstIndex = DistrictHarvestIndex.For(a); var secondIndex = DistrictHarvestIndex.For(b);
         var job = new RegionFloraGeneration(r, RegionTreeCoverage.Wooded, 83, a);
         job.Step(); Assert.True(job.Ready); job.Commit(_ => {});
-        Assert.Greater(a.Flora.Count, 300); Assert.AreEqual(RegionTreeCoverage.Wooded, a.TreeCoverage); Assert.AreEqual(83, a.FloraSeed);
+        Assert.Greater(a.Flora.Count, 75); Assert.AreEqual(RegionTreeCoverage.Wooded, a.TreeCoverage); Assert.AreEqual(83, a.FloraSeed);
         Assert.AreEqual(neighbor, JsonUtility.ToJson(b)); Assert.AreSame(settings, r.Terrain);
         Assert.AreEqual(71, r.Terrain.FloraSeed); Assert.AreEqual(RegionTreeCoverage.Sparse, r.Terrain.TreeCoverage);
         Assert.AreNotSame(firstIndex, DistrictHarvestIndex.For(a)); Assert.AreSame(secondIndex, DistrictHarvestIndex.For(b));

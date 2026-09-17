@@ -128,6 +128,10 @@ namespace CityForgeV3.World
         private Light _sun;
         private Transform _content;
         private DistrictCloudLayer _clouds;
+        private DistrictRainStorm _rainStorm;
+        public void StartRainStorm() => _rainStorm?.Begin();
+        public void StartSnowStorm() => _rainStorm?.Begin(true);
+        public void ClearRainStorm() => _rainStorm?.Clear();
         private Transform _grid;
         private Transform _roadArtworkRoot;
         private Transform _riverRoot;
@@ -308,6 +312,8 @@ namespace CityForgeV3.World
             _clouds = cloudObject.AddComponent<DistrictCloudLayer>();
             _clouds.Initialize(_widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0,
                 _camera.transform.rotation, _groundRenderer.GetComponent<MeshFilter>());
+            _rainStorm = cloudObject.AddComponent<DistrictRainStorm>();
+            _rainStorm.Initialize(_camera, _widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0, _clouds, _groundRenderer.GetComponent<MeshFilter>());
             _buildingDistrict = false;
             SetZoom(DistrictZoom.DefaultLevel);
             SetTimeOfDay(district.TimeOfDay);
@@ -396,7 +402,6 @@ namespace CityForgeV3.World
             if (_content == null || district == null) return;
             DistrictHarvestIndex.For(district); // Warm at load/bulk-edit boundaries, never on each small edit.
             _floraClimate = district.Climate;
-            _clouds = null;
             _floraBatches = null;
             if (_districtFloraRoot != null)
             {
@@ -804,6 +809,26 @@ namespace CityForgeV3.World
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
                 var source = visibleRenderer.sprite;
+                if (ForestClusterShadows.Update(visibleRenderer, shadow, ray, world =>
+                {
+                    var local = _content.InverseTransformPoint(world);
+                    var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
+                    return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
+                }, foot =>
+                {
+                    // Five bounded collider queries per cluster at build/update,
+                    // never per frame. Follow the camera ray through each trunk
+                    // so steep terrain cannot detach its shadow contact.
+                    var direction = visibleRenderer.transform.forward;
+                    if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
+                        return _content.TransformPoint(hit);
+                    return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
+                }))
+                {
+                    properties.SetTexture("_MainTex", Texture2D.whiteTexture);
+                    shadow.SetPropertyBlock(properties);
+                    continue;
+                }
                 var root = visibleRenderer.transform.position;
                 var right = visibleRenderer.transform.right;
                 right.y = 0f;
@@ -2032,6 +2057,7 @@ namespace CityForgeV3.World
             if (_camera == null) return;
             _zoomLevel = level;
             _clouds?.SetZoom(level);
+            _rainStorm?.SetZoom(level);
             ApplyDistrictGrassZoomScale();
             _camera.orthographicSize = OrthographicSize(level,
                 _widthMeters, _depthMeters, _camera.aspect);
@@ -2392,6 +2418,7 @@ namespace CityForgeV3.World
 
         private void ClearWorld()
         {
+            _rainStorm = null;
             _clouds = null;
             _floraBatches = null;
             _groundDecals = null;

@@ -15,6 +15,13 @@ namespace CityForgeV3.World
         static readonly int CloudMotionId = Shader.PropertyToID("_CloudMotion");
         readonly Vector4[] _motion = new Vector4[CloudCount];
         float _width, _depth;
+        Color _lightingTint = Color.white;
+        float _stormCoverage;
+        public void SetStormCoverage(float coverage)
+        {
+            _stormCoverage = coverage;
+            if (_cloudMaterial != null) { var tint = _lightingTint; tint.a *= 1 - coverage; _cloudMaterial.color = tint; }
+        }
         int _weatherSeed;
         double _weatherEpoch;
         public static bool VisibleAt(DistrictZoomLevel zoom) => zoom == DistrictZoomLevel.LOD4 || zoom == DistrictZoomLevel.LOD5Billboard;
@@ -87,8 +94,9 @@ namespace CityForgeV3.World
         }
         public void SetLighting(Color tint, bool night)
         {
-            if (_cloudMaterial != null) _cloudMaterial.color = tint;
-            if (_shadowMaterial != null) _shadowMaterial.SetFloat("_ShadowStrength",night?.035f:.13f);
+            _lightingTint = tint;
+            SetStormCoverage(_stormCoverage);
+            if (_shadowMaterial != null) _shadowMaterial.SetFloat("_ShadowStrength",night?.065f:.34f);
         }
         void LateUpdate()
         {

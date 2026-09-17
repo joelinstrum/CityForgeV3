@@ -79,10 +79,10 @@ namespace CityForgeV3.UI
                     try
                     {
                         generation.Step();
-                        notice.text = $"Generating tree coverage… {generation.Completed}/{region.Tiles.Count} districts · {generation.TreeCount:N0} trees";
+                        notice.text = $"Generating tree coverage… {generation.Completed}/{region.Tiles.Count} districts · {generation.TreeCount:N0} flora placements";
                         if (generation.Ready)
                         {
-                            notice.text = $"Applying {generation.TreeCount:N0} trees…";
+                            notice.text = $"Applying {generation.TreeCount:N0} flora placements…";
                             panel.schedule.Execute(() =>
                             {
                                 if (cancelled || panel.panel == null || _openRegion != region) return;
@@ -159,14 +159,14 @@ namespace CityForgeV3.UI
                 }
                 if (category == "Flora")
                 {
-                    content.Add(StyledLabel("Climate: " + saved.Climate + $" · {region.Tiles.Count} districts · {region.Tiles.Sum(tile => tile.Flora?.Count ?? 0):N0} existing trees", "document-modal-copy"));
+                    content.Add(StyledLabel("Climate: " + saved.Climate + $" · {region.Tiles.Count} districts · {region.Tiles.Sum(tile => tile.Flora?.Count ?? 0):N0} existing flora placements", "document-modal-copy"));
                     bool enabled = RegionClimateRules.AllowsForest(saved.Climate);
                     AddFloraCoverageChoices(content, "region-flora", saved.Climate, draft.TreeCoverage,
                         value => { draft.TreeCoverage = value; SelectCategory("Flora"); });
                     save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None);
                     content.Add(StyledLabel(enabled
-                        ? "Generate tree coverage across all districts. Sparse leaves open land; Wooded creates dense forest. Roads, water and buildings stay clear. Regeneration replaces this tool’s standing trees; planted trees and harvested trees stay."
-                        : "Sparse and Wooded are unavailable in Desert. Choose and apply another climate to generate tree coverage.", "document-modal-copy"));
+                        ? "Generate tree coverage across all districts. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Temperate and Mediterranean forests mix five-tree clusters with individual harvestable firs. Roads, water and buildings stay clear. Regeneration replaces this tool’s standing flora placements; planted trees and harvested trees stay."
+                        : "Tree coverage is unavailable in Desert. Choose and apply another climate to generate tree coverage.", "document-modal-copy"));
                     if (saved.Climate == RegionClimate.Tropical)
                         content.Add(StyledLabel("Tropical coverage uses tropical trees. Lumber crews currently harvest Cilician firs, available in Temperate and Mediterranean forests.", "inspector-note"));
                     return;

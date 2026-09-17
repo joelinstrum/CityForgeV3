@@ -30,11 +30,11 @@ public static class RegionMapLayersReview
             else if(command=="play"){EditorApplication.isPaused=false;EditorApplication.isPlaying=true;}
             else if(command=="resume")EditorApplication.isPaused=false;
             else if(command=="stop")EditorApplication.isPlaying=false;
-            else if(command=="tests")
+            else if(command=="tests" || command=="forest-tests")
             {
                 if(EditorApplication.isPlaying)throw new InvalidOperationException("Stop Play Mode before running EditMode tests.");
                 runner=ScriptableObject.CreateInstance<TestRunnerApi>();runner.RegisterCallbacks(new Results());
-                runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{".*(DistrictCloudLayerTests|RiverBankAppearanceTests|DistrictSurfaceCacheTests|DistrictRiverSculptTests|RegionRiverDrawingTests|RegionMapOrientationTests|NationalPikePlacementTests|DistrictRoadPlacementTests|RegionPikeStrokeTests|RegionMapLayersTests|RegionRiverNetworkTests|RegionTerrainMenuTests|DistrictElevationTests).*"}}));
+                runner.Execute(new ExecutionSettings(new Filter{testMode=TestMode.EditMode,groupNames=new[]{command=="forest-tests" ? ".*(RegionFloraGeneratorTests|DistrictTreeHarvestTests|DistrictFloraBatchesTests|DistrictFloraPaintTests|DistrictFloraCoverageTests).*" : ".*(DistrictCloudLayerTests|RiverBankAppearanceTests|DistrictSurfaceCacheTests|DistrictRiverSculptTests|RegionRiverDrawingTests|RegionMapOrientationTests|NationalPikePlacementTests|DistrictRoadPlacementTests|RegionPikeStrokeTests|RegionMapLayersTests|RegionRiverNetworkTests|RegionTerrainMenuTests|DistrictElevationTests).*"}}));
             }
             else UnityEngine.Object.FindFirstObjectByType<CityForgeApp>().RegionMapLayersQa(command);
             File.WriteAllText(BridgePath("result"),"OK "+command);

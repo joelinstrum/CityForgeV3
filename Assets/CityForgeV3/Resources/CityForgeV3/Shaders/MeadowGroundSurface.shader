@@ -3,9 +3,11 @@ Shader "CityForgeV3/MeadowGroundSurface"
     Properties
     {
         _Color ("Color", Color) = (1, 1, 1, 1)
+        _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
         _HillTex ("Thin crest meadow", 2D) = "white" {}
         _HillHeight ("Hill height metres", Float) = 45
+        _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
         _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
         _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
         _TerrainReliefStrength ("Terrain Relief Strength", Range(0, 2)) = 1.8
@@ -57,6 +59,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
             fixed4 _Color;
             sampler2D _MainTex, _HillTex;
             float _HillHeight;
+            float _DistantMeadow;
+            float _GrassHueShift;
             float4 _MainTex_ST;
             float _AmbientFloor;
             float4 _TerrainSunDirection;
@@ -97,6 +101,11 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 cell = floor(uv);
                 float2 weight = smoothstep(.15, .85, frac(uv));
                 float2 dx = ddx(uv), dy = ddy(uv);
+                // At the overview, average subpixel artwork before the offset-cell blend.
+                // This suppresses its repeating patch lattice without extra samples.
+                float footprint=max(length(dx),length(dy));
+                float filterScale=lerp(1.0,max(1.0,.125/max(.00001,footprint)),_DistantMeadow);
+                dx*=filterScale; dy*=filterScale;
                 fixed4 a = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell), dx, dy);
                 fixed4 b = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(1,0)), dx, dy);
                 fixed4 c = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(0,1)), dx, dy);
@@ -129,6 +138,21 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 return color;
             }
 
+            float3 ShiftGrassHue(float3 rgb)
+            {
+                // HSV rotation retains the source value/saturation and all fine artwork.
+                float4 K=float4(0,-1.0/3,2.0/3,-1);
+                float4 p=lerp(float4(rgb.bg,K.wz),float4(rgb.gb,K.xy),step(rgb.b,rgb.g));
+                float4 q=lerp(float4(p.xyw,rgb.r),float4(rgb.r,p.yzx),step(p.x,rgb.r));
+                float d=q.x-min(q.w,q.y), e=1e-6;
+                float3 hsv=float3(abs(q.z+(q.w-q.y)/(6*d+e)),d/(q.x+e),q.x);
+                // Keep brown dirt and neutral pebbles from picking up the green tint.
+                float grass=smoothstep(.10,.17,hsv.x)*(1-smoothstep(.40,.47,hsv.x))*smoothstep(.12,.28,hsv.y);
+                hsv.x+=_GrassHueShift*grass;
+                float3 hue=abs(frac(hsv.xxx+float3(0,2.0/3,1.0/3))*6-3);
+                return hsv.z*lerp(float3(1,1,1),saturate(hue-1),hsv.y);
+            }
+
             fixed4 frag(VertexToFragment input) : SV_Target
             {
                 fixed shadow = SHADOW_ATTENUATION(input);
@@ -158,6 +182,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 #if defined(HILL_MEADOW)
                 surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation);
                 #endif
+                if (_GrassHueShift > 0) surface.rgb=ShiftGrassHue(surface.rgb);
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);
             }
