@@ -3076,3 +3076,225 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
 
 .terraform-flyout--water { width: 210px; }
 .terraform-tool-button--water { width: 186px; height: 46px; font-size: 18px; }
+
+/* Map chrome V01. Scoped so the opening menu and lot editor retain their contracts. */
+.cf-map-screen, .cf-map-modal {
+    --cf-map-navy: rgb(8, 25, 42);
+    --cf-map-raised: rgb(15, 39, 60);
+    --cf-map-gold: rgb(192, 154, 76);
+    --cf-map-ivory: rgb(245, 232, 201);
+    --cf-map-muted: rgb(182, 194, 200);
+    color: var(--cf-map-ivory);
+}
+.cf-map-chrome, .cf-map-screen .terraform-rail, .cf-map-screen .terraform-flyout,
+.cf-map-screen .terraform-hud, .cf-map-screen .district-selected-lot-panel {
+    background-color: var(--cf-map-navy);
+    border-color: var(--cf-map-gold);
+    border-width: 1px;
+    border-radius: 5px;
+    color: var(--cf-map-ivory);
+}
+.cf-map-header {
+    position: absolute; left: 12px; right: 12px; top: 8px; height: 62px;
+    flex-direction: row; align-items: center; padding: 6px 10px;
+}
+.cf-map-brand { font-size: 23px; letter-spacing: 2px; -unity-font-style: bold; margin-right: 24px; }
+.cf-map-location { flex-grow: 1; flex-shrink: 1; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-map-action, .cf-map-modal .cf-map-action {
+    height: 42px; min-height: 42px; min-width: 110px; margin: 0 0 0 8px; padding: 3px 12px 3px 4px;
+    flex-direction: row; align-items: center; justify-content: center;
+    background-color: rgb(12, 32, 51); border-color: rgb(192, 154, 76); border-width: 1px; border-radius: 4px;
+    color: rgb(245, 232, 201); font-size: 15px; flex-shrink: 0;
+}
+.cf-map-action:hover, .cf-map-action:focus { background-color: rgb(29, 60, 80); border-color: rgb(248, 210, 116); }
+.cf-map-action:active { background-color: rgb(67, 65, 39); }
+.cf-map-icon { width: 38px; height: 38px; flex-shrink: 0; margin-right: 5px; }
+.cf-map-header > .cf-button { width: 120px; margin-bottom: 0; font-size: 15px; }
+.cf-map-rail-action { width: 88px; height: 88px; min-width: 0; margin: 0 0 4px 0; padding: 0; flex-direction: column; border-width: 0; background-color: transparent; font-size: 13px; }
+.cf-map-rail-action .cf-map-icon { width: 64px; height: 64px; margin: 0; }
+.cf-map-region-rail { position: absolute; left: 12px; top: 84px; width: 100px; padding: 6px; }
+.cf-map-inspector { position: absolute; top: 84px; right: 12px; width: 288px; padding: 18px; }
+.cf-map-kicker { font-size: 11px; letter-spacing: 1px; color: var(--cf-map-muted); margin-bottom: 3px; }
+.cf-map-heading { font-size: 26px; -unity-font-style: bold; white-space: normal; margin-bottom: 8px; }
+.cf-map-copy { font-size: 15px; white-space: normal; color: var(--cf-map-muted); margin: 12px 0; }
+.cf-map-portrait { align-self: center; width: 126px; height: 126px; margin: 8px 0 18px 0; }
+.cf-map-inspector .property-row { min-height: 34px; }
+.cf-map-inspector .property-key { font-size: 12px; min-width: 88px; }
+.cf-map-inspector .property-value { font-size: 15px; }
+.cf-map-inspector .cf-map-action { margin: 12px 0 0 0; }
+.cf-map-primary { background-color: rgb(83, 67, 32); }
+.cf-map-layers { position: absolute; left: 124px; top: 84px; border-width: 0; }
+.cf-map-layers .cf-button { height: 38px; font-size: 12px; margin: 0; background-color: var(--cf-map-navy); }
+.cf-map-screen .region-map-scroll { top: 76px; background-color: rgb(12, 29, 39); }
+.cf-map-screen .region-map { background-color: rgb(12, 29, 39); }
+.cf-map-screen .region-city-tile--selected { border-color: rgb(247, 205, 91); border-width: 3px; background-color: rgba(230, 192, 83, 0.25); }
+.cf-map-resources { position: absolute; left: 12px; right: 12px; top: 76px; height: 54px; flex-direction: row; padding: 6px 18px; }
+.cf-map-metric { flex-grow: 1; padding-left: 14px; border-left-width: 1px; border-left-color: rgb(57, 72, 76); }
+.cf-map-value { font-size: 18px; }
+.cf-map-management { position: absolute; right: 12px; top: 140px; flex-direction: row; padding: 4px; }
+.cf-map-management .cf-map-action { margin: 0 3px; min-width: 96px; height: 36px; min-height: 36px; font-size: 13px; }
+.cf-map-management .cf-map-icon { width: 28px; height: 28px; }
+.cf-map-screen .district-mode-switch { left: 12px; top: 140px; height: 38px; border-radius: 4px; background-color: var(--cf-map-navy); border-color: var(--cf-map-gold); }
+.cf-map-screen .district-mode-button { width: 102px; height: 30px; border-radius: 3px; }
+.cf-map-screen .district-mode-button--selected { background-color: rgb(79, 65, 32); border-color: var(--cf-map-gold); color: var(--cf-map-ivory); }
+.cf-map-screen .terraform-rail { left: 12px; top: 190px; bottom: 76px; width: 94px; padding: 4px; align-items: stretch; }
+.cf-map-screen .terraform-rail .unity-scroll-view__content-container { align-items: center; }
+.cf-map-screen .terraform-category-button { width: 78px; height: 78px; min-height: 78px; margin: 0 0 3px 0; padding: 0; flex-direction: column; align-items: center; border-width: 1px; border-color: transparent; border-radius: 4px; background-color: transparent; font-size: 12px; color: var(--cf-map-ivory); flex-shrink: 0; }
+.cf-map-screen .terraform-category-button .cf-map-icon { width: 56px; height: 56px; margin: 0; }
+.cf-map-screen .terraform-category-button:hover { background-color: var(--cf-map-raised); scale: 1 1; border-color: var(--cf-map-gold); }
+.cf-map-screen .terraform-category-button--selected { background-color: rgb(52, 53, 39); border-color: var(--cf-map-gold); }
+.cf-map-screen .terraform-flyout { left: 116px; top: 190px; width: 210px; max-height: 62%; padding: 10px; align-items: stretch; }
+.cf-map-screen .terraform-tool-button { width: auto; height: 38px; min-height: 38px; flex-shrink: 0; margin: 0 0 6px 0; font-size: 14px; border-radius: 3px; border-width: 1px; border-color: rgb(55, 77, 89); background-color: var(--cf-map-raised); color: var(--cf-map-ivory); }
+.cf-map-screen .terraform-tool-button--selected { border-color: var(--cf-map-gold); background-color: rgb(65, 60, 36); }
+.cf-map-screen .terraform-flyout-title { font-size: 13px; color: var(--cf-map-ivory); }
+.cf-map-screen .terraform-flyout .inspector-note { font-size: 12px; white-space: normal; margin-bottom: 10px; }
+.cf-map-time { position: absolute; bottom: 14px; left: 36%; height: 48px; flex-direction: row; align-items: center; padding: 5px 12px; }
+.cf-map-season { font-size: 16px; margin-right: 14px; }
+.cf-map-screen .district-time-button { height: 32px; min-width: 65px; margin: 0 3px; color: var(--cf-map-ivory); background-color: var(--cf-map-raised); border-width: 1px; border-color: var(--cf-map-gold); }
+.cf-map-screen .district-time-button--selected { background-color: rgb(91, 71, 29); }
+.cf-map-region-back { position: absolute; left: 12px; bottom: 14px; margin: 0; }
+.cf-map-screen .district-info-toggle { left: auto; right: 102px; bottom: 20px; width: 74px; }
+.cf-map-screen .district-interface-toggle { top: auto; bottom: 20px; right: 12px; height: 34px; }
+.cf-map-screen .terraform-hud { left: auto; right: 12px; bottom: 72px; width: 288px; min-height: 0; padding: 16px; }
+.cf-map-screen .terraform-minimap { display: none; }
+.cf-map-screen .terraform-info-kicker, .cf-map-screen .terraform-district-meta,
+.cf-map-screen .terraform-district-name-field { color: var(--cf-map-ivory); }
+.cf-map-screen .district-selected-lot-panel { right: 12px; top: 194px; width: 306px; padding: 18px; max-height: 65%; }
+.cf-map-screen .district-lot-info-meta, .cf-map-screen .district-lot-info-hint { font-size: 14px; }
+.cf-map-screen .district-simulation-panel { right: 12px; bottom: 74px; border-radius: 5px; background-color: var(--cf-map-navy); border-color: var(--cf-map-gold); }
+.cf-map-screen .district-edge-pan { display: none; }
+.cf-map-modal .document-modal-panel { background-color: var(--cf-map-navy); border-color: var(--cf-map-gold); border-width: 2px; border-radius: 6px; }
+.cf-map-modal .document-modal-title { color: var(--cf-map-ivory); font-size: 28px; }
+.cf-map-modal .document-modal-copy { color: var(--cf-map-muted); font-size: 15px; }
+.cf-map-modal .cf-button { border-radius: 4px; border-color: var(--cf-map-gold); font-size: 15px; }
+.cf-map-modal .cf-button--primary { background-color: rgb(87, 69, 31); }
+.cf-map-modal .cf-map-action { margin: 10px 0; }
+.cf-map-header { height: 78px; }
+.cf-map-brand { font-size: 30px; }
+.cf-map-location { font-size: 21px; }
+.cf-map-header .cf-map-action { height: 52px; min-width: 156px; }
+.cf-map-caption { font-size: 18px; -unity-text-align: middle-center; }
+.cf-map-header .cf-map-caption { font-size: 18px; }
+.cf-map-action .cf-map-icon { width: 42px; height: 42px; }
+.cf-map-screen .region-map-scroll { top: 94px; }
+.cf-map-region-rail, .cf-map-inspector, .cf-map-layers { top: 102px; }
+.cf-map-region-rail { width: 116px; }
+.cf-map-rail-action { width: 102px; height: 100px; }
+.cf-map-rail-action .cf-map-icon { width: 72px; height: 72px; margin: 0; }
+.cf-map-rail-action .cf-map-caption { font-size: 16px; }
+.cf-map-layers { left: 142px; }
+.cf-map-inspector { width: 350px; padding: 22px; }
+.cf-map-heading { font-size: 30px; }
+.cf-map-copy { font-size: 18px; }
+.cf-map-inspector .property-key { font-size: 15px; min-width: 108px; }
+.cf-map-inspector .property-value { font-size: 18px; }
+.cf-map-inspector .property-row { min-height: 42px; }
+.cf-map-inspector .cf-map-action { height: 54px; }
+.cf-map-resources { top: 94px; height: 66px; padding: 8px 18px; }
+.cf-map-kicker { font-size: 14px; }
+.cf-map-value { font-size: 22px; }
+.cf-map-screen .district-mode-switch { top: 170px; }
+.cf-map-management { top: 170px; }
+.cf-map-management .cf-map-action { height: 42px; min-width: 130px; }
+.cf-map-management .cf-map-caption { font-size: 16px; }
+.cf-map-management .cf-map-icon { width: 32px; height: 32px; }
+.cf-map-screen .terraform-rail { top: 222px; width: 116px; }
+.cf-map-screen .terraform-category-button { width: 100px; height: 92px; min-height: 92px; }
+.cf-map-screen .terraform-category-button .cf-map-icon { width: 66px; height: 66px; }
+.cf-map-screen .terraform-category-button .cf-map-caption { font-size: 16px; }
+.cf-map-screen .terraform-flyout { left: 140px; top: 222px; width: 236px; }
+.cf-map-screen .terraform-tool-button { font-size: 18px; height: 44px; min-height: 44px; }
+.cf-map-screen .terraform-flyout-title { font-size: 16px; }
+.cf-map-screen .terraform-flyout .inspector-note { font-size: 14px; }
+.cf-map-screen .district-selected-lot-panel { top: 230px; width: 350px; max-height: 66%; }
+.cf-map-selection-preview { align-self: center; width: 170px; height: 120px; margin: 10px 0; }
+.cf-map-screen .district-lot-info-name { font-size: 28px; }
+.cf-map-screen .district-lot-info-meta, .cf-map-screen .district-lot-info-hint { font-size: 17px; }
+.cf-map-season { font-size: 20px; }
+.cf-map-screen .district-time-button { font-size: 16px; }
+.cf-map-screen .district-notice { bottom: 84px; left: 25%; right: 25%; font-size: 17px; }
+.cf-map-screen .region-hover-help { bottom: 84px; }
+.cf-map-screen .district-unfounded-label { font-size: 16px; }
+.cf-map-screen .district-founder-hint { font-size: 14px; }
+.cf-map-screen .district-simulation-panel > .cf-button { font-size: 18px; background-color: rgb(87, 69, 31); }
+.cf-map-screen .district-time-button:disabled { opacity: 0.35; }
+.cf-map-screen .terraform-rail .unity-scroller--vertical { width: 6px; }
+/* Preserve the existing optional hover-pan controls without covering the header. */
+.cf-map-screen .district-edge-pan { display: flex; width: 24px; height: 24px; font-size: 12px; opacity: 0.35; }
+.cf-map-screen .district-edge-pan--left { left: 0; top: 70%; }
+.cf-map-screen .district-edge-pan--right { right: 0; top: 70%; }
+.cf-map-screen .district-edge-pan--top { top: 170px; }
+.cf-map-screen .district-edge-pan--bottom { bottom: 72px; }
+.cf-map-screen .terraform-rail .unity-scroll-view__content-viewport,
+.cf-map-screen .terraform-flyout .unity-scroll-view__content-viewport,
+.cf-map-screen .district-selected-lot-panel .unity-scroll-view__content-viewport {
+    overflow: hidden; min-height: 0; flex-shrink: 1;
+}
+.cf-map-screen .terraform-rail .unity-scroll-view__content-container,
+.cf-map-screen .terraform-flyout .unity-scroll-view__content-container,
+.cf-map-screen .district-selected-lot-panel .unity-scroll-view__content-container { flex-shrink: 0; }
+
+.cf-map-screen .district-mode-switch { height: 44px; }
+.cf-map-screen .district-mode-button { width: 146px; height: 36px; font-size: 16px; }
+
+/* Quiet city V02: fitted chrome; contextual panels never reserve world space. */
+.cf-quiet-map .cf-map-header { left: auto; right: 12px; top: 10px; height: 44px; padding: 0; background-color: transparent; border-width: 0; }
+.cf-quiet-map .cf-map-location { font-size: 16px; margin: 0 14px; color: rgb(246, 233, 206); }
+.cf-quiet-map .cf-map-header .cf-map-action { width: 42px; min-width: 42px; height: 42px; min-height: 42px; padding: 3px; margin: 0 0 0 6px; }
+.cf-quiet-map .cf-map-header .cf-map-icon { width: 34px; height: 34px; margin: 0; }
+.cf-quiet-map .cf-map-header .cf-map-caption { display: none; }
+.cf-quiet-map .cf-map-header #district-statistics, .cf-quiet-map .cf-map-header #region-statistics { display: none; }
+.cf-quiet-map .cf-map-resources { left: 12px; right: auto; top: 10px; height: 44px; padding: 2px 4px; background-color: rgba(8, 25, 42, 0.94); }
+.cf-quiet-map .cf-map-metric { flex-grow: 0; flex-shrink: 0; flex-direction: row; align-items: center; height: 36px; padding: 0 8px; margin: 0; background-color: transparent; border-width: 0; color: rgb(245, 232, 201); }
+.cf-quiet-map .cf-map-metric:hover, .cf-quiet-map .cf-map-metric:focus { background-color: rgb(27, 48, 62); }
+.cf-quiet-map .cf-map-metric .cf-map-icon { width: 30px; height: 30px; margin: 0 5px 0 0; }
+.cf-quiet-map .cf-map-value { font-size: 17px; margin: 0; }
+.cf-quiet-map .cf-quiet-dock { position: absolute; left: auto; top: auto; right: 12px; bottom: 14px; height: 58px; width: auto; padding: 0; flex-direction: row; background-color: transparent; border-width: 0; }
+.cf-quiet-map .cf-quiet-dock .cf-map-action { width: 56px; min-width: 56px; height: 56px; min-height: 56px; margin: 0 0 0 8px; padding: 7px; border-radius: 28px; }
+.cf-quiet-map .cf-quiet-dock .cf-map-caption { display: none; }
+.cf-quiet-map .cf-quiet-dock .cf-map-icon { width: 40px; height: 40px; margin: 0; }
+.cf-quiet-map .terraform-rail { left: auto; top: auto; right: 12px; bottom: 84px; width: auto; max-width: 570px; height: 70px; padding: 4px; }
+.cf-quiet-map .terraform-rail .unity-scroll-view__content-container { flex-direction: row; align-items: center; }
+.cf-quiet-map .terraform-category-button { width: 54px; height: 54px; min-height: 54px; margin: 0 2px; padding: 3px; }
+.cf-quiet-map .terraform-category-button .cf-map-icon { width: 46px; height: 46px; margin: 0; }
+.cf-quiet-map .terraform-category-button .cf-map-caption { display: none; }
+.cf-quiet-map .terraform-flyout { left: auto; right: 12px; top: auto; bottom: 166px; width: 270px; max-height: 58%; padding: 12px; }
+.cf-quiet-map .terraform-tool-button { font-size: 16px; min-height: 34px; height: 34px; margin-bottom: 4px; }
+.cf-quiet-map .terraform-flyout-title { font-size: 16px; }
+.cf-quiet-map .district-selected-lot-panel { top: auto; bottom: 84px; right: 12px; width: 280px; padding: 14px; max-height: 68%; }
+.cf-quiet-map .district-lot-info-name { font-size: 23px; padding-right: 24px; }
+.cf-quiet-map .cf-map-selection-preview { width: 128px; height: 84px; margin: 4px 0; }
+.cf-quiet-map .district-lot-info-meta, .cf-quiet-map .district-lot-info-hint { font-size: 15px; margin-top: 4px; margin-bottom: 4px; }
+.cf-quiet-map .cf-quiet-close { position: absolute; right: 0; top: 0; width: 28px; height: 28px; color: rgb(245, 232, 201); background-color: transparent; border-width: 0; font-size: 22px; }
+.cf-quiet-map #quiet-selection-details { margin: 8px 0 0 0; color: rgb(245, 232, 201); font-size: 15px; }
+.cf-quiet-map #quiet-selection-details .unity-toggle__text { color: rgb(245, 232, 201); }
+.cf-quiet-map .district-edge-pan { opacity: 0; }
+.cf-quiet-map .district-edge-pan:hover { opacity: 0.5; }
+.cf-quiet-map .district-edge-pan--top { top: 0; }
+.cf-quiet-map .district-edge-pan--bottom { bottom: 0; }
+.cf-quiet-map .district-simulation-panel { right: auto; left: 12px; bottom: 84px; width: 280px; }
+.cf-quiet-map .terraform-hud { bottom: 84px; width: 280px; }
+.cf-quiet-map .region-hover-help { width: auto; max-width: 280px; min-width: 0; min-height: 0; padding: 8px 10px; translate: 0 0; background-color: rgb(8, 25, 42); border-color: rgb(192, 154, 76); border-width: 1px; border-radius: 4px; }
+.cf-quiet-map .region-hover-help-text { font-size: 15px; color: rgb(245, 232, 201); white-space: normal; }
+.cf-quiet-map .region-map-scroll { top: 0; }
+.cf-quiet-map .cf-map-region-rail { left: auto; right: 12px; top: auto; bottom: 84px; width: auto; flex-direction: row; padding: 4px; }
+.cf-quiet-map .cf-map-rail-action { width: 52px; height: 52px; min-height: 52px; margin: 0 3px; }
+.cf-quiet-map .cf-map-rail-action .cf-map-icon { width: 44px; height: 44px; }
+.cf-quiet-map .cf-map-rail-action .cf-map-caption { display: none; }
+.cf-quiet-map .cf-map-inspector { top: auto; bottom: 160px; width: 280px; padding: 14px; }
+.cf-quiet-map .cf-map-portrait, .cf-quiet-map .cf-map-inspector .cf-map-copy, .cf-quiet-map .cf-map-inspector .cf-map-kicker { display: none; }
+.cf-quiet-map .cf-map-heading { font-size: 23px; }
+.cf-quiet-map .cf-map-inspector .property-row { min-height: 28px; }
+.cf-quiet-map .cf-map-inspector .property-key { min-width: 90px; font-size: 13px; }
+.cf-quiet-map .cf-map-inspector .property-value { font-size: 15px; }
+.cf-quiet-map .cf-map-inspector .cf-map-action { height: 38px; min-height: 38px; padding: 2px 6px; }
+.cf-quiet-map .cf-map-inspector .cf-map-caption { font-size: 15px; }
+.cf-quiet-map .cf-map-inspector .cf-map-icon { width: 28px; height: 28px; }
+.cf-quiet-map .cf-map-layers { left: 12px; top: 10px; }
+.cf-quiet-map .cf-quiet-summary { flex-direction: row; align-items: center; margin: 3px 0; font-size: 15px; }
+.cf-quiet-map .cf-quiet-summary .cf-map-icon { width: 26px; height: 26px; margin-right: 8px; }
+
+.cf-quiet-map .district-notice { left: 12px; right: auto; bottom: 16px; max-width: 380px; font-size: 15px; white-space: normal; padding: 8px 10px; }
+.cf-quiet-map .terraform-category-button.cf-map-action { min-width: 54px; }
+.cf-quiet-map .region-hover-help-layer { left: 0; right: 0; top: 0; bottom: 0; align-items: flex-start; justify-content: flex-start; }
+.cf-quiet-map .region-hover-help { position: absolute; margin: 0; }

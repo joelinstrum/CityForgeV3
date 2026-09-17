@@ -9,14 +9,16 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
-        private void ComposeRegionTerrainModal()
+        private void ComposeRegionTerrainModal() => ComposeRegionTerrainCategory("Rivers");
+
+        private void ComposeRegionTerrainCategory(string initialCategory)
         {
             var region = _openRegion;
             if (region == null) return;
             var saved = region.Terrain ?? new RegionTerrainSettings();
             var draft = saved.Copy();
             draft.Flow = RegionRiverFlow.Varied;
-            var category = "Rivers";
+            var category = initialCategory;
             bool busy = false, cancelled = false;
             var panel = CreateDocumentModal("REGION TERRAIN", "Choose terrain options for " + region.Name + ".");
             panel.name = "region-terrain-modal";
@@ -194,7 +196,7 @@ namespace CityForgeV3.UI
                 button.style.marginRight = 8; button.style.width = 174; button.style.fontSize = 18;
                 button.style.whiteSpace = WhiteSpace.NoWrap; tabs.Add(button);
             }
-            SelectCategory("Rivers");
+            SelectCategory(initialCategory);
         }
 
         private string RemoveRegionRivers(RegionSaveData region)

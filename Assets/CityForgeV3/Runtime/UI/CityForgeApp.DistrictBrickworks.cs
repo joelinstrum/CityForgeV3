@@ -8,7 +8,6 @@ namespace CityForgeV3.UI
     public sealed partial class CityForgeApp
     {
         bool _placingBrickworks;float _brickworksYaw;Vector2 _brickworksHover;bool _hasBrickworksHover;
-        readonly Dictionary<string,string> _brickworksNotices=new();
         void AddBrickworksIndustry(VisualElement scroll,RegionCityTile d)
         {
             bool unlocked=DistrictBrickworks.Unlocked(d);
@@ -62,13 +61,8 @@ namespace CityForgeV3.UI
             }
             panel.Add(CfButton.Create("BACK",ComposeDistrictIndustryModal,true,"quiet"));
         }
-        void RefreshBrickworksWarnings(RegionCityTile d)
-        {
-            var warnings=d.StoneSites.Where(s=>s.Built&&s.DeliveryStatus.StartsWith("Bricksworks required")).ToArray();
-            string key=string.Join("|",warnings.Select(s=>s.Id+":"+s.DeliveryStatus));string districtKey=(_openRegion?.RegionId??"")+"/"+d.TileId;
-            if(_brickworksNotices.TryGetValue(districtKey,out var old)&&old==key)return;
-            _brickworksNotices[districtKey]=key;
-            if(warnings.Length>0)ShowDistrictNotice(warnings[0].DeliveryStatus);
-        }
+        // Delivery warnings are read from the selected object's status callbacks.
+        // Do not scan all quarry sites during routine HUD refreshes.
+
     }
 }

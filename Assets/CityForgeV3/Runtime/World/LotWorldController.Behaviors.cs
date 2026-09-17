@@ -164,10 +164,13 @@ namespace CityForgeV3.World
                 {
                     instance.HasStarted = true;
                     var loadedBefore=instance.State.Loaded;
+                    var deliveriesBefore = instance.State.CompletedCycles;
                     CargoLoadingSimulation.Step(definition, instance.State, Time.deltaTime, view.TravelSeconds, boat != null, connected, length);
                     // State and inventory belong to the same district save. Only
                     // newly placed bundles count; reload, sailing and reset do not.
                     if(_districtHosted)DistrictTimber.CreditBargeLoading(_timberDistrict,loadedBefore,instance.State.Loaded);
+                    if (_districtHosted && _timberDistrict != null && _timberPlacement != null && instance.State.CompletedCycles > deliveriesBefore)
+                        DistrictLotSimulation.For(_timberDistrict).DeliveryCompleted(_timberPlacement.InstanceId, "lumber");
                 }
                 if (wasDeparted && !instance.State.Departed)
                 {

@@ -1,0 +1,3 @@
+PASS LotStatsTests.StatsRoundTripAndCopyRemainIndependent
+PASS LotStatsTests.LegacyLotsDoNotGainRequirementsOrRates
+TOTAL 2 passed

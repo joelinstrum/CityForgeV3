@@ -49,13 +49,13 @@ namespace CityForgeV3.UI
                 try
                 {
                     PersistDistrictRegion();
-                    button.text = "SAVED";
+                    CfMapChrome.SetCaption(button, "SAVED");
                     button.tooltip = "Region and all districts saved.";
-                    button.schedule.Execute(() => { button.text = "SAVE"; button.tooltip = "Save region and all districts. Changes are not saved automatically."; }).ExecuteLater(2000);
+                    button.schedule.Execute(() => { CfMapChrome.SetCaption(button, "SAVE"); button.tooltip = "Save region and all districts. Changes are not saved automatically."; }).ExecuteLater(2000);
                 }
                 catch (System.Exception error)
                 {
-                    button.text = "SAVE FAILED";
+                    CfMapChrome.SetCaption(button, "SAVE FAILED");
                     button.tooltip = "Could not save: " + error.Message + " — click to retry.";
                     Debug.LogException(error);
                 }

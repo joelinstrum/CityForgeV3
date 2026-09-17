@@ -77,6 +77,8 @@ namespace CityForgeV3.UI
         void ComposeSelectedObject(DistrictSelectionRef identity)
         {
             RemoveDocumentModal();
+            _districtPaletteOpen = false; _districtPaletteCategoryOpen = false;
+            SelectDistrictCategory("Select");
             _districtSelection.Clear(); _districtSelection.Add(identity);
             _selectedDistrictLotInstanceId = identity.Kind == DistrictSelectionKind.Lot ? identity.Id : "";
             RefreshSelectedObjectPanel();
@@ -88,9 +90,11 @@ namespace CityForgeV3.UI
             if (screen == null) return;
             screen.Q<VisualElement>("selected-object-panel")?.RemoveFromHierarchy();
             var panel = ComposeSelectedDistrictLotPanel(FindSelectedRegionTile());
-            if (panel == null) return;
+            if (panel == null) { SetDistrictChromeVisibility(screen); return; }
             panel.style.display = _districtInterfaceVisible ? DisplayStyle.Flex : DisplayStyle.None;
+            _districtInfoVisible = false;
             screen.Add(panel);
+            SetDistrictChromeVisibility(screen);
         }
 
         VisualElement BuildSelectedObjectPanel(DistrictSelectionRef identity)
@@ -98,11 +102,49 @@ namespace CityForgeV3.UI
             var target = _districtWorld?.ResolveSelectable(identity);
             if (target == null || !target.ShowInspector) return null;
             BindPlacedLotInspector(target);
-            var panel = new VisualElement { name = "selected-object-panel" };
+            var panel = new ScrollView(ScrollViewMode.Vertical) { name = "selected-object-panel", horizontalScrollerVisibility = ScrollerVisibility.Hidden };
+            panel.AddToClassList("cf-map-chrome");
             panel.AddToClassList("district-selected-lot-panel");
-            panel.Add(StyledLabel(identity.Kind == DistrictSelectionKind.Lot ? "SELECTED LOT" : "SELECTED OBJECT", "district-lot-info-kicker"));
-            panel.Add(StyledLabel(target.Title, "district-lot-info-name"));
-            panel.Add(StyledLabel(target.Description, "district-lot-info-meta"));
+            var close = new Button(ClearSelectedObject) { text = "×", tooltip = "Clear selection", name = "quiet-selection-close" };
+            close.AddToClassList("cf-quiet-close"); panel.Add(close);
+            panel.Add(CfMapChrome.Title(target.Title, "district-lot-info-name"));
+            var preview = CfMapChrome.Icon(identity.Kind == DistrictSelectionKind.Lot ? "Lots" : "Industry");
+            if (identity.Kind == DistrictSelectionKind.Lot)
+            {
+                var placed = FindSelectedRegionTile()?.Lots?.Find(item => item.InstanceId == identity.Id);
+                var texture = placed == null ? null : LoadSavedLotPreview(placed.LotId);
+                if (texture != null) { preview.image = texture; preview.uv = new Rect(0, 0, 1, 1); }
+            }
+            preview.AddToClassList("cf-map-selection-preview"); panel.Add(preview);
+            if (identity.Kind == DistrictSelectionKind.Lot)
+            {
+                var placed = FindSelectedRegionTile()?.Lots?.Find(item => item.InstanceId == identity.Id);
+                var data = placed == null ? null : LotContentCatalog.Read(placed.LotId);
+                void Summary(string icon, string value, string tip, Color? color = null)
+                {
+                    var row = new VisualElement { tooltip = tip, focusable = true };
+                    row.AddToClassList("cf-quiet-summary"); row.Add(CfMapChrome.ResourceIcon(icon));
+                    var text = new Label(value); if (color.HasValue) text.style.color = color.Value;
+                    row.Add(text); panel.Add(row);
+                }
+                if (data?.Stats != null)
+                {
+                    Summary("POPULATION", data.Stats.Residents.ToString("N0"), "Residents supported by this lot");
+                    // Only the selected content's authored benefits, never district objects.
+                    if (data.Stats.Benefits != null) foreach (var benefit in data.Stats.Benefits)
+                        if (benefit.ResourceId == "food" && benefit.Amount != 0)
+                            Summary("FOOD", $"{benefit.Amount:N0} t · {benefit.Timing}", "Food benefit");
+                }
+                var rates = DistrictBusinessEconomy.Rates(data);
+                if (rates != null)
+                {
+                    int net = rates.SeasonalRevenue - rates.SeasonalCost;
+                    Summary("TREASURY", $"{(net >= 0 ? "+" : "−")}${System.Math.Abs((long)net):N0} / season", "Seasonal revenue minus cost",
+                        net >= 0 ? new Color(.5f, .85f, .55f) : new Color(1f, .45f, .4f));
+                }
+            }
+            var details = new Foldout { text = "Details & actions", value = false, name = "quiet-selection-details" };
+            details.Add(StyledLabel(target.Description, "district-lot-info-meta"));
             if (target.StatusText != null)
             {
                 var status = StyledLabel(target.StatusText(), "district-lot-info-hint");
@@ -150,12 +192,12 @@ namespace CityForgeV3.UI
                     _districtWorld.ShowDistrictSelection(district, _districtSelection);
                     RefreshSelectedObjectPanel();
                 }, true, "quiet"));
-            panel.Add(actions);
+            details.Add(actions);
             panel.Add(message);
             if (identity.Kind == DistrictSelectionKind.Lot || target.DeleteBuilding != null)
             {
                 if (target.PreservesResource)
-                    panel.Add(StyledLabel("Deleting this building preserves the resource for rebuilding.", "district-lot-info-hint"));
+                    details.Add(StyledLabel("Deleting this building preserves the resource for rebuilding.", "district-lot-info-hint"));
                 var delete = CfButton.Create("DELETE BUILDING", () =>
                 {
                     if (_districtWorld?.ResolveSelectable(identity) != target) { RefreshSelectedObjectPanel(); return; }
@@ -165,10 +207,10 @@ namespace CityForgeV3.UI
                     DeleteDistrictSelection();
                 }, true, "danger");
                 delete.name = "delete-selected-building";
-                panel.Add(delete);
+                details.Add(delete);
             }
-            panel.Add(StyledLabel("Drag this lot within its outlined tiles. Click empty land to clear selection.", "district-lot-info-hint"));
-            panel.Add(CfButton.Create("CLEAR SELECTION", ClearSelectedObject, true, "quiet"));
+            details.Add(StyledLabel("Drag this lot within its outlined tiles. Click empty land to clear selection.", "district-lot-info-hint"));
+            panel.Add(details);
             return panel;
         }
     }

@@ -1,0 +1,27 @@
+180 editor frames: median=8.072541ms p95=24.62995ms max=34.38063ms drawcalls avg=538.805555555556 range=536..620
+OK district
+Selected Farm Lot 2 panel=True
+OK select-lot
+OK click:district-mode-builder
+OK district
+Selected Farm Lot 2 panel=True
+OK select-lot
+PASS 20 Build open/close cycles retained screen, header and camera: 56.2501ms flora=9951
+OK quiet-check
+OK frames
+180 editor frames: median=6.155463ms p95=6.856959ms max=15.66346ms drawcalls avg=533.861111111111 range=533..556
+PASS local palette updates retained screen/world/transforms; 1000 fixed HUD refreshes=388.8807ms flora=9951
+OK check
+System.NullReferenceException: Object reference not set to an instance of an object
+  at MapChromeReview.Poll () [0x00a3c] in /Users/joelinstrum/dev/CityForge-Regions-Review/Assets/Editor/MapChromeReview.cs:99 
+System.Exception: Missing button click:district-menu
+  at MapChromeReview.Poll () [0x0033c] in /Users/joelinstrum/dev/CityForge-Regions-Review/Assets/Editor/MapChromeReview.cs:41 
+OK district
+OK hover-lumber
+OK click:district-menu
+OK region
+OK click:region-terrain
+OK district
+PASS local palette updates retained screen/world/transforms; 1000 fixed HUD refreshes=10.3375ms flora=9951
+OK check
+OK hover-lumber

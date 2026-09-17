@@ -248,6 +248,7 @@ namespace CityForgeV3.World
         public List<string> RequiredPackageIds = new();
         public int BasePlopCost;
         public BusinessRates BusinessRates;
+        public LotStats Stats;
         public int LotSizeMeters = 20;
         public int LotWidthCells = 2;
         public int LotDepthCells = 2;
@@ -302,6 +303,7 @@ namespace CityForgeV3.World
                 RequiredPackageIds = RequiredPackageIds,
                 BasePlopCost = BasePlopCost,
                 BusinessRates = BusinessRates?.Copy(),
+                Stats = Stats?.Copy(),
                 LotType = LotType,
                 EraId = EraId,
                 AvailableEraIds = AvailableEraIds,

@@ -175,9 +175,7 @@ namespace CityForgeV3.UI
             _laborUiTimer+=Time.unscaledDeltaTime;
             if(_laborUiTimer<.5f)return;_laborUiTimer=0;
             var money=_root.Q<Label>("district-simulation-money");if(money!=null)money.text=$"${d.Treasury:N0}";
-            var season=_root.Q<Label>("district-labor-season");if(season!=null)season.text=$"Season: {DistrictLabor.SeasonName(s.SeasonIndex)} · Year {d.FoundingYear+s.SeasonIndex/4}";
-            RefreshDistrictResourceBar(d);RefreshWildlifeAlert(d);RefreshBrickworksWarnings(d);
-            var status=_root.Q<Label>("district-labor-status");if(status!=null)status.text=$"Axemen: {s.AssignedAxemen} · Wood: {s.Wood:N0} t"+(s.PaidSlots<s.AssignedAxemen?"\nWages due — open Labor":s.AssignedAxemen>0&&s.Workers.All(w=>w.Activity==AxemanActivity.Waiting)?"\nNo reachable trees":"");
+            RefreshDistrictResourceBar(d);RefreshMapMetrics(_root,d);RefreshWildlifeAlert(d);
         }
     }
 }

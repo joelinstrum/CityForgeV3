@@ -1,0 +1,1 @@
+PASS positive and negative net preview; scroll range=810.7348; offset=(0.00, 238.69); draft reset; no save written.
