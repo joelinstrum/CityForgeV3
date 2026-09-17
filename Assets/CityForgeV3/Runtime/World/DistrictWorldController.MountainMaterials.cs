@@ -47,12 +47,16 @@ namespace CityForgeV3.World
                 var hillGrass=Resources.Load<Texture2D>("CityForgeV3/Terrain/HillsV01/crest-meadow-4x4");
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0 && hillGrass!=null;
                 material.SetTexture("_HillTex",hillGrass);
+                material.SetFloat("_MeadowPatchStrength", 1f);
+                if (hillGrass != null) material.EnableKeyword("MEADOW_PATCHES");
+                else material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
                 if(hills) material.EnableKeyword("HILL_MEADOW"); else material.DisableKeyword("HILL_MEADOW");
                 ApplyDistrictGrassZoomScale();
                 return;
             }
             material.DisableKeyword("HILL_MEADOW");
+            material.DisableKeyword("MEADOW_PATCHES");
             var rock = Resources.Load<Texture2D>("CityForgeV3/Terrain/QuietSilverV01/quiet-silver-v01");
             var shale = Resources.Load<Texture2D>("CityForgeV3/Terrain/AlpineRockV01/scree-v01");
             var brown = Resources.Load<Texture2D>("CityForgeV3/Terrain/MountainBrownV01/brown-scree-v01");

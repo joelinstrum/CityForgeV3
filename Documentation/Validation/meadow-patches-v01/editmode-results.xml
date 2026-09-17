@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:53Z" duration="2.4784338">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="910" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:53Z" duration="2.478434" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2045" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/CityForge-LotSite-QA/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="910" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:53Z" duration="2.471877" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="58816" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2046" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="796" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:52Z" duration="2.008085" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2047" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="796" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:52Z" duration="2.007154" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2048" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="232" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:52Z" duration="1.985214" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1848" name="DistrictAfternoonLightingTests" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:52Z" duration="1.499222" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-suite type="ParameterizedMethod" id="1852" name="DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:50Z" duration="0.018275" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1850" name="DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown(Noon)" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown(Noon)" methodname="DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" seed="535496650" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:50Z" duration="0.014051" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1851" name="DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown(Afternoon)" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown(Afternoon)" methodname="DaylightSuppressesSceneSunAndRestoresItForNightAndShutdown" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" seed="118548223" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:50Z" duration="0.000311" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1855" name="HostedSunTravelsAlongTheProjectedShadowRay" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.HostedSunTravelsAlongTheProjectedShadowRay" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:52Z" duration="1.474811" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1853" name="HostedSunTravelsAlongTheProjectedShadowRay(Noon)" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.HostedSunTravelsAlongTheProjectedShadowRay(Noon)" methodname="HostedSunTravelsAlongTheProjectedShadowRay" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" seed="457823173" result="Passed" start-time="2026-09-17 17:15:50Z" end-time="2026-09-17 17:15:51Z" duration="1.068684" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1854" name="HostedSunTravelsAlongTheProjectedShadowRay(Afternoon)" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.HostedSunTravelsAlongTheProjectedShadowRay(Afternoon)" methodname="HostedSunTravelsAlongTheProjectedShadowRay" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" seed="1621045635" result="Passed" start-time="2026-09-17 17:15:51Z" end-time="2026-09-17 17:15:52Z" duration="0.405198" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1849" name="NoonCastsShortNortheastShadows" fullname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests.NoonCastsShortNortheastShadows" methodname="NoonCastsShortNortheastShadows" classname="CityForgeV3.Tests.EditMode.DistrictAfternoonLightingTests" runstate="Runnable" seed="535093226" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.000444" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1877" name="DistrictElevationTests" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.470318" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1878" name="OldDistrictIsFlatAndSavedHillsAreDeterministic" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.OldDistrictIsFlatAndSavedHillsAreDeterministic" methodname="OldDistrictIsFlatAndSavedHillsAreDeterministic" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="144764508" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.202806" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1880" name="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" methodname="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1444684371" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.193667" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1879" name="WaterRoadsAndDistrictEdgesStayLevel" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.WaterRoadsAndDistrictEdgesStayLevel" methodname="WaterRoadsAndDistrictEdgesStayLevel" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1711693303" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.064770" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1043" name="DistrictSurfaceCacheTests" fullname="DistrictSurfaceCacheTests" classname="DistrictSurfaceCacheTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:53Z" duration="0.457353" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1044" name="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" fullname="DistrictSurfaceCacheTests.DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" methodname="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="486414416" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:52Z" duration="0.002362" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1046" name="IncrementalRiverAndRoadHeightsEqualFullRebuild" fullname="DistrictSurfaceCacheTests.IncrementalRiverAndRoadHeightsEqualFullRebuild" methodname="IncrementalRiverAndRoadHeightsEqualFullRebuild" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="931668029" result="Passed" start-time="2026-09-17 17:15:52Z" end-time="2026-09-17 17:15:53Z" duration="0.453432" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1045" name="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" fullname="DistrictSurfaceCacheTests.ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" methodname="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="128347426" result="Passed" start-time="2026-09-17 17:15:53Z" end-time="2026-09-17 17:15:53Z" duration="0.000511" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-meadow-tests.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

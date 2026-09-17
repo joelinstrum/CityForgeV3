@@ -1,0 +1,6 @@
+shader=CityForgeV3/MeadowGroundSurface supported=True hill=False texture=crest-meadow-4x4 (UnityEngine.Texture2D)
+phase=0 zoom=696.7296 patch=False median=10.14 p95=11.86 max=16.58 ms draws=2649.1 GC/frame median=204856 bytes
+phase=1 zoom=696.7296 patch=True median=9.90 p95=13.68 max=19.20 ms draws=2649.1 GC/frame median=204856 bytes
+phase=2 zoom=55 patch=False median=6.01 p95=7.38 max=15.62 ms draws=152.1 GC/frame median=204856 bytes
+phase=3 zoom=55 patch=True median=5.73 p95=6.35 max=14.18 ms draws=152.1 GC/frame median=204856 bytes
+DONE
