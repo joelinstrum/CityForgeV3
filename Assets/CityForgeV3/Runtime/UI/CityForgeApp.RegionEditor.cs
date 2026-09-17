@@ -1314,9 +1314,15 @@ namespace CityForgeV3.UI
                 : ActiveDistrictCategory == "Water" && captured.Name == "Select Water"
                     ? "Select a river, move it with the arrow keys, or remove it with Delete."
                 : ActiveDistrictCategory == "Flora" && captured.Name == "Forest"
-                    ? "Generate Sparse or Wooded tree coverage in this district only."
+                    ? "Generate Light, Medium or Heavy tree coverage in this district only."
                 : ActiveDistrictCategory == "Flora" && captured.Name == "Trees"
                     ? "Open tree and stone placement, or generate district tree coverage."
+                : ActiveDistrictCategory == "Environment" && captured.Name == "Rain"
+                    ? "Gather full cloud cover, rain for ten seconds, then clear. Click again to restart."
+                : ActiveDistrictCategory == "Environment" && captured.Name == "Snow"
+                    ? "Gather clouds, snow for 10 seconds, hold ground snow for 10, then melt over 5. Temporary test weather."
+                : ActiveDistrictCategory == "Environment" && captured.Name == "Clear Skies"
+                    ? "Stop the storm and restore fair weather."
                 : captured.Name == "Hills" ? "Generate gentle rolling hills"
                 : $"{captured.Name} — interface preview; this district tool is not enabled yet"
         };
@@ -2374,7 +2380,7 @@ namespace CityForgeV3.UI
           "Select" => new[] { ("Select", "↖"), ("Move", "✥") },
           "Water" => new[] { ("Select Water", "↖"), ("Repair River", "✓"), ("Shape River", "↔"), ("Soften River", "~"), ("Erase River", "⌫") },
           "Flora" => new[] { ("Trees", "♣"), ("Forest", "♠"), ("Clear Flora", "⌫") },
-          "Environment" => new[] { ("Clouds", "☁"), ("Mist", "≋"), ("Clear Skies", "○") },
+          "Environment" => new[] { ("Rain", "☂"), ("Snow", "❄"), ("Clear Skies", "○") },
           "Sun" => new[] { ("Morning", "◔"), ("Noon", "☀"), ("Afternoon", "◕"), ("Night", "●") },
           _ => new[] { ("Hills", "Hills"), ("Raise", "▲"), ("Lower", "▼"), ("Level", "▬"), ("Smooth", "~"), ("Erode", "⌁") }
         };
@@ -2498,7 +2504,15 @@ namespace CityForgeV3.UI
       if (_districtEditorMode == DistrictEditorMode.Builder)
         _builderTool = tool;
       else
+      {
         _terraformTool = tool;
+        if (_terraformCategory == "Environment")
+        {
+          if (tool == "Rain") _districtWorld?.StartRainStorm();
+          else if (tool == "Snow") _districtWorld?.StartSnowStorm();
+          else if (tool == "Clear Skies") _districtWorld?.ClearRainStorm();
+        }
+      }
     }
 
     private bool IsDistrictRoadToolActive() =>

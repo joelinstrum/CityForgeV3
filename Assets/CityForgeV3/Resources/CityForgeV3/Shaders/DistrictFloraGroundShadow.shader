@@ -32,6 +32,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 float4 vertex : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 half heightRatio : TEXCOORD1;
+                half edgeOpacity : TEXCOORD2;
             };
 
             v2f vert(appdata input)
@@ -40,6 +41,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 output.vertex = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;
                 output.heightRatio = input.color.a;
+                output.edgeOpacity = input.color.r;
                 return output;
             }
 
@@ -52,7 +54,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 half distanceFade = lerp(1.0h, 0.62h,
                     smoothstep(0.48h, 1.0h, input.heightRatio));
                 return fixed4(_Color.rgb,
-                    alpha * _Color.a * distanceFade);
+                    alpha * _Color.a * distanceFade * input.edgeOpacity);
             }
         ENDCG
 

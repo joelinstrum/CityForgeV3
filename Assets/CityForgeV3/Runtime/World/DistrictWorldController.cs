@@ -127,6 +127,11 @@ namespace CityForgeV3.World
         private Camera _camera;
         private Light _sun;
         private Transform _content;
+        private DistrictCloudLayer _clouds;
+        private DistrictRainStorm _rainStorm;
+        public void StartRainStorm() => _rainStorm?.Begin();
+        public void StartSnowStorm() => _rainStorm?.Begin(true);
+        public void ClearRainStorm() => _rainStorm?.Clear();
         private Transform _grid;
         private Transform _roadArtworkRoot;
         private Transform _riverRoot;
@@ -303,6 +308,13 @@ namespace CityForgeV3.World
                     AddLot(founderLot, center, 0, "legacy-founder");
                 }
             }
+            var cloudObject = new GameObject("District distant clouds");
+            cloudObject.transform.SetParent(_content, false);
+            _clouds = cloudObject.AddComponent<DistrictCloudLayer>();
+            _clouds.Initialize(_widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0,
+                _camera.transform.rotation, _groundRenderer.GetComponent<MeshFilter>());
+            _rainStorm = cloudObject.AddComponent<DistrictRainStorm>();
+            _rainStorm.Initialize(_camera, _widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0, _clouds, _groundRenderer.GetComponent<MeshFilter>());
             _buildingDistrict = false;
             SetZoom(DistrictZoom.DefaultLevel);
             SetTimeOfDay(district.TimeOfDay);
@@ -798,6 +810,26 @@ namespace CityForgeV3.World
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
                 var source = visibleRenderer.sprite;
+                if (ForestClusterShadows.Update(visibleRenderer, shadow, ray, world =>
+                {
+                    var local = _content.InverseTransformPoint(world);
+                    var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
+                    return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
+                }, foot =>
+                {
+                    // Five bounded collider queries per cluster at build/update,
+                    // never per frame. Follow the camera ray through each trunk
+                    // so steep terrain cannot detach its shadow contact.
+                    var direction = visibleRenderer.transform.forward;
+                    if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
+                        return _content.TransformPoint(hit);
+                    return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
+                }))
+                {
+                    properties.SetTexture("_MainTex", Texture2D.whiteTexture);
+                    shadow.SetPropertyBlock(properties);
+                    continue;
+                }
                 var root = visibleRenderer.transform.position;
                 var right = visibleRenderer.transform.right;
                 right.y = 0f;
@@ -2028,6 +2060,8 @@ namespace CityForgeV3.World
         {
             if (_camera == null) return;
             _zoomLevel = level;
+            _clouds?.SetZoom(level);
+            _rainStorm?.SetZoom(level);
             ApplyDistrictGrassZoomScale();
             _camera.orthographicSize = OrthographicSize(level,
                 _widthMeters, _depthMeters, _camera.aspect);
@@ -2119,6 +2153,7 @@ namespace CityForgeV3.World
             if (_camera != null)
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
+            _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
             UpdateDistrictFloraShadows();
         }
 
@@ -2166,9 +2201,9 @@ namespace CityForgeV3.World
             {
                 DistrictZoomLevel.LOD1 => 44f,
                 DistrictZoomLevel.LOD2 => 132f,
-                DistrictZoomLevel.LOD3 => fullFit * 0.70f,
-                DistrictZoomLevel.LOD4 => fullFit,
-                DistrictZoomLevel.LOD5Billboard => fullFit * 1.35f,
+                DistrictZoomLevel.LOD3 => fullFit * 0.378f,
+                DistrictZoomLevel.LOD4 => fullFit * 0.675f,
+                DistrictZoomLevel.LOD5Billboard => fullFit,
                 _ => fullFit
             };
         }
@@ -2381,12 +2416,14 @@ namespace CityForgeV3.World
                 DistrictZoomLevel.LOD1 => 180f,
                 DistrictZoomLevel.LOD2 => 480f,
                 DistrictZoomLevel.LOD3 => 1600f,
-                DistrictZoomLevel.LOD4 => 2400f,
-                _ => 3200f
+                DistrictZoomLevel.LOD4 => 1800f,
+                _ => 2400f
             };
 
         private void ClearWorld()
         {
+            _rainStorm = null;
+            _clouds = null;
             _floraBatches = null;
             _groundDecals = null;
             _lots.Clear();

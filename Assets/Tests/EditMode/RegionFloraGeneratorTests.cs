@@ -22,12 +22,28 @@ public class RegionFloraGeneratorTests
         var d = District();
         var sparse = RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Sparse, 83);
         var wooded = RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83);
-        Assert.Greater(sparse.Count, 10); Assert.Greater(wooded.Count, sparse.Count * 5);
+        Assert.Greater(sparse.Count, 2); Assert.Greater(wooded.Count, sparse.Count * 5);
         Assert.True(wooded.All(t => RegionClimateRules.AllowsTree(climate, t.FloraId)));
         Assert.True(wooded.All(t => t.GeneratedByRegion && t.NormalizedX > 0 && t.NormalizedX < 1 && t.NormalizedZ > 0 && t.NormalizedZ < 1));
         CollectionAssert.AreEqual(wooded.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83).Select(JsonUtility.ToJson));
         Assert.AreNotEqual(wooded[0].InstanceId, RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 84)[0].InstanceId);
         if (climate != RegionClimate.Tropical) Assert.True(wooded.Any(DistrictTreeHarvest.CanFell));
+    }
+    [Test] public void HeavyTriplesMediumDensityAndPreservesSavedCoverageValues()
+    {
+        Assert.AreEqual(1, (int)RegionTreeCoverage.Sparse);
+        Assert.AreEqual(2, (int)RegionTreeCoverage.Wooded);
+        var d = District(); d.Width = 4; d.Height = 4;
+        var medium = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Wooded, 193);
+        var heavy = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193);
+        Assert.That((float)heavy.Count / medium.Count, Is.InRange(2.8f, 3.2f));
+        Assert.True(heavy.Any(DistrictTreeHarvest.CanFell));
+        CollectionAssert.AreEqual(heavy.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193).Select(JsonUtility.ToJson));
+        d.TreeCoverage = RegionTreeCoverage.Heavy; d.Flora = heavy;
+        var saved = JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));
+        Assert.AreEqual(RegionTreeCoverage.Heavy, saved.TreeCoverage);
+        Assert.AreEqual(heavy.Count, saved.Flora.Count);
+        Assert.Throws<InvalidOperationException>(() => RegionFloraGenerator.Generate(d, RegionClimate.Desert, RegionTreeCoverage.Heavy, 193));
     }
     [Test] public void DesertRejectsForestAndWarmClimatesNeverUseSnowyArtwork()
     {
@@ -65,7 +81,7 @@ public class RegionFloraGeneratorTests
         var quarry = new DistrictStoneSite { Built = true, NormalizedX = .7f, NormalizedZ = .2f }; d.StoneSites.Add(quarry);
         var works = new DistrictBrickworksSite { NormalizedX = .7f, NormalizedZ = .5f, Yaw = 90 }; d.Brickworks.Add(works);
         var trees = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Wooded, 49, _ => lot);
-        Assert.Greater(trees.Count, 100);
+        Assert.Greater(trees.Count, 25);
         var lotCenter = DistrictWorldController.DistrictLotCenterMeters(d, placed, lot);
         foreach (var tree in trees)
         {
@@ -75,6 +91,47 @@ public class RegionFloraGeneratorTests
             Assert.False(new Rect(lotCenter.x - 40, lotCenter.y - 30, 80, 60).Contains(p));
             Assert.Greater(Vector2.Distance(p, DistrictQuarry.Point(d, quarry)), 26);
             Assert.False(DistrictBrickworks.Contains(d, works, p, 4));
+            if (ForestClusterCatalog.IsCluster(tree.FloraId))
+            {
+                float radius = ForestClusterCatalog.ClearanceMeters * tree.Scale;
+                Assert.Greater(Mathf.Abs(p.x - 5), 9 + radius);
+                Assert.Greater(Mathf.Abs(p.y - (.8f - .5f) * 640), 19 + radius);
+                Assert.GreaterOrEqual(tree.NormalizedX * 640 - radius, 5);
+                Assert.Less(tree.NormalizedX * 640 + radius, 635);
+            }
+        }
+    }
+    [Test] public void MixedForestUsesAllClustersAndSeparateHarvestableFirsWithFewerRecords()
+    {
+        var d = District(); d.Width = d.Height = 2;
+        var trees = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Wooded, 192);
+        var clusters = trees.Where(t => ForestClusterCatalog.IsCluster(t.FloraId)).ToArray();
+        Assert.AreEqual(5, clusters.Select(t => t.FloraId).Distinct().Count());
+        Assert.Greater(clusters.Length, trees.Count * .65f);
+        var firs = trees.Where(DistrictTreeHarvest.CanFell).ToArray();
+        Assert.Greater(firs.Length, trees.Count * .12f);
+        Assert.Less(firs.Length, trees.Count * .35f);
+        Assert.Less(trees.Count, 750, "Old 24m wooded spacing produced about 2200 records here");
+        foreach (var tree in clusters) Assert.False(DistrictTreeHarvest.Fell(tree, 0));
+        var fir = firs[0]; Assert.True(DistrictTreeHarvest.Fell(fir, 0));
+        Assert.AreEqual(DistrictTreeHarvest.PrototypeWoodYield, DistrictTreeHarvest.TakeWood(fir, 10000));
+        Assert.AreEqual(DistrictTreeHarvestState.Stump, fir.HarvestState);
+        var before = JsonUtility.ToJson(d); var undo = new DistrictUndoHistory(); undo.Reset(before);
+        d.Flora = trees; undo.Commit(JsonUtility.ToJson(d));
+        var copy = JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));
+        CollectionAssert.AreEqual(trees.Select(t => t.FloraId), copy.Flora.Select(t => t.FloraId));
+        var index = DistrictHarvestIndex.For(copy);
+        int count = copy.Flora.Count;
+        Assert.True(index.RemoveFlora(clusters[0].InstanceId));
+        Assert.AreEqual(count - 1, copy.Flora.Count);
+        Assert.Null(index.Find(clusters[0].InstanceId));
+        Assert.NotNull(index.Find(firs[1].InstanceId), "Clearing one cluster must retain the separate lumber fir");
+        Assert.True(undo.TryUndo(out var restored)); Assert.AreEqual(before, restored);
+        foreach (var id in clusters.Select(t => t.FloraId).Distinct())
+        {
+            var texture = Resources.Load<Texture2D>(LotWorldController.ResolveFloraResourcePath(id, SeasonPreset.Summer));
+            Assert.NotNull(texture, id); Assert.Greater(texture.width, 1000);
+            Assert.AreEqual(ForestClusterCatalog.Pivot, LotWorldController.FloraPivot(texture.name));
         }
     }
     [Test] public void IncompleteAndFailedGenerationLeaveRegionAndHarvestIndexIntact()

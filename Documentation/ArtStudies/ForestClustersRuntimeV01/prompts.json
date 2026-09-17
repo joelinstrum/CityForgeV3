@@ -1,0 +1,32 @@
+[
+  {
+    "name": "forest-cluster-01-summer",
+    "input": "/Users/joelinstrum/dev/CityForge - V3/Documentation/ArtStudies/ForestClustersV03/mixed-cluster-01-summer.png",
+    "prompt": "Use case: background-extraction. Prepare this exact five-tree cluster as a game sprite. Remove ONLY all ground shadows and contact shadow blobs beneath/between the tree roots. All pixels below and around trunks must be transparent, leaving ONLY trees. Preserve tree foliage shading, colours (dark firs and lighter deciduous trees), all five trees, branching, trunk bases, exact positions and framing. No painted ground shadows whatsoever: engine supplies shadows separately. Real RGBA transparent background including gaps. Do not resize/recompose the grove or change the angle, no ground tile, text or new elements.",
+    "source": "/Users/joelinstrum/.codex/generated_images/01a0aaee-bd35-7e13-b14e-21d0bcf81741/exec-ac0d1153-732a-49bd-9251-dd2377b79ca0.png"
+  },
+  {
+    "name": "forest-cluster-02-summer",
+    "input": "/Users/joelinstrum/dev/CityForge - V3/Documentation/ArtStudies/ForestClustersV03/mixed-cluster-02-summer.png",
+    "prompt": "Use case: background-extraction. Prepare this exact five-tree cluster as a game sprite. Remove ONLY all ground shadows and contact shadow blobs beneath/between the tree roots. All pixels below and around trunks must be transparent, leaving ONLY trees. Preserve tree foliage shading, colours (dark firs and lighter deciduous trees), all five trees, branching, trunk bases, exact positions and framing. No painted ground shadows whatsoever: engine supplies shadows separately. Real RGBA transparent background including gaps. Do not resize/recompose the grove or change the angle, no ground tile, text or new elements.",
+    "source": "/Users/joelinstrum/.codex/generated_images/01a0aaee-bd35-7e13-b14e-21d0bcf81741/exec-1d8c56d4-2580-4a90-83a5-3b5f967dd4c2.png"
+  },
+  {
+    "name": "forest-cluster-03-summer",
+    "input": "/Users/joelinstrum/dev/CityForge - V3/Documentation/ArtStudies/ForestClustersV03/mixed-cluster-03-summer.png",
+    "prompt": "Use case: background-extraction. Prepare this exact five-tree cluster as a game sprite. Remove ONLY all ground shadows and contact shadow blobs beneath/between the tree roots. All pixels below and around trunks must be transparent, leaving ONLY trees. Preserve tree foliage shading, colours (dark firs and lighter deciduous trees), all five trees, branching, trunk bases, exact positions and framing. No painted ground shadows whatsoever: engine supplies shadows separately. Real RGBA transparent background including gaps. Do not resize/recompose the grove or change the angle, no ground tile, text or new elements.",
+    "source": "/Users/joelinstrum/.codex/generated_images/01a0aaee-bd35-7e13-b14e-21d0bcf81741/exec-de0f4f59-d232-42e8-a7f2-c366b2effb63.png"
+  },
+  {
+    "name": "forest-cluster-04-summer",
+    "input": "/Users/joelinstrum/dev/CityForge - V3/Documentation/ArtStudies/ForestClustersV03/mixed-cluster-04-summer.png",
+    "prompt": "Use case: background-extraction. Prepare this exact five-tree cluster as a game sprite. Remove ONLY all ground shadows and contact shadow blobs beneath/between the tree roots. All pixels below and around trunks must be transparent, leaving ONLY trees. Preserve tree foliage shading, colours (dark firs and lighter deciduous trees), all five trees, branching, trunk bases, exact positions and framing. No painted ground shadows whatsoever: engine supplies shadows separately. Real RGBA transparent background including gaps. Do not resize/recompose the grove or change the angle, no ground tile, text or new elements.",
+    "source": "/Users/joelinstrum/.codex/generated_images/01a0aaee-bd35-7e13-b14e-21d0bcf81741/exec-58f8a209-40d3-43fb-98da-6ddfef622f03.png"
+  },
+  {
+    "name": "forest-cluster-05-summer",
+    "input": "/Users/joelinstrum/dev/CityForge - V3/Documentation/ArtStudies/ForestClustersV03/mixed-cluster-05-summer.png",
+    "prompt": "Use case: background-extraction. Prepare this exact five-tree cluster as a game sprite. Remove ONLY all ground shadows and contact shadow blobs beneath/between the tree roots. All pixels below and around trunks must be transparent, leaving ONLY trees. Preserve tree foliage shading, colours (dark firs and lighter deciduous trees), all five trees, branching, trunk bases, exact positions and framing. No painted ground shadows whatsoever: engine supplies shadows separately. Real RGBA transparent background including gaps. Do not resize/recompose the grove or change the angle, no ground tile, text or new elements.",
+    "source": "/Users/joelinstrum/.codex/generated_images/01a0aaee-bd35-7e13-b14e-21d0bcf81741/exec-b9b6650e-a9ff-4733-abee-3187cadc39f6.png"
+  }
+]

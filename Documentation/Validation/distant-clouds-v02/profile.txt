@@ -1,0 +1,5 @@
+2026-09-16T19:06:28.5111880Z Little River Bend; flora=2947; lots=1; two cloud slots; two renderers
+clouds=False median frame=5.86ms p95=18.66ms mean draws=557.0 triangles=5169274
+clouds=True median frame=7.47ms p95=18.17ms mean draws=561.0 triangles=5431426
+10000 unchanged cloud zoom calls: 0.242ms, 0 bytes (includes Stopwatch allocation).
+DONE

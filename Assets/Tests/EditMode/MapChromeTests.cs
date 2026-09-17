@@ -116,6 +116,23 @@ namespace CityForgeV3.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+        [Test] public void QuietTerrainPaletteRetainsMergedWeatherCommands()
+        {
+            var go = Fixture(out var app, out var root, out var region);
+            try
+            {
+                var screen = new VisualElement(); screen.AddToClassList("district-terraform-screen"); root.Add(screen);
+                Set(app, "_districtPaletteOpen", true); Set(app, "_districtPaletteCategoryOpen", true);
+                Set(app, "_districtInterfaceVisible", true);
+                Call(app, "SelectDistrictCategory", "Environment");
+                Call(app, "RefreshDistrictPalette", screen, region.Tiles[0]);
+                Assert.That(screen.Q<Button>("district-tool-rain").tooltip, Does.Contain("rain for ten seconds"));
+                Assert.That(screen.Q<Button>("district-tool-snow").tooltip, Does.Contain("Temporary test weather"));
+                Assert.That(screen.Q<Button>("district-tool-clear-skies").tooltip, Does.Contain("restore fair weather"));
+                Assert.That(screen.Q("map-tool-options").style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
         [Test] public void RegionShortcutOpensRequestedCategory()
         {
             var go = Fixture(out var app, out var root, out var region);

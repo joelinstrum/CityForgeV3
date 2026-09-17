@@ -77,6 +77,24 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void HillMeadowAssetsSupportContinuousTerrainBlending()
+        {
+            var texture=Resources.Load<Texture2D>("CityForgeV3/Terrain/HillsV01/crest-meadow-4x4");
+            Assert.That(texture,Is.Not.Null);
+            Assert.That(texture.wrapMode,Is.EqualTo(TextureWrapMode.Repeat));
+            Assert.That(texture.mipmapCount,Is.GreaterThan(1));
+            var shader=Shader.Find("CityForgeV3/MeadowGroundSurface");
+            Assert.That(UnityEditor.ShaderUtil.ShaderHasError(shader),Is.False);
+            var material=new Material(shader);
+            try
+            {
+                Assert.That(material.HasProperty("_HillTex"),Is.True);
+                Assert.That(material.HasProperty("_HillHeight"),Is.True);
+            }
+            finally{Object.DestroyImmediate(material);}
+        }
+
+        [Test]
         public void BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp()
         {
             foreach (var name in new[] { "BanksV1/grass-pebbles", "BanksV1/inside-gravel", "BanksV1/outside-earth", "BanksV2/shoreline", "BanksV2/shoreline-gravel", "BanksV3/open-gravel" })
