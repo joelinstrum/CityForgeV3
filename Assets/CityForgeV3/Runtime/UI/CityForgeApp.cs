@@ -3442,6 +3442,98 @@ namespace CityForgeV3.UI
                 "inspector-title");
             buildingName.name = "selected-building-name";
             inspector.Add(buildingName);
+            if (_lotWorld.SelectedBuildingCanRepaint)
+            {
+              inspector.Add(StyledLabel("HOUSE PAINT", "section-label"));
+              var currentPaint = _lotWorld.SelectedBuildingPaintHex;
+              var paintButtons = new List<(Button button, string hex)>();
+              TextField customPaint = null;
+              void UpdatePaintUi(string status, bool accepted)
+              {
+                if (accepted)
+                {
+                  var selected = _lotWorld.SelectedBuildingPaintHex;
+                  foreach (var item in paintButtons)
+                  {
+                    var active = string.Equals(item.hex, selected,
+                        System.StringComparison.OrdinalIgnoreCase);
+                    item.button.EnableInClassList("mode-selected", active);
+                    item.button.EnableInClassList("quiet", !active);
+                  }
+                  customPaint?.SetValueWithoutNotify(selected);
+                  var heading = _root.Q<Label>(className: "topbar-heading");
+                  if (heading != null)
+                    heading.text = _lotWorld.CurrentLotName +
+                        (_lotWorld.HasUnsavedChanges ? " •" : "");
+                }
+                var note = inspector.Q<Label>(className: "status-note");
+                if (note == null)
+                {
+                  note = StyledLabel(status, "status-note");
+                  inspector.Add(note);
+                }
+                else note.text = status;
+              }
+              var paintChoices = new[]
+              {
+                ("ORIGINAL", ""), ("CREAM", "#E9DDBD"),
+                ("BLUE", "#789DB8"), ("SAGE", "#91A88A"),
+                ("ROSE", "#C39191"), ("OCHRE", "#C9A773")
+              };
+              for (var start = 0; start < paintChoices.Length; start += 3)
+              {
+                var paintRow = new VisualElement();
+                paintRow.AddToClassList("inspector-actions");
+                for (var choice = start; choice < start + 3; choice++)
+                {
+                  var captured = paintChoices[choice];
+                  var paintButton = CfButton.Create(captured.Item1, () =>
+                  {
+                    if (_lotWorld.SetSelectedBuildingPaint(captured.Item2))
+                    {
+                      _lotStatus = captured.Item2.Length == 0
+                          ? "Original house color restored"
+                          : "House repainted";
+                      UpdatePaintUi(_lotStatus, true);
+                    }
+                  }, true, string.Equals(currentPaint, captured.Item2,
+                      System.StringComparison.OrdinalIgnoreCase)
+                      ? "mode-selected" : "quiet");
+                  paintButton.name = "selected-building-paint-" +
+                      captured.Item1.ToLowerInvariant();
+                  if (captured.Item2.Length > 0 &&
+                      ColorUtility.TryParseHtmlString(captured.Item2,
+                          out var swatchColor))
+                  {
+                    paintButton.style.backgroundColor = swatchColor;
+                    paintButton.style.color = Color.black;
+                  }
+                  paintRow.Add(paintButton);
+                  paintButtons.Add((paintButton, captured.Item2));
+                }
+                inspector.Add(paintRow);
+              }
+              customPaint = new TextField("CUSTOM HEX")
+              {
+                name = "selected-building-paint-hex",
+                value = currentPaint
+              };
+              customPaint.RegisterCallback<PointerDownEvent>(evt =>
+                  evt.StopPropagation());
+              customPaint.RegisterCallback<PointerMoveEvent>(evt =>
+                  evt.StopPropagation());
+              customPaint.RegisterCallback<PointerUpEvent>(evt =>
+                  evt.StopPropagation());
+              inspector.Add(customPaint);
+              inspector.Add(CfButton.Create("APPLY PAINT", () =>
+              {
+                var accepted = _lotWorld.SetSelectedBuildingPaint(
+                    customPaint.value);
+                _lotStatus = accepted ? "House repainted"
+                    : "Enter a six-digit hex color";
+                UpdatePaintUi(_lotStatus, accepted);
+              }, true, "quiet"));
+            }
             var rotationRow = new VisualElement();
             rotationRow.AddToClassList("inspector-actions");
             var rotateLeft = CfButton.Create("↶ ROTATE LEFT", () =>
@@ -4014,7 +4106,70 @@ namespace CityForgeV3.UI
                 _lotWorld.SelectedAutomataVisibleNow
                     ? "VISIBLE" : "HIDDEN BY SCHEDULE"));
             var schedule = new ScrollView(ScrollViewMode.Vertical);
-            schedule.style.maxHeight = 292f;
+            schedule.style.maxHeight = 410f;
+            var automataClip = _lotWorld.SelectedAutomataClip;
+            if (automataClip != null &&
+                !string.IsNullOrEmpty(automataClip.recolorMaskRoot))
+            {
+              void AddGarmentColors(int slot, string label,
+                  (string name, string hex)[] choices)
+              {
+                schedule.Add(StyledLabel(label.ToUpperInvariant(),
+                    "section-label"));
+                var current = slot == 0
+                    ? _lotWorld.SelectedAutomataRecolorOneHex
+                    : _lotWorld.SelectedAutomataRecolorTwoHex;
+                var buttons = new List<(Button button, string hex)>();
+                TextField custom = null;
+                var row = new VisualElement();
+                row.AddToClassList("inspector-actions");
+                foreach (var choice in choices)
+                {
+                  var captured = choice;
+                  var button = CfButton.Create(captured.name, () =>
+                  {
+                    if (!_lotWorld.SetSelectedAutomataRecolor(slot,
+                            captured.hex)) return;
+                    custom?.SetValueWithoutNotify(captured.hex);
+                    foreach (var item in buttons)
+                    {
+                      var active = string.Equals(item.hex, captured.hex,
+                          StringComparison.OrdinalIgnoreCase);
+                      item.button.EnableInClassList("mode-selected", active);
+                      item.button.EnableInClassList("quiet", !active);
+                    }
+                  }, true, string.Equals(current, captured.hex,
+                      StringComparison.OrdinalIgnoreCase)
+                      ? "mode-selected" : "quiet");
+                  row.Add(button);
+                  buttons.Add((button, captured.hex));
+                }
+                schedule.Add(row);
+                custom = new TextField("CUSTOM HEX")
+                {
+                  value = current,
+                  name = "automata-recolor-" + slot
+                };
+                custom.RegisterCallback<PointerDownEvent>(evt =>
+                    evt.StopPropagation());
+                custom.RegisterCallback<PointerMoveEvent>(evt =>
+                    evt.StopPropagation());
+                custom.RegisterCallback<FocusOutEvent>(_ =>
+                {
+                  if (_lotWorld.SetSelectedAutomataRecolor(slot,
+                          custom.value))
+                    foreach (var item in buttons)
+                      item.button.EnableInClassList("mode-selected", false);
+                });
+                schedule.Add(custom);
+              }
+              AddGarmentColors(0, automataClip.recolorSlotOne,
+                  new[] { ("ORIGINAL", ""), ("BLUE", "#6589B5"),
+                      ("SAGE", "#8EA78D"), ("PLUM", "#986A99") });
+              AddGarmentColors(1, automataClip.recolorSlotTwo,
+                  new[] { ("ORIGINAL", ""), ("NAVY", "#596D8B"),
+                      ("BROWN", "#8B7058"), ("FOREST", "#688467") });
+            }
             schedule.Add(StyledLabel("SHOW AT THESE TIMES",
                 "section-label"));
             foreach (var preset in new[]

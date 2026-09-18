@@ -69,6 +69,8 @@ namespace CityForgeV3.World
         public float metallic;
         public float smoothness = 0.18f;
         public string tintHex = "#FFFFFF";
+        // Opt-in surface contract; no building ID is special-cased by the editor.
+        public bool repaintable;
         public string runtimeProfile = "standard";
         public int plopCost;
         public ContentResourceAmount[] constructionRequirements;

@@ -96,7 +96,11 @@ namespace CityForgeV3.Buildings3D
         private void Refresh(bool force)
         {
             if (targetCamera == null || quad == null || views == null) return;
-            var direction = targetCamera.transform.position - transform.position;
+            // Orthographic rays are parallel. Using the camera's position
+            // makes two buildings in the same view choose different facings.
+            var direction = targetCamera.orthographic
+                ? -targetCamera.transform.forward
+                : targetCamera.transform.position - transform.position;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) return;
             // The imported FBX root is pitched upright. Measure compass yaw

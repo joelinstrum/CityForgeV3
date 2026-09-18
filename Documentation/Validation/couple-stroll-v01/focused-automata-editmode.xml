@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 17:37:25Z" end-time="2026-09-18 17:37:29Z" duration="4.0786924">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="878" result="Passed" start-time="2026-09-18 17:37:25Z" end-time="2026-09-18 17:37:29Z" duration="4.078692" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2013" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="878" result="Passed" start-time="2026-09-18 17:37:25Z" end-time="2026-09-18 17:37:29Z" duration="3.880808" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="58312" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2014" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="771" result="Passed" start-time="2026-09-18 17:37:26Z" end-time="2026-09-18 17:37:29Z" duration="3.684405" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2015" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="771" result="Passed" start-time="2026-09-18 17:37:26Z" end-time="2026-09-18 17:37:29Z" duration="3.584269" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1165" name="ColonialLadiesAutomataTests" fullname="CityForgeV3.Tests.ColonialLadiesAutomataTests" classname="CityForgeV3.Tests.ColonialLadiesAutomataTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-18 17:37:26Z" end-time="2026-09-18 17:37:27Z" duration="0.726874" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1166" name="ChattingPairLoadsAsOneSelectableScheduledClip" fullname="CityForgeV3.Tests.ColonialLadiesAutomataTests.ChattingPairLoadsAsOneSelectableScheduledClip" methodname="ChattingPairLoadsAsOneSelectableScheduledClip" classname="CityForgeV3.Tests.ColonialLadiesAutomataTests" runstate="Runnable" seed="1746620365" result="Passed" start-time="2026-09-18 17:37:26Z" end-time="2026-09-18 17:37:27Z" duration="0.622409" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1167" name="CoupleStrollAutomataTests" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-18 17:37:27Z" end-time="2026-09-18 17:37:28Z" duration="1.018449" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1168" name="StrollingPairClearsBrickRoadAtSouthEnd" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairClearsBrickRoadAtSouthEnd" methodname="StrollingPairClearsBrickRoadAtSouthEnd" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="137725973" result="Passed" start-time="2026-09-18 17:37:27Z" end-time="2026-09-18 17:37:28Z" duration="0.548608" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1169" name="StrollingPairLoadsMovesAndSchedulesAsOneGroup" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairLoadsMovesAndSchedulesAsOneGroup" methodname="StrollingPairLoadsMovesAndSchedulesAsOneGroup" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="83547181" result="Passed" start-time="2026-09-18 17:37:28Z" end-time="2026-09-18 17:37:28Z" duration="0.386768" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1245" name="SchoolyardChildrenAutomataTests" fullname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests" classname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-18 17:37:28Z" end-time="2026-09-18 17:37:29Z" duration="0.834709" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1247" name="GroupScheduleUsesTimeAndSeasonWithoutSaving" fullname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests.GroupScheduleUsesTimeAndSeasonWithoutSaving" methodname="GroupScheduleUsesTimeAndSeasonWithoutSaving" classname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests" runstate="Runnable" seed="656534895" result="Passed" start-time="2026-09-18 17:37:28Z" end-time="2026-09-18 17:37:28Z" duration="0.397816" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1246" name="PreRenderedGroupPlacesAndRoundTripsWithoutSaving" fullname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests.PreRenderedGroupPlacesAndRoundTripsWithoutSaving" methodname="PreRenderedGroupPlacesAndRoundTripsWithoutSaving" classname="CityForgeV3.Tests.SchoolyardChildrenAutomataTests" runstate="Runnable" seed="167408674" result="Passed" start-time="2026-09-18 17:37:28Z" end-time="2026-09-18 17:37:29Z" duration="0.382856" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1757" name="VictorianGentlemenAutomataTests" fullname="CityForgeV3.Tests.VictorianGentlemenAutomataTests" classname="CityForgeV3.Tests.VictorianGentlemenAutomataTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-18 17:37:29Z" end-time="2026-09-18 17:37:29Z" duration="0.403110" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1758" name="ChattingPairLoadsAsOneSelectableScheduledClip" fullname="CityForgeV3.Tests.VictorianGentlemenAutomataTests.ChattingPairLoadsAsOneSelectableScheduledClip" methodname="ChattingPairLoadsAsOneSelectableScheduledClip" classname="CityForgeV3.Tests.VictorianGentlemenAutomataTests" runstate="Runnable" seed="1686308684" result="Passed" start-time="2026-09-18 17:37:29Z" end-time="2026-09-18 17:37:29Z" duration="0.383908" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/joelinstrum/dev/CityForge-Regions-Review/couple-occlusion-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="2.2927862">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="879" result="Passed" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="2.292786" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2014" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="879" result="Passed" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="2.097760" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="65253" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2015" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="772" result="Passed" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="1.902511" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2016" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="772" result="Passed" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="1.802365" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1167" name="CoupleStrollAutomataTests" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-18 17:53:14Z" end-time="2026-09-18 17:53:16Z" duration="1.601723" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1168" name="StrollingPairClearsBrickRoadAtSouthEnd" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairClearsBrickRoadAtSouthEnd" methodname="StrollingPairClearsBrickRoadAtSouthEnd" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="423179037" result="Passed" start-time="2026-09-18 17:53:15Z" end-time="2026-09-18 17:53:15Z" duration="0.611549" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1169" name="StrollingPairLoadsMovesAndSchedulesAsOneGroup" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairLoadsMovesAndSchedulesAsOneGroup" methodname="StrollingPairLoadsMovesAndSchedulesAsOneGroup" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="166703746" result="Passed" start-time="2026-09-18 17:53:15Z" end-time="2026-09-18 17:53:16Z" duration="0.393340" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1170" name="StrollingPairsShareClipButKeepSeparateGarmentColors" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairsShareClipButKeepSeparateGarmentColors" methodname="StrollingPairsShareClipButKeepSeparateGarmentColors" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="189757284" result="Passed" start-time="2026-09-18 17:53:16Z" end-time="2026-09-18 17:53:16Z" duration="0.391935" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-couple-recolor-retest.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
