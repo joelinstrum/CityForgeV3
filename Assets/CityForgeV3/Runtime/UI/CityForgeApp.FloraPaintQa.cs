@@ -34,7 +34,7 @@ namespace CityForgeV3.UI
   }
   public void CheckMountainPaintQa()
   {
-   if(_currentScreen!=AppScreen.Splash) {Debug.LogWarning("Family paint QA requires fresh splash; user work preserved.");return;}
+   if(_currentScreen!=AppScreen.MainMenu) {Debug.LogWarning("Family paint QA requires fresh main menu; user work preserved.");return;}
    StartCoroutine(CheckMountainPaintRoutine());
   }
   private IEnumerator CheckMountainPaintRoutine()

@@ -11,7 +11,7 @@ namespace CityForgeV3.UI
  {
   public void OpenPlaneUkQa()
   {
-   if(_hasOpenLot||_currentScreen!=AppScreen.Splash){Debug.LogWarning("Tree comparison requires a fresh splash session; existing work is preserved.");return;}
+   if(_hasOpenLot||_currentScreen!=AppScreen.MainMenu){Debug.LogWarning("Tree comparison requires a fresh main menu session; existing work is preserved.");return;}
    EnsureLotWorld();_lotWorld.NewEmptyLot("Plane UK tree comparison",LotType.Residential,6,4);
    _lotWorld.Session.Data.Flora.Add(new PlacedFlora{InstanceId="plane-qa-a",FloraId="plane-uk-3d-a",PositionX=-8,PositionZ=0});
    _lotWorld.Session.Data.Flora.Add(new PlacedFlora{InstanceId="plane-qa-b",FloraId="plane-uk-3d-b",PositionX=8,PositionZ=0});

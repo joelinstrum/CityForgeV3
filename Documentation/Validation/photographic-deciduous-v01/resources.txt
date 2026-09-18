@@ -1,0 +1,14 @@
+2026-09-17T23:22:32.5647300Z
+mature-oak Spring: root=146px pivot=146px PPU=100
+mature-oak Summer: root=149px pivot=149px PPU=100
+mature-oak Autumn: root=149px pivot=149px PPU=100
+mature-oak Winter: root=135px pivot=135px PPU=100
+american-elm Spring: root=59px pivot=59px PPU=94
+american-elm Summer: root=61px pivot=61px PPU=94
+american-elm Autumn: root=50px pivot=50px PPU=94
+american-elm Winter: root=55px pivot=55px PPU=94
+shagbark-hickory Spring: root=29px pivot=29px PPU=98
+shagbark-hickory Summer: root=33px pivot=33px PPU=98
+shagbark-hickory Autumn: root=33px pivot=33px PPU=98
+shagbark-hickory Winter: root=31px pivot=31px PPU=98
+PASS: 12 seasonal resources, measured roots, library paths and legacy Ashe/Oak paths. No scene or save mutation.

@@ -1,0 +1,7 @@
+2026-09-17T18:57:49.3087770Z Pine Ridge: 222 records, 154 clusters
+season=0 transition=0.10ms slices=1 maxSlice=0.04ms textures=2
+season=1 transition=109.86ms slices=10 maxSlice=16.34ms textures=2
+season=2 transition=91.69ms slices=10 maxSlice=14.43ms textures=2
+season=3 transition=119.21ms slices=10 maxSlice=25.23ms textures=2
+season=4 transition=0.00ms slices=1 maxSlice=0.00ms textures=2
+10000 unchanged season checks=0.780ms. PASS identities, positions, batching, unrelated flora, terrain cache and JSON retained.

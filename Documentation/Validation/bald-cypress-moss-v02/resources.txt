@@ -1,0 +1,10 @@
+2026-09-18T00:33:02.9007830Z
+bald-cypress-moss Spring: root=25px pivot=25px PPU=82
+bald-cypress-moss Summer: root=27px pivot=27px PPU=82
+bald-cypress-moss Autumn: root=27px pivot=27px PPU=82
+bald-cypress-moss Winter: root=26px pivot=26px PPU=82
+bald-cypress-moss-b Spring: root=17px pivot=17px PPU=82
+bald-cypress-moss-b Summer: root=17px pivot=17px PPU=82
+bald-cypress-moss-b Autumn: root=17px pivot=17px PPU=82
+bald-cypress-moss-b Winter: root=18px pivot=18px PPU=82
+PASS: both planting IDs and eight resources align with measured trunk roots.

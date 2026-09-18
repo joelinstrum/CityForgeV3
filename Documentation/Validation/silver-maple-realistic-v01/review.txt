@@ -1,0 +1,6 @@
+2026-09-17T22:28:24.8990910Z
+Spring: CityForgeV3/Flora/SilverMapleRealisticV01/silver-maple-a-spring; root=40px; pivot=40px; PPU=84
+Summer: CityForgeV3/Flora/SilverMapleRealisticV01/silver-maple-a-summer; root=42px; pivot=42px; PPU=84
+Autumn: CityForgeV3/Flora/SilverMapleRealisticV01/silver-maple-a-autumn; root=36px; pivot=36px; PPU=84
+Winter: CityForgeV3/Flora/SilverMapleRealisticV01/silver-maple-a-winter; root=42px; pivot=42px; PPU=84
+PASS: four seasonal resources and measured root anchors; Silver Maple B retained. No scene or save mutation.

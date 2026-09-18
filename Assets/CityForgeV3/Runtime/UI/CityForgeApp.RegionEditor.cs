@@ -1139,11 +1139,7 @@ namespace CityForgeV3.UI
           ? DisplayStyle.Flex : DisplayStyle.None;
       screen.Add(infoToggle);
 
-      var interfaceToggle = new Button(() =>
-      {
-        _districtInterfaceVisible = !_districtInterfaceVisible;
-        SetDistrictChromeVisibility(screen);
-      })
+      var interfaceToggle = new Button(ToggleDistrictInterface)
       {
         name = "district-interface-toggle",
         text = _districtInterfaceVisible ? "HIDE UI" : "SHOW UI",
@@ -1269,6 +1265,8 @@ namespace CityForgeV3.UI
         var button = new Button(() =>
         {
           if (waterMenu && captured.Name == "Repair River") { RepairDistrictRivers(); return; }
+          if (_districtEditorMode == DistrictEditorMode.Terraform && ActiveDistrictCategory == "Flora" && captured.Name == "Clear Flora")
+          { ClearDistrictTrees(); return; }
           SelectDistrictTool(captured.Name);
           if (_districtEditorMode == DistrictEditorMode.Terraform && ActiveDistrictCategory == "Terrain" && captured.Name == "Hills")
           { ComposeDistrictHillsModal(); return; }
@@ -1315,6 +1313,8 @@ namespace CityForgeV3.UI
                     ? "Select a river, move it with the arrow keys, or remove it with Delete."
                 : ActiveDistrictCategory == "Flora" && captured.Name == "Forest"
                     ? "Generate Light, Medium or Heavy tree coverage in this district only."
+                : ActiveDistrictCategory == "Flora" && captured.Name == "Clear Flora"
+                    ? "Remove all trees and forest clusters in this district. Keeps stones; supports Undo."
                 : ActiveDistrictCategory == "Flora" && captured.Name == "Trees"
                     ? "Open tree and stone placement, or generate district tree coverage."
                 : ActiveDistrictCategory == "Environment" && captured.Name == "Rain"
@@ -2146,6 +2146,12 @@ namespace CityForgeV3.UI
 
     private void PollTerraformViewKeys()
     {
+      // Physical polling owns H, including when the world viewport has focus.
+      // The caller already excludes text fields; leave modal dialogs visible.
+      if (Input.GetKeyDown(KeyCode.H) &&
+          !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
+          !Input.GetKey(KeyCode.LeftCommand) && !Input.GetKey(KeyCode.RightCommand))
+      { ToggleDistrictInterface(); return; }
       if (_lotNudge != null) { if (Input.GetKeyDown(KeyCode.Escape)) EndLotNudge(true); return; }
       if(_placingBrickworks)
       {
@@ -2524,33 +2530,26 @@ namespace CityForgeV3.UI
 
     private static readonly (string Id, string Name)[] DistrictTrees =
     {
-            ("angel-oak-spanish-moss", "Angel Oak with Spanish Moss"),
-            ("ashe", "Ashe Tree"),
-            ("camphor-tree", "Camphor Tree"),
+            ("american-elm", "American Elm"),
             ("cilician-fir", "Cilician Fir"),
-            ("vendor-balsam-fir-classic", "Classic Balsam Fir"),
-            ("vendor-cypress-oak", "Cypress Oak"),
-            ("date-palm", "Date Palm"),
-            ("eucalyptus-robusta-a", "Eucalyptus Robusta A"),
-            ("eucalyptus-robusta-b", "Eucalyptus Robusta B"),
-            ("evergreen", "Evergreen Pine"),
-            ("fraser-fir-large", "Large Fraser Fir"),
+            ("medium-balsam-fir", "Medium Balsam Fir"),
+            ("medium-fraser-fir", "Medium Fraser Fir"),
+            ("medium-blue-spruce", "Medium Blue Spruce"),
+            ("date-palm-tall", "Tall Date Palm"),
+            ("date-palm-short", "Short Date Palm"),
+            ("la-fan-palm-a", "LA Fan Palm A"),
+            ("la-fan-palm-b", "LA Fan Palm B"),
+            ("la-fan-palm-a-medium", "LA Fan Palm A (Medium)"),
+            ("la-fan-palm-b-medium", "LA Fan Palm B (Medium)"),
             ("london-plane-a", "London Plane A"),
             ("london-plane-b", "London Plane B"),
-            ("london-plane-c", "London Plane C"),
-            ("maple", "Maple Tree"),
-            ("oak", "Oak Tree"),
-            ("vendor-oregon-ash", "Oregon Ash"),
-            ("vendor-oregon-ash-wide", "Oregon Ash Wide"),
+            ("mature-oak", "Mature Oak"),
+            ("shagbark-hickory", "Shagbark Hickory"),
+            ("bald-cypress-moss", "Bald Cypress with Spanish Moss"),
+            ("bald-cypress-moss-b", "Bald Cypress with Spanish Moss B"),
             ("vendor-red-maple", "Red Maple"),
             ("silver-maple-a", "Silver Maple A"),
-            ("silver-maple-b", "Silver Maple B"),
-            ("fraser-fir-small", "Small Fraser Fir"),
-            ("fraser-fir-snowy", "Snowy Fraser Fir"),
-            ("street-tree-3d", "StreetTree3D"),
-            ("vendor-cypress-oak-wide", "Wide Cypress Oak"),
             ("vendor-willow", "Willow"),
-            ("vendor-red-maple-young", "Young Red Maple")
         };
 
     private static bool DistrictFloraCanOccupyWater(string floraId) =>

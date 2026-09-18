@@ -870,9 +870,16 @@ namespace CityForgeV3.World
             return true;
         }
 
+        // The willow cutout's pictured root flare needs a small visual burial
+        // at the lot's ground plane. Keep its saved placement and selection
+        // marker at the original point.
+        private static float FloraPresentationSink(PlacedFlora placed) =>
+            placed?.FloraId == "vendor-willow" ? 0.16f : 0f;
+
         private static Vector3 FloraPresentationPosition(PlacedFlora placed) =>
             new(placed.PositionX, 0.02f - Mathf.Max(0f,
-                placed.SinkDepthMeters), placed.PositionZ);
+                placed.SinkDepthMeters) - FloraPresentationSink(placed),
+                placed.PositionZ);
 
         private static void ApplyFloraGroundFade(SpriteRenderer renderer,
             float sinkDepthMeters)
@@ -880,10 +887,12 @@ namespace CityForgeV3.World
             if (renderer == null) return;
             var properties = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(properties);
+            var willow = renderer.sprite != null &&
+                renderer.sprite.texture.name.StartsWith("vendor-willow-");
             properties.SetFloat("_GroundFadeEnabled",
-                sinkDepthMeters > 0.001f ? 1f : 0f);
+                sinkDepthMeters > 0.001f || willow ? 1f : 0f);
             properties.SetFloat("_GroundY", 0.02f);
-            properties.SetFloat("_GroundFadeWidth", 0.42f);
+            properties.SetFloat("_GroundFadeWidth", willow ? 0.08f : 0.42f);
             renderer.SetPropertyBlock(properties);
         }
 
@@ -1547,7 +1556,8 @@ namespace CityForgeV3.World
                     properties.SetFloat("_ReferenceHeight", sourceHeight);
                     var sinkDepth = index < (_session.Data.Flora?.Count ?? 0)
                         ? Mathf.Max(0f,
-                            _session.Data.Flora[index].SinkDepthMeters)
+                            _session.Data.Flora[index].SinkDepthMeters) +
+                          FloraPresentationSink(_session.Data.Flora[index])
                         : 0f;
                     properties.SetFloat("_SinkCompensation", sinkDepth);
                     properties.SetColor("_Color", new Color(0.018f, 0.022f,
@@ -1611,7 +1621,14 @@ namespace CityForgeV3.World
         public static string ResolveFloraResourcePath(string floraId,
             SeasonPreset season)
         {
-            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.ResourcePath(floraId);
+            floraId = CurrentTreeArtwork(floraId);
+            if (floraId == "silver-maple-a")
+                return FloraTreeRepairs.RealisticSilverMapleRoot + floraId + "-" + season.ToString().ToLowerInvariant();
+            if (floraId == "vendor-willow")
+                return FloraTreeRepairs.RealisticWillowRoot + floraId + "-" + season.ToString().ToLowerInvariant();
+            if (floraId == "vendor-red-maple")
+                return FloraTreeRepairs.RealisticRedMapleRoot + floraId + "-" + season.ToString().ToLowerInvariant();
+            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.ResourcePath(floraId, season);
             if (floraId == "fraser-fir-snowy" && season != SeasonPreset.Winter)
                 floraId = "fraser-fir-small";
             if (StoneFloraCatalog.IsStone(floraId)) return StoneFloraCatalog.ResourcePath(floraId);
@@ -1652,6 +1669,7 @@ namespace CityForgeV3.World
         public static string ResolveFloraPresentationId(string floraId,
             int variation, SeasonPreset season = SeasonPreset.Summer)
         {
+            floraId = CurrentTreeArtwork(floraId);
             if (floraId == "fraser-fir-snowy" && season != SeasonPreset.Winter)
                 return "fraser-fir-small";
             if (string.Equals(floraId, "evergreen",
@@ -1672,6 +1690,30 @@ namespace CityForgeV3.World
                 return floraId;
             return (variation & 2) == 0 ? "oak" : "oak-b";
         }
+
+        // Saved flora IDs remain intact for Undo, harvest state, and manual saving.
+        // Only their presentation is replaced by the current tree collection.
+        public static string CurrentTreeArtwork(string floraId) => floraId switch
+        {
+            "maple" => "vendor-red-maple",
+            "ashe" or "vendor-oregon-ash" => "american-elm",
+            "oak" or "oak-b" or "angel-oak-spanish-moss" or
+                "vendor-cypress-oak" or "vendor-cypress-oak-wide" => "mature-oak",
+            "evergreen" or "evergreen-b" or "evergreen-snow" or
+                "evergreen-b-snow" or "narrow-street-tree" => "medium-blue-spruce",
+            "date-palm" => "date-palm-tall",
+            "eucalyptus-robusta-a" => "la-fan-palm-a",
+            "eucalyptus-robusta-b" => "la-fan-palm-b",
+            "silver-maple-b" => "silver-maple-a",
+            "vendor-red-maple-young" => "vendor-red-maple",
+            "camphor-tree" or "vendor-oregon-ash-wide" => "shagbark-hickory",
+            "fraser-fir-large" or "fraser-fir-small" or "fraser-fir-snowy" => "medium-fraser-fir",
+            "vendor-balsam-fir-classic" => "medium-balsam-fir",
+            "street-tree-3d" or "plane-uk-3d-a" => "london-plane-a",
+            "plane-uk-3d-b" or "london-plane-c" => "london-plane-b",
+            "vendor-hickory" => "shagbark-hickory",
+            _ => floraId
+        };
 
         private static int FloraVariationProfile(PlacedFlora placed)
         {
@@ -1712,7 +1754,8 @@ namespace CityForgeV3.World
             if (StoneFloraCatalog.IsStone(floraId)) { if (!_floraSpriteCache.TryGetValue(floraId, out var stone)) _floraSpriteCache[floraId] = stone = StoneFloraCatalog.CreateSprite(floraId); return stone; }
             var resourcePath = ResolveFloraResourcePath(floraId, Season);
             if (string.IsNullOrWhiteSpace(resourcePath)) return null;
-            if (_floraSpriteCache.TryGetValue(resourcePath, out var cached))
+            var cacheKey = resourcePath + "|" + floraId;
+            if (_floraSpriteCache.TryGetValue(cacheKey, out var cached))
                 return cached;
             var texture = Resources.Load<Texture2D>(resourcePath);
             if (texture == null) return null;
@@ -1720,13 +1763,14 @@ namespace CityForgeV3.World
                 new Rect(0f, 0f, texture.width, texture.height),
                 FloraPivot(texture.name),
                 FloraPixelsPerUnit(floraId, texture.name));
-            _floraSpriteCache[resourcePath] = sprite;
+            _floraSpriteCache[cacheKey] = sprite;
             return sprite;
         }
 
         public static float FloraPixelsPerUnit(string floraId,
             string textureName)
         {
+            floraId = CurrentTreeArtwork(floraId);
             if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.PixelsPerUnit;
             var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId);
             if(repairPpu>0f)return repairPpu;
@@ -6438,6 +6482,7 @@ namespace CityForgeV3.World
 
         private void ConfigurePlaneTree(SpriteRenderer renderer, string floraId)
         {
+            floraId = CurrentTreeArtwork(floraId);
             FloraTreeRepairs.Apply(renderer,floraId);
             if (renderer == null) return;
             var tree = renderer.GetComponent<PlaneUkFloraPresentation>();

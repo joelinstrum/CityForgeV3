@@ -29,8 +29,10 @@ namespace CityForgeV3.World
 
         public static Color FloraTint(SeasonPreset preset) => preset switch
         {
-            SeasonPreset.Spring => new Color(0.82f, 1.08f, 0.78f, 1f),
-            SeasonPreset.Autumn => new Color(1.02f, 0.62f, 0.28f, 1f),
+            // Tree artwork now carries its own spring buds and autumn leaf
+            // colors. A second season-wide wash made every Lot Editor tree
+            // unnaturally green in spring and orange in autumn.
+            SeasonPreset.Spring or SeasonPreset.Autumn => Color.white,
             // Winter trees already provide authored leafless bark colors.
             // Preserve that variation and apply only a restrained cool cast.
             SeasonPreset.Winter => new Color(0.90f, 0.93f, 0.96f, 1f),

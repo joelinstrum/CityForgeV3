@@ -12,7 +12,7 @@ namespace CityForgeV3.UI
   private string _harvestQaId;
   public void OpenDistrictHarvestQa()
   {
-   if(_currentScreen!=AppScreen.Splash || _openRegion!=null){Debug.LogWarning("Harvest QA needs fresh splash; live work preserved.");return;}
+   if(_currentScreen!=AppScreen.MainMenu || _openRegion!=null){Debug.LogWarning("Harvest QA needs fresh main menu; live work preserved.");return;}
    OpenSavedDistrictSelectionQa();
    var saved=FindSelectedRegionTile();
    var tree=saved?.Flora.FirstOrDefault(t=>DistrictTreeHarvest.CanFell(t));

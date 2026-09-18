@@ -1,0 +1,5 @@
+# Photographic palms validation
+
+Fresh in-editor Unity `photographic-palms-review` loaded all four 1024×1536 resources, verified the same cutout resolves in all seasons, Tropical library assignment, California/Mediterranean eligibility, both new date palms' Desert eligibility, and that the old `date-palm` path is unchanged. Measured alpha>128 trunk foot pixels match runtime pivots: tall date 12, short date 41, LA A 24, LA B 31. PPU values 120/180/70/80 give approximate visible heights 12.7/8.3/21.6/18.8m.
+
+`lot-camera-four-palms.png` is a direct current Lot camera render using four temporary SpriteRenderers and the production flora material, ordered left-to-right tall date, short date, LA A, LA B. All roots appear on the terrain in the final recapture; the first preview had outer positions outside the tile and was replaced. Temporary objects were removed and Lot JSON remained unchanged. This capture uses current Lot lighting and omits actual placed-tree shadow presentation. No dense performance measurement.

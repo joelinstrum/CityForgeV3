@@ -1,0 +1,7 @@
+{
+  "version": "CilicianFirRealisticV01",
+  "tool": "built-in image generation",
+  "intent": "Standing evergreen replacement for the harvestable Cilician fir.",
+  "art_direction": "Mature blue-green Cilician fir, irregular layered boughs, visible trunk, isolated transparent cutout, no baked ground shadow or scenery.",
+  "runtime": "Four identical evergreen seasonal copies; falling animation and stump remain CilicianHarvestV01."
+}

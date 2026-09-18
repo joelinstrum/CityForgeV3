@@ -1,0 +1,6 @@
+2026-09-17T22:10:11.7532960Z
+Spring: CityForgeV3/Flora/RedMapleRealisticV01/vendor-red-maple-spring; root=39px; pivot=39px; PPU=96
+Summer: CityForgeV3/Flora/RedMapleRealisticV01/vendor-red-maple-summer; root=39px; pivot=39px; PPU=96
+Autumn: CityForgeV3/Flora/RedMapleRealisticV01/vendor-red-maple-autumn; root=40px; pivot=40px; PPU=96
+Winter: CityForgeV3/Flora/RedMapleRealisticV01/vendor-red-maple-winter; root=39px; pivot=39px; PPU=96
+PASS: all four seasonal resources and measured root anchors; young maple retained. No scene or save mutation.

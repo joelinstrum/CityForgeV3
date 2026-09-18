@@ -1,0 +1,6 @@
+2026-09-18T00:18:34.6240420Z
+Spring: CityForgeV3/Flora/BaldCypressMossV01/bald-cypress-moss-spring; root=25px; pivot=25px; PPU=82
+Summer: CityForgeV3/Flora/BaldCypressMossV01/bald-cypress-moss-summer; root=27px; pivot=27px; PPU=82
+Autumn: CityForgeV3/Flora/BaldCypressMossV01/bald-cypress-moss-autumn; root=27px; pivot=27px; PPU=82
+Winter: CityForgeV3/Flora/BaldCypressMossV01/bald-cypress-moss-winter; root=26px; pivot=26px; PPU=82
+PASS: four seasonal resources and measured trunk contact; no save mutation.

@@ -6,6 +6,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         [PerRendererData] _FloraOpacity ("Tree Opacity", Float) = 1
         [PerRendererData] _FloraSaturation ("Tree Saturation", Float) = 1
         [PerRendererData] _FloraBaseEllipse ("Trunk Base Ellipse", Vector) = (0,0,0,0)
+        [PerRendererData] _ForestPalette ("District Forest Palette", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
@@ -54,6 +55,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             sampler2D _MainTex;
             fixed4 _Color;
             half _FloraSaturation;
+            half _ForestPalette;
             float4 _FloraBaseEllipse;
             half _FloraOpacity;
             half _Cutoff;
@@ -94,6 +96,20 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             fixed4 frag(v2f input) : SV_Target
             {
                 fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
+                if (_ForestPalette > .5h)
+                {
+                    // Continuous world-space patches survive batching, reload,
+                    // zoom and regeneration; no per-frame CPU work or new textures.
+                    float2 p = input.worldPosition.xz;
+                    half patch = saturate(.5h + .28h * sin(p.x * .041 + p.y * .027)
+                        + .22h * sin(p.x * -.019 + p.y * .063));
+                    half leaf = smoothstep(.015h, .11h, min(artwork.g - artwork.r * .85h, artwork.g - artwork.b));
+                    half3 tint = lerp(half3(.82h, .94h, .78h), half3(.79h, 1.02h, 1.10h), patch);
+                    tint = lerp(tint, half3(1.02h, 1.02h, .90h), smoothstep(.76h, 1.0h, patch) * .45h);
+                    if (_ForestPalette > 1.5h)
+                        artwork.rgb = lerp(artwork.rgb, artwork.rgb * half3(1.12h, 1.17h, 1.10h) + .018h, leaf);
+                    else artwork.rgb *= lerp(half3(1,1,1), tint, leaf);
+                }
                 half luminance = dot(artwork.rgb, half3(0.2126h,0.7152h,0.0722h));
                 artwork.rgb = max(0, lerp(luminance.xxx, artwork.rgb, _FloraSaturation));
                 if (_FloraBaseEllipse.w > 0 && input.uv.y < _FloraBaseEllipse.y + _FloraBaseEllipse.w)

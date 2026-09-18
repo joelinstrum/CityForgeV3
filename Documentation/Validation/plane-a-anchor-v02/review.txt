@@ -1,0 +1,8 @@
+2026-09-17T21:46:12.2826560Z
+Spring: opaque foot=19 pivot=19 error=4.768372E-07 pixels
+Summer: opaque foot=19 pivot=19 error=4.768372E-07 pixels
+Autumn: opaque foot=20 pivot=20 error=4.768372E-07 pixels
+Winter: opaque foot=18 pivot=18 error=0 pixels
+Actual trunk ground height=0.02; marker height=0.06
+Screen separation (includes marker's 4cm height bias)=2.02774 pixels
+PASS seasonal alpha registration; shared tree/shadow origin; lot data unchanged.

@@ -10,9 +10,9 @@ namespace CityForgeV3.UI
     {
         public void OpenSavedDistrictDecalQa()
         {
-            if (_currentScreen != AppScreen.Splash || _hasOpenLot || _openRegion != null)
+            if (_currentScreen != AppScreen.MainMenu || _hasOpenLot || _openRegion != null)
             {
-                Debug.LogWarning("Saved district decal preview requires fresh splash; live work preserved.");
+                Debug.LogWarning("Saved district decal preview requires fresh main menu; live work preserved.");
                 return;
             }
             var candidates = RegionSaveStore.List()
