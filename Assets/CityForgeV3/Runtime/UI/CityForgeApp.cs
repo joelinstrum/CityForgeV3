@@ -77,6 +77,13 @@ namespace CityForgeV3.UI
     private bool _districtSimulationPaused;
     private bool _districtRoadPointerDown;
     private Vector2Int _lastDistrictRoadDragCell;
+    private readonly List<Vector2Int> _districtRoadStrokePath = new();
+    private readonly HashSet<Vector2Int> _districtRoadStrokeAdded = new();
+    private DistrictRoadPlacementModel.EditSession _districtRoadEditSession;
+    private readonly HashSet<Vector2Int> _districtRoadLotCells = new();
+    private RegionCityTile _districtRoadLotDistrict;
+    private List<PlacedDistrictLot> _districtRoadLotSource;
+    private int _districtRoadLotCount = -1;
     private bool _hasSelectedDistrictRoad;
     private Vector2Int _selectedDistrictRoadCell;
     private int _districtYear = 1788;
