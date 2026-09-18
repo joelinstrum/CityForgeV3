@@ -7,7 +7,10 @@ namespace CityForgeV3.World
         public static bool AllowsTree(RegionClimate climate, string id)
         {
             if (id == "fraser-fir-snowy") return AllowsSnow(climate);
-            if (climate == RegionClimate.Desert) return id == "date-palm";
+            if (climate == RegionClimate.Desert)
+                return id is "date-palm" or "date-palm-tall" or "date-palm-short" or
+                    "la-fan-palm-a" or "la-fan-palm-b" or
+                    "la-fan-palm-a-medium" or "la-fan-palm-b-medium";
             if (climate == RegionClimate.Tropical) return FloraFamilies.ForTree(id) == FloraFamilies.Tropical;
             return climate == RegionClimate.Mediterranean || FloraFamilies.ForTree(id) != FloraFamilies.Tropical;
         }

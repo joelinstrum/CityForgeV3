@@ -1,0 +1,6 @@
+2026-09-18T01:32:18.6024340Z
+date-palm-tall: path=CityForgeV3/Flora/PhotographicPalmsV01/date-palm-tall foot=12px pivot=12px PPU=120
+date-palm-short: path=CityForgeV3/Flora/PhotographicPalmsV01/date-palm-short foot=41px pivot=41px PPU=180
+la-fan-palm-a: path=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-a foot=24px pivot=24px PPU=70
+la-fan-palm-b: path=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-b foot=31px pivot=31px PPU=80
+PASS: four resources, evergreen routing, tropical family, climate eligibility, pivots, legacy date palm unchanged.

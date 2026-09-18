@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="83" result="Passed" total="83" passed="83" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-17 18:55:57Z" end-time="2026-09-17 18:56:04Z" duration="6.8289662">
+  <test-suite type="TestSuite" id="2056" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="915" result="Passed" start-time="2026-09-17 18:55:57Z" end-time="2026-09-17 18:56:04Z" duration="6.828966" total="83" passed="83" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2052" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge - V3/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="915" result="Passed" start-time="2026-09-17 18:55:58Z" end-time="2026-09-17 18:56:04Z" duration="6.627872" total="83" passed="83" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33758" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2053" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="796" result="Passed" start-time="2026-09-17 18:55:58Z" end-time="2026-09-17 18:56:01Z" duration="3.336972" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2054" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="796" result="Passed" start-time="2026-09-17 18:55:58Z" end-time="2026-09-17 18:56:01Z" duration="3.136052" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1172" name="DistrictCloudLayerTests" fullname="CityForgeV3.Tests.DistrictCloudLayerTests" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:56:00Z" duration="0.546279" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1184" name="CloudsOnlyAtTwoFarthestZooms" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.202954" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1178" name="CloudsOnlyAtTwoFarthestZooms(0,False)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(0,False)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1330594438" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.001125" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1179" name="CloudsOnlyAtTwoFarthestZooms(1,False)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(1,False)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="348878410" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.000091" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1180" name="CloudsOnlyAtTwoFarthestZooms(2,False)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(2,False)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="501971167" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.000239" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1181" name="CloudsOnlyAtTwoFarthestZooms(3,False)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(3,False)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1177741899" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.000083" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1182" name="CloudsOnlyAtTwoFarthestZooms(4,True)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(4,True)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="780283193" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.000073" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1183" name="CloudsOnlyAtTwoFarthestZooms(5,True)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.CloudsOnlyAtTwoFarthestZooms(5,True)" methodname="CloudsOnlyAtTwoFarthestZooms" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="409229940" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.000067" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1175" name="RainMistBuildsDuringRainAndLingersAfterDropsStop" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.RainMistBuildsDuringRainAndLingersAfterDropsStop" methodname="RainMistBuildsDuringRainAndLingersAfterDropsStop" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1072813453" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:55:59Z" duration="0.001702" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1188" name="SameCloudTravelsContinuouslyAcrossDistrictSizes" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SameCloudTravelsContinuouslyAcrossDistrictSizes" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 18:55:59Z" end-time="2026-09-17 18:56:00Z" duration="0.199224" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1185" name="SameCloudTravelsContinuouslyAcrossDistrictSizes(640.0f)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SameCloudTravelsContinuouslyAcrossDistrictSizes(640.0f)" methodname="SameCloudTravelsContinuouslyAcrossDistrictSizes" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="711833188" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.002947" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1186" name="SameCloudTravelsContinuouslyAcrossDistrictSizes(2560.0f)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SameCloudTravelsContinuouslyAcrossDistrictSizes(2560.0f)" methodname="SameCloudTravelsContinuouslyAcrossDistrictSizes" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1453714345" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.000103" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1187" name="SameCloudTravelsContinuouslyAcrossDistrictSizes(7680.0f)" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SameCloudTravelsContinuouslyAcrossDistrictSizes(7680.0f)" methodname="SameCloudTravelsContinuouslyAcrossDistrictSizes" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="886406415" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.000085" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1174" name="SnowCoverReusesTerrainAndSwitchingWeatherResetsIt" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SnowCoverReusesTerrainAndSwitchingWeatherResetsIt" methodname="SnowCoverReusesTerrainAndSwitchingWeatherResetsIt" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="532750641" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.021680" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1173" name="SnowFallsTenSecondsHoldsTenAndMeltsFive" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.SnowFallsTenSecondsHoldsTenAndMeltsFive" methodname="SnowFallsTenSecondsHoldsTenAndMeltsFive" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1645749072" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.001948" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1177" name="StormCancelRestartReusesPresentation" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.StormCancelRestartReusesPresentation" methodname="StormCancelRestartReusesPresentation" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1046040249" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.003438" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1176" name="StormRainWaitsForCompleteCoverAndEndsAfterTenSeconds" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.StormRainWaitsForCompleteCoverAndEndsAfterTenSeconds" methodname="StormRainWaitsForCompleteCoverAndEndsAfterTenSeconds" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="1374227688" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.001501" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1189" name="ZoomReusesBoundedCloudMeshesAndSharedTerrain" fullname="CityForgeV3.Tests.DistrictCloudLayerTests.ZoomReusesBoundedCloudMeshesAndSharedTerrain" methodname="ZoomReusesBoundedCloudMeshesAndSharedTerrain" classname="CityForgeV3.Tests.DistrictCloudLayerTests" runstate="Runnable" seed="463551865" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:00Z" duration="0.010739" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestSuite" id="2055" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="232" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:01Z" duration="1.266025" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1884" name="DistrictElevationTests" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:01Z" duration="0.629290" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1885" name="OldDistrictIsFlatAndSavedHillsAreDeterministic" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.OldDistrictIsFlatAndSavedHillsAreDeterministic" methodname="OldDistrictIsFlatAndSavedHillsAreDeterministic" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="653101924" result="Passed" start-time="2026-09-17 18:56:00Z" end-time="2026-09-17 18:56:01Z" duration="0.233555" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1887" name="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" methodname="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="2009896779" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.136074" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1886" name="WaterRoadsAndDistrictEdgesStayLevel" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.WaterRoadsAndDistrictEdgesStayLevel" methodname="WaterRoadsAndDistrictEdgesStayLevel" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="617190384" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.058420" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1930" name="DistrictRoadPlacementTests" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.083002" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1934" name="BrickPlacementStopsWhenTreasuryCannotAffordTile" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.BrickPlacementStopsWhenTreasuryCannotAffordTile" methodname="BrickPlacementStopsWhenTreasuryCannotAffordTile" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1251967107" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001109" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1931" name="CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" methodname="CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1666697858" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.009656" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1935" name="DeletingRoadRepairsItsFormerNeighbors" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DeletingRoadRepairsItsFormerNeighbors" methodname="DeletingRoadRepairsItsFormerNeighbors" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="116936814" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000488" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1932" name="DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" methodname="DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="386570817" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000231" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1933" name="NeighborConnectionsInferCornerTAndCross" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.NeighborConnectionsInferCornerTAndCross" methodname="NeighborConnectionsInferCornerTAndCross" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="2094300089" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000600" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1266" name="RiverBankAppearanceTests" fullname="CityForgeV3.Tests.RiverBankAppearanceTests" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.124026" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1273" name="BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" methodname="BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1219366053" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.017806" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1271" name="ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" methodname="ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="989153165" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.011778" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1272" name="HillMeadowAssetsSupportContinuousTerrainBlending" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.HillMeadowAssetsSupportContinuousTerrainBlending" methodname="HillMeadowAssetsSupportContinuousTerrainBlending" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="873900443" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.002621" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1267" name="InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" methodname="InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1835734338" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001512" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1270" name="MirroringBendSwapsGravelAndEarthAndBoundsHairpins" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.MirroringBendSwapsGravelAndEarthAndBoundsHairpins" methodname="MirroringBendSwapsGravelAndEarthAndBoundsHairpins" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1109163104" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000780" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1268" name="ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" methodname="ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="342874706" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000543" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1269" name="StraightAndDegeneratePathsStayNeutralAndFinite" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.StraightAndDegeneratePathsStayNeutralAndFinite" methodname="StraightAndDegeneratePathsStayNeutralAndFinite" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1884022756" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000310" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1029" name="DistrictRiverSculptTests" fullname="DistrictRiverSculptTests" classname="DistrictRiverSculptTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.266863" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1031" name="BankJoinHandlesEndpointsDuplicatesAndHairpinsWithoutSpikes" fullname="DistrictRiverSculptTests.BankJoinHandlesEndpointsDuplicatesAndHairpinsWithoutSpikes" methodname="BankJoinHandlesEndpointsDuplicatesAndHairpinsWithoutSpikes" classname="DistrictRiverSculptTests" runstate="Runnable" seed="2070036124" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.002348" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1030" name="BankJoinPreservesWidthWithUnevenPointSpacing" fullname="DistrictRiverSculptTests.BankJoinPreservesWidthWithUnevenPointSpacing" methodname="BankJoinPreservesWidthWithUnevenPointSpacing" classname="DistrictRiverSculptTests" runstate="Runnable" seed="218043179" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.002304" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1046" name="ClipCutsDiagonalRiverFlushToDistrictEdgeAndPreservesUvs" fullname="DistrictRiverSculptTests.ClipCutsDiagonalRiverFlushToDistrictEdgeAndPreservesUvs" methodname="ClipCutsDiagonalRiverFlushToDistrictEdgeAndPreservesUvs" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1105745451" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.003084" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1041" name="EraserSplitsChannelAndLocalEditsSurviveRegenerationAndSerialization" fullname="DistrictRiverSculptTests.EraserSplitsChannelAndLocalEditsSurviveRegenerationAndSerialization" methodname="EraserSplitsChannelAndLocalEditsSurviveRegenerationAndSerialization" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1687111065" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.011049" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1045" name="IndexedWaterQueriesMatchFullScanAtCellBoundariesAndAfterRepeatedQueries" fullname="DistrictRiverSculptTests.IndexedWaterQueriesMatchFullScanAtCellBoundariesAndAfterRepeatedQueries" methodname="IndexedWaterQueriesMatchFullScanAtCellBoundariesAndAfterRepeatedQueries" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1501892825" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.066636" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1036" name="RebuildCombinesContinuationAndDiscardsInternalBankRemnant" fullname="DistrictRiverSculptTests.RebuildCombinesContinuationAndDiscardsInternalBankRemnant" methodname="RebuildCombinesContinuationAndDiscardsInternalBankRemnant" classname="DistrictRiverSculptTests" runstate="Runnable" seed="2079625867" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.005420" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1037" name="RebuildRetainsSeparateBorderCrossingsAndDifferentDepths" fullname="DistrictRiverSculptTests.RebuildRetainsSeparateBorderCrossingsAndDifferentDepths" methodname="RebuildRetainsSeparateBorderCrossingsAndDifferentDepths" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1899160614" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000530" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1044" name="RedrawReplacesSelectedReachAtLockedWidthWithoutChangingOtherRivers" fullname="DistrictRiverSculptTests.RedrawReplacesSelectedReachAtLockedWidthWithoutChangingOtherRivers" methodname="RedrawReplacesSelectedReachAtLockedWidthWithoutChangingOtherRivers" classname="DistrictRiverSculptTests" runstate="Runnable" seed="686877715" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.002333" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1035" name="RepairAllSmoothsGentleJaggednessAndKeepsBorderTangents" fullname="DistrictRiverSculptTests.RepairAllSmoothsGentleJaggednessAndKeepsBorderTangents" methodname="RepairAllSmoothsGentleJaggednessAndKeepsBorderTangents" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1615060826" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001169" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1033" name="RepairLeavesHealthyStraightRiverUnchanged" fullname="DistrictRiverSculptTests.RepairLeavesHealthyStraightRiverUnchanged" methodname="RepairLeavesHealthyStraightRiverUnchanged" classname="DistrictRiverSculptTests" runstate="Runnable" seed="403428828" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000313" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1032" name="RepairRemovesShortReversalsAndPreservesRiverContract" fullname="DistrictRiverSculptTests.RepairRemovesShortReversalsAndPreservesRiverContract" methodname="RepairRemovesShortReversalsAndPreservesRiverContract" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1448138236" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001448" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1039" name="RiverClippingAndJunctionCutsPreserveInterpolatedFlowDirections" fullname="DistrictRiverSculptTests.RiverClippingAndJunctionCutsPreserveInterpolatedFlowDirections" methodname="RiverClippingAndJunctionCutsPreserveInterpolatedFlowDirections" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1523564055" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001229" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1043" name="ShapeCanSnapAnInteriorEndToAnotherChannel" fullname="DistrictRiverSculptTests.ShapeCanSnapAnInteriorEndToAnotherChannel" methodname="ShapeCanSnapAnInteriorEndToAnotherChannel" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1996490627" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001449" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1040" name="ShapeMovesInteriorPreservingBorderCrossingsAndWidth" fullname="DistrictRiverSculptTests.ShapeMovesInteriorPreservingBorderCrossingsAndWidth" methodname="ShapeMovesInteriorPreservingBorderCrossingsAndWidth" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1893834554" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000283" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1038" name="ShapeThenRepairJoinsOffsetCity051ReachesIntoOneBorderToBorderChannel" fullname="DistrictRiverSculptTests.ShapeThenRepairJoinsOffsetCity051ReachesIntoOneBorderToBorderChannel" methodname="ShapeThenRepairJoinsOffsetCity051ReachesIntoOneBorderToBorderChannel" classname="DistrictRiverSculptTests" runstate="Runnable" seed="493589543" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000784" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1034" name="ShapeWidthOverrideChangesOnlySelectedRiverAndPreservesDepth" fullname="DistrictRiverSculptTests.ShapeWidthOverrideChangesOnlySelectedRiverAndPreservesDepth" methodname="ShapeWidthOverrideChangesOnlySelectedRiverAndPreservesDepth" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1261552275" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000245" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1042" name="SofteningReducesSharpBendWithoutMovingBorders" fullname="DistrictRiverSculptTests.SofteningReducesSharpBendWithoutMovingBorders" methodname="SofteningReducesSharpBendWithoutMovingBorders" classname="DistrictRiverSculptTests" runstate="Runnable" seed="1560715059" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.000466" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1049" name="DistrictSurfaceCacheTests" fullname="DistrictSurfaceCacheTests" classname="DistrictSurfaceCacheTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:02Z" duration="0.552577" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1050" name="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" fullname="DistrictSurfaceCacheTests.DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" methodname="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="973284143" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:01Z" duration="0.001946" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1052" name="IncrementalRiverAndRoadHeightsEqualFullRebuild" fullname="DistrictSurfaceCacheTests.IncrementalRiverAndRoadHeightsEqualFullRebuild" methodname="IncrementalRiverAndRoadHeightsEqualFullRebuild" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="1229890172" result="Passed" start-time="2026-09-17 18:56:01Z" end-time="2026-09-17 18:56:02Z" duration="0.453136" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1051" name="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" fullname="DistrictSurfaceCacheTests.ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" methodname="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="587851334" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.000457" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1067" name="NationalPikePlacementTests" fullname="NationalPikePlacementTests" classname="NationalPikePlacementTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.252079" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1069" name="CrossDistrictRoadIsContinuousAndPreparationDoesNotMutateLiveData" fullname="NationalPikePlacementTests.CrossDistrictRoadIsContinuousAndPreparationDoesNotMutateLiveData" methodname="CrossDistrictRoadIsContinuousAndPreparationDoesNotMutateLiveData" classname="NationalPikePlacementTests" runstate="Runnable" seed="594258736" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.008568" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1068" name="DiagonalStrokeHasOnlyCardinalStepsAndEndsAtDestination" fullname="NationalPikePlacementTests.DiagonalStrokeHasOnlyCardinalStepsAndEndsAtDestination" methodname="DiagonalStrokeHasOnlyCardinalStepsAndEndsAtDestination" classname="NationalPikePlacementTests" runstate="Runnable" seed="671890911" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.001125" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1077" name="DirtPackageHasFourRequestedArtPiecesAndCompilingShader" fullname="NationalPikePlacementTests.DirtPackageHasFourRequestedArtPiecesAndCompilingShader" methodname="DirtPackageHasFourRequestedArtPiecesAndCompilingShader" classname="NationalPikePlacementTests" runstate="Runnable" seed="1895095983" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.004352" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1076" name="EraSurfaceContract" fullname="NationalPikePlacementTests.EraSurfaceContract" classname="NationalPikePlacementTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.186599" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1072" name="EraSurfaceContract(&quot;founders&quot;,&quot;dirt&quot;)" fullname="NationalPikePlacementTests.EraSurfaceContract(&quot;founders&quot;,&quot;dirt&quot;)" methodname="EraSurfaceContract" classname="NationalPikePlacementTests" runstate="Runnable" seed="1061652965" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.000454" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1073" name="EraSurfaceContract(&quot;industrial&quot;,&quot;dirt&quot;)" fullname="NationalPikePlacementTests.EraSurfaceContract(&quot;industrial&quot;,&quot;dirt&quot;)" methodname="EraSurfaceContract" classname="NationalPikePlacementTests" runstate="Runnable" seed="466718659" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.000059" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1074" name="EraSurfaceContract(&quot;discovery&quot;,&quot;early-concrete&quot;)" fullname="NationalPikePlacementTests.EraSurfaceContract(&quot;discovery&quot;,&quot;early-concrete&quot;)" methodname="EraSurfaceContract" classname="NationalPikePlacementTests" runstate="Runnable" seed="1582651844" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.000056" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1075" name="EraSurfaceContract(&quot;modern&quot;,&quot;blacktop&quot;)" fullname="NationalPikePlacementTests.EraSurfaceContract(&quot;modern&quot;,&quot;blacktop&quot;)" methodname="EraSurfaceContract" classname="NationalPikePlacementTests" runstate="Runnable" seed="1228887550" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.000060" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1071" name="JoiningExistingRoadCreatesJunctionWithoutOverwritingMaterialOrOriginal" fullname="NationalPikePlacementTests.JoiningExistingRoadCreatesJunctionWithoutOverwritingMaterialOrOriginal" methodname="JoiningExistingRoadCreatesJunctionWithoutOverwritingMaterialOrOriginal" classname="NationalPikePlacementTests" runstate="Runnable" seed="596622664" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.001773" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1070" name="RiverCrossingStopsAtBankAndResumesOnOtherSide" fullname="NationalPikePlacementTests.RiverCrossingStopsAtBankAndResumesOnOtherSide" methodname="RiverCrossingStopsAtBankAndResumesOnOtherSide" classname="NationalPikePlacementTests" runstate="Runnable" seed="1825665325" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.005092" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1113" name="RegionMapLayersTests" fullname="RegionMapLayersTests" classname="RegionMapLayersTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.296948" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1114" name="LayerChoicesAreIndependentAndPreserveExistingVisuals" fullname="RegionMapLayersTests.LayerChoicesAreIndependentAndPreserveExistingVisuals" methodname="LayerChoicesAreIndependentAndPreserveExistingVisuals" classname="RegionMapLayersTests" runstate="Runnable" seed="1667823884" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.004711" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1115" name="OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" fullname="RegionMapLayersTests.OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" methodname="OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" classname="RegionMapLayersTests" runstate="Runnable" seed="1361328335" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.003139" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1116" name="ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" fullname="RegionMapLayersTests.ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" methodname="ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" classname="RegionMapLayersTests" runstate="Runnable" seed="162149320" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:02Z" duration="0.095010" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1117" name="RegionMapOrientationTests" fullname="RegionMapOrientationTests" classname="RegionMapOrientationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-17 18:56:02Z" end-time="2026-09-17 18:56:03Z" duration="0.598855" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1118" name="RegionAxesAndLabelsMatchActualDistrictCamera" fullname="RegionMapOrientationTests.RegionAxesAndLabelsMatchActualDistrictCamera" methodname="RegionAxesAndLabelsMatchActualDistrictCamera" classname="RegionMapOrientationTests" runstate="Runnable" seed="1562308538" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.504677" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1119" name="RegionPikeStrokeTests" fullname="RegionPikeStrokeTests" classname="RegionPikeStrokeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.110634" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1120" name="ClickAndTinyDragCannotCreateRoad" fullname="RegionPikeStrokeTests.ClickAndTinyDragCannotCreateRoad" methodname="ClickAndTinyDragCannotCreateRoad" classname="RegionPikeStrokeTests" runstate="Runnable" seed="1313883259" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.003415" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1121" name="DrawnRoadClampsToRegionAndPersistsNameAndIndependentGeometry" fullname="RegionPikeStrokeTests.DrawnRoadClampsToRegionAndPersistsNameAndIndependentGeometry" methodname="DrawnRoadClampsToRegionAndPersistsNameAndIndependentGeometry" classname="RegionPikeStrokeTests" runstate="Runnable" seed="630436190" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.002496" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1122" name="LongStrokeRemainsBoundedAndKeepsEndpoints" fullname="RegionPikeStrokeTests.LongStrokeRemainsBoundedAndKeepsEndpoints" methodname="LongStrokeRemainsBoundedAndKeepsEndpoints" classname="RegionPikeStrokeTests" runstate="Runnable" seed="1071314964" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.008159" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1123" name="RegionRiverDrawingTests" fullname="RegionRiverDrawingTests" classname="RegionRiverDrawingTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.206200" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1127" name="ConnectingStrokeSnapsBothEndsAndKeepsSelectedWidth" fullname="RegionRiverDrawingTests.ConnectingStrokeSnapsBothEndsAndKeepsSelectedWidth" methodname="ConnectingStrokeSnapsBothEndsAndKeepsSelectedWidth" classname="RegionRiverDrawingTests" runstate="Runnable" seed="225643944" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.006846" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1128" name="DrawingCrossesDistrictBoundaryWithoutGapsAndSurvivesRegenerationAndReload" fullname="RegionRiverDrawingTests.DrawingCrossesDistrictBoundaryWithoutGapsAndSurvivesRegenerationAndReload" methodname="DrawingCrossesDistrictBoundaryWithoutGapsAndSurvivesRegenerationAndReload" classname="RegionRiverDrawingTests" runstate="Runnable" seed="1762834862" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.005916" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1125" name="RiverInputRejectsJitterAndBacktrackingButKeepsBroadBends" fullname="RegionRiverDrawingTests.RiverInputRejectsJitterAndBacktrackingButKeepsBroadBends" methodname="RiverInputRejectsJitterAndBacktrackingButKeepsBroadBends" classname="RegionRiverDrawingTests" runstate="Runnable" seed="1863291837" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.004408" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1126" name="RiverInputRejectsSelfCrossingEvenWithSparsePointerSamples" fullname="RegionRiverDrawingTests.RiverInputRejectsSelfCrossingEvenWithSparsePointerSamples" methodname="RiverInputRejectsSelfCrossingEvenWithSparsePointerSamples" classname="RegionRiverDrawingTests" runstate="Runnable" seed="1835627138" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.000931" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1124" name="RiverSizesHaveExpectedWidthsAndDepthsAndCopyTheirDraft" fullname="RegionRiverDrawingTests.RiverSizesHaveExpectedWidthsAndDepthsAndCopyTheirDraft" methodname="RiverSizesHaveExpectedWidthsAndDepthsAndCopyTheirDraft" classname="RegionRiverDrawingTests" runstate="Runnable" seed="467109332" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:03Z" duration="0.000908" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1136" name="RegionRiverNetworkTests" fullname="RegionRiverNetworkTests" classname="RegionRiverNetworkTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:04Z" duration="0.678348" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1147" name="BorderClippingDoesNotRotateTheRiver" fullname="RegionRiverNetworkTests.BorderClippingDoesNotRotateTheRiver" methodname="BorderClippingDoesNotRotateTheRiver" classname="RegionRiverNetworkTests" runstate="Runnable" seed="861834615" result="Passed" start-time="2026-09-17 18:56:03Z" end-time="2026-09-17 18:56:04Z" duration="0.050622" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1148" name="EmptyDistrictLightingDoesNotInheritPreviousAmbient" fullname="RegionRiverNetworkTests.EmptyDistrictLightingDoesNotInheritPreviousAmbient" methodname="EmptyDistrictLightingDoesNotInheritPreviousAmbient" classname="RegionRiverNetworkTests" runstate="Runnable" seed="1029609814" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.002962" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1146" name="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" fullname="RegionRiverNetworkTests.ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" classname="RegionRiverNetworkTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.217028" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1142" name="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(WestToEast,WestToEast)" fullname="RegionRiverNetworkTests.ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(WestToEast,WestToEast)" methodname="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" classname="RegionRiverNetworkTests" runstate="Runnable" seed="273562258" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.021017" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1143" name="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(EastToWest,EastToWest)" fullname="RegionRiverNetworkTests.ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(EastToWest,EastToWest)" methodname="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" classname="RegionRiverNetworkTests" runstate="Runnable" seed="1461531070" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.013127" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1144" name="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(NorthToSouth,NorthToSouth)" fullname="RegionRiverNetworkTests.ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(NorthToSouth,NorthToSouth)" methodname="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" classname="RegionRiverNetworkTests" runstate="Runnable" seed="1825656141" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.019878" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1145" name="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(SouthToNorth,SouthToNorth)" fullname="RegionRiverNetworkTests.ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(SouthToNorth,SouthToNorth)" methodname="ExplicitDirectionMatchesCoordinatesAndDistrictMetadata" classname="RegionRiverNetworkTests" runstate="Runnable" seed="2030268836" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.016865" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1141" name="NetworkHasVariedConnectedNonzeroBranches" fullname="RegionRiverNetworkTests.NetworkHasVariedConnectedNonzeroBranches" classname="RegionRiverNetworkTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.328292" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1137" name="NetworkHasVariedConnectedNonzeroBranches(1)" fullname="RegionRiverNetworkTests.NetworkHasVariedConnectedNonzeroBranches(1)" methodname="NetworkHasVariedConnectedNonzeroBranches" classname="RegionRiverNetworkTests" runstate="Runnable" seed="833585026" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.065781" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1138" name="NetworkHasVariedConnectedNonzeroBranches(1785)" fullname="RegionRiverNetworkTests.NetworkHasVariedConnectedNonzeroBranches(1785)" methodname="NetworkHasVariedConnectedNonzeroBranches" classname="RegionRiverNetworkTests" runstate="Runnable" seed="939701462" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.047928" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1139" name="NetworkHasVariedConnectedNonzeroBranches(994)" fullname="RegionRiverNetworkTests.NetworkHasVariedConnectedNonzeroBranches(994)" methodname="NetworkHasVariedConnectedNonzeroBranches" classname="RegionRiverNetworkTests" runstate="Runnable" seed="2069024957" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.043741" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1140" name="NetworkHasVariedConnectedNonzeroBranches(26)" fullname="RegionRiverNetworkTests.NetworkHasVariedConnectedNonzeroBranches(26)" methodname="NetworkHasVariedConnectedNonzeroBranches" classname="RegionRiverNetworkTests" runstate="Runnable" seed="1319655926" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.041924" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1149" name="RegionTerrainMenuTests" fullname="RegionTerrainMenuTests" classname="RegionTerrainMenuTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.128868" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1150" name="CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" fullname="RegionTerrainMenuTests.CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" methodname="CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" classname="RegionTerrainMenuTests" runstate="Runnable" seed="1612259135" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.028120" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1151" name="RegionOptionsSurviveSerialization" fullname="RegionTerrainMenuTests.RegionOptionsSurviveSerialization" methodname="RegionOptionsSurviveSerialization" classname="RegionTerrainMenuTests" runstate="Runnable" seed="337009439" result="Passed" start-time="2026-09-17 18:56:04Z" end-time="2026-09-17 18:56:04Z" duration="0.001078" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /var/folders/y3/d9wwhmv57sqgmsfvr_rswy8w0000gn/T/cityforge-CityForge_-_V3-map-layers-tests.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

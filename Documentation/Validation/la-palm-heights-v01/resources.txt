@@ -1,0 +1,10 @@
+2026-09-18T01:44:46.8751830Z
+la-fan-palm-a-medium Spring: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-a tallPPU=70 mediumPPU=93.33334 ratio=0.75
+la-fan-palm-a-medium Summer: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-a tallPPU=70 mediumPPU=93.33334 ratio=0.75
+la-fan-palm-a-medium Autumn: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-a tallPPU=70 mediumPPU=93.33334 ratio=0.75
+la-fan-palm-a-medium Winter: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-a tallPPU=70 mediumPPU=93.33334 ratio=0.75
+la-fan-palm-b-medium Spring: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-b tallPPU=80 mediumPPU=106.6667 ratio=0.75
+la-fan-palm-b-medium Summer: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-b tallPPU=80 mediumPPU=106.6667 ratio=0.75
+la-fan-palm-b-medium Autumn: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-b tallPPU=80 mediumPPU=106.6667 ratio=0.75
+la-fan-palm-b-medium Winter: shared=CityForgeV3/Flora/PhotographicPalmsV01/la-fan-palm-b tallPPU=80 mediumPPU=106.6667 ratio=0.75
+PASS: two added medium planting IDs share tall artwork and are exactly 75% as tall in every season.

@@ -34,6 +34,25 @@ namespace CityForgeV3.UI
             }
         }
 
+        private void ClearDistrictTrees()
+        {
+            var district = FindSelectedRegionTile();
+            if (district == null) return;
+            FinishDistrictFloraPaint(district); CancelDistrictSelectionPointer();
+            EnsureDistrictUndo(district);
+            var removed = RegionFloraGenerator.ClearTrees(district);
+            if (removed.Count == 0) { ShowDistrictNotice("There are no trees to clear."); return; }
+            _districtSelection.Clear(); _selectedDistrictFloraInstanceId = "";
+            _activeDistrictRandomFloraGroupId = ""; _pendingDistrictFloraId = ""; _pendingDistrictFloraMode = 0;
+            _districtFloraPointerDown = false;
+            _districtWorld?.RemoveFloraPresentations(removed);
+            _districtWorld?.ShowDistrictSelection(district, _districtSelection);
+            SaveDistrictEdit(); // In-memory undo only; Save to disk stays explicit.
+            _districtWorldCompositionKey = DistrictCompositionKey(district);
+            RefreshSelectedObjectPanel();
+            ShowDistrictNotice($"Cleared {removed.Count:N0} tree placements. Undo restores them.");
+        }
+
         private void AddDistrictFloraTabs(VisualElement panel, string selected)
         {
             var tabs = DocumentModalActions();

@@ -8,9 +8,25 @@ namespace CityForgeV3.World
     // Pure spatial generation. No scene objects, rendering, navigation searches or forest scans per candidate.
     public static class RegionFloraGenerator
     {
-        static readonly string[] Tropical = { "date-palm", "camphor-tree", "eucalyptus-robusta-a", "eucalyptus-robusta-b", "angel-oak-spanish-moss" };
+        static readonly string[] Tropical = { "date-palm-tall", "date-palm-short", "la-fan-palm-a", "la-fan-palm-b", "la-fan-palm-a-medium", "la-fan-palm-b-medium" };
         public static bool Retain(PlacedDistrictFlora tree) => tree != null &&
             (!tree.GeneratedByRegion || tree.HarvestState != DistrictTreeHarvestState.Standing || tree.WoodCredited);
+
+        // Explicit district-wide edit: one scan, then indexed removals. Stones
+        // retain their records and presentations; no terrain generation involved.
+        public static List<string> ClearTrees(RegionCityTile district)
+        {
+            var ids = new List<string>();
+            foreach (var flora in district.Flora ?? new())
+                if (flora != null && !StoneFloraCatalog.IsStone(flora.FloraId)) ids.Add(flora.InstanceId);
+            if (ids.Count == 0) return ids;
+            var index = DistrictHarvestIndex.For(district);
+            foreach (var id in ids) index.RemoveFlora(id);
+            var removed = new HashSet<string>(ids);
+            district.LotNudges?.RemoveAll(n => n.Kind == DistrictSelectionKind.Flora && removed.Contains(n.Id));
+            district.TreeCoverage = RegionTreeCoverage.None;
+            return ids;
+        }
 
         public static List<PlacedDistrictFlora> Generate(RegionCityTile district, RegionClimate climate,
             RegionTreeCoverage coverage, int seed, Func<string, LotSaveData> readLot = null)

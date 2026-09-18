@@ -8,6 +8,27 @@ using UnityEngine;
 public class RegionFloraGeneratorTests
 {
     static RegionCityTile District() => new() { TileId = "forest-test", Name = "Forest test", Width = 1, Height = 1 };
+    [Test] public void ClearTreesRemovesManualClustersAndHarvestedRemnantsButKeepsStonesAndSupportsUndo()
+    {
+        var d = District();
+        d.Flora = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193);
+        d.TreeCoverage = RegionTreeCoverage.Heavy;
+        d.Flora.Add(new() { InstanceId="manual", FloraId="oak" });
+        d.Flora.Add(new() { InstanceId="stump", FloraId="cilician-fir", HarvestState=DistrictTreeHarvestState.Stump });
+        var stone = new PlacedDistrictFlora { InstanceId="stone", FloraId="pebbles" }; d.Flora.Add(stone);
+        var before = JsonUtility.ToJson(d);
+        var undo = new DistrictUndoHistory(); undo.Reset(before);
+        var index = DistrictHarvestIndex.For(d);
+        var removed = RegionFloraGenerator.ClearTrees(d);
+        Assert.Contains("manual", removed); Assert.Contains("stump", removed);
+        Assert.AreEqual(1, d.Flora.Count); Assert.AreSame(stone, d.Flora[0]);
+        Assert.AreEqual(RegionTreeCoverage.None, d.TreeCoverage);
+        Assert.IsEmpty(index.NearbyFlora(Vector2.zero, 10000).Where(t => !StoneFloraCatalog.IsStone(t.FloraId)));
+        Assert.IsEmpty(RegionFloraGenerator.ClearTrees(d));
+        undo.Commit(JsonUtility.ToJson(d)); Assert.True(undo.TryUndo(out var restored));
+        JsonUtility.FromJsonOverwrite(restored, d); DistrictHarvestIndex.Invalidate(d);
+        Assert.AreEqual(before, JsonUtility.ToJson(d));
+    }
     [Test] public void OldSavesDefaultToTemperateWithoutGeneratingTrees()
     {
         var region = JsonUtility.FromJson<RegionSaveData>("{\"RegionId\":\"old\",\"Tiles\":[{\"TileId\":\"old-district\"}]}");
@@ -28,6 +49,9 @@ public class RegionFloraGeneratorTests
         CollectionAssert.AreEqual(wooded.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83).Select(JsonUtility.ToJson));
         Assert.AreNotEqual(wooded[0].InstanceId, RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 84)[0].InstanceId);
         if (climate != RegionClimate.Tropical) Assert.True(wooded.Any(DistrictTreeHarvest.CanFell));
+        else Assert.True(wooded.All(t => t.FloraId is "date-palm-tall" or "date-palm-short" or
+            "la-fan-palm-a" or "la-fan-palm-b" or "la-fan-palm-a-medium" or
+            "la-fan-palm-b-medium"));
     }
     [Test] public void HeavyTriplesMediumDensityAndPreservesSavedCoverageValues()
     {
@@ -58,6 +82,31 @@ public class RegionFloraGeneratorTests
         Assert.False(RegionClimateRules.AllowsTree(RegionClimate.Temperate, "date-palm"));
         Assert.True(RegionClimateRules.AllowsTree(RegionClimate.Mediterranean, "date-palm"));
         Assert.True(RegionClimateRules.AllowsTree(RegionClimate.Mediterranean, "maple"));
+    }
+    [Test] public void RetiredTreePlacementsKeepTheirIdsAndLoadCurrentArtwork()
+    {
+        foreach (var id in new[] { "maple", "ashe", "oak", "oak-b", "evergreen",
+            "evergreen-b", "evergreen-snow", "evergreen-b-snow", "date-palm",
+            "narrow-street-tree", "street-tree-3d", "eucalyptus-robusta-a",
+            "eucalyptus-robusta-b", "silver-maple-b", "angel-oak-spanish-moss",
+            "vendor-red-maple-young", "camphor-tree", "fraser-fir-large",
+            "fraser-fir-small", "fraser-fir-snowy", "vendor-balsam-fir-classic",
+            "vendor-hickory", "vendor-cypress-oak", "vendor-cypress-oak-wide",
+            "vendor-oregon-ash", "vendor-oregon-ash-wide", "plane-uk-3d-a",
+            "plane-uk-3d-b", "london-plane-c" })
+        {
+            var replacement = LotWorldController.CurrentTreeArtwork(id);
+            Assert.AreNotEqual(id, replacement, id);
+            foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+                SeasonPreset.Autumn, SeasonPreset.Winter })
+            {
+                var path = LotWorldController.ResolveFloraResourcePath(id, season);
+                Assert.AreEqual(LotWorldController.ResolveFloraResourcePath(replacement, season), path, id);
+                Assert.NotNull(Resources.Load<Texture2D>(path), id + " " + season);
+            }
+        }
+        Assert.AreEqual("cilician-fir", LotWorldController.CurrentTreeArtwork("cilician-fir"));
+        Assert.True(DistrictTreeHarvest.CanFell(new PlacedDistrictFlora { FloraId = "cilician-fir" }));
     }
     [Test] public void RegenerationRetainsPlantedAndHarvestedTreesAndDoesNotDuplicateIds()
     {

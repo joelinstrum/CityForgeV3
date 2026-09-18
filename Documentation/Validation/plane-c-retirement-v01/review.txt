@@ -1,0 +1,2 @@
+2026-09-17T21:56:44.2623490Z
+PASS: all four seasons and variation profiles resolve retired C to B; textures load and scales match. No scene or save mutation.

@@ -11,6 +11,37 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
+        void ReviewClearForest()
+        {
+            var d = FindSelectedRegionTile();
+            EnsureDistrictUndo(d);
+            var before = JsonUtility.ToJson(d);
+            _districtUndo.Commit(before);
+            var stones = d.Flora.Where(t => StoneFloraCatalog.IsStone(t.FloraId)).Select(t => t.InstanceId).ToArray();
+            int revision = _districtWorld.SurfaceCacheRevision;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            ClearDistrictTrees(); watch.Stop();
+            if (d.Flora.Any(t => !StoneFloraCatalog.IsStone(t.FloraId))) throw new Exception("Trees remain after Clear Flora");
+            if (!stones.SequenceEqual(d.Flora.Select(t=>t.InstanceId).OrderBy(id=>Array.IndexOf(stones,id)))) throw new Exception("Clear Flora removed stones");
+            if (revision != _districtWorld.SurfaceCacheRevision) throw new Exception("Clear Flora rebuilt terrain");
+            if (_districtWorld.GetComponentsInChildren<SpriteRenderer>().Any(r=>r.gameObject.activeInHierarchy && r.name.StartsWith("District Flora — ") && !StoneFloraCatalog.IsStone(r.name.Substring("District Flora — ".Length)))) throw new Exception("Tree presentation remains");
+            if (!UndoDistrictEdit() || JsonUtility.ToJson(d) != before) throw new Exception("Clear Flora Undo did not restore district");
+            File.WriteAllText("/tmp/cityforge-clear-forest.txt", DateTime.UtcNow.ToString("o") + $" PASS: clear {d.Flora.Count} placements in {watch.Elapsed.TotalMilliseconds:F2}ms, preserve {stones.Length} stones and terrain cache, Undo restores exact district JSON. No Save.\n");
+        }
+
+        void ReviewForestStyle()
+        {
+            var d = FindSelectedRegionTile();
+            d.Flora = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193);
+            _districtWorld.RefreshFlora(d);
+            _terraformZoomLevel = DistrictZoomLevel.LOD3; _districtWorld.SetZoom(_terraformZoomLevel);
+            _districtWorld.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+            var shadows = _districtWorld.GetComponentsInChildren<MeshRenderer>().Where(r => r.name == "Flora shadow batch").ToArray();
+            var b = new MaterialPropertyBlock(); shadows[0].GetPropertyBlock(b);
+            File.WriteAllText("/tmp/cityforge-forest-style.txt", $"shadows={shadows.Length} color={b.GetColor("_Color")} texture={b.GetTexture("_MainTex")?.name} bounds={shadows[0].bounds} enabled={shadows[0].enabled} material={shadows[0].sharedMaterial.name} queue={shadows[0].sharedMaterial.renderQueue}\n");
+            if (UnityEditor.ShaderUtil.ShaderHasError(Shader.Find("CityForgeV3/LitShadowReceivingSprite"))) throw new Exception("Forest shader compile failure");
+        }
+
         IEnumerator ReviewForestClusters()
         {
             const string report = "/tmp/cityforge-forest-clusters.txt";
@@ -70,7 +101,11 @@ namespace CityForgeV3.UI
                 if (!DistrictTreeHarvest.Fell(fir, 1)) throw new Exception("Cannot fell separate fir");
                 _districtWorld.RefreshHarvestTrees(district, new HashSet<string>{fir.InstanceId});
                 _districtWorld.PlayTreeFalls(district, new HashSet<string>{fir.InstanceId});
-                for (int i=0;i<180;i++) yield return null;
+                // The fall player runs against unscaled seconds. A fixed frame
+                // count can complete before its 1.5s duration in a fast Editor.
+                float deadline = Time.unscaledTime + DistrictHarvestSprites.Duration + 2f;
+                while (_districtWorld.IsTreeFalling(fir.InstanceId) && Time.unscaledTime < deadline)
+                    yield return null;
                 if (_districtWorld.IsTreeFalling(fir.InstanceId)) throw new Exception("Fir animation did not finish");
                 DistrictTreeHarvest.TakeWood(fir, DistrictTreeHarvest.PrototypeWoodYield);
                 _districtWorld.RefreshHarvestTrees(district, new HashSet<string>{fir.InstanceId});
@@ -78,6 +113,11 @@ namespace CityForgeV3.UI
                 _terraformZoomLevel = DistrictZoomLevel.LOD2;
                 _districtWorld.SetZoom(_terraformZoomLevel);
                 for(int i=0;i<30;i++)yield return null;
+                RiverBankQa("bank-capture");
+                for (int i=0;i<5;i++) yield return null;
+                _terraformZoomLevel = DistrictZoomLevel.LOD5Billboard;
+                _districtWorld.SetZoom(_terraformZoomLevel);
+                for (int i=0;i<30;i++) yield return null;
                 RiverBankQa("bank-capture");
                 for (int i=0;i<5;i++) yield return null;
                 File.AppendAllText(report,"PASS: clusters batched, terrain cache retained, separate fir falls and yields wood, cluster objects retained.\n");

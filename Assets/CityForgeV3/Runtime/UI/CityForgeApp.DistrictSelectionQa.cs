@@ -11,9 +11,9 @@ namespace CityForgeV3.UI
     {
         public void OpenSavedDistrictSelectionQa()
         {
-            if (_currentScreen != AppScreen.Splash || _hasOpenLot || _openRegion != null)
+            if (_currentScreen != AppScreen.MainMenu || _hasOpenLot || _openRegion != null)
             {
-                Debug.LogWarning("Selection QA requires fresh splash; live work preserved.");
+                Debug.LogWarning("Selection QA requires fresh main menu; live work preserved.");
                 return;
             }
             OpenSavedDistrictDecalQa();

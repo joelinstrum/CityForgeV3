@@ -403,6 +403,7 @@ namespace CityForgeV3.World
             if (_content == null || district == null) return;
             DistrictHarvestIndex.For(district); // Warm at load/bulk-edit boundaries, never on each small edit.
             _floraClimate = district.Climate;
+            _forestSeason = ForestClusterCatalog.SeasonForIndex(district.Labor?.SeasonIndex ?? 0);
             _floraBatches = null;
             if (_districtFloraRoot != null)
             {
@@ -412,11 +413,14 @@ namespace CityForgeV3.World
                 else DestroyImmediate(old);
             }
             _districtFloraPresentations.Clear();
+            _forestClusters.Clear();
+            _pendingForestSeason = null;
             _districtFloraRoot = new GameObject("District Flora").transform;
             _districtFloraRoot.SetParent(_content, false);
             foreach (var placed in district.Flora ??
                      new List<PlacedDistrictFlora>())
                 AddDistrictFloraPresentation(placed);
+            PrepareForestSeason(district);
             UpdateDistrictFloraShadows();
             _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
             _floraBatches.Build(_districtFloraPresentations.Values);
@@ -670,9 +674,10 @@ namespace CityForgeV3.World
             var presentationId = LotWorldController.ResolveFloraPresentationId(
                 RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
             var resource = LotWorldController.ResolveFloraResourcePath(
-                presentationId, SeasonPreset.Summer);
+                presentationId, ForestClusterCatalog.IsCluster(presentationId) ? _forestSeason : SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
-            if (!_districtFloraSprites.TryGetValue(resource, out var sprite) ||
+            var spriteKey = resource + "|" + presentationId;
+            if (!_districtFloraSprites.TryGetValue(spriteKey, out var sprite) ||
                 sprite == null)
             {
                 var texture = Resources.Load<Texture2D>(resource);
@@ -682,7 +687,7 @@ namespace CityForgeV3.World
                     LotWorldController.FloraPivot(texture.name),
                     LotWorldController.FloraPixelsPerUnit(
                         presentationId, texture.name));
-                _districtFloraSprites[resource] = sprite;
+                _districtFloraSprites[spriteKey] = sprite;
             }
             if (placed.FloraId == "cilician-fir" && placed.HarvestState != DistrictTreeHarvestState.Standing)
                 sprite = DistrictHarvestSprites.Get(placed.HarvestDirection, 23,
@@ -700,6 +705,12 @@ namespace CityForgeV3.World
             renderer.sprite = sprite;
             renderer.sharedMaterial = DistrictFloraMaterial();
             FloraTreeRepairs.Apply(renderer, presentationId);
+            if (ForestClusterCatalog.IsCluster(placed.FloraId) || placed.FloraId == "cilician-fir")
+            {
+                var palette = new MaterialPropertyBlock(); renderer.GetPropertyBlock(palette);
+                palette.SetFloat("_ForestPalette", ForestClusterCatalog.IsCluster(placed.FloraId) ? 0f : 2f);
+                renderer.SetPropertyBlock(palette);
+            }
             renderer.color = TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint;
             renderer.sortingOrder = DistrictFloraSortingOrder(
                 item.transform.localPosition);
@@ -707,6 +718,11 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
+            if (ForestClusterCatalog.IsCluster(placed.FloraId))
+            {
+                _forestClusters[placed.InstanceId] = renderer;
+                ApplyForestSeasonCutoff(renderer);
+            }
             RegisterSelectable(item, new DistrictSelectionRef(DistrictSelectionKind.Flora, placed.InstanceId),
                 placed.FloraId, inspector: false, geometry: new Renderer[] { renderer });
         }
@@ -766,15 +782,20 @@ namespace CityForgeV3.World
         private void UpdateDistrictFloraShadowsFor(IEnumerable<SpriteRenderer> renderers)
         {
             if (_districtFloraRoot == null) return;
+            if (_districtFloraShadowMaterial != null)
+            {
+                _districtFloraShadowMaterial.SetMatrix("_DistrictWorldToLocal", _content.worldToLocalMatrix);
+                _districtFloraShadowMaterial.SetVector("_DistrictHalfSize", new Vector4(_widthMeters * .5f, _depthMeters * .5f, 0, 0));
+            }
             var visible = TimeOfDay != TimeOfDayPreset.Night;
             var ray = _sun != null
                 ? _sun.transform.rotation * Vector3.forward
                 : TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
             var opacity = TimeOfDay switch
             {
-                TimeOfDayPreset.Morning => .22f,
-                TimeOfDayPreset.Noon => .30f,
-                TimeOfDayPreset.Afternoon => .25f,
+                TimeOfDayPreset.Morning => .38f,
+                TimeOfDayPreset.Noon => .48f,
+                TimeOfDayPreset.Afternoon => .42f,
                 _ => 0f
             };
             foreach (var visibleRenderer in renderers)
@@ -831,7 +852,8 @@ namespace CityForgeV3.World
                     continue;
                 }
                 var root = visibleRenderer.transform.position;
-                var right = visibleRenderer.transform.right;
+                var right = Vector3.Cross(Vector3.up, new Vector3(ray.x, 0, ray.z));
+                if (right.sqrMagnitude < .0001f) right = visibleRenderer.transform.right;
                 right.y = 0f;
                 right.Normalize();
                 var scale = visibleRenderer.transform.lossyScale;
@@ -2435,6 +2457,8 @@ namespace CityForgeV3.World
             _roadArtworkRoot = null;
             _riverSurfaces.Clear();
             _districtFloraPresentations.Clear();
+            _forestClusters.Clear();
+            _pendingForestSeason = null;
             _districtSelectionRoot = null;
             for (var index = transform.childCount - 1; index >= 0; index--)
             {

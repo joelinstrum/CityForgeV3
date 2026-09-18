@@ -155,7 +155,7 @@ namespace CityForgeV3.UI
     private RoadLaneMarkingStyle _pendingRoadLaneMarkingStyle = RoadLaneMarkingStyle.Lines;
     private RoadCenterMarkingStyle _pendingRoadCenterMarkingStyle = RoadCenterMarkingStyle.DoubleLines;
     private bool _pendingApplyRoadMaterialsToAll;
-    private string _placementFloraId = "maple";
+    private string _placementFloraId = "mature-oak";
     private string _placementPropId = "";
     private string _placementEffectId = "";
     private string _placementBuildingPropId = "";
@@ -557,7 +557,7 @@ namespace CityForgeV3.UI
         _root.styleSheets.Add(styles);
       }
 
-      Show(AppScreen.Splash);
+      Show(AppScreen.MainMenu);
     }
 
     private void OnApplicationFocus(bool focused)
@@ -698,9 +698,6 @@ namespace CityForgeV3.UI
 
       switch (screen)
       {
-        case AppScreen.Splash:
-          ComposeSplash();
-          break;
         case AppScreen.MainMenu:
           ComposeMainMenu();
           break;
@@ -1151,38 +1148,6 @@ namespace CityForgeV3.UI
         focused = focused.parent;
       }
       return false;
-    }
-
-    private void ComposeSplash()
-    {
-      var screen = Screen("splash-screen");
-      var art = new VisualElement
-      {
-        name = "splash-art",
-        focusable = true
-      };
-      art.AddToClassList("splash-art");
-      var texture = Resources.Load<Texture2D>("CityForgeV3/Art/city-forge-splash");
-      if (texture != null)
-      {
-        art.style.backgroundImage = new StyleBackground(texture);
-      }
-
-      var prompt = new Label("CLICK TO CONTINUE");
-      prompt.AddToClassList("splash-prompt");
-      art.Add(prompt);
-      art.RegisterCallback<ClickEvent>(_ => Show(AppScreen.MainMenu));
-      art.RegisterCallback<KeyDownEvent>(evt =>
-      {
-        if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.Space)
-        {
-          Show(AppScreen.MainMenu);
-          evt.StopPropagation();
-        }
-      });
-      screen.Add(art);
-      _root.Add(screen);
-      art.schedule.Execute(art.Focus);
     }
 
     private void ComposeMainMenu()
@@ -5028,13 +4993,13 @@ namespace CityForgeV3.UI
     private void OpenFloraModal()
     {
       var panel = CreateDocumentModal("FLORA LIBRARY",
-          "Choose an item to plant. Select placed flora and press R to plant a row. 3D trees use meshes at zoom 1–2 and billboards farther out.");
+          "Choose an item to plant. Select placed flora and press R to plant a row.");
       panel.AddToClassList("road-material-modal-panel");
       panel.AddToClassList("flora-modal-panel");
       var tabs = new VisualElement { name = "flora-category-tabs" };
       tabs.style.flexDirection = FlexDirection.Row;
       tabs.style.flexWrap = Wrap.Wrap;
-      foreach (var category in new[] { "Trees", "Shrubs", "Stones", "3D", "Agriculture" })
+      foreach (var category in new[] { "Trees", "Shrubs", "Stones", "Agriculture" })
       {
         var captured = category;
         var button = CfButton.Create(category.ToUpperInvariant(), () =>
@@ -5047,7 +5012,7 @@ namespace CityForgeV3.UI
         tabs.Add(button);
       }
       panel.Add(tabs);
-      if (_floraLibraryCategory == "Trees" || _floraLibraryCategory == "3D") AddTreeFamilyTabs(panel, OpenFloraModal);
+      if (_floraLibraryCategory == "Trees") AddTreeFamilyTabs(panel, OpenFloraModal);
       var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "flora-library-scroll" };
       scroll.AddToClassList("flora-modal-scroll");
       var grid = new VisualElement();
@@ -5055,33 +5020,26 @@ namespace CityForgeV3.UI
       grid.style.flexShrink = 0f;
       foreach (var item in new[]
       {
-                (Category: "Trees", Id: "maple", Name: "Maple Tree"),
-                (Category: "Trees", Id: "ashe", Name: "Ashe Tree"),
-                (Category: "Trees", Id: "oak", Name: "Oak Tree"),
-                (Category: "Trees", Id: "evergreen", Name: "Evergreen Pine"),
-                (Category: "Trees", Id: "date-palm", Name: "Date Palm"),
-                (Category: "Trees", Id: "street-tree-3d", Name: "StreetTree3D"),
-                (Category: "Trees", Id: "eucalyptus-robusta-a", Name: "Eucalyptus Robusta A"),
-                (Category: "Trees", Id: "eucalyptus-robusta-b", Name: "Eucalyptus Robusta B"),
+                (Category: "Trees", Id: "mature-oak", Name: "Mature Oak"),
+                (Category: "Trees", Id: "american-elm", Name: "American Elm"),
+                (Category: "Trees", Id: "shagbark-hickory", Name: "Shagbark Hickory"),
+                (Category: "Trees", Id: "bald-cypress-moss", Name: "Bald Cypress with Spanish Moss"),
+                (Category: "Trees", Id: "bald-cypress-moss-b", Name: "Bald Cypress with Spanish Moss B"),
+                (Category: "Trees", Id: "date-palm-tall", Name: "Tall Date Palm"),
+                (Category: "Trees", Id: "date-palm-short", Name: "Short Date Palm"),
+                (Category: "Trees", Id: "la-fan-palm-a", Name: "LA Fan Palm A"),
+                (Category: "Trees", Id: "la-fan-palm-b", Name: "LA Fan Palm B"),
+                (Category: "Trees", Id: "la-fan-palm-a-medium", Name: "LA Fan Palm A (Medium)"),
+                (Category: "Trees", Id: "la-fan-palm-b-medium", Name: "LA Fan Palm B (Medium)"),
                 (Category: "Trees", Id: "silver-maple-a", Name: "Silver Maple A"),
-                (Category: "Trees", Id: "silver-maple-b", Name: "Silver Maple B"),
-                (Category: "3D", Id: "angel-oak-spanish-moss", Name: "Angel Oak with Spanish Moss (3D)"),
                 (Category: "Trees", Id: "vendor-red-maple", Name: "Red Maple"),
-                (Category: "Trees", Id: "vendor-red-maple-young", Name: "Young Red Maple"),
                 (Category: "Trees", Id: "cilician-fir", Name: "Cilician Fir"),
-                (Category: "Trees", Id: "camphor-tree", Name: "Camphor Tree"),
-                (Category: "Trees", Id: "fraser-fir-large", Name: "Large Fraser Fir"),
-                (Category: "Trees", Id: "fraser-fir-small", Name: "Small Fraser Fir"),
-                (Category: "Trees", Id: "fraser-fir-snowy", Name: "Snowy Fraser Fir"),
+                (Category: "Trees", Id: "medium-balsam-fir", Name: "Medium Balsam Fir"),
+                (Category: "Trees", Id: "medium-fraser-fir", Name: "Medium Fraser Fir"),
+                (Category: "Trees", Id: "medium-blue-spruce", Name: "Medium Blue Spruce"),
                 (Category: "Trees", Id: "london-plane-a", Name: "London Plane A"),
                 (Category: "Trees", Id: "london-plane-b", Name: "London Plane B"),
-                (Category: "Trees", Id: "london-plane-c", Name: "London Plane C"),
-                (Category: "Trees", Id: "vendor-balsam-fir-classic", Name: "Classic Balsam Fir"),
                 (Category: "Trees", Id: "vendor-willow", Name: "Willow"),
-                (Category: "Trees", Id: "vendor-cypress-oak", Name: "Cypress Oak"),
-                (Category: "Trees", Id: "vendor-cypress-oak-wide", Name: "Wide Cypress Oak"),
-                (Category: "Trees", Id: "vendor-oregon-ash", Name: "Oregon Ash"),
-                (Category: "Trees", Id: "vendor-oregon-ash-wide", Name: "Wide Oregon Ash"),
                 (Category: "Shrubs", Id: "hart-tongue-fern", Name: "Hart's-tongue Fern"),
                 (Category: "Shrubs", Id: "japanese-painted-fern", Name: "Japanese Painted Fern"),
                 (Category: "Shrubs", Id: "male-fern", Name: "Male Fern"),
@@ -5089,8 +5047,6 @@ namespace CityForgeV3.UI
                 (Category: "Shrubs", Id: "small-hedge", Name: "Small Hedge"),
                 (Category: "Shrubs", Id: "medium-hedge", Name: "Medium Hedge"),
                 (Category: "Shrubs", Id: "long-hedge", Name: "Long Hedge"),
-                (Category: "3D", Id: "plane-uk-3d-a", Name: "Plane UK A"),
-                (Category: "3D", Id: "plane-uk-3d-b", Name: "Plane UK B"),
                 (Category: "Agriculture", Id: "corn-field", Name: "Corn Field"),
             })
       {
@@ -6077,15 +6033,29 @@ namespace CityForgeV3.UI
       Show(AppScreen.LotEditor);
     }
 
-    private static string FloraDisplayName(string id) => StoneFloraCatalog.IsStone(id) ? StoneFloraCatalog.DisplayName(id) : id switch
+    private static string FloraDisplayName(string id) => StoneFloraCatalog.IsStone(id) ? StoneFloraCatalog.DisplayName(id) : LotWorldController.CurrentTreeArtwork(id) switch
     {
       "plane-uk-3d-a" => "Plane UK A (3D)",
       "plane-uk-3d-b" => "Plane UK B (3D)",
       "maple" => "Maple Tree",
       "ashe" => "Ashe Tree",
       "oak" => "Oak Tree",
+      "mature-oak" => "Mature Oak",
+      "american-elm" => "American Elm",
+      "shagbark-hickory" => "Shagbark Hickory",
+      "medium-balsam-fir" => "Medium Balsam Fir",
+      "medium-fraser-fir" => "Medium Fraser Fir",
+      "medium-blue-spruce" => "Medium Blue Spruce",
+      "bald-cypress-moss" => "Bald Cypress with Spanish Moss",
+      "bald-cypress-moss-b" => "Bald Cypress with Spanish Moss B",
       "evergreen" => "Evergreen Pine",
       "date-palm" => "Date Palm",
+      "date-palm-tall" => "Tall Date Palm",
+      "date-palm-short" => "Short Date Palm",
+      "la-fan-palm-a" => "LA Fan Palm A",
+      "la-fan-palm-b" => "LA Fan Palm B",
+      "la-fan-palm-a-medium" => "LA Fan Palm A (Medium)",
+      "la-fan-palm-b-medium" => "LA Fan Palm B (Medium)",
       "narrow-street-tree" => "Street Tree",
       "street-tree-3d" => "StreetTree3D",
       "hart-tongue-fern" => "Hart's-tongue Fern",
@@ -6106,7 +6076,7 @@ namespace CityForgeV3.UI
       "fraser-fir-snowy" => "Snowy Fraser Fir",
       "london-plane-a" => "London Plane A",
       "london-plane-b" => "London Plane B",
-      "london-plane-c" => "London Plane C",
+      "london-plane-c" => "London Plane B",
       "vendor-balsam-fir-classic" => "Classic Balsam Fir",
       "vendor-hickory" => "Hickory",
       "vendor-willow" => "Willow",

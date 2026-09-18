@@ -121,6 +121,7 @@ namespace CityForgeV3.World
                     if (_districtFloraPresentations.TryGetValue(id, out var renderer))
                     {
                         _districtFloraPresentations.Remove(id);
+                        _forestClusters.Remove(id);
                         if (renderer != null)
                         {
                             _floraBatches?.Remove(renderer);

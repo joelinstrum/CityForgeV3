@@ -1,0 +1,2 @@
+2026-09-17T22:48:41.5564820Z
+Willow sprite foot=(-8.50, -0.14, -8.87); marker=(-8.50, 0.06, -8.87); visual sink=0.16m. Shadow shares sprite; lot JSON unchanged.

@@ -1,0 +1,2 @@
+2026-09-17T23:34:43.9349080Z
+DONE. Three temporary tree presentations rendered in all four seasons with the active lot camera then removed; lot JSON unchanged. These texture previews use the current lot lighting.

@@ -1,0 +1,1 @@
+2026-09-17T18:00:46.5646810Z PASS: clear 2947 placements in 16.37ms, preserve 105 stones and terrain cache, Undo restores exact district JSON. No Save.

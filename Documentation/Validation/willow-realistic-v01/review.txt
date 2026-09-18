@@ -1,0 +1,6 @@
+2026-09-17T22:40:38.9040360Z
+Spring: CityForgeV3/Flora/WillowRealisticV01/vendor-willow-spring; root=64px; pivot=64px; PPU=104
+Summer: CityForgeV3/Flora/WillowRealisticV01/vendor-willow-summer; root=105px; pivot=105px; PPU=104
+Autumn: CityForgeV3/Flora/WillowRealisticV01/vendor-willow-autumn; root=133px; pivot=133px; PPU=104
+Winter: CityForgeV3/Flora/WillowRealisticV01/vendor-willow-winter; root=135px; pivot=135px; PPU=104
+PASS: four seasonal resources and measured root anchors. No scene or save mutation.

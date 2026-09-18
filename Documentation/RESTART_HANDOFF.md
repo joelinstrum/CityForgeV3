@@ -355,3 +355,191 @@ limits in FOREST_CLUSTERS.md. Explicit Heavy refresh526ms, median frame12.76ms
 versus Medium393ms/8.12ms in short Editor sample. User saves untouched. Uncommitted.
 
 Regional regression suite83/83 passed fresh 2026-09-17 01:33:22Z; XML archived beside forest30/30 results.
+
+### September 17 — forest shadow visibility and summer palette
+
+On ui-makeover, uncommitted: fix shadows collapsing when sun aligns with billboard
+width. ForestClusterShadows now projects volumetric canopy footprints plus contact
+shade; single fir silhouette faces across sunlight. Higher opacity and shader
+district-bound clipping. Foliage-mask palette varies cluster greens in world-space
+patches, modestly lifts standalone firs. No source-art, save, labor changes.
+30 forest +83 regional tests passed; reviewed flat near/far Game views and copied
+dense district, restored without Save. Evidence/limits in Validation/forest-shadow-palette-v03.
+Season-preview versus calendar-advance question pending; currently summer-only
+forest rendering, seasonal cutouts not production-ready. Preserve other-session
+MapChrome/RegionEditor/USS edits. QA prepare → bank-fixture → wait loaded →
+forest-style → bank-capture; forest-style sets Afternoon for visible shadows.
+restore afterward. Shader diagnostics fully removed.
+
+### September 17 — Clear Flora action
+
+Clear Flora now immediately removes all non-stone district flora (manual and
+generated trees/clusters, fallen trees/stumps) and sets TreeCoverage=None.
+Stones and other district content remain. One explicit scan collects IDs,
+DistrictHarvestIndex swap-removes each; RemoveFloraPresentations batches local
+render removals. No full terrain/forest redraw or labor algorithm changes.
+Flora nudge records and stale selection/paint state are cleared; one Undo restores
+all removed content; disk persistence remains manual. Empty action is a no-op.
+31 forest tests passed fresh17:57:27 UTC. Live isolated Little River Bend copy
+2947 flora: cleared2842, retained105 stones, same terrain-cache revision; exact
+JSON restored with Undo. Clear measured16.37ms in Editor (not a frame-time or
+allocation benchmark). Fixture restored, no Save. Evidence under
+Documentation/Validation/clear-flora-v01. QA prepare → bank-cloud-dense → wait
+loaded → forest-clear-review → restore. Changes uncommitted with prior forest
+shadow/palette work and concurrent UI edits; preserve all unrelated edits.
+
+
+### September 17 — realistic seasonal forest clusters in-game
+
+User approved both realistic summer palettes and the fall/winter derivatives,
+then requested runtime integration. Added versioned ForestClustersRealisticV01
+runtime art, copied unchanged from same-named ArtStudies. Saved cluster IDs01–05
+map to two palette variants (odd A/even B); existing clusters change appearance
+without regeneration or migration. Prior PNGs preserved. Same placement densities,
+clearance, harvestable separate firs, shared batches, manual Save and Undo.
+
+Clusters now follow existing district Labor.SeasonIndex; spring uses summer.
+No season skip/preview UI. Calendar and worker/labor algorithms untouched.
+New cluster-only registry and staged season swaps (16 per Update), shared sprites
+warmed on flora load, retain tree objects/unrelated batches/terrain. Recalibrated
+five shadow contacts; bare winter branch proxies, evergreen fir canopy. Winter
+alpha cutoff/mipmap coverage .12 removes faint canopy residue. Disabled
+old world-space palette multiplier on clusters to preserve approved art colors.
+
+35 forest tests and83 regional tests passed. All three seasons inspected in actual
+normal windowed Game view. Dense isolated Little River Bend:4060 records/849clusters,
+54frames per season swap. Worst slice~32–42ms; aggregate~.84–.96s (more total CPU,
+less single-frame work than initial .35–.41s transition). No measured frame-rate
+improvement claimed. Clear/Undo retained105stones, same terrain cache, exact JSON.
+Three user saves byte-identical. Evidence Documentation/Validation/realistic-forest-v01.
+
+QA: prepare → bank-fixture (or bank-cloud-dense) → wait loaded → forest-style →
+forest-realistic-check. forest-realistic-{summer,autumn,winter}-{close,far} selects
+an isolated fixture season/camera; wait for staged transition before bank-capture.
+forest-realistic-staged runs actual Update transitions; wait for DONE in
+/tmp/cityforge-realistic-forest.txt before restore. Fixtures restored after QA.
+Concurrent MapChrome/RegionEditor/USS and previous shadow/Clear Flora edits preserved.
+All work remains uncommitted on ui-makeover; no commit or push performed.
+
+### September 17 — realistic standing Cilician fir
+
+Replaced the standing harvestable Cilician fir billboard with versioned
+`CilicianFirRealisticV01` art: a more natural blue-green, irregular evergreen
+cutout. The runtime has matching spring/summer/autumn/winter copies because the
+fir is evergreen. Existing `CilicianHarvestV01` falling animation sheets and
+stump, flora ID, lumber yield, worker targeting, save representation, Undo, and
+manual saving are unchanged. Old TreeRepairsV01 art is retained.
+
+New asset contract test passed in forest suite36/36 (fresh XML 20:24:05–20:24:07Z).
+Live isolated dense `forest-review` passed: cluster batching retained; the
+separate fir fell, yielded wood, and fixture flora restored. QA helper wait was
+made time-based (animation duration plus two seconds) rather than 180 frames so
+fast Editor frames cannot falsely fail the existing harvest check. Normal
+windowed Game View capture inspected; no baked backdrop. Evidence:
+Documentation/Validation/cilician-fir-realistic-v01. Fixture restored without
+Save. Work remains uncommitted on ui-makeover; preserve concurrent UI edits.
+
+### September 17 — London Plane A/B and measured Plane A root correction
+
+Runtime LondonPlaneRealisticV01 contains A spring/summer/autumn/winter and B
+spring/summer/autumn. B winter remains legacy. User approved both silhouettes;
+B's accidental lamp was removed from its runtime images. Spring/autumn flora
+color multipliers are now neutral in SeasonLighting; approved A art restored
+after a mistaken attempt to fix lighting through image edits.
+
+Latest Plane A anchor fix supersedes all guessed pivots/selection offsets:
+alpha-measured bottom padding is 19px spring/summer, 20px autumn, 18px winter,
+on a1536px canvas. FloraTreeRepairs uses those exact normalized pivots at96PPU.
+Removed SelectionRootLocalY and restored standard ApplyFloraSelection logic;
+tree/shadow/selector now share the trunk foot. B remains .065 pivot unchanged.
+Actual normal Game View visually inspected beside B and bench; all four alpha
+foot checks passed in live Unity. Evidence Validation/plane-a-anchor-v02.
+No new full forest suite run this turn (previous38/38 did not prove visual
+alignment); updated asset test now compares real alpha pixels to the pivot.
+No stop Play, Save, PNG mutation, commit or unrelated UI edit this turn.
+# 2026-09-17 — Plane C retirement and next species study
+
+Removed London Plane C from lot and district planting catalogs. Existing saved `london-plane-c` records are retained and resolve to Plane B artwork/presentation/scale, with display name London Plane B. Old source textures remain. A/B anchoring and artwork are unchanged. No save or commit performed.
+
+Read-only Unity bridge command `plane-retirement-review` checks all seasons and variation profiles, asset availability and scale parity; report under `Documentation/Validation/plane-c-retirement-v01/`. Red Maple summer study saved under `Documentation/ArtStudies/RedMapleRealisticV01/`; preview only, not installed. Continue seasonal/runtime work after visual feedback.
+
+
+### September 17 — approved Red Maple seasonal set installed
+
+Mature `vendor-red-maple` now resolves to RedMapleRealisticV01 in the shared lot/district resource resolver, all four seasons. Approved source studies preserved; runtime PNGs copied unchanged with the Plane A importer settings and new GUIDs. PPU96 gives approximately15.5m visible height. Measured alpha>128 trunk foot is39px spring/summer/winter and40px autumn on1536px canvas; standard shared shadow/selection anchor retained. Young Red Maple unchanged. No flora IDs, placements, save files or worker logic changed.
+
+Unity refreshed/compiled and read-only `maple-review` passed all four resource, root and scale checks at22:10:11Z; evidence Validation/red-maple-realistic-v01/review.txt. No live Game-view visual check or full test suite this turn; did not stop Play or save. Existing displayed sprites may need a season change or lot reopen to refresh. All changes uncommitted.
+
+
+### September 17 — photographic Silver Maple A installed
+
+Approved photographic Silver Maple V02 seasonal studies were copied unchanged into `SilverMapleRealisticV01` with unique Unity GUIDs. Existing `silver-maple-a` ID now resolves there in shared lot/district resource path for spring/summer/autumn/winter. `silver-maple-b` remains legacy. PPU84 retains about the original17.5m visible height. Alpha>128 root-foot measurements on1536px images: spring40, summer42, autumn36, winter42; pivot matches each. Existing save records, selection/shadow handling, worker logic and manual saving unchanged.
+
+Unity refreshed/compiled; read-only `silver-maple-review` passed at22:28:24Z, including all assets, foot pivots, scale and B preservation. Evidence `Documentation/Validation/silver-maple-realistic-v01/review.txt`. No Game-view appearance capture or full test suite this turn; did not stop Play, save or commit. Existing sprites may need a season change or lot reopen to refresh. Preserve unrelated UI and water edits.
+
+
+### September 17 — Willow seasonal set installed
+
+Approved Willow summer study V01 (rather than the denser V02 alternative) supplied spring/autumn/winter derivatives. Four originals retained under `ArtStudies/WillowRealisticV01`; copies are under `Resources/.../WillowRealisticV01`. Existing `vendor-willow` ID in shared lot/district resolver points to them. Legacy art retained; save records and manual saving untouched. New PPU104 keeps summer near former12.56m visible height. Alpha>128 visible foot on1536px images: spring64, summer105, autumn133, winter135; each pivot matched. Removed legacy1.4x Willow saturation boost for approved natural palette.
+
+Unity refresh/compile and read-only `willow-review` passed all seasonal loads, foot anchors and scale at22:40:38Z; report `Validation/willow-realistic-v01/review.txt`. No Game-view visual check or full suite this turn; did not stop Play or save. Existing sprites may require season change/lot reopen to refresh. No commit; preserve unrelated edits.
+
+
+### September 17 — Willow Lot ground contact corrected
+
+User screenshot showed Willow roots hovering above terrain; selection square position was already correct. Willow PNG alpha foot pivots were correct, so do not change them. LotWorldController now applies a0.16m Willow-only presentation sink, a narrow ground fade, and matching shadow sink compensation; saved placement and selection ground point stay unchanged. Other flora and district behavior unchanged. Read-only `willow-ground-review` captured live Game view and confirmed lot JSON unchanged, shadow sprite shared, selector around rooted trunk. Evidence Validation/willow-ground-v02. No Save or commit.
+
+
+### September 17 — approved dark Oak and two autonomous photographic species
+
+User approved OakPhotorealV01 summer V02 and explicitly authorized making more trees and installing them without further approval while away. Created oak spring/autumn/winter from that source, plus American Elm and Shagbark Hickory in all four seasons. Elm has a high vase silhouette; Hickory a narrower crown and peeling bark. Built-in imagegen source studies and exact prompts are preserved under `Documentation/ArtStudies/{OakPhotorealV01,ElmPhotorealV01,HickoryPhotorealV01}`. Runtime copies are in new `PhotographicDeciduousV01`; no canonical PNG overwritten.
+
+Added NEW lot/district planting IDs `mature-oak`, `american-elm`, `shagbark-hickory`, with display names and shared resource paths. Existing `ashe`, `oak`, `oak-b`, `vendor-hickory` remain unchanged. PPU:100,94,98 respectively. Measured alpha>128 foot pivots by spring/summer/autumn/winter: oak146/149/149/135, elm59/61/50/55, hickory29/33/33/31 pixels on1536px images. Forest generation still uses its five approved clusters; these are manual planting choices.
+
+Unity refreshed/compiled and read-only `photo-trees-review` passed all12 seasonal resources, pivot/scale contracts and legacy source paths at23:22:32Z. A direct active Lot camera render used temporary scene objects for all four seasons and removed them immediately; lot JSON unchanged. Summer, autumn and winter captures visually inspected: oak appears upright at the lot camera angle; root positions and different silhouettes read clearly. All seasonal captures use current lot lighting and temp trees have no shadows, so this is not a complete seasonal lighting/shadow or dense performance test. Evidence `Documentation/Validation/photographic-deciduous-v01/`. No Play stop, Save, commit or push. Preserve concurrent UI, water, labor and prior forest edits.
+
+### September 17 — bald cypress with Spanish moss
+
+New `bald-cypress-moss` manual planting choice in Lot and District flora lists. New `BaldCypressMossV01` runtime PNGs for all four seasons, copied from versioned imagegen studies under `Documentation/ArtStudies/BaldCypressMossV01`; old trees and art remain untouched. Bald cypress has fine green summer needles, sparse fresh spring needles, copper/russet autumn needles, and bare winter branches, with pale Spanish moss retained throughout. PPU82 (~18m). Alpha-measured trunk foot/pivot spring25, summer27, autumn27, winter26px on1536px canvas. Shared resource resolver makes both editors use same art. Forest auto-generation remains unchanged.
+
+Unity refreshed/compiled. `cypress-moss-review` passed all four seasonal resource, scale and ground-pivot checks at00:18:34Z. `cypress-moss-game` rendered all four via the active Lot camera with a temporary object, then removed it; Lot JSON unchanged. Summer and winter captures visually inspected; evidence `Documentation/Validation/bald-cypress-moss-v01/`. Captures use summer Lot lighting and omit actual placed-tree shadows, so live placement/seasonal lighting remains for user review. No Save, commit or push; preserve all concurrent UI/water/forest edits.
+
+### September 17 — second bald cypress palette and silhouette
+
+At user's request for multiple cypresses with color variation, added `bald-cypress-moss-b` as a separate manual Lot/District planting choice; original `bald-cypress-moss` and its artwork unchanged. B has broader/open crown, darker summer foliage and golden-yellow/amber autumn instead of A's copper/russet. Spring has yellow-green emerging needles; winter bare branches; Spanish moss persists in every season. New versioned source studies `Documentation/ArtStudies/BaldCypressMossV02`, runtime copies `Resources/.../BaldCypressMossV02`. PPU82; B measured central trunk feet/pivots17/17/17/18px spring/summer/autumn/winter.
+
+Unity refreshed/compiled. `cypress-moss-pair-review` passed eight resources/pivots and `cypress-moss-pair-game` captured both side by side in all seasons with temporary objects removed and Lot JSON unchanged. Summer/autumn camera captures inspected; evidence `Documentation/Validation/bald-cypress-moss-v02/`. Preview lighting/shadows limit as above. No Save, commit or push; preserve all unrelated edits.
+
+### September 17 — medium Balsam Fir, Fraser Fir and Blue Spruce
+
+Added three NEW manual Lot/District planting IDs: `medium-balsam-fir`, `medium-fraser-fir`, `medium-blue-spruce`, all in Fir and Mountain. Each has two imagegen assets: snow-free for Spring/Summer/Autumn and branch-snow variant for Winter. Balsam is loose/deep green, Fraser compact/emerald with silver underside, Blue Spruce stiff/powdery steel blue. Source studies and generation/edit intent under `Documentation/ArtStudies/MediumConifersV01`; runtime copies under `Resources/.../MediumConifersV01`; old fir art/IDs unchanged. PPU128/128/120. Alpha-measured snow-free/snowy foot pixels on1536px: Balsam14/15, Fraser21/20, Blue Spruce6/7; matching pivots.
+
+Unity refreshed/compiled. `medium-conifers-review` passed all three IDs, six textures, four-season routing, mountain family and pivots at00:56:59Z. `medium-conifers-game` rendered snow-free and snowy trio via active Lot camera with temporary objects; both captures visually inspected, objects removed, Lot JSON unchanged. Evidence `Documentation/Validation/medium-conifers-v01/`. Capture used current Lot lighting and no actual placed-tree shadows; no dense performance test. No Save, commit or push. Procedural forest species unchanged; preserve concurrent UI, water, labor and prior flora edits.
+
+### September 17 — photographic date and Los Angeles palms
+
+Four NEW manual planting IDs in Tropical Lot/District libraries: `date-palm-tall`, `date-palm-short`, `la-fan-palm-a`, `la-fan-palm-b`. Tall/short date palms have visibly substantial trunks and feather fronds; LA palms are distinct tall skinny Washingtonia robusta fan palms. Four built-in imagegen source studies under `Documentation/ArtStudies/PhotographicPalmsV01`, copied unchanged to versioned runtime `Resources/.../PhotographicPalmsV01`. Existing `date-palm` ID/art untouched. Evergreen resolver reuses one texture in all seasons. PPU120/180/70/80 yields ~12.7/8.3/21.6/18.8m visible height. Alpha-measured root pivots12/41/24/31px on1536px. `RegionClimateRules` now allows the two NEW date palms in Desert, as it already allows the legacy date palm; California/Mediterranean permits all four.
+
+Unity refreshed/compiled. `photographic-palms-review` passed resource/season/climate/pivot/legacy path checks at01:32:18Z. `photographic-palms-game` rendered four palms via active Lot camera; final capture visually inspected with all four roots on Lot terrain. Temporary preview objects removed; Lot JSON unchanged. Evidence `Documentation/Validation/photographic-palms-v01/`. Preview uses current lighting and no placed-tree shadows; no dense performance test. No Save, commit or push. Preserve concurrent UI, water, labor and prior flora edits.
+
+### September 17 — 75% LA fan palm heights
+
+At user's request, added two NEW manual planting IDs `la-fan-palm-a-medium` and `la-fan-palm-b-medium` to Lot/District Tropical libraries. They share existing PhotographicPalmsV01 art with `la-fan-palm-a/b`; original IDs/scale and PNGs unchanged. New PPU=70*4/3 and80*4/3 gives exactly75% of the originals' visible height (~16.2m and14.1m). Shared source texture names preserve the measured ground pivot and selection/shadow anchor. California/Mediterranean climate eligibility retained. No additional image generation or duplicate textures.
+
+Unity refreshed/compiled. `palm-heights-review` verified both all-season shared resource paths, family/climate and exact .75 height ratios at01:44:46Z. `palm-heights-game` captured tall/medium A/B comparison using temporary Lot SpriteRenderers; final Game-camera capture visually inspected and lot JSON unchanged. Evidence `Documentation/Validation/la-palm-heights-v01/`. No Save, commit or push; concurrent edits preserved.
+
+### September 17 — retire legacy tree choices, preserve saved placements
+
+Removed pre-regeneration tree choices from the Lot and District planting libraries, including the old 3D tree choices. The current photographic Plane, Maple, Willow, Oak, Elm, Hickory, Cypress, palm and medium conifer choices remain. The Cilician Fir ID remains plantable and is still the individually harvestable lumber tree; generated five-tree forest clusters and their harvest pattern remain unchanged. Tropical generation now selects only new photographic palms.
+
+Saved Lot/District flora records are not rewritten or deleted. `LotWorldController.CurrentTreeArtwork` resolves retired IDs to approved new tree art for resource loading, presentation, pivots and sizing. Legacy PNGs remain in the project as canonical source/compatibility assets. The Lot and District sprite caches now key by presentation ID as well as resource path so the 75%-height palms can share texture without sharing sprite scale. No automatic save was added.
+
+Unity refreshed/compiled. Fresh forest suite: 38 passed, 1 failed of 39. The new retired-ID test passed with all four seasonal resources and Cilician harvest. The remaining failure is `DistrictFloraBatchesTests.NearbyCopiesShareOneMeshAndRemainPickable`: expected `_FloraSaturation` 1.4, got 1.0; it concerns existing batching/material state outside this tree retirement. No Save, commit or push; concurrent UI/water/forest edits preserved.
+
+### September 17 — open directly at the main menu
+
+Removed the click-to-continue splash route from `CityForgeApp`: startup now calls `Show(AppScreen.MainMenu)` directly, and the splash enum case/composition is gone. Editor QA helpers that required a fresh splash now require a fresh main menu. The splash image source and unrelated UI styles remain untouched. Unity refreshed/compiled and entered Play mode through the project-scoped bridge; no new compile or startup exception appeared. No save, commit or push.
+
+### September 17 — commit-ready validation
+
+The forest batching saturation assertion was updated to the current neutral artwork value (1.0). Fresh project-scoped Unity EditMode runs passed: forest 39/39 at 02:26:01Z and regional 83/83 at 02:26:42Z. The earlier 38/39 result above is superseded. Startup was also refreshed and entered Play mode without a new startup exception. The branch remains `ui-makeover`; unrelated concurrent map chrome and water import changes are excluded from the forest/tree/startup commit.

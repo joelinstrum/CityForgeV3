@@ -1,0 +1,9 @@
+2026-09-17T18:48:09.4548470Z Little River Bend: 4060 records, 849 clusters
+season=0 transition=0.14ms slices=1 maxSlice=0.06ms textures=2
+season=1 transition=887.66ms slices=54 maxSlice=35.24ms textures=2
+season=2 transition=841.31ms slices=54 maxSlice=31.72ms textures=2
+season=3 transition=964.76ms slices=54 maxSlice=42.06ms textures=2
+season=4 transition=0.00ms slices=1 maxSlice=0.00ms textures=2
+10000 unchanged season checks=0.840ms. PASS identities, positions, batching, unrelated flora, terrain cache and JSON retained.
+Actual Update loop: 849 clusters completed winter in 54 frames, all batched.
+Staged fixture season restored. DONE

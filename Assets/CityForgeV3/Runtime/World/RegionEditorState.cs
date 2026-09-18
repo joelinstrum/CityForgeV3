@@ -148,7 +148,7 @@ namespace CityForgeV3.World
     {
         public string InstanceId = "";
         public string GroupId = "";
-        public string FloraId = "maple";
+        public string FloraId = "mature-oak";
         public float NormalizedX = 0.5f;
         public float NormalizedZ = 0.5f;
         public float Scale = 1f;

@@ -2913,9 +2913,10 @@ namespace CityForgeV3.Tests
                 SeasonPreset.Summer, baseline), Is.EqualTo(baseline));
             Assert.That(SeasonLighting.BuildingTint(SeasonPreset.Summer),
                 Is.EqualTo(Color.white));
-            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Autumn).r,
-                Is.GreaterThan(SeasonLighting.FloraTint(
-                    SeasonPreset.Autumn).g));
+            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Spring),
+                Is.EqualTo(Color.white));
+            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Autumn),
+                Is.EqualTo(Color.white));
             var winterFlora = SeasonLighting.FloraTint(SeasonPreset.Winter);
             Assert.That(winterFlora.r, Is.GreaterThanOrEqualTo(0.90f));
             Assert.That(winterFlora.b, Is.GreaterThan(winterFlora.r),
@@ -8619,11 +8620,11 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(new[] { 0, 1, 2, 3 }));
         }
 
-        [TestCase(0, "oak")]
-        [TestCase(1, "oak")]
-        [TestCase(2, "oak-b")]
-        [TestCase(3, "oak-b")]
-        public void OakVariation_ChoosesMatchingSpeedTreeFamily(
+        [TestCase(0, "mature-oak")]
+        [TestCase(1, "mature-oak")]
+        [TestCase(2, "mature-oak")]
+        [TestCase(3, "mature-oak")]
+        public void SavedOakPlacementsUseCurrentArtwork(
             int profile, string expectedFloraId)
         {
             Assert.That(LotWorldController.ResolveFloraPresentationId(
@@ -8633,12 +8634,12 @@ namespace CityForgeV3.Tests
                     expectedFloraId, SeasonPreset.Summer)), Is.Not.Null);
         }
 
-        [TestCase(0, SeasonPreset.Winter, "evergreen-snow")]
-        [TestCase(1, SeasonPreset.Winter, "evergreen-b-snow")]
-        [TestCase(2, SeasonPreset.Winter, "evergreen-snow")]
-        [TestCase(3, SeasonPreset.Summer, "evergreen-b")]
-        [TestCase(3, SeasonPreset.Winter, "evergreen-b-snow")]
-        public void EvergreenVariation_UsesSnowOnSomeWinterTrees(
+        [TestCase(0, SeasonPreset.Winter, "medium-blue-spruce")]
+        [TestCase(1, SeasonPreset.Winter, "medium-blue-spruce")]
+        [TestCase(2, SeasonPreset.Winter, "medium-blue-spruce")]
+        [TestCase(3, SeasonPreset.Summer, "medium-blue-spruce")]
+        [TestCase(3, SeasonPreset.Winter, "medium-blue-spruce")]
+        public void SavedEvergreenPlacementsUseCurrentArtwork(
             int profile, SeasonPreset season, string expectedFloraId)
         {
             Assert.That(LotWorldController.ResolveFloraPresentationId(
@@ -8646,6 +8647,26 @@ namespace CityForgeV3.Tests
             Assert.That(Resources.Load<Texture2D>(
                 LotWorldController.ResolveFloraResourcePath(
                     expectedFloraId, season)), Is.Not.Null);
+        }
+
+        [TestCase("maple", "vendor-red-maple")]
+        [TestCase("ashe", "american-elm")]
+        [TestCase("date-palm", "date-palm-tall")]
+        [TestCase("angel-oak-spanish-moss", "mature-oak")]
+        [TestCase("plane-uk-3d-a", "london-plane-a")]
+        [TestCase("fraser-fir-snowy", "medium-fraser-fir")]
+        [TestCase("cilician-fir", "cilician-fir")]
+        public void SavedTreeIdentityUsesCurrentArtworkWithoutChangingIdentity(
+            string savedId, string artworkId)
+        {
+            Assert.That(LotWorldController.CurrentTreeArtwork(savedId),
+                Is.EqualTo(artworkId));
+            Assert.That(LotWorldController.ResolveFloraPresentationId(
+                savedId, 0), Is.EqualTo(artworkId));
+            Assert.That(LotWorldController.ResolveFloraResourcePath(
+                savedId, SeasonPreset.Summer),
+                Is.EqualTo(LotWorldController.ResolveFloraResourcePath(
+                    artworkId, SeasonPreset.Summer)));
         }
 
         [Test]

@@ -1,0 +1,2 @@
+2026-09-18T00:57:50.6738500Z
+DONE. Three temporary conifers rendered snow-free and snowy, then removed; lot JSON unchanged. Current lot lighting, no preview shadows.

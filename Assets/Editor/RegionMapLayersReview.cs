@@ -27,6 +27,24 @@ public static class RegionMapLayersReview
                 view.maximized=false;view.Focus();view.Repaint();
             }
             else if(command=="pike-art")NationalPikeArtReview.Capture();
+            else if(command=="plane-anchor-review")PlaneAnchorReview.Capture();
+            else if(command=="plane-retirement-review")PlaneAnchorReview.VerifyRetirement();
+            else if(command=="maple-review")PlaneAnchorReview.VerifyMaple();
+            else if(command=="silver-maple-review")PlaneAnchorReview.VerifySilverMaple();
+            else if(command=="willow-review")PlaneAnchorReview.VerifyWillow();
+            else if(command=="willow-ground-review")PlaneAnchorReview.CaptureWillowGround();
+            else if(command=="photo-trees-review")PlaneAnchorReview.VerifyPhotographicTrees();
+            else if(command=="photo-trees-game")PhotographicTreesReview.Capture();
+            else if(command=="cypress-moss-review")PhotographicTreesReview.VerifyCypressMoss();
+            else if(command=="cypress-moss-game")PhotographicTreesReview.CaptureCypressMoss();
+            else if(command=="cypress-moss-pair-review")PhotographicTreesReview.VerifyCypressMossPair();
+            else if(command=="cypress-moss-pair-game")PhotographicTreesReview.CaptureCypressMossPair();
+            else if(command=="medium-conifers-review")PhotographicTreesReview.VerifyMediumConifers();
+            else if(command=="medium-conifers-game")PhotographicTreesReview.CaptureMediumConifers();
+            else if(command=="photographic-palms-review")PhotographicPalmsReview.Verify();
+            else if(command=="photographic-palms-game")PhotographicPalmsReview.Capture();
+            else if(command=="palm-heights-review")PhotographicPalmsReview.VerifyHeightVariants();
+            else if(command=="palm-heights-game")PhotographicPalmsReview.CaptureHeightVariants();
             else if(command=="play"){EditorApplication.isPaused=false;EditorApplication.isPlaying=true;}
             else if(command=="resume")EditorApplication.isPaused=false;
             else if(command=="stop")EditorApplication.isPlaying=false;

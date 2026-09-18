@@ -1,5 +1,55 @@
 # Mixed forest placements
 
+## Current runtime — realistic seasonal clusters (September 17)
+
+Supersedes the artwork and summer-only rendering described below. Runtime uses
+`Flora/ForestClustersRealisticV01`: six original RGBA images copied without pixel
+changes from the approved realistic art studies (two palettes × summer/autumn/winter).
+The five existing saved IDs remain intact: 01/03/05 use palette A, 02/04 use B.
+These are two color variants of one arrangement, not five distinct silhouettes.
+No regeneration or save migration is needed for existing **cluster** records;
+old individual-tree forests are not automatically converted.
+
+Each texture is 1254 square, 50 pixels/metre, pivot (.5,.027), sRGB, clamp,
+trilinear filtering, mipmaps with alpha coverage at .02 (winter .12). Winter
+renderers use the matching .12 alpha cutoff to reject faint residual canopy
+pixels without editing the source PNGs. The original images and
+previous V01 runtime artwork are preserved. Existing cluster clearance, density,
+selection, batching and separate harvestable firs are unchanged. The standing
+Cilician fir now uses `Flora/CilicianFirRealisticV01`: a versioned realistic
+evergreen cutout with identical seasonal copies. Its prior falling sheets and
+stump, lumber yield, ID, worker targeting, and save representation are retained.
+The previous
+world-space summer palette multiplier is disabled on clusters so the approved
+artwork colors remain visible.
+
+Clusters read the district's existing Labor.SeasonIndex without modifying it:
+0 summer, 1 autumn, 2 winter, 3 spring, repeating. Spring shares summer artwork.
+No calendar skip or preview UI was added. This seasonal feature covers mixed
+clusters, not a whole-world seasonal overhaul of terrain/buildings/other flora.
+Winter deciduous shadows use open branch proxies and lighter contact shade;
+the fir retains a canopy shadow. Five shadow contacts are recalibrated against
+the new artwork. These remain approximate proxies on steep ground.
+
+At load/bulk flora refresh, six shared sprites are warmed. A maintained registry
+tracks only cluster renderers. Routine Update reads one season value. At a change,
+one registry snapshot is processed at most 16 clusters per frame, reusing source
+objects and rebuilding deduplicated affected batch cells. New flora uses the target
+season; deletion skips inactive queued objects; a new season supersedes pending
+work; load/Undo/refresh clears pending work. No full district/terrain rebuild or
+worker algorithm change. The transition intentionally appears progressively.
+
+Validation: `Validation/realistic-forest-v01/`. 36 forest and 83 regional tests
+passed. Actual normal windowed Game-view summer/fall/winter close/far captures
+inspected. Dense isolated Little River Bend copy: 4060 records, 849 clusters
+(includes retained individual trees), 54 frames per transition. Back-to-back CPU
+slice measurements: worst slice 35.24ms autumn, 31.72ms winter, 42.06ms spring;
+total work .84–.96s. This replaces a .35–.41s single-frame bulk transition, but
+increases aggregate CPU due to repeated local batch rebuilds. 10000 unchanged
+season checks took .840ms. No whole-frame speedup, reliable allocations, or
+long-run stability claimed. All three user save files remained byte-identical.
+
+
 Forest → Generate Tree Coverage now uses five mixed-tree cluster variants in
 Temperate and Mediterranean districts. A candidate has an 80% chance of being a
 five-tree scenery cluster and a 20% chance of being an individual Cilician fir.
@@ -114,3 +164,12 @@ allocating operations, so no reliable allocation result is claimed. Live harvest
 shared batching, terrain-cache retention and fixture restoration passed. Steep
 mountain projection remains an approximation; proxy canopies can stretch across
 abrupt slopes. No user save was written. Forest suite30/30 passed, fresh01:30:31 UTC.
+
+## September 17 — visible shadows and restrained summer palette
+
+Fixed sun-aligned shadow collapse with transverse canopy volume, added soft contact
+shade, raised opacity, and clipped shadow geometry at district edges. District
+forest foliage now has deterministic world-space summer green variation; individual
+firs are slightly lighter. Source PNGs unchanged. 30 forest +83 regional tests
+passed. See Validation/forest-shadow-palette-v03/README.md for visual evidence,
+profiling limits and pending season-preview decision. No season UI added yet.

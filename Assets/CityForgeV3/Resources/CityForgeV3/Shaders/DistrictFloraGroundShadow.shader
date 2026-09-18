@@ -4,6 +4,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
     {
         [PerRendererData] _MainTex ("Tree Silhouette", 2D) = "white" {}
         [PerRendererData] _Color ("Shadow Color", Color) = (0.018, 0.022, 0.026, 0.2)
+        _DistrictHalfSize ("District Shadow Bounds", Vector) = (100000,100000,0,0)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
     }
     SubShader
@@ -19,6 +20,8 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             sampler2D _MainTex;
             fixed4 _Color;
             half _Cutoff;
+            float4 _DistrictHalfSize;
+            float4x4 _DistrictWorldToLocal;
 
             struct appdata
             {
@@ -33,6 +36,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 float2 uv : TEXCOORD0;
                 half heightRatio : TEXCOORD1;
                 half edgeOpacity : TEXCOORD2;
+                float2 receiverPosition : TEXCOORD3;
             };
 
             v2f vert(appdata input)
@@ -40,6 +44,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 v2f output;
                 output.vertex = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;
+                output.receiverPosition = mul(_DistrictWorldToLocal, mul(unity_ObjectToWorld, input.vertex)).xz;
                 output.heightRatio = input.color.a;
                 output.edgeOpacity = input.color.r;
                 return output;
@@ -47,6 +52,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
 
             fixed4 frag(v2f input) : SV_Target
             {
+                clip(_DistrictHalfSize.xy - abs(input.receiverPosition));
                 half alpha = tex2D(_MainTex, input.uv).a;
                 clip(alpha - _Cutoff);
                 // Preserve trunk contact while gently losing density toward

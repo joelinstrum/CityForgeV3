@@ -1,0 +1,14 @@
+2026-09-18T00:56:59.8659620Z
+medium-balsam-fir Spring: CityForgeV3/Flora/MediumConifersV01/medium-balsam-fir-snowfree foot=14px pivot=14px PPU=128
+medium-balsam-fir Summer: CityForgeV3/Flora/MediumConifersV01/medium-balsam-fir-snowfree foot=14px pivot=14px PPU=128
+medium-balsam-fir Autumn: CityForgeV3/Flora/MediumConifersV01/medium-balsam-fir-snowfree foot=14px pivot=14px PPU=128
+medium-balsam-fir Winter: CityForgeV3/Flora/MediumConifersV01/medium-balsam-fir-snowy foot=15px pivot=15px PPU=128
+medium-fraser-fir Spring: CityForgeV3/Flora/MediumConifersV01/medium-fraser-fir-snowfree foot=21px pivot=21px PPU=128
+medium-fraser-fir Summer: CityForgeV3/Flora/MediumConifersV01/medium-fraser-fir-snowfree foot=21px pivot=21px PPU=128
+medium-fraser-fir Autumn: CityForgeV3/Flora/MediumConifersV01/medium-fraser-fir-snowfree foot=21px pivot=21px PPU=128
+medium-fraser-fir Winter: CityForgeV3/Flora/MediumConifersV01/medium-fraser-fir-snowy foot=20px pivot=20px PPU=128
+medium-blue-spruce Spring: CityForgeV3/Flora/MediumConifersV01/medium-blue-spruce-snowfree foot=6px pivot=6px PPU=120
+medium-blue-spruce Summer: CityForgeV3/Flora/MediumConifersV01/medium-blue-spruce-snowfree foot=6px pivot=6px PPU=120
+medium-blue-spruce Autumn: CityForgeV3/Flora/MediumConifersV01/medium-blue-spruce-snowfree foot=6px pivot=6px PPU=120
+medium-blue-spruce Winter: CityForgeV3/Flora/MediumConifersV01/medium-blue-spruce-snowy foot=7px pivot=7px PPU=120
+PASS: three species, six textures, four-season paths, mountain category and ground pivots.
