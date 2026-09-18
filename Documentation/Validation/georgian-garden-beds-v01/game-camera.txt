@@ -1,0 +1,2 @@
+play=True screen=LotEditor hasLot=True lot=Untitled Lot id=untitled-lot dirty=False zoom=Detail season=Summer camera=True 1035x670 pitch=30 azimuth=45
+Two temporary bed presentations captured in live Game view, including a temporary closer orthographic size, then destroyed. Lot JSON unchanged. No Save.

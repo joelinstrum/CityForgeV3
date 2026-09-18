@@ -34,7 +34,8 @@ namespace CityForgeV3.UI
     View,
     Transport,
     Vehicles,
-    Boats
+    Boats,
+    Garden
   }
 
   public enum TerrainSculptMode
@@ -1222,7 +1223,7 @@ namespace CityForgeV3.UI
       _lotWorld.SetFloraEditorContext(
           _lotEditorCategory == LotEditorCategory.Flora);
       _lotWorld.SetPropEditorContext(
-          _lotEditorCategory is LotEditorCategory.Props or
+          _lotEditorCategory is LotEditorCategory.Garden or LotEditorCategory.Props or
               LotEditorCategory.Characters or
               LotEditorCategory.Entertainment or LotEditorCategory.Boats);
       _lotWorld.SetBuildingPropEditorContext(
@@ -1239,7 +1240,7 @@ namespace CityForgeV3.UI
               LotEditorCategory.Roads or LotEditorCategory.Railroad or
               LotEditorCategory.Paths or LotEditorCategory.Water or
               LotEditorCategory.Terrain or
-              LotEditorCategory.Flora or
+              LotEditorCategory.Flora or LotEditorCategory.Garden or
               LotEditorCategory.Props or LotEditorCategory.Characters or
               LotEditorCategory.Entertainment or LotEditorCategory.Boats or
               LotEditorCategory.BaseTextures or
@@ -1833,7 +1834,7 @@ namespace CityForgeV3.UI
           evt.StopPropagation();
           return;
         }
-        if ((_lotEditorCategory is LotEditorCategory.Props or
+        if ((_lotEditorCategory is LotEditorCategory.Garden or LotEditorCategory.Props or
                       LotEditorCategory.Characters or
                       LotEditorCategory.Entertainment or LotEditorCategory.Boats) && evt.button == 0 &&
                   !string.IsNullOrWhiteSpace(_placementPropId))
@@ -2082,7 +2083,7 @@ namespace CityForgeV3.UI
           evt.StopPropagation();
           return;
         }
-        if ((_lotEditorCategory is LotEditorCategory.Props or
+        if ((_lotEditorCategory is LotEditorCategory.Garden or LotEditorCategory.Props or
                   LotEditorCategory.Characters or
                   LotEditorCategory.Entertainment or LotEditorCategory.Boats) &&
                   !string.IsNullOrWhiteSpace(_placementPropId))
@@ -2499,6 +2500,7 @@ namespace CityForgeV3.UI
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Terrain,
           "terrain-hill-v01", "Terrain"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Flora, "flora-tree-v91", "Flora"));
+      toolRailScroll.Add(CategoryButton(LotEditorCategory.Garden, "base-textures", "Garden"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Props, "props-lamppost-v91", "Props"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Characters,
           "buildings", "3D Characters"));
@@ -3899,6 +3901,35 @@ namespace CityForgeV3.UI
           inspector.Add(Property("TIME", timeSpec.Label));
           inspector.Add(Property("ARTWORK", _lotWorld.NeutralPilotShowing ? "GAME-LIT" : "BAKED REFERENCE"));
         }
+        if (_lotEditorCategory == LotEditorCategory.Garden)
+        {
+          inspector.Add(StyledLabel("GARDEN", "inspector-title"));
+          inspector.Add(Property("LIBRARY", "COMPLETE PLANTED BEDS"));
+          inspector.Add(Property("ACTIVE",
+              _placementPropId == LotWorldController.GeorgianGardenSquarePropId
+                  ? "MIXED SQUARE BED" :
+              _placementPropId == LotWorldController.GeorgianGardenRectanglePropId
+                  ? "MIXED RECTANGLE BED" :
+              _placementPropId == LotWorldController.GeorgianHedgeSquarePropId
+                  ? "CLIPPED HEDGE SQUARE" :
+              _placementPropId == LotWorldController.GeorgianHedgeRectanglePropId
+                  ? "CLIPPED HEDGE RECTANGLE" :
+              _placementPropId == LotWorldController.GeorgianGardenBorderPropId
+                  ? "FLOWER & THICKET BORDER" : "NONE"));
+          inspector.Add(CfButton.Create("GARDEN LIBRARY…",
+              OpenGardenModal, true, "primary"));
+          var gardenSelected = LotWorldController.IsGardenPropId(
+              _lotWorld.SelectedPropId);
+          var gardenActions = new VisualElement();
+          gardenActions.AddToClassList("inspector-actions");
+          gardenActions.Add(CfButton.Create("↺ ROTATE",
+              () => RotateSelectedProp(-1), gardenSelected));
+          gardenActions.Add(CfButton.Create("ROTATE ↻",
+              () => RotateSelectedProp(1), gardenSelected));
+          inspector.Add(gardenActions);
+          inspector.Add(CfButton.Create("DELETE SELECTED",
+              DeleteSelectedProp, gardenSelected, "danger"));
+        }
         if (_lotEditorCategory is LotEditorCategory.Flora or
             LotEditorCategory.Props or LotEditorCategory.Characters or
             LotEditorCategory.Entertainment)
@@ -4336,6 +4367,24 @@ namespace CityForgeV3.UI
         AttachToolCategoryHoverInfo(water, category, label);
         return water;
       }
+      if (category == LotEditorCategory.Garden)
+      {
+        var garden = new Button(() => SetLotEditorCategory(category))
+        {
+          name = "Garden",
+          text = "✿",
+          tooltip = ToolCategoryTooltip(category, label)
+        };
+        garden.AddToClassList("cf-image-button");
+        garden.AddToClassList(selected
+            ? "cf-image-button--tool-category-selected"
+            : "cf-image-button--tool-category");
+        var gardenCaption = new Label("GARDEN") { pickingMode = PickingMode.Ignore };
+        gardenCaption.AddToClassList("tool-category-caption");
+        garden.Add(gardenCaption);
+        AttachToolCategoryHoverInfo(garden, category, label);
+        return garden;
+      }
       if (category == LotEditorCategory.Decals)
       {
         var decals = new Button(() => SetLotEditorCategory(category))
@@ -4475,6 +4524,7 @@ namespace CityForgeV3.UI
           LotEditorCategory.Water => "Water — create ponds, lakes, rivers, and swamps",
           LotEditorCategory.Terrain => "Terrain — raise and lower the land",
           LotEditorCategory.Flora => "Flora — place trees, shrubs, and planting",
+          LotEditorCategory.Garden => "Garden — hedges, flower beds, and planted arrangements",
           LotEditorCategory.Props => "Props — place lot and 3D building props",
           LotEditorCategory.Characters => "3D Characters — place people and characters",
           LotEditorCategory.Entertainment => "Entertainment — place exhibits and attractions",
@@ -4507,6 +4557,14 @@ namespace CityForgeV3.UI
       {
         _placementDecalCategory = "";
         _lotWorld.SetDecalPlacementPreview(false);
+      }
+      if ((category == LotEditorCategory.Garden &&
+           !LotWorldController.IsGardenPropId(_placementPropId)) ||
+          (category != LotEditorCategory.Garden &&
+           LotWorldController.IsGardenPropId(_placementPropId)))
+      {
+        _placementPropId = "";
+        _lotWorld.SetPropPlacementPreview("");
       }
       if (_building3DPlacementPending)
       {
@@ -4553,6 +4611,8 @@ namespace CityForgeV3.UI
       Show(AppScreen.LotEditor);
       if (category == LotEditorCategory.Flora)
         OpenFloraModal();
+      else if (category == LotEditorCategory.Garden)
+        OpenGardenModal();
       else if (category == LotEditorCategory.Boats)
         OpenBoatsModal();
       else if (category == LotEditorCategory.Props)
@@ -4890,6 +4950,62 @@ namespace CityForgeV3.UI
       var actions = DocumentModalActions();
       actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
       panel.Add(actions);
+    }
+
+    private void OpenGardenModal()
+    {
+      var panel = CreateDocumentModal("GARDEN LIBRARY",
+          "Choose a complete planted bed, then click the lot to place it.");
+      panel.name = "garden-library-panel";
+      panel.AddToClassList("road-material-modal-panel");
+      var grid = new VisualElement();
+      grid.AddToClassList("road-material-grid");
+      AddGardenBedCard(grid, "garden-card-georgian-square",
+          "GEORGIAN MIXED SQUARE", "Square bed • 4 × 4 m • shrubs & flowers",
+          LotWorldController.GeorgianGardenSquarePropId,
+          "CityForgeV3/Garden/GeorgianBedsV01/square-summer");
+      AddGardenBedCard(grid, "garden-card-georgian-rectangle",
+          "GEORGIAN MIXED RECTANGLE",
+          "Wide bed • 6 × 3 m • shrubs & flowers",
+          LotWorldController.GeorgianGardenRectanglePropId,
+          "CityForgeV3/Garden/GeorgianBedsV01/rectangle-summer");
+      AddGardenBedCard(grid, "garden-card-hedge-square",
+          "CLIPPED HEDGE SQUARE",
+          "Formal hedge plot • 4 × 4 m",
+          LotWorldController.GeorgianHedgeSquarePropId,
+          "CityForgeV3/Garden/GeorgianClippedHedgesV01/clipped-leaves");
+      AddGardenBedCard(grid, "garden-card-hedge-rectangle",
+          "CLIPPED HEDGE RECTANGLE",
+          "Formal hedge plot • 6 × 3 m",
+          LotWorldController.GeorgianHedgeRectanglePropId,
+          "CityForgeV3/Garden/GeorgianClippedHedgesV01/clipped-leaves");
+      panel.Add(grid);
+      var actions = DocumentModalActions();
+      actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
+      panel.Add(actions);
+    }
+
+    private void AddGardenBedCard(VisualElement panel, string name,
+        string label, string description, string propId, string previewPath)
+    {
+      var card = new VisualElement { name = name };
+      card.AddToClassList("road-material-card");
+      var preview = new VisualElement();
+      preview.AddToClassList("road-material-swatch");
+      preview.style.backgroundImage = new StyleBackground(
+          Resources.Load<Texture2D>(previewPath));
+      card.Add(preview);
+      card.Add(CfButton.Create(label, () =>
+      {
+        _placementPropId = propId;
+        _lotWorld.SetPropPlacementPreview(_placementPropId);
+        _lotStatus = label + " armed • click to place • select to rotate";
+        RemoveDocumentModal();
+        ComposeLotEditor();
+      }, true, _placementPropId == propId
+          ? "mode-selected" : "quiet"));
+      card.Add(StyledLabel(description, "catalog-meta"));
+      panel.Add(card);
     }
 
     private string _floraLibraryCategory = "Trees";
@@ -5479,7 +5595,7 @@ namespace CityForgeV3.UI
         category == LotEditorCategory.Roads ||
         category == LotEditorCategory.Railroad ||
         category == LotEditorCategory.OverlayTextures ||
-        ((category is LotEditorCategory.Props or LotEditorCategory.Characters or
+        ((category is LotEditorCategory.Garden or LotEditorCategory.Props or LotEditorCategory.Characters or
               LotEditorCategory.Entertainment or LotEditorCategory.Boats) &&
             !string.IsNullOrWhiteSpace(propId));
 
@@ -5794,7 +5910,7 @@ namespace CityForgeV3.UI
         case LotEditorCategory.Paths when _lotWorld.CirculationCursorSelected:
           NudgeCirculation(horizontal, vertical);
           break;
-        case LotEditorCategory.Props or LotEditorCategory.Entertainment or LotEditorCategory.Boats
+        case LotEditorCategory.Garden or LotEditorCategory.Props or LotEditorCategory.Entertainment or LotEditorCategory.Boats
               when _lotWorld.SelectedPropIndex >= 0:
           _lotStatus = _lotWorld.NudgeSelectedPropByScreenPixels(
               horizontal, vertical)
@@ -5889,16 +6005,16 @@ namespace CityForgeV3.UI
     private void RotateSelectedProp(int direction)
     {
       _lotStatus = _lotWorld.RotateSelectedProp(direction)
-          ? "Fence rotated 90°"
-          : "Fence cannot rotate here";
+          ? "Selected piece rotated 90°"
+          : "Selected piece cannot rotate here";
       Show(AppScreen.LotEditor);
     }
 
     private void DeleteSelectedProp()
     {
       _lotStatus = _lotWorld.DeleteSelectedProp()
-          ? "Fence removed"
-          : "No fence selected";
+          ? "Selected piece removed"
+          : "No piece selected";
       Show(AppScreen.LotEditor);
     }
 

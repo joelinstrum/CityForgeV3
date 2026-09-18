@@ -2343,6 +2343,12 @@ namespace CityForgeV3.World
             ClearUnavailableSeasonalPropInteraction();
             RefreshFloraSeasonalPresentations();
             RefreshPropSeasonVisibility();
+            if (_propPreview != null)
+            {
+                _propPreview.GetComponent<GeorgianGardenBorder>()?.SetSeason(Season);
+                _propPreview.GetComponent<GeorgianGardenBed>()?.SetSeason(Season);
+                _propPreview.GetComponent<GeorgianClippedHedgeGarden>()?.SetSeason(Season);
+            }
             if (_floraPreview != null &&
                 !string.IsNullOrWhiteSpace(_floraPreviewId))
                 _floraPreview.sprite = LoadFloraSprite(_floraPreviewId);
