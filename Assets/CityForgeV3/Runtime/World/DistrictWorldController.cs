@@ -1745,10 +1745,13 @@ namespace CityForgeV3.World
         private void AddRoadPiece(PlacedRoadPiece placed)
         {
             if (placed == null) return;
-            if (placed.DistrictDiagonalConnections != 0 &&
+            // Use the actual brick surface for every district Antique Brick
+            // tile. The topology sprites contain pale edge markings even when
+            // their no-lines variant is selected.
+            if (placed.PackageId == RoadPiecePackageCatalog.TwoLaneSidewalkId &&
                 placed.RoadMaterialId == "antique-brick")
             {
-                AddAntiqueDiagonalRoad(placed);
+                AddAntiqueBrickRoad(placed);
                 return;
             }
             var package = RoadPiecePackageCatalog.Resolve(placed.PackageId);
@@ -1810,7 +1813,7 @@ namespace CityForgeV3.World
                     TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
         }
 
-        private void AddAntiqueDiagonalRoad(PlacedRoadPiece placed)
+        private void AddAntiqueBrickRoad(PlacedRoadPiece placed)
         {
             var mask = placed.DistrictDiagonalConnections;
             foreach (var port in new[] { RoadPiecePort.North, RoadPiecePort.East,
@@ -1842,7 +1845,7 @@ namespace CityForgeV3.World
             }
             _antiqueDiagonalMaterial.SetColor("_TimeTint",
                 TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
-            var roadObject = new GameObject("District Antique Brick Diagonal");
+            var roadObject = new GameObject("District Antique Brick Road");
             roadObject.transform.SetParent(_roadArtworkRoot, false);
             roadObject.transform.localPosition = new Vector3(
                 -_widthMeters * .5f + (placed.GridX + .5f) * DistrictScale.CellSizeMeters,

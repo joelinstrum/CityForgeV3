@@ -165,6 +165,93 @@ namespace CityForgeV3.World
                 return true;
             }
 
+            // Smooth only a short staircase created by this drag. Older roads
+            // and branch tiles are never removed, and the check touches at
+            // most five path cells and their immediate neighbors.
+            public bool TrySmoothAntiqueBrickStaircase(List<Vector2Int> path,
+                HashSet<Vector2Int> addedThisStroke, ref int treasury,
+                System.Func<Vector2Int, Vector2Int, bool> canConnect,
+                out Vector2Int[] changed)
+            {
+                changed = null;
+                if (path == null || path.Count < 3 || addedThisStroke == null)
+                    return false;
+                var last = path.Count - 1;
+                var start = -1;
+                if (last >= 4)
+                {
+                    var a = path[last - 4];
+                    var b = path[last - 3];
+                    var c = path[last - 2];
+                    var d = path[last - 1];
+                    var e = path[last];
+                    var first = b - a;
+                    var second = c - b;
+                    if (first == d - c && second == e - d &&
+                        IsCardinal(first) && IsCardinal(second) &&
+                        first.x != second.x && first.y != second.y)
+                        start = last - 4;
+                }
+                if (start < 0 && last >= 3)
+                {
+                    var heading = path[last - 2] - path[last - 3];
+                    var first = path[last - 1] - path[last - 2];
+                    var second = path[last] - path[last - 1];
+                    if (Mathf.Abs(heading.x) == 1 &&
+                        Mathf.Abs(heading.y) == 1 &&
+                        IsCardinal(first) && IsCardinal(second) &&
+                        first + second == heading)
+                        start = last - 2;
+                }
+                if (start < 0) return false;
+
+                var old = path.GetRange(start, path.Count - start);
+                var removals = old.Count == 5
+                    ? new[] { old[1], old[3] }
+                    : new[] { old[1] };
+                foreach (var cell in old)
+                {
+                    var road = At(cell.x, cell.y);
+                    if (road == null ||
+                        road.PackageId != RoadPiecePackageCatalog.TwoLaneSidewalkId ||
+                        road.RoadMaterialId != "antique-brick") return false;
+                }
+                for (var index = 0; index < removals.Length; index++)
+                {
+                    var cell = removals[index];
+                    var road = At(cell.x, cell.y);
+                    if (!addedThisStroke.Contains(cell) ||
+                        road.DistrictDiagonalConnections != 0) return false;
+                    foreach (var port in CardinalPorts)
+                    {
+                        var step = Step(port);
+                        var neighbor = cell + step;
+                        if (At(neighbor.x, neighbor.y) != null &&
+                            neighbor != old[index * 2] &&
+                            neighbor != old[index * 2 + 2]) return false;
+                    }
+                }
+                for (var index = 0; index < old.Count - 2; index += 2)
+                    if (canConnect != null && !canConnect(old[index], old[index + 2]))
+                        return false;
+
+                foreach (var cell in removals)
+                {
+                    TryDelete(cell.x, cell.y);
+                    addedThisStroke.Remove(cell);
+                    treasury += AntiqueBrickCostPerTile;
+                }
+                for (var index = 0; index < old.Count - 2; index += 2)
+                    TryConnectDiagonal(old[index], old[index + 2]);
+                for (var index = last - 1; index > start; index -= 2)
+                    path.RemoveAt(index);
+                changed = old.ToArray();
+                return true;
+            }
+
+            private static bool IsCardinal(Vector2Int step) =>
+                Mathf.Abs(step.x) + Mathf.Abs(step.y) == 1;
+
             public int Connections(PlacedRoadPiece road)
             {
                 if (road == null) return 0;

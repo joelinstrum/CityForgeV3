@@ -808,11 +808,32 @@ namespace CityForgeV3.UI
                   (DistrictRoadLotOccupied(district, previous.x, next.y) ||
                    DistrictRoadLotOccupied(district, next.x, previous.y)))
                 break;
+              var wasEmpty = DistrictRoadSession(district).At(next.x, next.y) == null;
               if (!PlaceDistrictRoad(district, next.x, next.y)) break;
+              if (wasEmpty) _districtRoadStrokeAdded.Add(next);
+              _districtRoadStrokePath.Add(next);
               if (_builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily &&
                   DistrictRoadSession(district).TryConnectDiagonal(previous, next))
                 _districtWorld?.RefreshRoadCellsAndNeighbors(district,
                     new[] { previous, next }, DistrictRoadSession(district).At);
+              if (_builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily)
+              {
+                var session = DistrictRoadSession(district);
+                var treasury = district.Treasury;
+                if (session.TrySmoothAntiqueBrickStaircase(
+                    _districtRoadStrokePath, _districtRoadStrokeAdded,
+                    ref treasury, (from, to) =>
+                        !DistrictRoadLotOccupied(district, from.x, to.y) &&
+                        !DistrictRoadLotOccupied(district, to.x, from.y),
+                    out var changed))
+                {
+                  district.Treasury = treasury;
+                  _districtWorld?.RefreshRoadCellsAndNeighbors(district,
+                      changed, session.At);
+                  var money = _root?.Q<Label>("district-simulation-money");
+                  if (money != null) money.text = $"${treasury:N0}";
+                }
+              }
               _lastDistrictRoadDragCell = next;
             }
           }
@@ -972,16 +993,20 @@ namespace CityForgeV3.UI
         else if (IsDistrictRoadToolActive())
         {
           _districtRoadPointerDown = true;
+          _districtRoadStrokePath.Clear();
+          _districtRoadStrokeAdded.Clear();
           _lastDistrictRoadDragCell = DistrictRoadCell(district,
                     normalized.x, normalized.y);
+          _districtRoadStrokePath.Add(_lastDistrictRoadDragCell);
           _selectedDistrictRoadCell = _lastDistrictRoadDragCell;
           _hasSelectedDistrictRoad = true;
           var existingRoad = DistrictRoadSession(district).At(
                     _lastDistrictRoadDragCell.x,
                     _lastDistrictRoadDragCell.y);
           if (existingRoad == null)
-            PlaceDistrictRoad(district, _lastDistrictRoadDragCell.x,
-                      _lastDistrictRoadDragCell.y);
+            if (PlaceDistrictRoad(district, _lastDistrictRoadDragCell.x,
+                      _lastDistrictRoadDragCell.y))
+              _districtRoadStrokeAdded.Add(_lastDistrictRoadDragCell);
           _districtWorld.ShowRoadSelectionGuide(
                     _selectedDistrictRoadCell.x,
                     _selectedDistrictRoadCell.y);
@@ -1024,6 +1049,8 @@ namespace CityForgeV3.UI
         }
         if (!_districtRoadPointerDown) return;
         _districtRoadPointerDown = false;
+        _districtRoadStrokePath.Clear();
+        _districtRoadStrokeAdded.Clear();
         _districtWorld?.CommitSurfaceChanges();
         _districtWorldCompositionKey = DistrictCompositionKey(district);
         SaveDistrictEdit();
