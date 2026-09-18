@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="13" result="Passed" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.3254671">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="948" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.325467" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2094" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/quarry-and-performance-updates/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="948" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.316136" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20804" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2095" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="825" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.310207" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2096" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="825" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.308356" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2097" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="240" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.296584" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1963" name="DistrictRoadPlacementTests" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.290335" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1975" name="AntiqueBrickCanTurnFromCardinalToDiagonalWithoutLinkingTouchingRoads" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.AntiqueBrickCanTurnFromCardinalToDiagonalWithoutLinkingTouchingRoads" methodname="AntiqueBrickCanTurnFromCardinalToDiagonalWithoutLinkingTouchingRoads" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1046374664" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.014681" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1974" name="AntiqueBrickDragConnectsDiagonalTilesAndRepairsOnlyNearbyRoads" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.AntiqueBrickDragConnectsDiagonalTilesAndRepairsOnlyNearbyRoads" methodname="AntiqueBrickDragConnectsDiagonalTilesAndRepairsOnlyNearbyRoads" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1555868539" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.005213" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1972" name="BrickPlacementStopsWhenTreasuryCannotAffordTile" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.BrickPlacementStopsWhenTreasuryCannotAffordTile" methodname="BrickPlacementStopsWhenTreasuryCannotAffordTile" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="114337056" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000526" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1969" name="CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" methodname="CountryAndPikeRemainDistinctWhenConnectingAndReplacingRoads" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="148240618" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000341" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1973" name="DeletingRoadRepairsItsFormerNeighbors" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DeletingRoadRepairsItsFormerNeighbors" methodname="DeletingRoadRepairsItsFormerNeighbors" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1656842636" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000321" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1976" name="DeliveryUsesOnlyExplicitDiagonalLinks" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DeliveryUsesOnlyExplicitDiagonalLinks" methodname="DeliveryUsesOnlyExplicitDiagonalLinks" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="564325743" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.006555" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1977" name="DiagonalBrickPresentationSharesMaterialAndBridgesTileCorners" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DiagonalBrickPresentationSharesMaterialAndBridgesTileCorners" methodname="DiagonalBrickPresentationSharesMaterialAndBridgesTileCorners" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1026135629" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.249309" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[RIVER REFRESH mesh=1ms terrain=1ms decals=18ms total=20ms
+]]></output>
+              </test-case>
+              <test-case id="1970" name="DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" methodname="DirtIsFreeAndBrickCostsTwentyFiveOnlyForNewTile" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1088313681" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000280" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1971" name="NeighborConnectionsInferCornerTAndCross" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.NeighborConnectionsInferCornerTAndCross" methodname="NeighborConnectionsInferCornerTAndCross" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="251867748" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000372" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1968" name="OctileRouteSupportsAllDiagonalFacings" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.OctileRouteSupportsAllDiagonalFacings" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.002229" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1964" name="OctileRouteSupportsAllDiagonalFacings(3,3)" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.OctileRouteSupportsAllDiagonalFacings(3,3)" methodname="OctileRouteSupportsAllDiagonalFacings" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1513076561" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000441" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1965" name="OctileRouteSupportsAllDiagonalFacings(3,-3)" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.OctileRouteSupportsAllDiagonalFacings(3,-3)" methodname="OctileRouteSupportsAllDiagonalFacings" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1396324148" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000047" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1966" name="OctileRouteSupportsAllDiagonalFacings(-3,3)" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.OctileRouteSupportsAllDiagonalFacings(-3,3)" methodname="OctileRouteSupportsAllDiagonalFacings" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1620681657" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000042" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1967" name="OctileRouteSupportsAllDiagonalFacings(-3,-3)" fullname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests.OctileRouteSupportsAllDiagonalFacings(-3,-3)" methodname="OctileRouteSupportsAllDiagonalFacings" classname="CityForgeV3.Tests.EditMode.DistrictRoadPlacementTests" runstate="Runnable" seed="1608559922" result="Passed" start-time="2026-09-18 20:46:18Z" end-time="2026-09-18 20:46:18Z" duration="0.000040" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: /tmp/cityforge-antique-diagonal-road-tests.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -12,6 +12,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         _RoadMaterialTiling ("Road Material Tiling", Float) = 5
         _SidewalkMaterialTiling ("Sidewalk Material Tiling", Float) = 5
         _HideCurbBorders ("Hide Curb Borders", Float) = 0
+        _UseWorldUv ("Use World UV", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _TimeTint ("Time of Day Tint", Color) = (1, 1, 1, 1)
         _ReceiveSunShadow ("Receive Sun Shadow", Range(0, 1)) = 1
@@ -50,11 +51,16 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             #include "NationalPikeDirt.cginc"
             float4 _MainTex_ST;
             float _UseMaterialZones;
+            float _UseWorldUv;
+            float _MaterialTiling;
             Varyings vert(AppData input)
             {
                 Varyings output;
                 output.pos = UnityObjectToClipPos(input.vertex);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                float3 world = mul(unity_ObjectToWorld, input.vertex).xyz;
+                output.uv = _UseWorldUv > 0.5
+                    ? world.xz * (_MaterialTiling / 10.0)
+                    : TRANSFORM_TEX(input.uv, _MainTex);
                 return output;
             }
             fixed4 frag(Varyings input) : SV_Target
@@ -102,6 +108,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             float _RoadMaterialTiling;
             float _SidewalkMaterialTiling;
             float _HideCurbBorders;
+            float _UseWorldUv;
             float _ReceiveSunShadow;
             float4 _CFCloudShadowCenter;
             float4 _CFCloudShadowParams;
@@ -110,9 +117,11 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             {
                 Varyings output;
                 output.pos = UnityObjectToClipPos(input.vertex);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 output.worldPosition = mul(unity_ObjectToWorld,
                     input.vertex).xyz;
+                output.uv = _UseWorldUv > 0.5
+                    ? output.worldPosition.xz * (_MaterialTiling / 10.0)
+                    : TRANSFORM_TEX(input.uv, _MainTex);
                 TRANSFER_SHADOW(output);
                 return output;
             }
@@ -168,12 +177,13 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                     // separator. Historic all-brick roads do not need that
                     // modern-looking stripe, so allow it to inherit the adjacent
                     // brick paving without changing the topology artwork.
-                    fixed curbMinimum = min(semantic.r,
-                        min(semantic.g, semantic.b));
-                    fixed curbSpread = max(semantic.r,
-                        max(semantic.g, semantic.b)) - curbMinimum;
-                    fixed curbMask = smoothstep(0.82, 0.94, curbMinimum) *
-                        (1.0 - smoothstep(0.035, 0.10, curbSpread));
+                    // The template's curb is warm off-white (232, 223, 207),
+                    // so a neutral-white test leaves the stripe visible.
+                    const fixed3 curbColor = fixed3(232.0 / 255.0,
+                        223.0 / 255.0, 207.0 / 255.0);
+                    fixed curbMask = 1.0 - smoothstep(0.025, 0.28,
+                        min(distance(semantic, curbColor),
+                            distance(semanticConverted, curbColor)));
                     artwork.rgb = lerp(artwork.rgb, sidewalkSurface,
                         curbMask * saturate(_HideCurbBorders));
 
@@ -226,13 +236,17 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             float4 _MainTex_ST;
             fixed4 _Color;
             fixed4 _TimeTint;
+            float _UseWorldUv;
+            float _MaterialTiling;
 
             Varyings vert(AppData v)
             {
                 Varyings output;
                 output.pos = UnityObjectToClipPos(v.vertex);
-                output.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 output.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                output.uv = _UseWorldUv > 0.5
+                    ? output.worldPos.xz * (_MaterialTiling / 10.0)
+                    : TRANSFORM_TEX(v.uv, _MainTex);
                 TRANSFER_VERTEX_TO_FRAGMENT(output);
                 return output;
             }
