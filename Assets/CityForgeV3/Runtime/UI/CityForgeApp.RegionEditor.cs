@@ -794,13 +794,27 @@ namespace CityForgeV3.UI
                     1, 1, roadPlaceable);
           if (_districtRoadPointerDown && roadPlaceable)
           {
-            var route = RoadPlacementModel.BuildPlannedRoadRoute(
-                      _lastDistrictRoadDragCell, roadCell);
+            var route = _builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily
+                ? DistrictRoadPlacementModel.OctileRoute(
+                    _lastDistrictRoadDragCell, roadCell)
+                : RoadPlacementModel.BuildPlannedRoadRoute(
+                    _lastDistrictRoadDragCell, roadCell);
             for (var routeIndex = 1; routeIndex < route.Count;
                        routeIndex++)
-              PlaceDistrictRoad(district, route[routeIndex].x,
-                        route[routeIndex].y);
-            _lastDistrictRoadDragCell = roadCell;
+            {
+              var previous = route[routeIndex - 1];
+              var next = route[routeIndex];
+              if (previous.x != next.x && previous.y != next.y &&
+                  (DistrictRoadLotOccupied(district, previous.x, next.y) ||
+                   DistrictRoadLotOccupied(district, next.x, previous.y)))
+                break;
+              if (!PlaceDistrictRoad(district, next.x, next.y)) break;
+              if (_builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily &&
+                  DistrictRoadSession(district).TryConnectDiagonal(previous, next))
+                _districtWorld?.RefreshRoadCellsAndNeighbors(district,
+                    new[] { previous, next }, DistrictRoadSession(district).At);
+              _lastDistrictRoadDragCell = next;
+            }
           }
           return;
         }
@@ -857,7 +871,8 @@ namespace CityForgeV3.UI
                   target?.GetFirstAncestorOfType<Button>() != null) return;
         // Inspect existing objects before dispatching any active category's tool.
         // UI controls remain UI controls; only a click on the world surface picks.
-        if ((target == screen || target?.ClassListContains("district-terraform-viewport") == true) &&
+        if (!IsDistrictRoadToolActive() &&
+            (target == screen || target?.ClassListContains("district-terraform-viewport") == true) &&
             TryInspectDistrictObject(DistrictCameraPoint(evt.position)))
         {
           BeginLotNudge(screen, evt.pointerId, DistrictCameraPoint(evt.position));
@@ -961,7 +976,7 @@ namespace CityForgeV3.UI
                     normalized.x, normalized.y);
           _selectedDistrictRoadCell = _lastDistrictRoadDragCell;
           _hasSelectedDistrictRoad = true;
-          var existingRoad = RoadPlacementModel.FindAt(district.Roads,
+          var existingRoad = DistrictRoadSession(district).At(
                     _lastDistrictRoadDragCell.x,
                     _lastDistrictRoadDragCell.y);
           if (existingRoad == null)
@@ -1902,6 +1917,7 @@ namespace CityForgeV3.UI
         placement.GridX = oldX; placement.GridZ = oldZ; placement.RotationQuarterTurns = oldRotation;
         return "The lot could not be rotated.";
       }
+      InvalidateDistrictRoadLotCells();
       return DistrictActionResult.Applied(warning);
     }
 
@@ -3087,6 +3103,8 @@ namespace CityForgeV3.UI
                 0, rows - 1);
           }
         }
+        _districtRoadEditSession = null;
+        InvalidateDistrictRoadLotCells();
         _districtWorld?.RefreshRoads(district, deferSurfaceRefresh: true);
       }
       if (floraChanged)
@@ -3161,6 +3179,8 @@ namespace CityForgeV3.UI
         }
       }
       if (deletedRoadCells.Count > 0) DistrictRoadPlacementModel.Repair(district.Roads);
+      _districtRoadEditSession = null;
+      InvalidateDistrictRoadLotCells();
       _districtSelection.Clear();
       _selectedDistrictLotInstanceId = "";
       _hoveredDistrictLotInstanceId = "";
@@ -3261,32 +3281,79 @@ namespace CityForgeV3.UI
 
     private bool CanPlaceDistrictRoad(RegionCityTile district, int x, int z)
     {
-      var columns = DistrictScale.Columns(district.Width);
-      var rows = DistrictScale.Columns(district.Height);
-      var centerX = (x + 0.5f) / columns;
-      var centerZ = (z + 0.5f) / rows;
-      if (FindDistrictLotAt(district, centerX, centerZ) != null) return false;
-      var existing = RoadPlacementModel.FindAt(district.Roads, x, z);
+      if (DistrictRoadLotOccupied(district, x, z)) return false;
+      var existing = DistrictRoadSession(district).At(x, z);
       if (existing?.PackageId == DistrictRoadPlacementModel.PackageId(
               _builderTool)) return true;
       return DistrictRoadPlacementModel.CostPerTile(_builderTool) <=
              district.Treasury;
     }
 
-    private void PlaceDistrictRoad(RegionCityTile district, int x, int z)
+    private bool DistrictRoadLotOccupied(RegionCityTile district, int x, int z)
+    {
+      var lots = district.Lots;
+      if (_districtRoadLotDistrict != district ||
+          !ReferenceEquals(_districtRoadLotSource, lots) ||
+          _districtRoadLotCount != (lots?.Count ?? 0))
+      {
+        _districtRoadLotDistrict = district;
+        _districtRoadLotSource = lots;
+        _districtRoadLotCount = lots?.Count ?? 0;
+        _districtRoadLotCells.Clear();
+        if (lots != null)
+          foreach (var lot in lots)
+          {
+            if (!TryGetDistrictLotFootprint(lot, out _,
+                    out var spanX, out var spanZ)) continue;
+            var minX = lot.GridX + lot.ShoreOffsetX / 10f;
+            var minZ = lot.GridZ + lot.ShoreOffsetZ / 10f;
+            for (var cellZ = Mathf.FloorToInt(minZ);
+                 cellZ < Mathf.CeilToInt(minZ + spanZ); cellZ++)
+              for (var cellX = Mathf.FloorToInt(minX);
+                   cellX < Mathf.CeilToInt(minX + spanX); cellX++)
+                if (cellX + .5f >= minX && cellX + .5f < minX + spanX &&
+                    cellZ + .5f >= minZ && cellZ + .5f < minZ + spanZ)
+                  _districtRoadLotCells.Add(new Vector2Int(cellX, cellZ));
+          }
+      }
+      return _districtRoadLotCells.Contains(new Vector2Int(x, z));
+    }
+
+    private void InvalidateDistrictRoadLotCells()
+    {
+      _districtRoadLotDistrict = null;
+      _districtRoadLotSource = null;
+      _districtRoadLotCount = -1;
+      _districtRoadLotCells.Clear();
+    }
+
+    private DistrictRoadPlacementModel.EditSession DistrictRoadSession(
+        RegionCityTile district)
+    {
+      district.Roads ??= new List<PlacedRoadPiece>();
+      if (_districtRoadEditSession == null ||
+          !_districtRoadEditSession.Owns(district.Roads))
+        _districtRoadEditSession = new DistrictRoadPlacementModel.EditSession(
+            district.Roads);
+      return _districtRoadEditSession;
+    }
+
+    private bool PlaceDistrictRoad(RegionCityTile district, int x, int z)
     {
       if (district == null || !IsDistrictRoadToolActive() ||
-          !CanPlaceDistrictRoad(district, x, z)) return;
+          !CanPlaceDistrictRoad(district, x, z)) return false;
       var columns = DistrictScale.Columns(district.Width);
       var rows = DistrictScale.Columns(district.Height);
-      district.Roads ??= new List<PlacedRoadPiece>();
+      var session = DistrictRoadSession(district);
       var treasury = district.Treasury;
-      if (!DistrictRoadPlacementModel.TryPlace(district.Roads, x, z,
-              columns, rows, _builderTool, ref treasury)) return;
+      if (!session.TryPlace(x, z, columns, rows, _builderTool,
+              ref treasury)) return true;
       district.Treasury = treasury;
-      _districtWorld?.RefreshRoadAndNeighbors(district, x, z);
+      _districtWorld?.RefreshRoadCellsAndNeighbors(district,
+          new[] { new Vector2Int(x, z) }, session.At);
       var money = _root?.Q<Label>("district-simulation-money");
       if (money != null) money.text = $"${district.Treasury:N0}";
+      return true;
     }
 
     private bool TryDeleteSelectedDistrictRoad()
@@ -3296,15 +3363,16 @@ namespace CityForgeV3.UI
           _builderCategory != "Roads") return false;
       var district = FindSelectedRegionTile();
       if (district?.Roads == null) return false;
-      if (!DistrictRoadPlacementModel.TryDelete(district.Roads,
+      var session = DistrictRoadSession(district);
+      if (!session.TryDelete(
               _selectedDistrictRoadCell.x,
               _selectedDistrictRoadCell.y))
       {
         _hasSelectedDistrictRoad = false;
         return false;
       }
-      _districtWorld?.RefreshRoadAndNeighbors(district,
-          _selectedDistrictRoadCell.x, _selectedDistrictRoadCell.y);
+      _districtWorld?.RefreshRoadCellsAndNeighbors(district,
+          new[] { _selectedDistrictRoadCell }, session.At);
       _districtWorld?.HideLotPlacementGuide();
       _hasSelectedDistrictRoad = false;
       _districtWorldCompositionKey = DistrictCompositionKey(district);
