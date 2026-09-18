@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="1.5572495">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="875" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="1.557250" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2009" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="875" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="1.356307" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="51738" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2010" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="768" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="1.159686" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2011" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="768" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="0.959595" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1167" name="CoupleStrollAutomataTests" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="0.856610" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1168" name="StrollingPairLoadsMovesAndSchedulesAsOneGroup" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairLoadsMovesAndSchedulesAsOneGroup" methodname="StrollingPairLoadsMovesAndSchedulesAsOneGroup" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="76530659" result="Passed" start-time="2026-09-18 17:15:57Z" end-time="2026-09-18 17:15:58Z" duration="0.653310" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/joelinstrum/dev/CityForge-Regions-Review/couple-spacing-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

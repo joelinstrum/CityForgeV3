@@ -37,6 +37,40 @@ namespace CityForgeV3.World
             FindSelectedAutomata() is { } placement &&
             (TimeMask(placement) & (1 << (int)TimeOfDay)) != 0 &&
             (SeasonMask(placement) & (1 << (int)AutomataSeason)) != 0;
+        public AutomataClipEntry SelectedAutomataClip =>
+            AutomataClipCatalog.Find(FindSelectedAutomata()?.AutomataId);
+        public string SelectedAutomataRecolorOneHex =>
+            FindSelectedAutomata()?.RecolorOneHex ?? "";
+        public string SelectedAutomataRecolorTwoHex =>
+            FindSelectedAutomata()?.RecolorTwoHex ?? "";
+
+        public bool SetSelectedAutomataRecolor(int slot, string hex)
+        {
+            var placement = FindSelectedAutomata();
+            var entry = SelectedAutomataClip;
+            if (placement == null || entry == null ||
+                string.IsNullOrEmpty(entry.recolorMaskRoot) ||
+                slot < 0 || slot > 1) return false;
+            hex = (hex ?? "").Trim();
+            if (hex.Length > 0)
+            {
+                if (!hex.StartsWith("#", StringComparison.Ordinal))
+                    hex = "#" + hex;
+                if (hex.Length != 7 ||
+                    !ColorUtility.TryParseHtmlString(hex, out _))
+                    return false;
+            }
+            var previous = slot == 0 ? placement.RecolorOneHex :
+                placement.RecolorTwoHex;
+            if (string.Equals(previous, hex,
+                    StringComparison.OrdinalIgnoreCase)) return false;
+            PushAutomataUndo();
+            if (slot == 0) placement.RecolorOneHex = hex;
+            else placement.RecolorTwoHex = hex;
+            ApplyAutomataRecolors(placement);
+            NotifyAutomataStateChanged();
+            return true;
+        }
 
         public void BindAutomataSeasonProvider(Func<SeasonPreset> provider)
             => _automataSeasonProvider = provider;
@@ -119,6 +153,14 @@ namespace CityForgeV3.World
                     out var presentation) && presentation != null)
                 presentation.SetVisibilitySchedule(TimeMask(placement),
                     SeasonMask(placement));
+        }
+
+        private void ApplyAutomataRecolors(PlacedAutomata placement)
+        {
+            if (_automataPresentations.TryGetValue(placement.InstanceId,
+                    out var presentation) && presentation != null)
+                presentation.SetRecolors(placement.RecolorOneHex,
+                    placement.RecolorTwoHex);
         }
 
         private void BuildAutomataRoot()
@@ -334,7 +376,9 @@ namespace CityForgeV3.World
                     RotationQuarterTurns = item.RotationQuarterTurns,
                     HasVisibilitySchedule = item.HasVisibilitySchedule,
                     VisibleTimeMask = item.VisibleTimeMask,
-                    VisibleSeasonMask = item.VisibleSeasonMask
+                    VisibleSeasonMask = item.VisibleSeasonMask,
+                    RecolorOneHex = item.RecolorOneHex,
+                    RecolorTwoHex = item.RecolorTwoHex
                 });
             _automataUndo.Push(snapshot);
             if (_automataUndo.Count <= 20) return;
@@ -374,6 +418,7 @@ namespace CityForgeV3.World
                 placement.InstanceId);
             _automataPresentations.Add(placement.InstanceId, presentation);
             ApplyAutomataSchedule(placement);
+            ApplyAutomataRecolors(placement);
             PositionAutomataPresentation(placement);
             presentation.SetSelected(placement.InstanceId == _selectedAutomataId);
         }
@@ -406,6 +451,7 @@ namespace CityForgeV3.World
                 presented++;
                 CreateAutomataPresentation(placement);
                 ApplyAutomataSchedule(placement);
+                ApplyAutomataRecolors(placement);
                 PositionAutomataPresentation(placement);
             }
             _automataRemovedIds.Clear();

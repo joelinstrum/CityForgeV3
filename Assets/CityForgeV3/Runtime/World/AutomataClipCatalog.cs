@@ -22,6 +22,9 @@ namespace CityForgeV3.World
         public float pixelsPerMeter = 32f;
         public float pivotY = 0.375f;
         public float visibleBelowPivotMeters;
+        public string recolorMaskRoot = "";
+        public string recolorSlotOne = "";
+        public string recolorSlotTwo = "";
         public int defaultTimeMask = 31;
         public int defaultSeasonMask = 15;
     }
@@ -71,6 +74,13 @@ namespace CityForgeV3.World
                     Mathf.CeilToInt((float)entry.frameCount /
                                     entry.frameColumns) * entry.frameHeight)
                     return false;
+                if (!string.IsNullOrEmpty(entry.recolorMaskRoot))
+                {
+                    var mask = Resources.Load<Texture2D>(
+                        entry.recolorMaskRoot + "-facing-" + facing);
+                    if (mask == null || mask.width != texture.width ||
+                        mask.height != texture.height) return false;
+                }
             }
             return true;
         }

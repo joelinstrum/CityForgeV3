@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="1.0153402">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="873" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="1.015340" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2006" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="873" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.806321" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26549" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2007" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="766" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.617556" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2008" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="766" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.517434" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1159" name="ColonialHousesContentTests" fullname="CityForgeV3.Tests.ColonialHousesContentTests" classname="CityForgeV3.Tests.ColonialHousesContentTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.317967" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1163" name="HousePlacesInResidentialLotWithNearModelAndFarViews" fullname="CityForgeV3.Tests.ColonialHousesContentTests.HousePlacesInResidentialLotWithNearModelAndFarViews" classname="CityForgeV3.Tests.ColonialHousesContentTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.211472" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1161" name="HousePlacesInResidentialLotWithNearModelAndFarViews(&quot;colonial-eave-front-house-v01&quot;)" fullname="CityForgeV3.Tests.ColonialHousesContentTests.HousePlacesInResidentialLotWithNearModelAndFarViews(&quot;colonial-eave-front-house-v01&quot;)" methodname="HousePlacesInResidentialLotWithNearModelAndFarViews" classname="CityForgeV3.Tests.ColonialHousesContentTests" runstate="Runnable" seed="1958999932" result="Passed" start-time="2026-09-18 15:53:09Z" end-time="2026-09-18 15:53:10Z" duration="0.088721" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1162" name="HousePlacesInResidentialLotWithNearModelAndFarViews(&quot;colonial-gable-front-house-v01&quot;)" fullname="CityForgeV3.Tests.ColonialHousesContentTests.HousePlacesInResidentialLotWithNearModelAndFarViews(&quot;colonial-gable-front-house-v01&quot;)" methodname="HousePlacesInResidentialLotWithNearModelAndFarViews" classname="CityForgeV3.Tests.ColonialHousesContentTests" runstate="Runnable" seed="1360439831" result="Passed" start-time="2026-09-18 15:53:10Z" end-time="2026-09-18 15:53:10Z" duration="0.018588" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1160" name="OrthographicFarViewUsesOneCameraFacingAcrossTheLot" fullname="CityForgeV3.Tests.ColonialHousesContentTests.OrthographicFarViewUsesOneCameraFacingAcrossTheLot" methodname="OrthographicFarViewUsesOneCameraFacingAcrossTheLot" classname="CityForgeV3.Tests.ColonialHousesContentTests" runstate="Runnable" seed="365504780" result="Passed" start-time="2026-09-18 15:53:10Z" end-time="2026-09-18 15:53:10Z" duration="0.001317" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/joelinstrum/dev/CityForge-Regions-Review/colonial-houses-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

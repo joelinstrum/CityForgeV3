@@ -9,7 +9,11 @@ namespace CityForgeV3.World
     {
         private static readonly Dictionary<string, Sprite[][]> SharedFrames =
             new(StringComparer.Ordinal);
+        private static readonly Dictionary<string, Texture2D[]>
+            SharedRecolorMasks = new(StringComparer.Ordinal);
         private static Sprite _selectionOutline;
+        private static Material _sharedArtMaterial;
+        private static Material _sharedRecolorMaterial;
         private LotWorldController _owner;
         private Camera _camera;
         private AutomataClipEntry _entry;
@@ -17,6 +21,9 @@ namespace CityForgeV3.World
         private SpriteRenderer _art;
         private SpriteRenderer _selection;
         private Sprite _lastSprite;
+        private MaterialPropertyBlock _recolorProperties;
+        private Texture2D[] _recolorMasks;
+        private int _lastFacing = -1;
         private float _elapsed;
         private bool _visible = true;
         private bool _selected;
@@ -34,6 +41,13 @@ namespace CityForgeV3.World
             _art = new GameObject("Pre-rendered scene")
                 .AddComponent<SpriteRenderer>();
             _art.transform.SetParent(transform, false);
+            if (!string.IsNullOrEmpty(entry.recolorMaskRoot))
+            {
+                _recolorMasks = MasksFor(entry);
+                _recolorProperties = new MaterialPropertyBlock();
+                _art.sharedMaterial = SharedRecolorMaterial();
+            }
+            else _art.sharedMaterial = SharedArtMaterial(_art.sharedMaterial);
             _selection = new GameObject("Group selection outline")
                 .AddComponent<SpriteRenderer>();
             _selection.transform.SetParent(transform, false);
@@ -60,6 +74,24 @@ namespace CityForgeV3.World
             _timeMask = timeMask;
             _seasonMask = seasonMask;
             RefreshVisibility();
+        }
+
+        public void SetRecolors(string firstHex, string secondHex)
+        {
+            if (_recolorProperties == null || _art == null) return;
+            var firstColor = Color.white;
+            var secondColor = Color.white;
+            var first = !string.IsNullOrEmpty(firstHex) &&
+                ColorUtility.TryParseHtmlString(firstHex, out firstColor);
+            var second = !string.IsNullOrEmpty(secondHex) &&
+                ColorUtility.TryParseHtmlString(secondHex, out secondColor);
+            _recolorProperties.SetColor("_RecolorOne",
+                first ? firstColor : Color.white);
+            _recolorProperties.SetColor("_RecolorTwo",
+                second ? secondColor : Color.white);
+            _recolorProperties.SetFloat("_RecolorOneMix", first ? 1f : 0f);
+            _recolorProperties.SetFloat("_RecolorTwoMix", second ? 1f : 0f);
+            _art.SetPropertyBlock(_recolorProperties);
         }
 
         public void RefreshVisibility()
@@ -121,6 +153,13 @@ namespace CityForgeV3.World
                 (360f / _entry.facingCount));
             facing = (facing % _entry.facingCount + _entry.facingCount) %
                 _entry.facingCount;
+            if (_recolorProperties != null && facing != _lastFacing)
+            {
+                _recolorProperties.SetTexture("_MaskTex",
+                    _recolorMasks[facing]);
+                _art.SetPropertyBlock(_recolorProperties);
+                _lastFacing = facing;
+            }
             var frame = Mathf.FloorToInt(_elapsed * _entry.framesPerSecond) %
                 _entry.frameCount;
             var sprite = _frames[facing][frame];
@@ -185,6 +224,18 @@ namespace CityForgeV3.World
             return frames;
         }
 
+        private static Texture2D[] MasksFor(AutomataClipEntry entry)
+        {
+            if (SharedRecolorMasks.TryGetValue(entry.id, out var cached))
+                return cached;
+            var masks = new Texture2D[entry.facingCount];
+            for (var facing = 0; facing < entry.facingCount; facing++)
+                masks[facing] = Resources.Load<Texture2D>(
+                    entry.recolorMaskRoot + "-facing-" + facing);
+            SharedRecolorMasks.Add(entry.id, masks);
+            return masks;
+        }
+
         private static Sprite SelectionOutline()
         {
             if (_selectionOutline != null) return _selectionOutline;
@@ -204,6 +255,37 @@ namespace CityForgeV3.World
                 new Rect(0f, 0f, 64f, 64f),
                 new Vector2(0.5f, 0.5f), 8f);
             return _selectionOutline;
+        }
+
+        private static Material SharedArtMaterial(Material spriteMaterial)
+        {
+            if (_sharedArtMaterial != null) return _sharedArtMaterial;
+            // Road artwork (3002) and ground decals (3003) are surfaces, so
+            // they must finish before camera-facing automata are blended.
+            // A single shared material preserves batching across placements.
+            _sharedArtMaterial = new Material(spriteMaterial)
+            {
+                name = "Shared automata art above ground",
+                renderQueue = 3004,
+                hideFlags = HideFlags.DontSave
+            };
+            return _sharedArtMaterial;
+        }
+
+        private static Material SharedRecolorMaterial()
+        {
+            if (_sharedRecolorMaterial != null) return _sharedRecolorMaterial;
+            var shader = Resources.Load<Shader>(
+                "CityForgeV3/Shaders/AutomataGarmentRecolor") ??
+                Shader.Find("CityForgeV3/AutomataGarmentRecolor");
+            if (shader == null) return null;
+            _sharedRecolorMaterial = new Material(shader)
+            {
+                name = "Shared automata garment recolor",
+                renderQueue = 3004,
+                hideFlags = HideFlags.DontSave
+            };
+            return _sharedRecolorMaterial;
         }
 
         private static uint Seed(string value)

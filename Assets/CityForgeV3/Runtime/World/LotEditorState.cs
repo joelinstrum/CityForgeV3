@@ -146,6 +146,8 @@ namespace CityForgeV3.World
         public bool HasVisibilitySchedule;
         public int VisibleTimeMask;
         public int VisibleSeasonMask;
+        public string RecolorOneHex = "";
+        public string RecolorTwoHex = "";
     }
 
     [Serializable]
@@ -361,6 +363,8 @@ namespace CityForgeV3.World
     public sealed class PlacedBuilding3D
     {
         public bool DoorOpen;
+        // Empty means the source artwork's original color.
+        public string PaintHex = "";
         public string InstanceId = "";
         public string AssetId = "brownstone-building-22k";
         public float X;

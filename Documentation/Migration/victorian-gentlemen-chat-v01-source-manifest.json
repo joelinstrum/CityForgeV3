@@ -1,0 +1,14 @@
+{
+  "Documentation/Migration/SourceArchives/VictorianGentlemenChatV01/victorian-gentleman-10k-source.zip": {
+    "bytes": 3970290,
+    "sha256": "4178d255c42391e3d31fc660ab260e97e25da58bc34dd7d0d04bf5d623048d16"
+  },
+  "Assets/CityForgeV3/Resources/CityForgeV3/Props/Characters/VictorianGentlemanV01/VictorianGentlemanAnimatedV01.fbx": {
+    "bytes": 7696972,
+    "sha256": "b68c60079fccecaec612c852d849e8d26f46d7673638b53b1c9c48d701640d58"
+  },
+  "Assets/CityForgeV3/Resources/CityForgeV3/Props/Characters/VictorianGentlemanV01/Textures/base-color-dark.png": {
+    "bytes": 1286874,
+    "sha256": "9214b954554ff8d352444e5aa88e6bb87c4a78e0ad7d438abb1d1009737de437"
+  }
+}

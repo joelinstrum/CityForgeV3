@@ -3,6 +3,8 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
+        _PaintColor ("Paint Color", Color) = (1,1,1,1)
+        _PaintEnabled ("Paint Enabled", Float) = 0
         _MainTex ("Albedo", 2D) = "white" {}
         [Normal] _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Scale", Range(0,2)) = 1
@@ -37,6 +39,8 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         sampler2D _BumpMap;
         sampler2D _MetallicGlossMap;
         fixed4 _Color;
+        fixed4 _PaintColor;
+        half _PaintEnabled;
         half _BumpScale;
         half _Metallic;
         half _GlossMapScale;
@@ -88,6 +92,16 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         {
             clip(_ConstructionRevealHeight - input.worldPos.y);
             fixed4 albedo = tex2D(_MainTex, input.uv_MainTex) * _Color;
+            // The supplied atlases combine white clapboard with dark roof,
+            // stone and brick. Recolor bright, low-chroma paint while keeping
+            // source texture shading and all non-paint surfaces intact.
+            half high = max(albedo.r, max(albedo.g, albedo.b));
+            half low = min(albedo.r, min(albedo.g, albedo.b));
+            half neutral = 1.0h - smoothstep(0.10h, 0.23h, high - low);
+            half paintMask = _PaintEnabled * neutral *
+                smoothstep(0.43h, 0.73h, high);
+            albedo.rgb = lerp(albedo.rgb,
+                albedo.rgb * _PaintColor.rgb, paintMask);
             fixed3 preserved = saturate(
                 PreserveSourceColor(albedo.rgb) * _AlbedoBoost);
             output.Normal = UnpackScaleNormal(

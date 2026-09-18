@@ -135,6 +135,68 @@ namespace CityForgeV3.World
         private Material _building3DMeshSelectionMaterial;
 
         public int SelectedBuilding3DIndex => _selectedBuilding3DIndex;
+        public bool SelectedBuildingCanRepaint
+        {
+            get
+            {
+                var buildings = _session?.Data?.Buildings3D;
+                return buildings != null && _selectedBuilding3DIndex >= 0 &&
+                    _selectedBuilding3DIndex < buildings.Count &&
+                    BuildingContentCatalog.Find(
+                        buildings[_selectedBuilding3DIndex].AssetId)?.repaintable == true;
+            }
+        }
+        public string SelectedBuildingPaintHex => SelectedBuildingCanRepaint
+            ? _session.Data.Buildings3D[_selectedBuilding3DIndex].PaintHex ?? ""
+            : "";
+
+        public bool SetSelectedBuildingPaint(string hex)
+        {
+            if (!SelectedBuildingCanRepaint) return false;
+            hex = (hex ?? "").Trim();
+            Color color = Color.white;
+            if (hex.Length > 0)
+            {
+                if (!hex.StartsWith("#")) hex = "#" + hex;
+                if (hex.Length != 7 || !ColorUtility.TryParseHtmlString(hex,
+                        out color)) return false;
+                hex = "#" + ColorUtility.ToHtmlStringRGB(color);
+            }
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            if (string.Equals(placed.PaintHex ?? "", hex,
+                    System.StringComparison.OrdinalIgnoreCase)) return true;
+            placed.PaintHex = hex;
+            ApplyBuildingPaint(_selectedBuilding3DIndex);
+            return true;
+        }
+
+        private void ApplyBuildingPaint(int index)
+        {
+            var buildings = _session?.Data?.Buildings3D;
+            if (buildings == null || index < 0 || index >= buildings.Count ||
+                index >= _experimentalBuilding3DVisibleRoots.Count) return;
+            var root = _experimentalBuilding3DVisibleRoots[index];
+            if (root == null) return;
+            var placed = buildings[index];
+            if (BuildingContentCatalog.Find(placed.AssetId)?.repaintable != true)
+                return;
+            var color = Color.white;
+            var enabled = !string.IsNullOrWhiteSpace(placed.PaintHex) &&
+                ColorUtility.TryParseHtmlString(placed.PaintHex, out color);
+            if (!enabled) color = Color.white;
+            var block = new MaterialPropertyBlock();
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null || renderer.sharedMaterial == null ||
+                    renderer.sharedMaterial.shader?.name !=
+                    "CityForgeV3/Experimental3DBuildingPBR") continue;
+                renderer.GetPropertyBlock(block);
+                block.SetColor("_PaintColor", color);
+                block.SetFloat("_PaintEnabled", enabled ? 1f : 0f);
+                renderer.SetPropertyBlock(block);
+                block.Clear();
+            }
+        }
         public string SelectedBuilding3DDisplayName
         {
             get
@@ -865,6 +927,7 @@ namespace CityForgeV3.World
                         else DestroyImmediate(far);
                     }
                 }
+                ApplyBuildingPaint(_experimentalBuilding3DVisibleRoots.Count - 1);
             }
             RebuildEffectPresentations();
             // Lot reconstruction may run after SetTimeOfDay (the QA helpers
