@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -122,6 +123,9 @@ namespace CityForgeV3.World
         private readonly Dictionary<string, LotWorldController> _lotsByInstance =
             new();
         private readonly Dictionary<Vector2Int, GameObject> _roadsByCell = new();
+        private readonly Dictionary<Vector2Int, PlacedRoadPiece> _roadPlacementsByCell = new();
+        private readonly Dictionary<int, Mesh> _antiqueDiagonalMeshes = new();
+        private Material _antiqueDiagonalMaterial;
         private readonly List<RuntimeRiverSurface> _riverSurfaces = new();
         private readonly List<Renderer> _riverGrassEdgeRenderers = new();
         private Camera _camera;
@@ -327,6 +331,10 @@ namespace CityForgeV3.World
         {
             if(_content==null || district==null)return;
             if(!deferSurfaceRefresh)RefreshElevation();
+            _roadPlacementsByCell.Clear();
+            foreach (var road in district.Roads ?? new List<PlacedRoadPiece>())
+                if (road != null)
+                    _roadPlacementsByCell[new Vector2Int(road.GridX, road.GridZ)] = road;
             if(_roadArtworkRoot==null)
             {
                 _roadArtworkRoot=new GameObject("District Roads").transform;_roadArtworkRoot.SetParent(_content,false);
@@ -349,7 +357,8 @@ namespace CityForgeV3.World
             _roadsByCell.Remove(cell);
             if(prior==null)return;
             var material=prior.GetComponent<Renderer>()?.sharedMaterial;
-            if(material!=null){if(Application.isPlaying)Destroy(material);else DestroyImmediate(material);}
+            if(material!=null && material!=_antiqueDiagonalMaterial)
+            {if(Application.isPlaying)Destroy(material);else DestroyImmediate(material);}
             prior.SetActive(false);if(Application.isPlaying)Destroy(prior);else DestroyImmediate(prior);
         }
 
@@ -1706,31 +1715,29 @@ namespace CityForgeV3.World
             RefreshRoadCellsAndNeighbors(district, new[] { new Vector2Int(x, z) });
 
         public void RefreshRoadCellsAndNeighbors(RegionCityTile district, IEnumerable<Vector2Int> changed)
+            => RefreshRoadCellsAndNeighbors(district, changed,
+                (x, z) => RoadPlacementModel.FindAt(district?.Roads, x, z));
+
+        public void RefreshRoadCellsAndNeighbors(RegionCityTile district,
+            IEnumerable<Vector2Int> changed,
+            Func<int, int, PlacedRoadPiece> roadAt)
         {
-            if (district == null || _roadArtworkRoot == null) return;
+            if (district == null || _roadArtworkRoot == null || roadAt == null) return;
             var cells = new HashSet<Vector2Int>();
             foreach (var c in changed)
-                foreach (var offset in new[] { Vector2Int.zero, Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down })
-                    cells.Add(c + offset);
+                for (var dz = -1; dz <= 1; dz++)
+                    for (var dx = -1; dx <= 1; dx++)
+                        cells.Add(c + new Vector2Int(dx, dz));
             foreach (var cell in cells)
             {
-                if (_roadsByCell.TryGetValue(cell, out var prior))
-                {
-                    _roadsByCell.Remove(cell);
-                    var renderer = prior != null ? prior.GetComponent<Renderer>() : null;
-                    if (renderer != null && renderer.sharedMaterial != null)
-                    {
-                        if (Application.isPlaying) Destroy(renderer.sharedMaterial);
-                        else DestroyImmediate(renderer.sharedMaterial);
-                    }
-                    if (prior != null)
-                    {
-                        prior.SetActive(false);
-                        if (Application.isPlaying) Destroy(prior);
-                        else DestroyImmediate(prior);
-                    }
-                }
-                var road = RoadPlacementModel.FindAt(district.Roads, cell.x, cell.y);
+                RemoveRoadVisual(cell);
+                var road = roadAt(cell.x, cell.y);
+                if (road == null) _roadPlacementsByCell.Remove(cell);
+                else _roadPlacementsByCell[cell] = road;
+            }
+            foreach (var cell in cells)
+            {
+                var road = roadAt(cell.x, cell.y);
                 if (road != null) AddRoadPiece(road);
             }
         }
@@ -1738,6 +1745,12 @@ namespace CityForgeV3.World
         private void AddRoadPiece(PlacedRoadPiece placed)
         {
             if (placed == null) return;
+            if (placed.DistrictDiagonalConnections != 0 &&
+                placed.RoadMaterialId == "antique-brick")
+            {
+                AddAntiqueDiagonalRoad(placed);
+                return;
+            }
             var package = RoadPiecePackageCatalog.Resolve(placed.PackageId);
             var piece = package.Piece(placed.Topology);
             if (piece?.HasArtwork != true) return;
@@ -1795,6 +1808,104 @@ namespace CityForgeV3.World
             if (material.HasProperty("_TimeTint"))
                 material.SetColor("_TimeTint",
                     TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
+        }
+
+        private void AddAntiqueDiagonalRoad(PlacedRoadPiece placed)
+        {
+            var mask = placed.DistrictDiagonalConnections;
+            foreach (var port in new[] { RoadPiecePort.North, RoadPiecePort.East,
+                         RoadPiecePort.South, RoadPiecePort.West })
+            {
+                var step = DistrictRoadPlacementModel.Step(port);
+                if (_roadPlacementsByCell.ContainsKey(new Vector2Int(
+                        placed.GridX + step.x, placed.GridZ + step.y)))
+                    mask |= 1 << (int)port;
+            }
+            if (!_antiqueDiagonalMeshes.TryGetValue(mask, out var mesh))
+            {
+                mesh = BuildAntiqueDiagonalMesh(mask);
+                _antiqueDiagonalMeshes.Add(mask, mesh);
+            }
+            if (_antiqueDiagonalMaterial == null)
+            {
+                var surface = RoadMaterialCatalog.Resolve("antique-brick");
+                _antiqueDiagonalMaterial = new Material(
+                    Shader.Find("CityForgeV3/ShadowReceivingRoadOverlay"))
+                {
+                    name = "District Antique Brick Diagonal Shared",
+                    mainTexture = surface.LoadTexture(),
+                    renderQueue = 3002
+                };
+                _antiqueDiagonalMaterial.SetFloat("_UseWorldUv", 1f);
+                _antiqueDiagonalMaterial.SetFloat("_MaterialTiling",
+                    surface.TilesPerTenMeters);
+            }
+            _antiqueDiagonalMaterial.SetColor("_TimeTint",
+                TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
+            var roadObject = new GameObject("District Antique Brick Diagonal");
+            roadObject.transform.SetParent(_roadArtworkRoot, false);
+            roadObject.transform.localPosition = new Vector3(
+                -_widthMeters * .5f + (placed.GridX + .5f) * DistrictScale.CellSizeMeters,
+                .152f,
+                -_depthMeters * .5f + (placed.GridZ + .5f) * DistrictScale.CellSizeMeters);
+            roadObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+            roadObject.AddComponent<MeshRenderer>().sharedMaterial =
+                _antiqueDiagonalMaterial;
+            var cell = new Vector2Int(placed.GridX, placed.GridZ);
+            _roadsByCell[cell] = roadObject;
+            _roadVisualState[cell] = JsonUtility.ToJson(placed);
+        }
+
+        private static Mesh BuildAntiqueDiagonalMesh(int mask)
+        {
+            const float halfWidth = 3.81f;
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var uv = new List<Vector2>();
+            void Add(Vector3 vertex)
+            {
+                vertices.Add(vertex);
+                uv.Add(Vector2.zero);
+            }
+            // Each arm reaches the midpoint between road centers. The other
+            // tile supplies the remaining half, including across a diagonal
+            // corner where square tile sprites alone would leave a gap.
+            for (var index = 0; index < 8; index++)
+            {
+                if ((mask & (1 << index)) == 0) continue;
+                var step = DistrictRoadPlacementModel.Step((RoadPiecePort)index);
+                var direction = new Vector2(step.x, step.y).normalized;
+                var end = new Vector2(step.x, step.y) * 5f;
+                var normal = new Vector2(-direction.y, direction.x) * halfWidth;
+                var baseIndex = vertices.Count;
+                Add(new Vector3(-normal.x, 0f, -normal.y));
+                Add(new Vector3(normal.x, 0f, normal.y));
+                Add(new Vector3(end.x - normal.x, 0f, end.y - normal.y));
+                Add(new Vector3(end.x + normal.x, 0f, end.y + normal.y));
+                triangles.AddRange(new[] { baseIndex, baseIndex + 2,
+                    baseIndex + 1, baseIndex + 1, baseIndex + 2,
+                    baseIndex + 3 });
+            }
+            var center = vertices.Count;
+            Add(Vector3.zero);
+            const int segments = 24;
+            for (var index = 0; index <= segments; index++)
+            {
+                var angle = index * Mathf.PI * 2f / segments;
+                Add(new Vector3(Mathf.Cos(angle) * halfWidth, 0f,
+                    Mathf.Sin(angle) * halfWidth));
+                if (index > 0)
+                    triangles.AddRange(new[] { center, center + index,
+                        center + index + 1 });
+            }
+            var mesh = new Mesh { name = $"Antique Brick Road Ports {mask}" };
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(triangles, 0);
+            mesh.SetNormals(new List<Vector3>(
+                System.Linq.Enumerable.Repeat(Vector3.up, vertices.Count)));
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         public bool AddPlacedLot(RegionCityTile district,
@@ -2158,6 +2269,9 @@ namespace CityForgeV3.World
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             TimeOfDay = preset;
+            if (_antiqueDiagonalMaterial != null)
+                _antiqueDiagonalMaterial.SetColor("_TimeTint",
+                    TimeOfDayLighting.For(preset).NeutralArtworkTint);
             ApplyAfternoonSceneLights(preset);
             foreach (var renderer in _districtFloraPresentations.Values)
                 if (renderer != null)
@@ -2454,7 +2568,21 @@ namespace CityForgeV3.World
             _lots.Clear();
             _lotsByInstance.Clear();
             _roadsByCell.Clear();
+            _roadPlacementsByCell.Clear();
             _roadVisualState.Clear();
+            foreach (var mesh in _antiqueDiagonalMeshes.Values)
+                if (mesh != null)
+                {
+                    if (Application.isPlaying) Destroy(mesh);
+                    else DestroyImmediate(mesh);
+                }
+            _antiqueDiagonalMeshes.Clear();
+            if (_antiqueDiagonalMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(_antiqueDiagonalMaterial);
+                else DestroyImmediate(_antiqueDiagonalMaterial);
+                _antiqueDiagonalMaterial = null;
+            }
             // Destroy is deferred in Play Mode. RefreshRoads must not attach
             // replacement roads to the old, inactive root awaiting destruction.
             _roadArtworkRoot = null;
