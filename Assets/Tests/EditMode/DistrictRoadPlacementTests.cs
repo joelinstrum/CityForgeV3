@@ -174,6 +174,74 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void RepeatedStairStepsBecomeDiagonalAndRefundOnlyRemovedTiles()
+        {
+            var roads = new List<PlacedRoadPiece>();
+            var session = new DistrictRoadPlacementModel.EditSession(roads);
+            var treasury = 1000;
+            var path = new List<Vector2Int>();
+            var added = new HashSet<Vector2Int>();
+            foreach (var cell in new[] { new Vector2Int(2, 2),
+                         new Vector2Int(3, 2), new Vector2Int(3, 3),
+                         new Vector2Int(4, 3), new Vector2Int(4, 4) })
+            {
+                session.TryPlace(cell.x, cell.y, 12, 12,
+                    DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+                path.Add(cell);
+                added.Add(cell);
+            }
+            Assert.That(session.TrySmoothAntiqueBrickStaircase(path, added,
+                ref treasury, (_, _) => true, out var changed), Is.True);
+            Assert.That(changed.Length, Is.EqualTo(5));
+            Assert.That(path, Is.EqualTo(new[] { new Vector2Int(2, 2),
+                new Vector2Int(3, 3), new Vector2Int(4, 4) }));
+            Assert.That(session.At(3, 2), Is.Null);
+            Assert.That(session.At(4, 3), Is.Null);
+            Assert.That(treasury, Is.EqualTo(925));
+            Assert.That(session.At(3, 3).DistrictDiagonalConnections,
+                Is.Not.Zero);
+
+            foreach (var cell in new[] { new Vector2Int(5, 4),
+                         new Vector2Int(5, 5) })
+            {
+                session.TryPlace(cell.x, cell.y, 12, 12,
+                    DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+                path.Add(cell);
+                added.Add(cell);
+            }
+            Assert.That(session.TrySmoothAntiqueBrickStaircase(path, added,
+                ref treasury, (_, _) => true, out _), Is.True);
+            Assert.That(path[path.Count - 1], Is.EqualTo(new Vector2Int(5, 5)));
+            Assert.That(session.At(5, 4), Is.Null);
+            Assert.That(treasury, Is.EqualTo(900));
+        }
+
+        [Test]
+        public void StairSmoothingPreservesPreexistingRoadAndBranches()
+        {
+            var roads = new List<PlacedRoadPiece>();
+            var session = new DistrictRoadPlacementModel.EditSession(roads);
+            var treasury = 1000;
+            var path = new List<Vector2Int> { new(2, 2), new(3, 2),
+                new(3, 3), new(4, 3), new(4, 4) };
+            foreach (var cell in path)
+                session.TryPlace(cell.x, cell.y, 12, 12,
+                    DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+            var added = new HashSet<Vector2Int>(path);
+            added.Remove(new Vector2Int(3, 2));
+            Assert.That(session.TrySmoothAntiqueBrickStaircase(path, added,
+                ref treasury, (_, _) => true, out _), Is.False);
+            Assert.That(session.At(3, 2), Is.Not.Null);
+
+            added.Add(new Vector2Int(3, 2));
+            session.TryPlace(3, 1, 12, 12,
+                DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+            Assert.That(session.TrySmoothAntiqueBrickStaircase(path, added,
+                ref treasury, (_, _) => true, out _), Is.False);
+            Assert.That(roads.Count, Is.EqualTo(6));
+        }
+
+        [Test]
         public void DeliveryUsesOnlyExplicitDiagonalLinks()
         {
             var district = new RegionCityTile { Width = 1, Height = 1 };
@@ -218,7 +286,7 @@ namespace CityForgeV3.Tests.EditMode
                 world.Build(district);
                 var renderers = System.Array.FindAll(
                     root.GetComponentsInChildren<MeshRenderer>(),
-                    renderer => renderer.name == "District Antique Brick Diagonal");
+                    renderer => renderer.name == "District Antique Brick Road");
                 Assert.That(renderers.Length, Is.EqualTo(3));
                 Assert.That(renderers[0].sharedMaterial,
                     Is.SameAs(renderers[1].sharedMaterial));
@@ -227,6 +295,37 @@ namespace CityForgeV3.Tests.EditMode
                 var bounds = renderers[1].GetComponent<MeshFilter>().sharedMesh.bounds;
                 Assert.That(bounds.size.x, Is.GreaterThan(10f),
                     "Diagonal strips must reach across tile corners.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void StraightBrickUsesPlainBrickSurfaceWithoutAuthoredEdgeArtwork()
+        {
+            var district = new RegionCityTile { Width = 1, Height = 1 };
+            var session = new DistrictRoadPlacementModel.EditSession(district.Roads);
+            var treasury = 1000;
+            session.TryPlace(32, 32, 64, 64,
+                DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+            session.TryPlace(33, 32, 64, 64,
+                DistrictRoadPlacementModel.AntiqueBrickFamily, ref treasury);
+            var root = new GameObject("Straight Brick Review");
+            try
+            {
+                root.AddComponent<DistrictWorldController>().Build(district);
+                var renderers = System.Array.FindAll(
+                    root.GetComponentsInChildren<MeshRenderer>(),
+                    renderer => renderer.name == "District Antique Brick Road");
+                Assert.That(renderers.Length, Is.EqualTo(2));
+                Assert.That(renderers[0].sharedMaterial,
+                    Is.SameAs(renderers[1].sharedMaterial));
+                Assert.That(renderers[0].sharedMaterial.mainTexture.name,
+                    Is.EqualTo("brick-antique"));
+                Assert.That(renderers[0].sharedMaterial.GetFloat("_UseMaterialZones"),
+                    Is.Zero, "The marked topology artwork must not be sampled.");
             }
             finally
             {
