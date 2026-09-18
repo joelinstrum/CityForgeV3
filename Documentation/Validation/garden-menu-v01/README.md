@@ -1,0 +1,5 @@
+# Garden menu — September 17, 2026
+
+Added Garden between Flora and Props in the Lot Editor tool rail, with a flower glyph, tooltip, Garden Library dialog, and inspector entry. The library explicitly reports that no garden pieces are available yet. Directional assets and rotation behavior are future work; existing flora/props remain in their current catalogs. Garden is appended to the category enum to preserve existing numeric values.
+
+Unity refreshed and compiled. A temporary editor-only check submitted the real Garden button and Done button through UI Toolkit NavigationSubmitEvent; open/close checks passed. Captured and inspected the normal, non-maximized Game view. QA started with no lot open and restored the prior screen/category. This does not establish physical mouse behavior, populated-lot regression coverage, or garden placement/rotation. No Save action, asset generation, persistence change, worker/labor change, or destructive fixture was involved. Temporary helper removed afterward. Existing forest/regional test results were not rerun or claimed for this menu change.

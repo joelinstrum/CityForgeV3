@@ -1,0 +1,1 @@
+Isolated temporary geometry rendered at the Lot camera's 45-degree azimuth and 20-degree elevation. Square and rectangle summer, square winter, rectangle at 90 degrees, and rectangle winter at 90 degrees captured. Rectangle quarter-turn footprint verified 3 x 6 m. Active lot JSON unchanged; no Save called.
