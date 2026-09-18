@@ -62,6 +62,9 @@ namespace CityForgeV3.World
         public float normalizeMeters;
         public string materialMode = "embedded";
         public string textureRoot;
+        public string farBillboardResourceRoot;
+        public float farBillboardPixelsPerMeter;
+        public float farBillboardYawOffset;
         public float bumpScale = 0.72f;
         public float metallic;
         public float smoothness = 0.18f;
@@ -157,12 +160,29 @@ namespace CityForgeV3.World
         }
 
         public static IReadOnlyList<BuildingContentEntry> ForLotEditor(
-            BuildingUseCategory category, string eraId = null)
+            BuildingUseCategory category, string eraId = null,
+            string subcategory = null)
         {
             EnsureLoaded();
             var result = new List<BuildingContentEntry>();
             foreach (var entry in _all)
-                if (!entry.hideFromLotEditor && Category(entry) == category && IsAvailableInEra(entry, eraId)) result.Add(entry);
+                if (!entry.hideFromLotEditor && Category(entry) == category &&
+                    IsAvailableInEra(entry, eraId) &&
+                    (string.IsNullOrWhiteSpace(subcategory) ||
+                     string.Equals(entry.subcategory, subcategory,
+                         StringComparison.OrdinalIgnoreCase))) result.Add(entry);
+            return result;
+        }
+
+        public static IReadOnlyList<string> LotEditorSubcategories(
+            BuildingUseCategory category, string eraId = null)
+        {
+            var result = new List<string>();
+            foreach (var entry in ForLotEditor(category, eraId))
+                if (!string.IsNullOrWhiteSpace(entry.subcategory) &&
+                    !result.Contains(entry.subcategory))
+                    result.Add(entry.subcategory);
+            result.Sort(StringComparer.OrdinalIgnoreCase);
             return result;
         }
 

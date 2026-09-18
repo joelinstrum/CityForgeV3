@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.1919827">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="868" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.191983" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1997" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="868" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.181463" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22312" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1998" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="761" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.174115" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1999" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="761" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.165369" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1234" name="SmallSchool3DContentTests" fullname="CityForgeV3.Tests.SmallSchool3DContentTests" classname="CityForgeV3.Tests.SmallSchool3DContentTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.083469" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1235" name="SchoolPlacesInCivicsLotAsThreeDimensionalBuilding" fullname="CityForgeV3.Tests.SmallSchool3DContentTests.SchoolPlacesInCivicsLotAsThreeDimensionalBuilding" methodname="SchoolPlacesInCivicsLotAsThreeDimensionalBuilding" classname="CityForgeV3.Tests.SmallSchool3DContentTests" runstate="Runnable" seed="1118715172" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.068872" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1236" name="SchoolUsesThreeDimensionalModelWithSharedFarViews" fullname="CityForgeV3.Tests.SmallSchool3DContentTests.SchoolUsesThreeDimensionalModelWithSharedFarViews" methodname="SchoolUsesThreeDimensionalModelWithSharedFarViews" classname="CityForgeV3.Tests.SmallSchool3DContentTests" runstate="Runnable" seed="1356102813" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.006545" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1237" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="473" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.063416" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1549" name="CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" fullname="CityForgeV3.Tests.UiFoundationTests.CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" methodname="CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="968492888" result="Passed" start-time="2026-09-18 01:50:52Z" end-time="2026-09-18 01:50:52Z" duration="0.006658" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-small-school-3d-tests-final.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
