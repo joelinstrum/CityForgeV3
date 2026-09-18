@@ -1139,11 +1139,7 @@ namespace CityForgeV3.UI
           ? DisplayStyle.Flex : DisplayStyle.None;
       screen.Add(infoToggle);
 
-      var interfaceToggle = new Button(() =>
-      {
-        _districtInterfaceVisible = !_districtInterfaceVisible;
-        SetDistrictChromeVisibility(screen);
-      })
+      var interfaceToggle = new Button(ToggleDistrictInterface)
       {
         name = "district-interface-toggle",
         text = _districtInterfaceVisible ? "HIDE UI" : "SHOW UI",
@@ -2150,6 +2146,12 @@ namespace CityForgeV3.UI
 
     private void PollTerraformViewKeys()
     {
+      // Physical polling owns H, including when the world viewport has focus.
+      // The caller already excludes text fields; leave modal dialogs visible.
+      if (Input.GetKeyDown(KeyCode.H) &&
+          !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl) &&
+          !Input.GetKey(KeyCode.LeftCommand) && !Input.GetKey(KeyCode.RightCommand))
+      { ToggleDistrictInterface(); return; }
       if (_lotNudge != null) { if (Input.GetKeyDown(KeyCode.Escape)) EndLotNudge(true); return; }
       if(_placingBrickworks)
       {

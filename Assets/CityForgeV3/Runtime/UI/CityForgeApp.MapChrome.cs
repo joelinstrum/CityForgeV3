@@ -141,7 +141,15 @@ namespace CityForgeV3.UI
         {
             _mapMetrics.Clear();
             screen.AddToClassList("cf-quiet-map");
-            var header = MapHeader(_openRegion.Name + " · " + district.Name);
+            var header = MapHeader(district.Name);
+            var regionLink = new Button(LeaveDistrictEditor)
+            {
+                name = "district-region-link",
+                text = "‹ " + _openRegion.Name,
+                tooltip = "Return to region map: " + _openRegion.Name
+            };
+            regionLink.AddToClassList("cf-map-region-link");
+            header.Insert(0, regionLink);
             header.Add(CfMapChrome.Action("Statistics", "Statistics", ComposeDistrictStats, "district-statistics"));
             AddMapSave(header, "district-save-button");
             header.Add(CfMapChrome.Action("Menu", "Menu", () => ShowMapMenu(true), "district-menu"));
@@ -208,8 +216,17 @@ namespace CityForgeV3.UI
         static readonly string[] MapStockNames = { "FOOD", "LUMBER", "STONE", "BRICK" };
         static readonly int[] MapStockIndices = { 6, 0, 2, 9 };
 
+        void ToggleDistrictInterface()
+        {
+            var screen = _root?.Q(className: "district-terraform-screen");
+            if (screen == null || _root.Q("document-modal") != null) return;
+            _districtInterfaceVisible = !_districtInterfaceVisible;
+            SetDistrictChromeVisibility(screen);
+        }
+
         void SetDistrictChromeVisibility(VisualElement screen)
         {
+            screen.EnableInClassList("cf-map-ui-hidden", !_districtInterfaceVisible);
             var visible = _districtInterfaceVisible ? DisplayStyle.Flex : DisplayStyle.None;
             foreach (var mode in new[] { DistrictEditorMode.Builder, DistrictEditorMode.Terraform })
                 screen.Q("district-mode-" + mode.ToString().ToLowerInvariant())?.EnableInClassList("district-mode-button--selected", _districtPaletteOpen && _districtEditorMode == mode);
@@ -240,6 +257,14 @@ namespace CityForgeV3.UI
         void ShowMapMenu(bool district)
         {
             var panel = CreateDocumentModal("CITY FORGE", district ? "District controls" : "Region controls");
+            if (district)
+            {
+                panel.Add(CfMapChrome.Action("District information", "Region", () =>
+                {
+                    RemoveDocumentModal(); ReturnToQuietDistrict(); _districtInfoVisible = true;
+                    SetDistrictChromeVisibility(_root.Q(className: "district-terraform-screen"));
+                }));
+            }
             panel.Add(CfMapChrome.Action(district ? "Region Map" : "Main Menu", "Region", () =>
             { RemoveDocumentModal(); if (district) LeaveDistrictEditor(); else Show(AppScreen.MainMenu); }));
             if (district)
@@ -248,11 +273,6 @@ namespace CityForgeV3.UI
                 panel.Add(CfMapChrome.Action("Industry", "Industry", ComposeDistrictIndustryModal, "quiet-industry"));
                 panel.Add(CfMapChrome.Action("Labor", "Labor", ComposeDistrictLaborModal, "quiet-labor"));
                 panel.Add(CfMapChrome.Action("Resources", "Resources", ComposeDistrictResourcesModal, "quiet-resources"));
-                panel.Add(CfMapChrome.Action("District information", "Region", () =>
-                {
-                    RemoveDocumentModal(); ReturnToQuietDistrict(); _districtInfoVisible = true;
-                    SetDistrictChromeVisibility(_root.Q(className: "district-terraform-screen"));
-                }));
                 var d = FindSelectedRegionTile();
                 int season = DistrictLabor.State(d).SeasonIndex;
                 panel.Add(StyledLabel(d.Founded ? $"{DistrictLabor.SeasonName(season)} · Year {d.FoundingYear + season / 4}" : "Not founded", "cf-map-copy"));
