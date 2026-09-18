@@ -321,9 +321,6 @@ namespace CityForgeV3.World
         public int GridX;
         public int GridZ;
         public int RotationQuarterTurns;
-        // District-only diagonal links. Older saves default to zero and retain
-        // their automatically inferred cardinal connections.
-        public int DistrictDiagonalConnections;
     }
 
     public static class RoadPlacementModel

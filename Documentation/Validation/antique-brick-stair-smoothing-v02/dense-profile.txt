@@ -1,5 +1,0 @@
-roads=2304 diagonalLinks=30 placed=30
-local edit ms=1.918 allocated=0
-per-edit full index proxy ms=9.309 allocated=0
-build ms=296.643
-render 800x600 frames=20 medianMs=5.650 p95Ms=14.011 maxMs=14.011 allocated=0 drawCalls=0 batches=0

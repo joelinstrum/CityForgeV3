@@ -16,12 +16,6 @@ namespace CityForgeV3.World
             RoadPiecePort.South, RoadPiecePort.West
         };
 
-        private static readonly RoadPiecePort[] DiagonalPorts =
-        {
-            RoadPiecePort.NorthEast, RoadPiecePort.SouthEast,
-            RoadPiecePort.SouthWest, RoadPiecePort.NorthWest
-        };
-
         public static string PackageId(string family) =>
             family == AntiqueBrickFamily
                 ? RoadPiecePackageCatalog.TwoLaneSidewalkId
@@ -57,325 +51,75 @@ namespace CityForgeV3.World
 
         public static bool TryPlace(List<PlacedRoadPiece> roads, int x, int z,
             int columns, int rows, string family, ref int treasury)
-            => new EditSession(roads).TryPlace(x, z, columns, rows, family,
-                ref treasury);
-
-        // The district editor owns one session for a drag. Its spatial index is
-        // built once and maintained on each edit; normal placement never scans
-        // the district to discover neighbors or repair unrelated roads.
-        public sealed class EditSession
         {
-            private readonly List<PlacedRoadPiece> _roads;
-            private readonly Dictionary<Vector2Int, PlacedRoadPiece> _byCell = new();
-            private int _knownCount;
-
-            public EditSession(List<PlacedRoadPiece> roads)
+            if (roads == null || x < 0 || z < 0 || x >= columns || z >= rows)
+                return false;
+            var packageId = PackageId(family);
+            var existing = RoadPlacementModel.FindAt(roads, x, z);
+            if (existing != null && existing.PackageId == packageId) return false;
+            var cost = CostPerTile(family);
+            if (cost > treasury) return false;
+            treasury -= cost;
+            if (existing == null)
             {
-                _roads = roads;
-                if (roads == null) return;
-                foreach (var road in roads)
-                    if (road != null)
-                        _byCell[new Vector2Int(road.GridX, road.GridZ)] = road;
-                _knownCount = roads.Count;
+                existing = new PlacedRoadPiece
+                {
+                    Id = $"district-road-{System.Guid.NewGuid():N}",
+                    GridX = x,
+                    GridZ = z
+                };
+                roads.Add(existing);
             }
+            existing.PackageId = packageId;
+            existing.RoadMaterialId = family == AntiqueBrickFamily
+                ? "antique-brick" : "dirt";
+            existing.SidewalkMaterialId = family == AntiqueBrickFamily
+                ? "antique-brick" : "";
+            existing.MarkingStyle = RoadMarkingStyle.NoLines;
+            existing.LaneMarkingStyle = RoadLaneMarkingStyle.NoLines;
+            existing.CenterMarkingStyle = RoadCenterMarkingStyle.NoLines;
+            Repair(roads);
+            return true;
+        }
 
-            public bool Owns(List<PlacedRoadPiece> roads) =>
-                ReferenceEquals(_roads, roads) && roads != null &&
-                roads.Count == _knownCount;
-
-            public PlacedRoadPiece At(int x, int z) =>
-                _byCell.TryGetValue(new Vector2Int(x, z), out var road)
-                    ? road : null;
-
-            public bool TryPlace(int x, int z, int columns, int rows,
-                string family, ref int treasury)
+        public static void Repair(List<PlacedRoadPiece> roads)
+        {
+            if (roads == null) return;
+            var occupied = new HashSet<Vector2Int>();
+            foreach (var road in roads)
+                if (road != null) occupied.Add(new Vector2Int(road.GridX, road.GridZ));
+            foreach (var road in roads)
             {
-                if (_roads == null || x < 0 || z < 0 || x >= columns || z >= rows)
-                    return false;
-                var packageId = PackageId(family);
-                var existing = At(x, z);
-                if (existing != null && existing.PackageId == packageId) return false;
-                var cost = CostPerTile(family);
-                if (cost > treasury) return false;
-                treasury -= cost;
-                if (existing == null)
-                {
-                    existing = new PlacedRoadPiece
-                    {
-                        Id = $"district-road-{System.Guid.NewGuid():N}",
-                        GridX = x, GridZ = z
-                    };
-                    _roads.Add(existing);
-                    _byCell.Add(new Vector2Int(x, z), existing);
-                    _knownCount = _roads.Count;
-                }
-                else
-                {
-                    // Replacing a diagonal brick tile drops its links on both
-                    // ends; the adjacent pieces then repair locally.
-                    ClearDiagonalLinks(existing);
-                }
-                existing.PackageId = packageId;
-                existing.RoadMaterialId = family == AntiqueBrickFamily
-                    ? "antique-brick" : "dirt";
-                existing.SidewalkMaterialId = family == AntiqueBrickFamily
-                    ? "antique-brick" : "";
-                existing.MarkingStyle = RoadMarkingStyle.NoLines;
-                existing.LaneMarkingStyle = RoadLaneMarkingStyle.NoLines;
-                existing.CenterMarkingStyle = RoadCenterMarkingStyle.NoLines;
-                RepairAround(x, z);
-                return true;
-            }
-
-            public bool TryConnectDiagonal(Vector2Int from, Vector2Int to)
-            {
-                var dx = to.x - from.x;
-                var dz = to.y - from.y;
-                if (Mathf.Abs(dx) != 1 || Mathf.Abs(dz) != 1) return false;
-                var first = At(from.x, from.y);
-                var second = At(to.x, to.y);
-                if (first?.RoadMaterialId != "antique-brick" ||
-                    second?.RoadMaterialId != "antique-brick" ||
-                    first.PackageId != RoadPiecePackageCatalog.TwoLaneSidewalkId ||
-                    second.PackageId != RoadPiecePackageCatalog.TwoLaneSidewalkId)
-                    return false;
-                var port = DiagonalPort(dx, dz);
-                var opposite = Opposite(port);
-                var firstBit = 1 << (int)port;
-                var secondBit = 1 << (int)opposite;
-                if ((first.DistrictDiagonalConnections & firstBit) != 0 &&
-                    (second.DistrictDiagonalConnections & secondBit) != 0)
-                    return false;
-                first.DistrictDiagonalConnections |= firstBit;
-                second.DistrictDiagonalConnections |= secondBit;
-                RepairAt(first);
-                RepairAt(second);
-                return true;
-            }
-
-            public bool TryDelete(int x, int z)
-            {
-                var road = At(x, z);
-                if (road == null) return false;
-                ClearDiagonalLinks(road);
-                _roads.Remove(road);
-                _byCell.Remove(new Vector2Int(x, z));
-                _knownCount = _roads.Count;
-                RepairAround(x, z);
-                return true;
-            }
-
-            // Smooth only a short staircase created by this drag. Older roads
-            // and branch tiles are never removed, and the check touches at
-            // most five path cells and their immediate neighbors.
-            public bool TrySmoothAntiqueBrickStaircase(List<Vector2Int> path,
-                HashSet<Vector2Int> addedThisStroke, ref int treasury,
-                System.Func<Vector2Int, Vector2Int, bool> canConnect,
-                out Vector2Int[] changed)
-            {
-                changed = null;
-                if (path == null || path.Count < 3 || addedThisStroke == null)
-                    return false;
-                var last = path.Count - 1;
-                var start = -1;
-                if (last >= 4)
-                {
-                    var a = path[last - 4];
-                    var b = path[last - 3];
-                    var c = path[last - 2];
-                    var d = path[last - 1];
-                    var e = path[last];
-                    var first = b - a;
-                    var second = c - b;
-                    if (first == d - c && second == e - d &&
-                        IsCardinal(first) && IsCardinal(second) &&
-                        first.x != second.x && first.y != second.y)
-                        start = last - 4;
-                }
-                if (start < 0 && last >= 3)
-                {
-                    var heading = path[last - 2] - path[last - 3];
-                    var first = path[last - 1] - path[last - 2];
-                    var second = path[last] - path[last - 1];
-                    if (Mathf.Abs(heading.x) == 1 &&
-                        Mathf.Abs(heading.y) == 1 &&
-                        IsCardinal(first) && IsCardinal(second) &&
-                        first + second == heading)
-                        start = last - 2;
-                }
-                if (start < 0) return false;
-
-                var old = path.GetRange(start, path.Count - start);
-                var removals = old.Count == 5
-                    ? new[] { old[1], old[3] }
-                    : new[] { old[1] };
-                foreach (var cell in old)
-                {
-                    var road = At(cell.x, cell.y);
-                    if (road == null ||
-                        road.PackageId != RoadPiecePackageCatalog.TwoLaneSidewalkId ||
-                        road.RoadMaterialId != "antique-brick") return false;
-                }
-                for (var index = 0; index < removals.Length; index++)
-                {
-                    var cell = removals[index];
-                    var road = At(cell.x, cell.y);
-                    if (!addedThisStroke.Contains(cell) ||
-                        road.DistrictDiagonalConnections != 0) return false;
-                    foreach (var port in CardinalPorts)
-                    {
-                        var step = Step(port);
-                        var neighbor = cell + step;
-                        if (At(neighbor.x, neighbor.y) != null &&
-                            neighbor != old[index * 2] &&
-                            neighbor != old[index * 2 + 2]) return false;
-                    }
-                }
-                for (var index = 0; index < old.Count - 2; index += 2)
-                    if (canConnect != null && !canConnect(old[index], old[index + 2]))
-                        return false;
-
-                foreach (var cell in removals)
-                {
-                    TryDelete(cell.x, cell.y);
-                    addedThisStroke.Remove(cell);
-                    treasury += AntiqueBrickCostPerTile;
-                }
-                for (var index = 0; index < old.Count - 2; index += 2)
-                    TryConnectDiagonal(old[index], old[index + 2]);
-                for (var index = last - 1; index > start; index -= 2)
-                    path.RemoveAt(index);
-                changed = old.ToArray();
-                return true;
-            }
-
-            private static bool IsCardinal(Vector2Int step) =>
-                Mathf.Abs(step.x) + Mathf.Abs(step.y) == 1;
-
-            public int Connections(PlacedRoadPiece road)
-            {
-                if (road == null) return 0;
-                var mask = road.DistrictDiagonalConnections;
-                foreach (var port in CardinalPorts)
-                {
-                    var step = Step(port);
-                    if (At(road.GridX + step.x, road.GridZ + step.y) != null)
-                        mask |= 1 << (int)port;
-                }
-                return mask;
-            }
-
-            public void RepairAll()
-            {
-                foreach (var road in _roads)
-                    if (road != null) RepairAt(road);
-            }
-
-            private void ClearDiagonalLinks(PlacedRoadPiece road)
-            {
-                foreach (var port in DiagonalPorts)
-                {
-                    var bit = 1 << (int)port;
-                    if ((road.DistrictDiagonalConnections & bit) == 0) continue;
-                    var step = Step(port);
-                    var other = At(road.GridX + step.x, road.GridZ + step.y);
-                    if (other == null) continue;
-                    other.DistrictDiagonalConnections &= ~(1 << (int)Opposite(port));
-                    RepairAt(other);
-                }
-                road.DistrictDiagonalConnections = 0;
-            }
-
-            private void RepairAround(int x, int z)
-            {
-                for (var dz = -1; dz <= 1; dz++)
-                    for (var dx = -1; dx <= 1; dx++)
-                        RepairAt(At(x + dx, z + dz));
-            }
-
-            private void RepairAt(PlacedRoadPiece road)
-            {
-                if (road == null) return;
-                // An old save may have a missing diagonal neighbor. Clear its
-                // orphaned bit without changing any saved cardinal road.
-                foreach (var port in DiagonalPorts)
-                {
-                    var bit = 1 << (int)port;
-                    if ((road.DistrictDiagonalConnections & bit) == 0) continue;
-                    var step = Step(port);
-                    var other = At(road.GridX + step.x, road.GridZ + step.y);
-                    if (other == null ||
-                        (other.DistrictDiagonalConnections &
-                         (1 << (int)Opposite(port))) == 0)
-                        road.DistrictDiagonalConnections &= ~bit;
-                }
-                if (road.DistrictDiagonalConnections != 0)
-                {
-                    // District diagonal road presentation uses the explicit
-                    // port mask to draw curved joins of any cardinal shape.
-                    road.Topology = RoadPieceTopology.Diagonal;
-                    road.RotationQuarterTurns = 0;
-                    return;
-                }
+                if (road == null) continue;
                 var desired = new List<RoadPiecePort>();
                 foreach (var port in CardinalPorts)
                 {
-                    var step = Step(port);
-                    if (At(road.GridX + step.x, road.GridZ + step.y) != null)
+                    var neighbor = port switch
+                    {
+                        RoadPiecePort.North => new Vector2Int(road.GridX, road.GridZ + 1),
+                        RoadPiecePort.East => new Vector2Int(road.GridX + 1, road.GridZ),
+                        RoadPiecePort.South => new Vector2Int(road.GridX, road.GridZ - 1),
+                        _ => new Vector2Int(road.GridX - 1, road.GridZ)
+                    };
+                    if (occupied.Contains(neighbor))
                         desired.Add(port);
                 }
                 if (desired.Count == 0) desired.Add(RoadPiecePort.North);
                 var package = RoadPiecePackageCatalog.Resolve(road.PackageId);
                 if (!RoadPlacementModel.TryFindTopologyForPorts(package, desired,
-                        out var topology, out var turns)) return;
+                        out var topology, out var turns)) continue;
                 road.Topology = topology;
                 road.RotationQuarterTurns = turns;
             }
         }
 
-        public static void Repair(List<PlacedRoadPiece> roads)
-        {
-            if (roads != null) new EditSession(roads).RepairAll();
-        }
-
         public static bool TryDelete(List<PlacedRoadPiece> roads, int x, int z)
-            => roads != null && new EditSession(roads).TryDelete(x, z);
-
-        public static Vector2Int Step(RoadPiecePort port) => port switch
         {
-            RoadPiecePort.North => Vector2Int.up,
-            RoadPiecePort.East => Vector2Int.right,
-            RoadPiecePort.South => Vector2Int.down,
-            RoadPiecePort.West => Vector2Int.left,
-            RoadPiecePort.NorthEast => new Vector2Int(1, 1),
-            RoadPiecePort.SouthEast => new Vector2Int(1, -1),
-            RoadPiecePort.SouthWest => new Vector2Int(-1, -1),
-            _ => new Vector2Int(-1, 1)
-        };
-
-        public static RoadPiecePort DiagonalPort(int dx, int dz) =>
-            dx > 0 ? (dz > 0 ? RoadPiecePort.NorthEast : RoadPiecePort.SouthEast)
-                : (dz > 0 ? RoadPiecePort.NorthWest : RoadPiecePort.SouthWest);
-
-        public static RoadPiecePort Opposite(RoadPiecePort port) =>
-            (int)port < 4
-                ? (RoadPiecePort)(((int)port + 2) % 4)
-                : (RoadPiecePort)(4 + (((int)port - 4 + 2) % 4));
-
-        public static List<Vector2Int> OctileRoute(Vector2Int from,
-            Vector2Int to)
-        {
-            var route = new List<Vector2Int> { from };
-            var delta = to - from;
-            var steps = Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y));
-            for (var i = 1; i <= steps; i++)
-            {
-                var cell = new Vector2Int(
-                    from.x + Mathf.RoundToInt((float)i * delta.x / steps),
-                    from.y + Mathf.RoundToInt((float)i * delta.y / steps));
-                if (cell != route[route.Count - 1]) route.Add(cell);
-            }
-            return route;
+            var road = RoadPlacementModel.FindAt(roads, x, z);
+            if (road == null) return false;
+            roads.Remove(road);
+            Repair(roads);
+            return true;
         }
     }
 }

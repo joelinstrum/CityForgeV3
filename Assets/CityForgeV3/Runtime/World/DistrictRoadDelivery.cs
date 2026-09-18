@@ -8,18 +8,12 @@ namespace CityForgeV3.World
     public sealed class DistrictRoadDelivery
     {
         readonly HashSet<Vector2Int> cells;
-        readonly Dictionary<Vector2Int, int> diagonalConnections = new();
         readonly float width, depth;
-        static readonly Vector2Int[] Directions={Vector2Int.up,Vector2Int.right,Vector2Int.down,Vector2Int.left,
-            new(1,1),new(1,-1),new(-1,-1),new(-1,1)};
+        static readonly Vector2Int[] Directions={Vector2Int.up,Vector2Int.right,Vector2Int.down,Vector2Int.left};
         public DistrictRoadDelivery(RegionCityTile district)
         {
             width=DistrictScale.SizeMeters(district.Width);depth=DistrictScale.SizeMeters(district.Height);
             cells=new((district.Roads??new()).Select(r=>new Vector2Int(r.GridX,r.GridZ)));
-            foreach (var road in district.Roads ?? new List<PlacedRoadPiece>())
-                if (road != null && road.DistrictDiagonalConnections != 0)
-                    diagonalConnections[new Vector2Int(road.GridX, road.GridZ)] =
-                        road.DistrictDiagonalConnections;
         }
         Vector2 Center(Vector2Int c)=>new((c.x+.5f)*10-width/2,(c.y+.5f)*10-depth/2);
         public List<Vector2> Route(Vector2 from,Rect building,float serviceDistance=30)
@@ -32,21 +26,7 @@ namespace CityForgeV3.World
             while(queue.Count>0)
             {
                 var cell=queue.Dequeue();
-                foreach(var direction in Directions)
-                {
-                    var next=cell+direction;
-                    if(!cells.Contains(next)||previous.ContainsKey(next))continue;
-                    if(direction.x!=0 && direction.y!=0)
-                    {
-                        var port=DistrictRoadPlacementModel.DiagonalPort(direction.x,direction.y);
-                        var opposite=DistrictRoadPlacementModel.Opposite(port);
-                        if(!diagonalConnections.TryGetValue(cell,out var a) ||
-                           !diagonalConnections.TryGetValue(next,out var b) ||
-                           (a & (1 << (int)port)) == 0 ||
-                           (b & (1 << (int)opposite)) == 0)continue;
-                    }
-                    previous[next]=cell;queue.Enqueue(next);
-                }
+                foreach(var direction in Directions){var next=cell+direction;if(!cells.Contains(next)||previous.ContainsKey(next))continue;previous[next]=cell;queue.Enqueue(next);}
             }
             float Gap(Vector2Int c){var p=Center(c);return (p-new Vector2(Mathf.Clamp(p.x,building.xMin,building.xMax),Mathf.Clamp(p.y,building.yMin,building.yMax))).sqrMagnitude;}
             var end=previous.Keys.OrderBy(Gap).ThenBy(c=>c.x).ThenBy(c=>c.y).First();
