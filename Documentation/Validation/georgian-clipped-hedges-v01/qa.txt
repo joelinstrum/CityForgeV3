@@ -1,0 +1,2 @@
+play=True screen=LotEditor hasLot=True lot=Untitled Lot dirty=False zoom=Detail season=Summer camera=2070x1340 pitch=30 azimuth=45
+Temporary presentations captured in actual Lot camera. Isolated PlacedProp JSON roundtrip and 3 x 6m rotated footprint passed. Active lot JSON unchanged; no Save.

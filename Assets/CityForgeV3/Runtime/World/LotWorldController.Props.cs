@@ -27,6 +27,24 @@ namespace CityForgeV3.World
             "simple-street-lamppost-v01";
         public const string OrnateBenchPropId = "ornate-bench-v01";
         public const string Hedge3DPropId = "hedge-3d-v01";
+        public const string GeorgianGardenBorderPropId = "georgian-flower-thicket-border-v01";
+        public const float GeorgianGardenBorderWidthMeters = 4f;
+        public const float GeorgianGardenBorderDepthMeters = 1.5f;
+        public const string GeorgianGardenSquarePropId = "georgian-mixed-garden-square-v01";
+        public const string GeorgianGardenRectanglePropId = "georgian-mixed-garden-rectangle-v01";
+        public const string GeorgianHedgeSquarePropId = "georgian-clipped-hedge-square-v01";
+        public const string GeorgianHedgeRectanglePropId = "georgian-clipped-hedge-rectangle-v01";
+        public static bool IsGardenPropId(string propId) =>
+            string.Equals(propId, GeorgianGardenBorderPropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, GeorgianGardenSquarePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, GeorgianGardenRectanglePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, GeorgianHedgeSquarePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, GeorgianHedgeRectanglePropId,
+                StringComparison.OrdinalIgnoreCase);
         public const string WoodenPalisadePropId = "wooden-palisade-v01";
         public const string MedievalWellPropId = "medieval-well-v01";
         public const string WoodenPalisadeGatePropId =
@@ -183,6 +201,8 @@ namespace CityForgeV3.World
         public bool PropRepeatLineActive => _propRepeatLineActive;
         public int LastPropRepeatPlacementCount { get; private set; }
         public int SelectedPropIndex { get; private set; } = -1;
+        public string SelectedPropId => SelectedPropIndex >= 0 && SelectedPropIndex < PropCount
+            ? _session.Data.Props[SelectedPropIndex].PropId : "";
         public string SelectedPropInstanceId => SelectedPropIndex >= 0 && SelectedPropIndex < PropCount
             ? _session.Data.Props[SelectedPropIndex].InstanceId : "";
         public bool SelectedPropIsThreeDimensionalCharacter =>
@@ -1615,9 +1635,14 @@ namespace CityForgeV3.World
             {
                 var presentation = _propPresentations[index];
                 if (presentation != null)
+                {
+                    presentation.GetComponent<GeorgianGardenBorder>()?.SetSeason(Season);
+                    presentation.GetComponent<GeorgianGardenBed>()?.SetSeason(Season);
+                    presentation.GetComponent<GeorgianClippedHedgeGarden>()?.SetSeason(Season);
                     presentation.gameObject.SetActive(
                         PropSeasonCatalog.IsAvailable(
                             placedProps[index].PropId, Season));
+                }
             }
             ApplyPropSelection();
             ApplyCharacterZoomVisibility();
@@ -1718,6 +1743,21 @@ namespace CityForgeV3.World
 
         public Transform CreatePropPresentation(string propId, string name, float alpha)
         {
+            if (string.Equals(propId, GeorgianGardenBorderPropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return GeorgianGardenBorder.Create(name, alpha, Season);
+            if (string.Equals(propId, GeorgianGardenSquarePropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return GeorgianGardenBed.Create(name, false, alpha, Season);
+            if (string.Equals(propId, GeorgianGardenRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return GeorgianGardenBed.Create(name, true, alpha, Season);
+            if (string.Equals(propId, GeorgianHedgeSquarePropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return GeorgianClippedHedgeGarden.Create(name, false, alpha, Season);
+            if (string.Equals(propId, GeorgianHedgeRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return GeorgianClippedHedgeGarden.Create(name, true, alpha, Season);
             var boat = BoatCatalog.Find(propId);
             if (boat != null) return CreateBoatPresentation(boat, name, alpha);
             if (IsHorseWagon(propId)) return CreateHorseCarriagePresentation(name, alpha, propId);
@@ -2232,6 +2272,28 @@ namespace CityForgeV3.World
             float alpha, bool valid)
         {
             if (root == null) return;
+            if (string.Equals(propId, GeorgianGardenBorderPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                root.GetComponent<GeorgianGardenBorder>()?.SetOpacity(alpha, Season);
+                return;
+            }
+            if (string.Equals(propId, GeorgianGardenSquarePropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(propId, GeorgianGardenRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                root.GetComponent<GeorgianGardenBed>()?.SetOpacity(alpha, Season);
+                return;
+            }
+            if (string.Equals(propId, GeorgianHedgeSquarePropId,
+                    StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(propId, GeorgianHedgeRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                root.GetComponent<GeorgianClippedHedgeGarden>()?.SetOpacity(alpha, Season);
+                return;
+            }
             var simpleLamppost = string.Equals(propId, SimpleStreetLamppostPropId,
                 StringComparison.OrdinalIgnoreCase);
             var lamppost = simpleLamppost || string.Equals(propId,
@@ -2812,6 +2874,44 @@ namespace CityForgeV3.World
                 var oddHedge = Mathf.Abs(turns) % 2 == 1;
                 width = oddHedge ? Hedge3DDepthMeters : Hedge3DLengthMeters;
                 depth = oddHedge ? Hedge3DLengthMeters : Hedge3DDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, GeorgianGardenBorderPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddGarden = Mathf.Abs(turns) % 2 == 1;
+                width = oddGarden ? GeorgianGardenBorderDepthMeters :
+                    GeorgianGardenBorderWidthMeters;
+                depth = oddGarden ? GeorgianGardenBorderWidthMeters :
+                    GeorgianGardenBorderDepthMeters;
+                return;
+            }
+            if (string.Equals(propId, GeorgianGardenSquarePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = depth = 4f;
+                return;
+            }
+            if (string.Equals(propId, GeorgianGardenRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddGarden = Mathf.Abs(turns) % 2 == 1;
+                width = oddGarden ? 3f : 6f;
+                depth = oddGarden ? 6f : 3f;
+                return;
+            }
+            if (string.Equals(propId, GeorgianHedgeSquarePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = depth = 4f;
+                return;
+            }
+            if (string.Equals(propId, GeorgianHedgeRectanglePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddGarden = Mathf.Abs(turns) % 2 == 1;
+                width = oddGarden ? 3f : 6f;
+                depth = oddGarden ? 6f : 3f;
                 return;
             }
             if (string.Equals(propId, WoodenPalisadeGatePropId,
