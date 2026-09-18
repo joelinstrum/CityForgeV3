@@ -1,0 +1,92 @@
+{
+  "asset": "schoolyard-children-v01",
+  "sources": [
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-boy-1.zip",
+      "sha256": "3862d4734d08388ff7b3b54347c753b39704a02bbd1b00fa22efa939472a19de",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-boy-1.zip"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-boy-2.png",
+      "sha256": "adfd1437d9e950f50a96dd628b90ea58ab9afcc0b4bdb3caa5a7553e1e27c802",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-boy-2.png"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-boy-2.zip",
+      "sha256": "b978142617337db5ed0096dcd100b2b2ac33fde4eb648e6d9abbb3bbae941f05",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-boy-2.zip"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-boy.png",
+      "sha256": "c8024d64978ed9cdc5e87c41ff82f962012854a86a251ae99fa84a61ba3b2a84",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-boy.png"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-girl-1.png",
+      "sha256": "78a955535bc4428c007148189114e97db69764b9b239a15fece552430772cf23",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-girl-1.png"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-girl-1.zip",
+      "sha256": "5994520d9f743d4e089dbaec091d361bc92f78e63d3e95a50ecf56e2344b91a8",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-girl-1.zip"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-girl-2.png",
+      "sha256": "dba6c2e6bc7c83f02a28397d57f32dc546ff35112b5ce5e025de4424d06d8efc",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-girl-2.png"
+    },
+    {
+      "file": "Documentation/Migration/SourceArchives/SchoolyardChildrenV01/18th-century-girl-2.zip",
+      "sha256": "888c26f92cfee5f2a2511914009a5586aa51e2db9a3ac44dd5a5a20bc031a0b0",
+      "original": "/Users/joelinstrum/Downloads/3d characters/18th-century-schoolchildren/18th-century-girl-2.zip"
+    }
+  ],
+  "derived": [
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-0.png",
+      "sha256": "dd29137807227c5fe7c5a0a51614e78699bec00344131f69d0814c0637675834"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-1.png",
+      "sha256": "407aa973ee2fc45e7feeff19e939cc8f1d25f3944ebf7bf8bd208052448225d3"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-2.png",
+      "sha256": "e049b54522498d2ba430b8f2af8e76abee9f03ca2d1dd60b6fde495fe1fa9c2a"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-3.png",
+      "sha256": "e9563792829fadf9f6d5e6adc299494eee94af2fca8d7081c1b0c8f7b649b91b"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-4.png",
+      "sha256": "cb36162cd2f228e2de089f2efcd8cd8a37b74fa26efc9371535cb22f80e6c4ef"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-5.png",
+      "sha256": "0fa9f22c58b48c82569646ce3e0fa7697ded7c362c50cc2e33d6db81b618ec14"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-6.png",
+      "sha256": "9e77331cb3359e86d2dade64a4c81f0a1bdfbd50c697d152a37237a7306e4a5a"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01-facing-7.png",
+      "sha256": "a959e88041a15724457d8fafce1231300b6f36ef8346a9ebba5ff80719f57746"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/SchoolyardChildrenV01/Group/thumbnail.png",
+      "sha256": "7b30e5e227cd9a1ecabfdd40e24b6cbf998bd1fe06540c87d16201e4bcb5cd67"
+    },
+    {
+      "file": "Assets/CityForgeV3/Resources/CityForgeV3/Automata/automata-catalog.json",
+      "sha256": "333cee318abefc5500d79aa23ed16a15129b7ae464e7df78f11e585321f21bfe"
+    }
+  ],
+  "buildScripts": [
+    "Tools/build_schoolyard_children_atlases.py",
+    "Tools/pack_schoolyard_children_atlases.py",
+    "Tools/compose_schoolyard_group_atlases.py"
+  ]
+}

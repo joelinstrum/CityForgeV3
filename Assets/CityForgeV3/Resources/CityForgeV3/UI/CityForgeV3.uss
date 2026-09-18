@@ -1575,6 +1575,12 @@
     -unity-text-align: middle-center;
 }
 
+.tool-category-automata {
+    color: rgb(247, 214, 126);
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
 .effects-card-icon {
     height: 54px;
     color: rgb(247, 214, 126);

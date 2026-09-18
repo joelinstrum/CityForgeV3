@@ -136,6 +136,19 @@ namespace CityForgeV3.World
     }
 
     [Serializable]
+    public sealed class PlacedAutomata
+    {
+        public string InstanceId = "";
+        public string AutomataId = "";
+        public float PositionX;
+        public float PositionZ;
+        public int RotationQuarterTurns;
+        public bool HasVisibilitySchedule;
+        public int VisibleTimeMask;
+        public int VisibleSeasonMask;
+    }
+
+    [Serializable]
     public sealed class PlacedOverlayTexture
     {
         public string InstanceId = "";
@@ -268,6 +281,7 @@ namespace CityForgeV3.World
         public List<PlacedBuilding> Buildings = new();
         public List<PlacedFlora> Flora = new();
         public List<PlacedProp> Props = new();
+        public List<PlacedAutomata> Automata = new();
         public List<CityForgeV3.Behaviors.LotBehaviorInstance> Behaviors = new();
         public List<PlacedEffect> Effects = new();
         public List<PlacedWaterArea> WaterAreas = new();
@@ -320,6 +334,7 @@ namespace CityForgeV3.World
                 Buildings = Buildings,
                 Flora = Flora,
                 Props = Props,
+                Automata = Automata,
                 Behaviors = Behaviors,
                 Effects = Effects,
                 WaterAreas = WaterAreas,
@@ -434,6 +449,7 @@ namespace CityForgeV3.World
             Data.Buildings ??= new List<PlacedBuilding>();
             Data.Flora ??= new List<PlacedFlora>();
             Data.Props ??= new List<PlacedProp>();
+            Data.Automata ??= new List<PlacedAutomata>();
             Data.Flora ??= new List<PlacedFlora>();
             Data.Props ??= new List<PlacedProp>();
             Data.Buildings.Clear();
@@ -592,6 +608,7 @@ namespace CityForgeV3.World
             Data.StreetcarTracks ??= new List<PlacedStreetcarTrack>();
             Data.StreetcarStops ??= new List<PlacedStreetcarStop>();
             Data.Buildings3D ??= new List<PlacedBuilding3D>();
+            Data.Automata ??= new List<PlacedAutomata>();
             foreach (var building in Data.Buildings3D)
                 if (building != null)
                     building.Attachments ??= new List<PlacedBuildingProp>();

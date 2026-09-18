@@ -434,6 +434,7 @@ namespace CityForgeV3.World
             BuildDecalRoot();
             BuildFloraRoot();
             BuildPropRoot();
+            BuildAutomataRoot();
             BuildBuildingPropRoot();
             BuildCirculationEditor();
             BuildCamera();
@@ -463,6 +464,7 @@ namespace CityForgeV3.World
             BuildDecalRoot();
             BuildFloraRoot();
             BuildPropRoot();
+            BuildAutomataRoot();
             BuildBuildingPropRoot();
             BuildCirculationEditor();
             BuildProxyBuilding();
@@ -3115,6 +3117,8 @@ namespace CityForgeV3.World
             _buildingDragActive = false;
             _buildingFocusFreezeActive = false;
             _session.NewLot(name, lotType, Mathf.Max(widthCells, depthCells) * 10);
+            _automataUndo.Clear();
+            _selectedAutomataId = "";
             _session.SetLotDimensions(widthCells, depthCells);
             _session.MarkClean();
             _roadUndo.Clear();
@@ -4551,7 +4555,10 @@ namespace CityForgeV3.World
 
         private void RestoreRoadSnapshot(string snapshot)
         {
+            var automata = _session.Data.Automata;
             _session.Restore(snapshot);
+            // Road undo must not roll back independent automata edits.
+            _session.Data.Automata = automata;
             ClampRoadCursorToLot();
             RebuildRoadArtwork();
             RebuildRoadVehicleNetwork();
@@ -7329,6 +7336,7 @@ namespace CityForgeV3.World
             RebuildDecalPresentations();
             RebuildFloraPresentations();
             RebuildPropPresentations();
+            SynchronizeAutomataPresentations();
             RebuildEffectPresentations();
             RebuildOverlayTexturePresentations();
             RebuildPedestrianNetworkFromOverlays();

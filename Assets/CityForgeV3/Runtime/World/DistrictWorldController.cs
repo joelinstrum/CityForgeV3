@@ -2238,6 +2238,9 @@ namespace CityForgeV3.World
             host.transform.SetParent(_content, false);
             var lot = host.AddComponent<LotWorldController>();
             lot.BuildAsDistrictHosted(_camera, _sun);
+            lot.BindAutomataSeasonProvider(() =>
+                LotWorldController.AutomataSeasonForDistrictIndex(
+                    _terrainDistrict?.Labor?.SeasonIndex ?? 0));
             lot.ConfigureDistrictRiverSurfaceSampler(SampleRiverSurface);
             lot.ConfigureBoatRouteProvider(FindDownstreamBoatRoute);
             lot.LoadRuntimeLot(data);

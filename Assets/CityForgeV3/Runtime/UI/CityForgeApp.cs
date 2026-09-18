@@ -34,7 +34,8 @@ namespace CityForgeV3.UI
     View,
     Transport,
     Vehicles,
-    Boats
+    Boats,
+    Automata
   }
 
   public enum TerrainSculptMode
@@ -157,6 +158,9 @@ namespace CityForgeV3.UI
     private bool _pendingApplyRoadMaterialsToAll;
     private string _placementFloraId = "mature-oak";
     private string _placementPropId = "";
+    private string _placementAutomataId = "";
+    private bool _automataPointerDown;
+    private bool _automataDragStarted;
     private string _placementEffectId = "";
     private string _placementBuildingPropId = "";
     private string _placementOverlayTextureId = "";
@@ -1241,6 +1245,7 @@ namespace CityForgeV3.UI
               LotEditorCategory.Terrain or
               LotEditorCategory.Flora or
               LotEditorCategory.Props or LotEditorCategory.Characters or
+              LotEditorCategory.Automata or
               LotEditorCategory.Entertainment or LotEditorCategory.Boats or
               LotEditorCategory.BaseTextures or
               LotEditorCategory.OverlayTextures or
@@ -1575,6 +1580,54 @@ namespace CityForgeV3.UI
         // Editor tool, including while the camera hand is active.
         // An armed catalog item must win first so an enclosure's mesh
         // cannot consume a click intended to drop Kong inside it.
+        if (evt.button == 0 &&
+                  _lotEditorCategory == LotEditorCategory.Automata)
+        {
+          var placed = false;
+          if (!string.IsNullOrWhiteSpace(_placementAutomataId))
+          {
+            placed = _lotWorld.PlaceAutomataFromPanel(
+                _placementAutomataId, evt.position, panelSize);
+            if (placed) _placementAutomataId = "";
+          }
+          if (string.IsNullOrWhiteSpace(_placementAutomataId) &&
+              _lotWorld.BeginAutomataDragFromPanel(
+                evt.position, panelSize, placed))
+          {
+            _automataPointerDown = true;
+            _automataDragStarted = false;
+            _lotStatus = "Automata group selected • drag to move";
+            viewportInput.CapturePointer(evt.pointerId);
+          }
+          else
+          {
+            _lotStatus = !string.IsNullOrWhiteSpace(_placementAutomataId)
+                ? "Keep the group footprint inside the lot"
+                : "Choose an automata group";
+            Show(AppScreen.LotEditor);
+          }
+          evt.StopPropagation();
+          return;
+        }
+        if (evt.button == 0 && !_cameraPanToolActive &&
+            !_buildingPlacementPending &&
+            !ShouldPrioritizeToolPlacement(_lotEditorCategory,
+                _placementFloraId, _placementPropId) &&
+            string.IsNullOrWhiteSpace(_placementBuildingPropId) &&
+            _lotEditorCategory is not (LotEditorCategory.Effects or
+                LotEditorCategory.Decals or
+                LotEditorCategory.OverlayTextures) &&
+            _lotWorld.BeginAutomataDragFromPanel(evt.position, panelSize))
+        {
+          _automataPointerDown = true;
+          _automataDragStarted = false;
+          _lotEditorCategory = LotEditorCategory.Automata;
+          _lotEditorCategoryExpanded = true;
+          _lotStatus = "Automata group selected • drag to move";
+          viewportInput.CapturePointer(evt.pointerId);
+          evt.StopPropagation();
+          return;
+        }
         if (evt.button == 0 &&
                   string.IsNullOrWhiteSpace(_placementBuildingPropId) &&
                   (_lotWorld.ActiveObjectSelection ==
@@ -1995,6 +2048,7 @@ namespace CityForgeV3.UI
           return;
         }
         var hoverSuppressed = _runtimeObjectPointerDown || _buildingPointerDown || _floraPointerDown ||
+                  _automataPointerDown ||
                   _building3DPointerDown ||
                   _building3DPlacementPending ||
                   _propPointerDown || _buildingPropPointerDown ||
@@ -2011,6 +2065,13 @@ namespace CityForgeV3.UI
                   _lotEditorCategory == LotEditorCategory.OverlayTextures;
         _lotWorld.UpdateObjectHoverFromPanel(
                   evt.position, panelSize, hoverSuppressed);
+        if (_automataPointerDown)
+        {
+          if (_lotWorld.DragAutomataFromPanel(evt.position, panelSize))
+            _automataDragStarted = true;
+          evt.StopPropagation();
+          return;
+        }
         if (_buildingPointerDown)
         {
           if (_lotWorld.DragBuildingFromPanel(evt.position, panelSize))
@@ -2179,6 +2240,25 @@ namespace CityForgeV3.UI
       });
       viewportInput.RegisterCallback<PointerUpEvent>(evt =>
       {
+        if (evt.button == 0 && _automataPointerDown)
+        {
+          _automataPointerDown = false;
+          var panelSize = new Vector2(
+                    viewportInput.resolvedStyle.width,
+                    viewportInput.resolvedStyle.height);
+          if (_lotWorld.DragAutomataFromPanel(evt.position, panelSize))
+            _automataDragStarted = true;
+          if (viewportInput.HasPointerCapture(evt.pointerId))
+            viewportInput.ReleasePointer(evt.pointerId);
+          _lotWorld.EndAutomataDrag();
+          _lotStatus = _automataDragStarted
+              ? "Automata group moved"
+              : "Automata group selected • drag to move";
+          _automataDragStarted = false;
+          Show(AppScreen.LotEditor);
+          evt.StopPropagation();
+          return;
+        }
         if (evt.button == 0 && _waterArrowPointerDown)
         {
           _waterArrowPointerDown = false; viewportInput.ReleasePointer(evt.pointerId);
@@ -2502,6 +2582,8 @@ namespace CityForgeV3.UI
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Props, "props-lamppost-v91", "Props"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Characters,
           "buildings", "3D Characters"));
+      toolRailScroll.Add(CategoryButton(LotEditorCategory.Automata,
+          "", "Automata"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Effects,
           "effects", "Effects"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.BaseTextures, "base-textures", "Base"));
@@ -3899,6 +3981,102 @@ namespace CityForgeV3.UI
           inspector.Add(Property("TIME", timeSpec.Label));
           inspector.Add(Property("ARTWORK", _lotWorld.NeutralPilotShowing ? "GAME-LIT" : "BAKED REFERENCE"));
         }
+        if (_lotEditorCategory == LotEditorCategory.Automata)
+        {
+          inspector.Add(StyledLabel("AUTOMATA", "inspector-title"));
+          inspector.Add(Property("LIBRARY", "ANIMATED SCENES"));
+          inspector.Add(Property("PLACED", $"{_lotWorld.AutomataCount} GROUPS"));
+          inspector.Add(Property("ACTIVE",
+              string.IsNullOrWhiteSpace(_placementAutomataId)
+                  ? "NONE" : AutomataClipCatalog.Find(_placementAutomataId)
+                      ?.displayName?.ToUpperInvariant() ?? "NONE"));
+          inspector.Add(Property("SELECTED",
+              _lotWorld.SelectedAutomataName.ToUpperInvariant()));
+          inspector.Add(CfButton.Create("OPEN LIBRARY…",
+              OpenAutomataModal, true, "primary"));
+          inspector.Add(CfButton.Create(
+              _lotWorld.HasSelectedAutomata ? "NEXT GROUP" : "SELECT GROUP",
+              () =>
+              {
+                _lotWorld.SelectNextAutomata();
+              }, _lotWorld.AutomataCount > 0, "quiet"));
+          if (!string.IsNullOrWhiteSpace(_placementAutomataId))
+            inspector.Add(CfButton.Create("STOP PLACING", () =>
+            {
+              _placementAutomataId = "";
+              Show(AppScreen.LotEditor);
+            }, true, "quiet"));
+          if (_lotWorld.HasSelectedAutomata)
+          {
+            inspector.Add(Property("NOW",
+                _lotWorld.SelectedAutomataVisibleNow
+                    ? "VISIBLE" : "HIDDEN BY SCHEDULE"));
+            var schedule = new ScrollView(ScrollViewMode.Vertical);
+            schedule.style.maxHeight = 292f;
+            schedule.Add(StyledLabel("SHOW AT THESE TIMES",
+                "section-label"));
+            foreach (var preset in new[]
+                     {
+                       TimeOfDayPreset.Morning,
+                       TimeOfDayPreset.Noon,
+                       TimeOfDayPreset.Afternoon,
+                       TimeOfDayPreset.Evening,
+                       TimeOfDayPreset.Night
+                     })
+            {
+              var captured = preset;
+              var toggle = CfCheckToggle.Create(
+                  TimeOfDayLighting.For(preset).Label,
+                  _lotWorld.SelectedAutomataTimeEnabled(preset));
+              toggle.RegisterValueChangedCallback(evt =>
+              {
+                _lotWorld.SetSelectedAutomataTimeEnabled(captured,
+                    evt.newValue);
+              });
+              schedule.Add(toggle);
+            }
+            schedule.Add(StyledLabel("SHOW IN THESE SEASONS",
+                "section-label"));
+            foreach (var season in new[]
+                     {
+                       SeasonPreset.Spring,
+                       SeasonPreset.Summer,
+                       SeasonPreset.Autumn,
+                       SeasonPreset.Winter
+                     })
+            {
+              var captured = season;
+              var toggle = CfCheckToggle.Create(
+                  SeasonLighting.Label(season),
+                  _lotWorld.SelectedAutomataSeasonEnabled(season));
+              toggle.RegisterValueChangedCallback(evt =>
+              {
+                _lotWorld.SetSelectedAutomataSeasonEnabled(captured,
+                    evt.newValue);
+              });
+              schedule.Add(toggle);
+            }
+            inspector.Add(schedule);
+          }
+          var automataActions = new VisualElement();
+          automataActions.AddToClassList("inspector-actions");
+          automataActions.Add(CfButton.Create("ROTATE", () =>
+          {
+            _lotWorld.RotateSelectedAutomata(1);
+            Show(AppScreen.LotEditor);
+          }, _lotWorld.HasSelectedAutomata, "quiet"));
+          inspector.Add(automataActions);
+          inspector.Add(CfButton.Create("DELETE SELECTED", () =>
+          {
+            _lotWorld.DeleteSelectedAutomata();
+            Show(AppScreen.LotEditor);
+          }, _lotWorld.HasSelectedAutomata, "danger"));
+          inspector.Add(CfButton.Create("UNDO AUTOMATA", () =>
+          {
+            _lotWorld.UndoAutomata();
+            Show(AppScreen.LotEditor);
+          }, _lotWorld.CanUndoAutomata, "quiet"));
+        }
         if (_lotEditorCategory is LotEditorCategory.Flora or
             LotEditorCategory.Props or LotEditorCategory.Characters or
             LotEditorCategory.Entertainment)
@@ -4314,6 +4492,28 @@ namespace CityForgeV3.UI
         AttachToolCategoryHoverInfo(effects, category, label);
         return effects;
       }
+      if (category == LotEditorCategory.Automata)
+      {
+        var automata = new Button(() => SetLotEditorCategory(category))
+        {
+          name = "Automata",
+          text = "↻",
+          tooltip = ToolCategoryTooltip(category, label)
+        };
+        automata.AddToClassList("cf-image-button");
+        automata.AddToClassList(selected
+            ? "cf-image-button--tool-category-selected"
+            : "cf-image-button--tool-category");
+        automata.AddToClassList("tool-category-automata");
+        var automataCaption = new Label("AUTOMATA")
+        {
+          pickingMode = PickingMode.Ignore
+        };
+        automataCaption.AddToClassList("tool-category-caption");
+        automata.Add(automataCaption);
+        AttachToolCategoryHoverInfo(automata, category, label);
+        return automata;
+      }
       if (category == LotEditorCategory.Water)
       {
         var water = new Button(() => SetLotEditorCategory(category))
@@ -4477,6 +4677,7 @@ namespace CityForgeV3.UI
           LotEditorCategory.Flora => "Flora — place trees, shrubs, and planting",
           LotEditorCategory.Props => "Props — place lot and 3D building props",
           LotEditorCategory.Characters => "3D Characters — place people and characters",
+          LotEditorCategory.Automata => "Automata — place animated scenes on the lot",
           LotEditorCategory.Entertainment => "Entertainment — place exhibits and attractions",
           LotEditorCategory.Effects => "Effects — add atmospheric and lighting effects",
           LotEditorCategory.BaseTextures => "Base — paint base terrain textures",
@@ -4495,6 +4696,10 @@ namespace CityForgeV3.UI
         category = LotEditorCategory.Buildings3D;
       if (category != LotEditorCategory.Terrain)
         _terrainSculptMode = TerrainSculptMode.None;
+      if (category != LotEditorCategory.Automata)
+      {
+        _placementAutomataId = "";
+      }
       if (category != LotEditorCategory.Water &&
           _lotWorld.WaterPlacementActive)
         _lotWorld.CancelWaterPlacement();
@@ -4559,6 +4764,8 @@ namespace CityForgeV3.UI
         OpenPropsModal();
       else if (category == LotEditorCategory.Characters)
         OpenCharactersModal();
+      else if (category == LotEditorCategory.Automata)
+        OpenAutomataModal();
       else if (category == LotEditorCategory.Entertainment)
         OpenEntertainmentModal();
       else if (category == LotEditorCategory.Effects)
@@ -5138,6 +5345,39 @@ namespace CityForgeV3.UI
       card.Add(select);
       card.Add(StyledLabel(description, "catalog-meta"));
       grid.Add(card);
+    }
+
+    private void OpenAutomataModal()
+    {
+      var panel = CreateDocumentModal("AUTOMATA LIBRARY",
+          "Choose a scene, then click the lot to place it.");
+      foreach (var entry in AutomataClipCatalog.Entries)
+      {
+        var clip = entry;
+        var card = new VisualElement();
+        card.AddToClassList("character-library-card");
+        var select = CfButton.Create(
+          clip.displayName.ToUpperInvariant(), () =>
+          {
+            _placementAutomataId = clip.id;
+            RemoveDocumentModal();
+            Show(AppScreen.LotEditor);
+          }, AutomataClipCatalog.ResourcesAvailable(clip), "primary");
+        select.name = "automata-" + clip.id;
+        card.Add(select);
+        card.Add(new Image
+        {
+          image = Resources.Load<Texture2D>(clip.thumbnailResource),
+          scaleMode = ScaleMode.ScaleToFit,
+          pickingMode = PickingMode.Ignore
+        });
+        card.Add(StyledLabel(clip.description.ToUpperInvariant(),
+            "catalog-meta"));
+        panel.Add(card);
+      }
+      var actions = DocumentModalActions();
+      actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
+      panel.Add(actions);
     }
 
     private void OpenCharactersModal()
@@ -6914,7 +7154,8 @@ namespace CityForgeV3.UI
           return;
         // Keep the captured viewport alive through building drags.
         // Pointer-up opens the selected inspector and refreshes it.
-        if (_buildingPointerDown || _building3DPointerDown) return;
+        if (_buildingPointerDown || _building3DPointerDown ||
+            _automataPointerDown) return;
         Show(AppScreen.LotEditor);
       });
     }
