@@ -83,10 +83,10 @@ namespace CityForgeV3.World
             if (result.Count > 1 && Segment(from, result[1])) result.RemoveAt(0);
             return result;
         }
-        public List<Vector2> Route(Vector2 from, Vector2 to) => new DistrictRoadDelivery(district).Route(from,to);
+        public List<Vector2> Route(Vector2 from, Vector2 to) => DistrictRoadDelivery.For(district).Route(from,to);
         public List<TimberDestination> Mills(Vector2 from)
         {
-            var roads=new DistrictRoadDelivery(district);var result=new List<TimberDestination>();
+            var roads=DistrictRoadDelivery.For(district);var result=new List<TimberDestination>();
             foreach(var placed in district.Lots??new())
             {
                 var data=readLot(placed.LotId);

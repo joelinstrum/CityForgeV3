@@ -5,6 +5,32 @@ namespace CityForgeV3.World
 {
     public static class DistrictRoadPlacementModel
     {
+        sealed class TopologyStamp { public int Value; }
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<List<PlacedRoadPiece>,TopologyStamp> TopologyStamps=new();
+        static void MarkTopologyChanged(List<PlacedRoadPiece> roads)
+        { if(roads!=null)TopologyStamps.GetValue(roads,_=>new TopologyStamp()).Value++; }
+        public static void InvalidateNetwork(List<PlacedRoadPiece> roads) => MarkTopologyChanged(roads);
+        sealed class NetworkStamp
+        {
+            public List<PlacedRoadPiece> Roads;
+            public int Count=-1, Topology=-1, Bridge=-1, Key;
+        }
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RegionCityTile,NetworkStamp> NetworkStamps=new();
+        // A maintained generation, not a hash: distinct topology/bridge edits cannot cancel each other out.
+        public static int NetworkKey(RegionCityTile district)
+        {
+            var roads=district.Roads;var stamp=NetworkStamps.GetValue(district,_=>new NetworkStamp());
+            int topology=roads==null?0:TopologyStamps.GetValue(roads,_=>new TopologyStamp()).Value;
+            int count=roads?.Count??0;
+            if(!ReferenceEquals(stamp.Roads,roads)||stamp.Count!=count||stamp.Topology!=topology||stamp.Bridge!=district.BridgeRevision)
+            {
+                stamp.Roads=roads;stamp.Count=count;stamp.Topology=topology;stamp.Bridge=district.BridgeRevision;
+                unchecked{stamp.Key++;}
+            }
+            return stamp.Key;
+        }
+
+
         public const string DirtFamily = "Dirt Road";
         public const string PikeDirtFamily = "Pike Dirt Road";
         public const string AntiqueBrickFamily = "Antique Brick Road";
@@ -124,6 +150,7 @@ namespace CityForgeV3.World
                 existing.LaneMarkingStyle = RoadLaneMarkingStyle.NoLines;
                 existing.CenterMarkingStyle = RoadCenterMarkingStyle.NoLines;
                 RepairAround(x, z);
+                MarkTopologyChanged(_roads);
                 return true;
             }
 
@@ -150,6 +177,7 @@ namespace CityForgeV3.World
                 second.DistrictDiagonalConnections |= secondBit;
                 RepairAt(first);
                 RepairAt(second);
+                MarkTopologyChanged(_roads);
                 return true;
             }
 
@@ -162,6 +190,7 @@ namespace CityForgeV3.World
                 _byCell.Remove(new Vector2Int(x, z));
                 _knownCount = _roads.Count;
                 RepairAround(x, z);
+                MarkTopologyChanged(_roads);
                 return true;
             }
 
@@ -267,6 +296,7 @@ namespace CityForgeV3.World
 
             public void RepairAll()
             {
+                MarkTopologyChanged(_roads);
                 foreach (var road in _roads)
                     if (road != null) RepairAt(road);
             }

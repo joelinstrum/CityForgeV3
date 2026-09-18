@@ -792,7 +792,7 @@ namespace CityForgeV3.UI
                     roadCell.x, roadCell.y);
           _districtWorld.ShowLotPlacementGuide(roadCell.x, roadCell.y,
                     1, 1, roadPlaceable);
-          if (_districtRoadPointerDown && roadPlaceable)
+          if (_districtRoadPointerDown)
           {
             var route = _builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily
                 ? DistrictRoadPlacementModel.OctileRoute(
@@ -804,6 +804,7 @@ namespace CityForgeV3.UI
             {
               var previous = route[routeIndex - 1];
               var next = route[routeIndex];
+              if (TryOfferDistrictBridge(district, previous, next)) break;
               if (previous.x != next.x && previous.y != next.y &&
                   (DistrictRoadLotOccupied(district, previous.x, next.y) ||
                    DistrictRoadLotOccupied(district, next.x, previous.y)))
@@ -1561,6 +1562,7 @@ namespace CityForgeV3.UI
     {
       if (district == null) return "";
       var parts = new List<string>();
+      parts.Add("bridges:"+district.BridgeRevision);
       foreach (var nudge in district.LotNudges ?? new()) parts.Add("nudge:" + JsonUtility.ToJson(nudge));
       parts.Add("hills:" + JsonUtility.ToJson(district.Hills));
       foreach(var works in district.Brickworks??new List<DistrictBrickworksSite>())parts.Add($"brickworks:{works.Id}:{works.NormalizedX}:{works.NormalizedZ}:{works.Yaw}");
@@ -3251,6 +3253,7 @@ namespace CityForgeV3.UI
           DistrictRoadPlacementModel.PikeDirtFamily,
           "FREE PER TILE",
           "CityForgeV3/Roads/NationalPikeDirtV1/straight");
+      list.Add(CfButton.Create("BRIDGES", () => ComposeDistrictBridgeModal()));
       panel.Add(list);
       var actions = new VisualElement();
       actions.AddToClassList("district-road-family-actions");
@@ -3309,6 +3312,13 @@ namespace CityForgeV3.UI
     private bool CanPlaceDistrictRoad(RegionCityTile district, int x, int z)
     {
       if (DistrictRoadLotOccupied(district, x, z)) return false;
+      var point=DistrictBridgePlanner.Center(district,new Vector2Int(x,z));
+      if (_districtWorld != null)
+      {
+        var bridge=_districtWorld.BridgeAt(point);var cell=new Vector2Int(x,z);
+        if(bridge!=null && cell!=bridge.Start && cell!=bridge.End)return false;
+        if(_districtWorld.SampleBridgeSurface(point).Channel)return false;
+      }
       var existing = DistrictRoadSession(district).At(x, z);
       if (existing?.PackageId == DistrictRoadPlacementModel.PackageId(
               _builderTool)) return true;

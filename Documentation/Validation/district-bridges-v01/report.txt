@@ -1,0 +1,11 @@
+Planned (27, 32) -> (36, 32); deck 2.124; near 0.152; far 0.152
+covered-wood: UnityStats draw calls=0, batches=0, triangles=0 (manual Camera.Render)
+covered-wood: warm assembly 5.54 ms, 2392064 managed heap delta bytes, 2 renderers
+stone: UnityStats draw calls=0, batches=0, triangles=0 (manual Camera.Render)
+stone: warm assembly 3.33 ms, 2392064 managed heap delta bytes, 2 renderers
+UI transaction: cancel leaves state unchanged and removes preview; build charges once; in-memory undo restores treasury and removes bridge; reload rebuilds bridge index. PASS
+Dense render: 25 bridges, 50 bridge renderers; 30 synchronous Camera.Render calls median=0.61 ms max=0.91 ms; heap delta=0; UnityStats draw calls=0 batches=0. This is render submission timing, not game frame timing.
+Dense travel: 100,000 indexed height queries, 45.46 ms, heap delta=0 bytes.
+Existing edit composition key (20,000 flora, 10,000 roads): 66.04 ms, 6438912 bytes
+Existing navigation construction (10,000 roads): 3.09 ms, 700416 bytes
+Cached network (10,000 roads, 100,000 lookups): 35.80 ms, 0 heap delta bytes
