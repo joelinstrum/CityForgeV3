@@ -10,7 +10,14 @@ namespace CityForgeV3.World
         [Serializable] sealed class BridgeMeshData
         { public string name; public Vector3[] vertices, normals; public Vector2[] uv; public int[] triangles; }
         [Serializable] sealed class BridgePackage
-        { public float bayLength, capLength; public BridgeMeshData[] modules; }
+        {
+            public float bayLength, capLength, rightCapLength;
+            public bool singleMiddle;
+            public float sourceMin, sourceMax, leftCut, rightCut;
+            public float leftEndDeck, rightEndDeck;
+            public float[] deckHeights;
+            public BridgeMeshData[] modules;
+        }
         sealed class BridgeAssets
         { public BridgePackage Package; public Material Material; }
         readonly Dictionary<string,BridgeAssets> _bridgeAssets=new();
@@ -42,8 +49,39 @@ namespace CityForgeV3.World
         {
             var b=BridgeAt(p,DistrictBridgePlanner.TravelHalfWidth);
             if(b!=null && DistrictBridgePlanner.Contains(_terrainDistrict,b,p,DistrictBridgePlanner.TravelHalfWidth,out var along))
-                return DistrictBridgePlanner.Height(_terrainDistrict,b,along);
+            {
+                var height=DistrictBridgePlanner.Height(_terrainDistrict,b,along);
+                if(b.StyleId=="stone" && _bridgeAssets.TryGetValue("stone",out var assets) && assets.Package.singleMiddle)
+                    height+=StoneDeckOffset(assets.Package,
+                        Vector2.Distance(DistrictBridgePlanner.Center(_terrainDistrict,b.Start),
+                            DistrictBridgePlanner.Center(_terrainDistrict,b.End)),along);
+                return height;
+            }
             return TerrainElevation(p.x,p.y)+.02f;
+        }
+        static float StoneDeckOffset(BridgePackage package,float total,float along)
+        {
+            float connector=DistrictBridgePlanner.RampLength+package.capLength;
+            float usable=total-2*DistrictBridgePlanner.RampLength-package.capLength-package.rightCapLength;
+            if(along<DistrictBridgePlanner.RampLength || along>total-DistrictBridgePlanner.RampLength || usable<=0)
+                return 0;
+            float sourceX,shift;
+            if(along<=connector)
+            {sourceX=package.sourceMin+(along-DistrictBridgePlanner.RampLength)/35f;shift=package.leftEndDeck;}
+            else if(along<connector+usable)
+            {
+                float t=(along-connector)/usable;
+                sourceX=Mathf.Lerp(package.leftCut,package.rightCut,t);
+                shift=Mathf.Lerp(package.leftEndDeck,package.rightEndDeck,t);
+            }
+            else
+            {sourceX=package.rightCut+(along-connector-usable)/35f;shift=package.rightEndDeck;}
+            var heights=package.deckHeights;
+            if(heights==null || heights.Length<2)return 0;
+            float sampleX=Mathf.Clamp01((sourceX-package.sourceMin-.005f)/
+                (package.sourceMax-package.sourceMin-.01f))*(heights.Length-1);
+            int index=Mathf.Min(Mathf.FloorToInt(sampleX),heights.Length-2);
+            return Mathf.Lerp(heights[index],heights[index+1],sampleX-index)-shift;
         }
         public bool IsBlockedByRiverForTravel(Vector2 normalized)
         {
@@ -107,23 +145,17 @@ namespace CityForgeV3.World
             var a=DistrictBridgePlanner.Center(district,b.Start);var end=DistrictBridgePlanner.Center(district,b.End);
             var axis=(end-a).normalized;var span=Vector2.Distance(a,end);
             if(span<DistrictBridgePlanner.MinLength || span>DistrictBridgePlanner.MaxLength)return null;
-            var package=assets.Package;float usable=span-2*DistrictBridgePlanner.RampLength-2*package.capLength;
+            var package=assets.Package;
+            float rightCap=package.singleMiddle?package.rightCapLength:package.capLength;
+            float usable=span-2*DistrictBridgePlanner.RampLength-package.capLength-rightCap;
             if(usable<=0)return null;
-            int bays=Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
+            int bays=package.singleMiddle?1:Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
             float bay=usable/bays;
             var root=new GameObject((preview?"Preview — ":"")+DistrictBridgeCatalog.Find(b.StyleId).Name);
             root.transform.SetParent(_content,false);root.transform.localPosition=new Vector3(a.x,b.DeckHeight,a.y);
             root.transform.localRotation=Quaternion.LookRotation(new Vector3(axis.x,0,axis.y));
-            var foundationHeights=new float[Mathf.CeilToInt(span/2)+1];
-            for(int i=0;i<foundationHeights.Length;i++)
-            {
-                var p=Vector2.Lerp(a,end,(float)i/(foundationHeights.Length-1));
-                var sample=SampleRiverSurface(_content.TransformPoint(new Vector3(p.x,0,p.y)));
-                float bed=sample.HasValue?_content.InverseTransformPoint(new Vector3(0,sample.Value.BedElevation,0)).y:TerrainElevation(p.x,p.y);
-                foundationHeights[i]=bed-b.DeckHeight-.3f;
-            }
             var vertices=new List<Vector3>();var normals=new List<Vector3>();var uv=new List<Vector2>();var triangles=new List<int>();
-            void Append(BridgeMeshData module,float offset,float scale)
+            void Append(BridgeMeshData module,float offset,float scale,float shiftStart=0,float shiftEnd=0)
             {
                 int first=vertices.Count;
                 float pierBottom=-4.275f;
@@ -136,31 +168,40 @@ namespace CityForgeV3.World
                 }
                 for(int i=0;i<module.vertices.Length;i++)
                 {
-                    var p=module.vertices[i];p.z=p.z*scale+offset;
+                    var p=module.vertices[i];
+                    float originalAlong=p.z;
+                    if(package.singleMiddle)
+                        p.y+=Mathf.Lerp(shiftStart,shiftEnd,
+                            Mathf.Clamp01(originalAlong/package.bayLength));
+                    p.z=originalAlong*scale+offset;
                     // Extend only the foot of each wooden pier; the timber deck and roof retain their shape.
                     if(module.name=="Support_Pier" && p.y<-.7f)
                     {
                         p.y=Mathf.Lerp(-.7f,pierBottom,Mathf.Clamp01((-p.y-.7f)/(4.275f-.7f)));
                     }
-                    if(b.StyleId=="stone" && p.y < -2.5f)
-                    {
-                        float sourceBottom=-4.4f;
-                        float target=Mathf.Min(sourceBottom,foundationHeights[Mathf.Clamp(Mathf.RoundToInt(p.z/span*(foundationHeights.Length-1)),0,foundationHeights.Length-1)]);
-                        p.y=Mathf.Lerp(-2.5f,target,Mathf.Clamp01((-p.y-2.5f)/(-sourceBottom-2.5f)));
-                    }
-                    vertices.Add(p);var n=module.normals[i];n.z/=scale;normals.Add(n.normalized);uv.Add(module.uv[i]);
+                    vertices.Add(p);var n=module.normals[i];
+                    n.z=(n.z-(shiftEnd-shiftStart)/package.bayLength*n.y)/scale;
+                    normals.Add(n.normalized);uv.Add(module.uv[i]);
                 }
                 foreach(var t in module.triangles)triangles.Add(first+t);
             }
             float connector=DistrictBridgePlanner.RampLength+package.capLength;
             foreach(var module in package.modules)
             {
-                if(module.name=="Entrance_Start")Append(module,connector,1);
+                if(package.singleMiddle)
+                {
+                    float leftShift=-package.leftEndDeck;
+                    float rightShift=-package.rightEndDeck;
+                    if(module.name=="Entrance_Start")Append(module,connector,1,leftShift,leftShift);
+                    else if(module.name=="Entrance_End")Append(module,connector+usable-package.bayLength,1,rightShift,rightShift);
+                    else if(module.name=="Middle_Bay")Append(module,connector,usable/package.bayLength,leftShift,rightShift);
+                }
+                else if(module.name=="Entrance_Start")Append(module,connector,1);
                 else if(module.name=="Entrance_End")Append(module,connector+usable,1);
                 else for(int i=0;i<bays;i++)Append(module,connector+(i+(module.name=="Support_Pier"?.5f:0))*bay,
                     module.name=="Support_Pier"?1:bay/package.bayLength);
             }
-            var mesh=new Mesh{name="Assembled bridge",indexFormat=IndexFormat.UInt32};mesh.SetVertices(vertices);mesh.SetNormals(normals);mesh.SetUVs(0,uv);mesh.SetTriangles(triangles,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
+            var mesh=new Mesh{name="Assembled bridge",indexFormat=IndexFormat.UInt32};mesh.SetVertices(vertices);mesh.SetNormals(normals);mesh.SetUVs(0,uv);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();
             var body=new GameObject("Bridge span");body.transform.SetParent(root.transform,false);
             body.AddComponent<MeshFilter>().sharedMesh=mesh;body.AddComponent<MeshRenderer>().sharedMaterial=assets.Material;
             AddBridgeRamps(root.transform,b,span);

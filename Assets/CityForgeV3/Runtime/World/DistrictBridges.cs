@@ -32,8 +32,8 @@ namespace CityForgeV3.World
         public static readonly DistrictBridgeStyle[] Styles = {
             new("covered-wood", "Covered Wooden Bridge", "CityForgeV3/Bridges/CoveredWoodenV01",
                 "A sheltered timber crossing with repeating roof bays and river piers.", 800, 35),
-            new("stone", "Stone Arch Bridge", "CityForgeV3/Bridges/StoneV01",
-                "A masonry crossing with repeating stone arches.", 1600, 60)
+            new("stone", "Stone Arch Bridge", "CityForgeV3/Bridges/StoneV02",
+                "The supplied masonry bridge with original ends and one fitted center arch.", 1600, 60)
         };
         public static DistrictBridgeStyle Find(string id)
         { foreach(var style in Styles) if(style.Id==id) return style; return null; }
@@ -45,9 +45,9 @@ namespace CityForgeV3.World
     {
         public const float HalfWidth = 4.5f;
         public const float TravelHalfWidth = 2.5f;
-        public const float RampLength = 10f;
+        public const float RampLength = 8f;
         public const float MaxLength = 240f;
-        public const float MinLength = 60f;
+        public const float MinLength = 50f;
         public readonly struct Surface
         {
             public readonly bool Channel, Water;
@@ -93,12 +93,23 @@ namespace CityForgeV3.World
                 var p=Center(d,c);
                 return sample(p).Channel || sample(p+side*HalfWidth).Channel || sample(p-side*HalfWidth).Channel;
             }
+            bool ApproachDry(Vector2Int cell,bool near)
+            {
+                var origin=Center(d,cell);
+                for(int station=0;station<=4;station++)
+                for(int lane=-2;lane<=2;lane++)
+                {
+                    var point=origin+axis*(near?1:-1)*(RampLength*station/4f)+side*(lane*HalfWidth*.5f);
+                    if(sample(point).Water)return false;
+                }
+                return true;
+            }
             var start=bank;
-            // Find a dry near bank, then reserve a complete approach ramp on land.
+            // Find bank anchors with a dry approach wide enough for the deck.
             int retreat=0;
             while(Channel(start) && retreat++<8)start-=direction;
-            start-=direction*2;
-            if(!InBounds(start)||Channel(start)){reason="There is not enough dry ground for the near approach.";return false;}
+            for(int i=0;i<4 && InBounds(start) && !ApproachDry(start,true);i++)start-=direction;
+            if(!InBounds(start)||!ApproachDry(start,true)){reason="There is not enough dry ground for the near approach.";return false;}
             var end=bank;bool water=false,channel=false;int steps=0;
             while(steps++<26)
             {
@@ -108,8 +119,8 @@ namespace CityForgeV3.World
                 var surface=sample(Center(d,end));water|=surface.Water;channel|=Channel(end);
                 if(channel && !Channel(end))
                 {
-                    end+=direction*2;
-                    while(Vector2.Distance(Center(d,start),Center(d,end))<MinLength)end+=direction;
+                    for(int i=0;i<4 && InBounds(end) && !ApproachDry(end,false);i++)end+=direction;
+                    while(InBounds(end) && Vector2.Distance(Center(d,start),Center(d,end))<MinLength)end+=direction;
                     break;
                 }
             }
@@ -125,7 +136,7 @@ namespace CityForgeV3.World
                 {
                     var q=p+side*(lane*HalfWidth*.5f);var s=sample(q);
                     if(occupied(q)){reason="Clear buildings or an existing bridge from this crossing.";return false;}
-                    if((along<RampLength || along>span-RampLength) && s.Channel)
+                    if((along<RampLength || along>span-RampLength) && s.Water)
                     {reason="The approach needs more dry land. Try a straighter crossing.";return false;}
                     if(s.Water){water=true;highWater=Mathf.Max(highWater,s.WaterHeight);}
                     if(!s.Channel && along>=RampLength && along<=span-RampLength)highGround=Mathf.Max(highGround,s.Ground+.152f);
@@ -133,7 +144,7 @@ namespace CityForgeV3.World
             }
             if(!water){reason="The route does not cross river water.";return false;}
             float ah=sample(a).Ground+.152f,zh=sample(z).Ground+.152f;
-            float deck=Mathf.Max(Mathf.Max(ah,zh),Mathf.Max(highGround,highWater+2f));
+            float deck=Mathf.Max(Mathf.Max(ah,zh),Mathf.Max(highGround,highWater+1.5f));
             if(deck-ah>RampLength*.2f || deck-zh>RampLength*.2f)
             {reason="The banks are too uneven for safe approaches. Level the banks or try another crossing.";return false;}
             bridge=new PlacedDistrictBridge { Id=Guid.NewGuid().ToString("N"), Start=start,End=end,

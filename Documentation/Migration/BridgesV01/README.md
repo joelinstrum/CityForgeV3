@@ -1,5 +1,7 @@
 # District bridge sources and derivatives — V01
 
+The StoneV01 derivative described below is superseded by [BridgesV02](../BridgesV02/README.md). Its runtime package was removed; the source archive and this historical record remain unchanged.
+
 September 18, 2026. Both models were supplied by Joe for City Forge. Original archives and extracted art remain unchanged outside the game repository, matching the project's existing external Blender-source policy.
 
 | Source | Original location | SHA-256 |

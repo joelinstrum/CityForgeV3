@@ -1,5 +1,7 @@
 # District bridges V01 validation
 
+Historical result. The stone package and span fitting have since changed; see [V02 validation](../district-bridges-v02/README.md) for the current render and checks.
+
 Work branch: `feature/district-bridges`, based on `origin/main` at `1eaf191`.
 Unity: 6000.1.12f1. Tests and renders use `/Users/joelinstrum/dev/CityForge-Regions-Review`. The separate editor in `/Users/joelinstrum/dev/CityForge - V3` was not controlled or modified. Replaced review-project files were backed up under its `RecoveryBackups/bridge-sync-*` directories.
 

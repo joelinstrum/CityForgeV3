@@ -40,7 +40,17 @@ public static class DistrictBridgeQa
             world.AddDistrictBridge(d,b);watch.Stop();long allocated=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-before;
             int renderers=go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches");
             if(world.BridgeAt(center)!=b)throw new Exception("Bridge spatial lookup failed");
-            if(Mathf.Abs(world.TravelElevation(center)-b.DeckHeight)>.001f)throw new Exception("Travel surface mismatch");
+            if(style.Id=="stone")
+            {
+                var body=go.GetComponentsInChildren<MeshFilter>().First(f=>f.name=="Bridge span").sharedMesh.bounds;
+                float span=Vector2.Distance(a,z);
+                if(Mathf.Abs(body.min.z-DistrictBridgePlanner.RampLength)>.02f ||
+                    Mathf.Abs(body.max.z-(span-DistrictBridgePlanner.RampLength))>.02f)
+                    throw new Exception($"Stone ends miss their bank connections: mesh {body.min.z:F2}..{body.max.z:F2}, span {span:F2}");
+            }
+            float travel=world.TravelElevation(center);
+            if(style.Id=="stone" ? travel<=b.DeckHeight || travel>b.DeckHeight+3f : Mathf.Abs(travel-b.DeckHeight)>.001f)
+                throw new Exception($"Travel surface mismatch: {style.Id} at {travel:F3} m, base deck {b.DeckHeight:F3} m");
             report+=$"{style.Id}: warm assembly {watch.Elapsed.TotalMilliseconds:F2} ms, {allocated} managed heap delta bytes, {renderers} renderers\n";
             world.RemoveDistrictBridge(d,b);if(world.BridgeAt(center)!=null)throw new Exception("Removed bridge remains indexed");
         }

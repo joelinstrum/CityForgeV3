@@ -16,8 +16,8 @@ namespace CityForgeV3.Tests.EditMode
         {
             var d=District();int queries=0;
             bool ok=DistrictBridgePlanner.TryPlan(d,new(62,64),Vector2Int.right,p=>{queries++;return River(p);},_=>false,out var b,out var reason);
-            Assert.That(ok,Is.True,reason);Assert.That(b.Start.x,Is.EqualTo(60));Assert.That(b.End.x,Is.GreaterThanOrEqualTo(67));
-            Assert.That(b.DeckHeight,Is.EqualTo(1));Assert.That(queries,Is.LessThan(800));
+            Assert.That(ok,Is.True,reason);Assert.That(b.Start.x,Is.EqualTo(61));Assert.That(b.End.x,Is.GreaterThanOrEqualTo(66));
+            Assert.That(b.DeckHeight,Is.EqualTo(.5f).Within(.001f));Assert.That(queries,Is.LessThan(800));
             Assert.That(DistrictBridgePlanner.Height(d,b,0),Is.EqualTo(b.StartHeight));
             Assert.That(DistrictBridgePlanner.Height(d,b,20),Is.EqualTo(b.DeckHeight));
         }
