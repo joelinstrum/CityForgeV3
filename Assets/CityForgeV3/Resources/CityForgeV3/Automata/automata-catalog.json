@@ -1,0 +1,23 @@
+{
+  "clips": [
+    {
+      "id": "group-18th-century-children-v01",
+      "displayName": "Group of 18th Century Children",
+      "description": "Five children walking and clapping in an 8 × 8 m schoolyard scene",
+      "resourceRoot": "CityForgeV3/Automata/SchoolyardChildrenV01/Group/group-18th-century-children-v01",
+      "thumbnailResource": "CityForgeV3/Automata/SchoolyardChildrenV01/Group/thumbnail",
+      "footprintMeters": 8,
+      "frameWidth": 224,
+      "frameHeight": 128,
+      "frameColumns": 8,
+      "frameCount": 32,
+      "facingCount": 8,
+      "framesPerSecond": 8,
+      "pixelsPerMeter": 32,
+      "pivotY": 0.375,
+      "visibleBelowPivotMeters": 1.0,
+      "defaultTimeMask": 2,
+      "defaultSeasonMask": 5
+    }
+  ]
+}
