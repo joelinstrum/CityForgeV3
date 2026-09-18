@@ -507,6 +507,12 @@ namespace CityForgeV3.World
                 Destroy(_sun.gameObject);
             _sun = sharedSun;
             ZoomLevel = presentationLevel;
+            foreach (var billboard in _farBuildingBillboards)
+                if (billboard != null)
+                {
+                    billboard.SetCamera(_camera);
+                    billboard.SetFar(presentationLevel >= LotZoomLevel.Far);
+                }
             _gridVisible = false;
             ApplyGridVisibility();
             ApplyCharacterZoomVisibility();
@@ -522,7 +528,12 @@ namespace CityForgeV3.World
         public void SetDistrictPresentationLevel(LotZoomLevel level)
         {
             if (!_districtHosted) return;
+            var changed = ZoomLevel != level;
             ZoomLevel = level;
+            if (changed)
+                foreach (var billboard in _farBuildingBillboards)
+                    if (billboard != null)
+                        billboard.SetFar(level >= LotZoomLevel.Far);
             ApplyCharacterZoomVisibility();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();

@@ -45,9 +45,9 @@ namespace CityForgeV3.World
     }
 
     /// <summary>
-    /// Discrete district camera stops. These deliberately mirror the building
-    /// presentation contract: detailed 3D at LOD0 through LOD4 and billboard
-    /// presentation at the farthest LOD5 view.
+    /// Discrete district camera stops. Building representations are selected
+    /// by each asset: the schoolhouse uses images at LOD4 and LOD5, while
+    /// package LODGroups choose their mesh or billboard by screen size.
     /// </summary>
     public static class DistrictZoom
     {

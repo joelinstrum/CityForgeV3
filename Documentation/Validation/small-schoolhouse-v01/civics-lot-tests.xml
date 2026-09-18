@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.1486608">
+  <test-suite type="TestSuite" id="1000" name="City Forge Regions Review" fullname="City Forge Regions Review" runstate="Runnable" testcasecount="867" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.148661" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1996" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="867" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.138518" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="5699" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1997" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="760" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.130521" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1998" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="760" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.125575" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1234" name="SmallSchoolTripoPackageTests" fullname="CityForgeV3.Tests.SmallSchoolTripoPackageTests" classname="CityForgeV3.Tests.SmallSchoolTripoPackageTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.043840" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1235" name="SchoolLoadsUnderCivicEducationWithSourceShapedShadow" fullname="CityForgeV3.Tests.SmallSchoolTripoPackageTests.SchoolLoadsUnderCivicEducationWithSourceShapedShadow" methodname="SchoolLoadsUnderCivicEducationWithSourceShapedShadow" classname="CityForgeV3.Tests.SmallSchoolTripoPackageTests" runstate="Runnable" seed="379151182" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.035619" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1236" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="473" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.060286" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1548" name="CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" fullname="CityForgeV3.Tests.UiFoundationTests.CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" methodname="CivicsLotContractPersistsWithoutChangingExistingLotTypeIds" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1731407040" result="Passed" start-time="2026-09-18 01:05:03Z" end-time="2026-09-18 01:05:03Z" duration="0.007549" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-civics-lot-tests-final.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -2571,7 +2571,7 @@ namespace CityForgeV3.UI
 
         var types = new List<string>
                 {
-                    "Residential", "Commercial", "Industrial", "Mixed", "Transportation"
+                    "Residential", "Commercial", "Industrial", "Mixed", "Transportation", "Civics"
                 };
         var typeField = new CityForgeChoiceField(
             _root, "LOT TYPE", types, Mathf.Max(0, types.IndexOf(LotTypeLabel(_lotWorld.LotType))));
@@ -2621,139 +2621,6 @@ namespace CityForgeV3.UI
         screen.Add(main);
       }
 
-      if (_lotEditorCategoryExpanded && _lotEditorCategory == LotEditorCategory.Buildings)
-      {
-        var buildingModal = new VisualElement
-        {
-          name = "buildings-category-panel"
-        };
-        buildingModal.AddToClassList("document-modal");
-        buildingModal.AddToClassList("building-library-modal");
-        var catalog = new VisualElement { name = "building-library-panel" };
-        catalog.AddToClassList("catalog");
-        catalog.AddToClassList("building-catalog");
-        catalog.AddToClassList("document-modal-panel");
-        catalog.AddToClassList("building-library-modal-panel");
-        catalog.Add(StyledLabel("BUILDINGS", "section-label"));
-        catalog.Add(StyledLabel("BUILDING LIBRARY", "catalog-title"));
-        var closeLibrary = CfButton.Create("CLOSE", () =>
-        {
-          _lotEditorCategoryExpanded = false;
-          Show(AppScreen.LotEditor);
-        }, true, "quiet");
-        closeLibrary.name = "close-building-library";
-        closeLibrary.AddToClassList("building-library-close");
-        catalog.Add(closeLibrary);
-        var categoryTabs = new VisualElement { name = "building-use-tabs" };
-        categoryTabs.AddToClassList("building-use-tabs");
-        foreach (BuildingUseCategory category in Enum.GetValues(typeof(BuildingUseCategory)))
-        {
-          // Entertainment currently contains real-time 3D attractions
-          // and belongs only in the 3D building library.
-          if (category == BuildingUseCategory.Entertainment) continue;
-          var capturedCategory = category;
-          var categoryButton = CfButton.Create(
-              category.ToString().ToUpperInvariant(),
-              () =>
-              {
-                _buildingUseCategory = capturedCategory;
-                _buildingSubcategory = string.Empty;
-                Show(AppScreen.LotEditor);
-              },
-              true,
-              _buildingUseCategory == category
-                  ? "building-use-selected"
-                  : "building-use");
-          categoryButton.name = $"building-use-{category.ToString().ToLowerInvariant()}";
-          categoryTabs.Add(categoryButton);
-        }
-        catalog.Add(categoryTabs);
-
-        var subcategories = BuildingCatalog.SubcategoriesFor(_buildingUseCategory);
-        if (subcategories.Count > 0)
-        {
-          var subcategoryTabs = new VisualElement { name = "building-subcategory-tabs" };
-          subcategoryTabs.AddToClassList("building-use-tabs");
-          var allSubcategoriesButton = CfButton.Create(
-              "ALL",
-              () =>
-              {
-                _buildingSubcategory = string.Empty;
-                Show(AppScreen.LotEditor);
-              },
-              true,
-              string.IsNullOrWhiteSpace(_buildingSubcategory)
-                  ? "building-use-selected"
-                  : "building-use");
-          allSubcategoriesButton.name = "building-subcategory-all";
-          subcategoryTabs.Add(allSubcategoriesButton);
-          foreach (var subcategory in subcategories)
-          {
-            var capturedSubcategory = subcategory;
-            var subcategoryButton = CfButton.Create(
-                subcategory.ToUpperInvariant(),
-                () =>
-                {
-                  _buildingSubcategory = capturedSubcategory;
-                  Show(AppScreen.LotEditor);
-                },
-                true,
-                _buildingSubcategory == subcategory
-                    ? "building-use-selected"
-                    : "building-use");
-            subcategoryButton.name = $"building-subcategory-{subcategory.ToLowerInvariant()}";
-            subcategoryTabs.Add(subcategoryButton);
-          }
-          catalog.Add(subcategoryTabs);
-        }
-
-        var visibleBuildings = BuildingCatalog.ForUseCategory(
-            _buildingUseCategory, _buildingSubcategory);
-        catalog.Add(StyledLabel(
-            $"{visibleBuildings.Count} {_buildingUseCategory.ToString().ToUpperInvariant()} " +
-            $"BUILDING{(visibleBuildings.Count == 1 ? string.Empty : "S")}",
-            "catalog-meta"));
-        var buildingGrid = new VisualElement { name = "building-card-grid" };
-        buildingGrid.AddToClassList("building-card-grid");
-        foreach (var entry in visibleBuildings)
-        {
-          var captured = entry;
-          var card = new Button(() => PlaceBuilding(captured))
-          {
-            name = $"building-card-{entry.Id}"
-          };
-          card.AddToClassList("building-card");
-
-          var thumbnail = new VisualElement();
-          thumbnail.AddToClassList("building-card-thumbnail");
-          var texture = Resources.Load<Texture2D>(entry.ThumbnailResourcePath);
-          if (texture != null)
-            thumbnail.style.backgroundImage = new StyleBackground(texture);
-          card.Add(thumbnail);
-
-          card.Add(StyledLabel(
-              entry.ShortName.ToUpperInvariant(),
-              "building-card-name"));
-          var compactMeta = $"{entry.OccupancyWidth}×{entry.OccupancyDepth}";
-          if (entry.ReviewStatus != "approved") compactMeta += "  REVIEW";
-          card.Add(StyledLabel(compactMeta, "building-card-meta"));
-          buildingGrid.Add(card);
-        }
-        var buildingScroll = new ScrollView(ScrollViewMode.Vertical)
-        {
-          name = "building-card-scroll"
-        };
-        buildingScroll.AddToClassList("building-card-scroll");
-        buildingScroll.Add(buildingGrid);
-        catalog.Add(buildingScroll);
-        if (visibleBuildings.Count == 0)
-          catalog.Add(StyledLabel(
-              $"NO {_buildingUseCategory.ToString().ToUpperInvariant()} BUILDINGS YET",
-              "catalog-empty"));
-        buildingModal.Add(catalog);
-        screen.Add(buildingModal);
-      }
-
       if (_lotEditorCategoryExpanded &&
           _lotEditorCategory == LotEditorCategory.Buildings3D)
       {
@@ -2789,6 +2656,7 @@ namespace CityForgeV3.UI
               () =>
               {
                 _buildingUseCategory = capturedCategory;
+                _buildingSubcategory = string.Empty;
                 Show(AppScreen.LotEditor);
               },
               true,
@@ -2801,11 +2669,41 @@ namespace CityForgeV3.UI
         }
         catalog.Add(categoryTabs);
 
+        var threeDimensionalSubcategories =
+            BuildingContentCatalog.LotEditorSubcategories(
+                _buildingUseCategory, _lotWorld.CurrentEraId);
+        if (threeDimensionalSubcategories.Count > 0)
+        {
+          var subcategoryTabs = new VisualElement
+          { name = "building-3d-subcategory-tabs" };
+          subcategoryTabs.AddToClassList("building-use-tabs");
+          subcategoryTabs.Add(CfButton.Create("ALL", () =>
+          {
+            _buildingSubcategory = string.Empty;
+            Show(AppScreen.LotEditor);
+          }, true, string.IsNullOrWhiteSpace(_buildingSubcategory)
+              ? "building-use-selected" : "building-use"));
+          foreach (var subcategory in threeDimensionalSubcategories)
+          {
+            var selected = subcategory;
+            var tab = CfButton.Create(subcategory.ToUpperInvariant(), () =>
+            {
+              _buildingSubcategory = selected;
+              Show(AppScreen.LotEditor);
+            }, true, _buildingSubcategory == subcategory
+                ? "building-use-selected" : "building-use");
+            tab.name = $"building-3d-subcategory-{subcategory.ToLowerInvariant()}";
+            subcategoryTabs.Add(tab);
+          }
+          catalog.Add(subcategoryTabs);
+        }
+
         var grid = new VisualElement { name = "building-3d-card-grid" };
         grid.AddToClassList("building-card-grid");
         var visibleBuildingCount = 0;
         foreach (var entry in BuildingContentCatalog.ForLotEditor(
-                     _buildingUseCategory, _lotWorld.CurrentEraId))
+                     _buildingUseCategory, _lotWorld.CurrentEraId,
+                     _buildingSubcategory))
         {
           var captured = entry;
           var card = new Button(() =>
@@ -2831,14 +2729,15 @@ namespace CityForgeV3.UI
           card.Add(StyledLabel(captured.displayName.ToUpperInvariant(),
               "building-card-name"));
           card.Add(StyledLabel(
-              $"{captured.category.ToUpperInvariant()} • {(captured.description ?? string.Empty).ToUpperInvariant()}",
+              $"{(string.IsNullOrWhiteSpace(captured.subcategory) ? captured.category : captured.subcategory).ToUpperInvariant()} • {(captured.description ?? string.Empty).ToUpperInvariant()}",
               "building-card-meta"));
           card.Add(StyledLabel("ADD TO CURRENT LOT",
               "building-card-meta"));
           grid.Add(card);
           visibleBuildingCount++;
         }
-        if (_buildingUseCategory == BuildingUseCategory.Civics &&
+        if (string.IsNullOrWhiteSpace(_buildingSubcategory) &&
+            _buildingUseCategory == BuildingUseCategory.Civics &&
             BuildingContentCatalog.Find(
                 LotWorldController.ArtMuseumProductionId) == null)
         {
@@ -2872,7 +2771,8 @@ namespace CityForgeV3.UI
           grid.Add(museumCard);
           visibleBuildingCount++;
         }
-        if (_buildingUseCategory == BuildingUseCategory.Entertainment &&
+        if (string.IsNullOrWhiteSpace(_buildingSubcategory) &&
+            _buildingUseCategory == BuildingUseCategory.Entertainment &&
             BuildingContentCatalog.Find(
                 LotWorldController.KingKongEnclosureBuilding3DId) == null)
         {
@@ -2907,7 +2807,8 @@ namespace CityForgeV3.UI
           grid.Add(enclosureCard);
           visibleBuildingCount++;
         }
-        if (_buildingUseCategory == BuildingUseCategory.Commercial &&
+        if (string.IsNullOrWhiteSpace(_buildingSubcategory) &&
+            _buildingUseCategory == BuildingUseCategory.Commercial &&
             BuildingContentCatalog.Find(
                 LotWorldController.PlymouthStoreProductionId) == null)
         {
@@ -2942,7 +2843,8 @@ namespace CityForgeV3.UI
           grid.Add(plymouthCard);
           visibleBuildingCount++;
         }
-        if (_buildingUseCategory == BuildingUseCategory.Residential &&
+        if (string.IsNullOrWhiteSpace(_buildingSubcategory) &&
+            _buildingUseCategory == BuildingUseCategory.Residential &&
             BuildingContentCatalog.Find(
                 LotWorldController.GildedAgeMansionExperimentalId) == null)
         {
@@ -4598,7 +4500,7 @@ namespace CityForgeV3.UI
         LotEditorCategory category, string label) => category switch
         {
           LotEditorCategory.Main => "Main — lot name, dimensions, and type",
-          LotEditorCategory.Buildings3D => "Buildings — place and edit buildings",
+          LotEditorCategory.Buildings3D => "Buildings — place real-time 3D models",
           LotEditorCategory.Roads => "Roads — build and edit streets",
           LotEditorCategory.Railroad => "Railroads — rail lines and streetcars",
           LotEditorCategory.Transport => "Transport — vehicles, railroads, and boats",
@@ -4622,6 +4524,10 @@ namespace CityForgeV3.UI
 
     private void SetLotEditorCategory(LotEditorCategory category)
     {
+      // The image-driven catalog is retained for loading existing lots, but
+      // every new building choice opens the real-time 3D library.
+      if (category == LotEditorCategory.Buildings)
+        category = LotEditorCategory.Buildings3D;
       if (category != LotEditorCategory.Terrain)
         _terrainSculptMode = TerrainSculptMode.None;
       if (category != LotEditorCategory.Water &&
@@ -4666,14 +4572,11 @@ namespace CityForgeV3.UI
       if (category is LotEditorCategory.Vehicles or LotEditorCategory.Railroad or LotEditorCategory.Boats)
         _lotInspectorVisible = true;
       _lotStatus = $"{category} tools opened";
-      if (category == LotEditorCategory.Buildings)
-      {
-        // Reopening a broad category should start with its complete
-        // catalog. Otherwise a remembered secondary filter such as
-        // Government can make Culture buildings appear missing even
-        // while the Civics tab remains selected.
+      if (category == LotEditorCategory.Buildings3D &&
+          _lotWorld.LotType == LotType.Civics)
+        _buildingUseCategory = BuildingUseCategory.Civics;
+      if (category == LotEditorCategory.Buildings3D)
         _buildingSubcategory = string.Empty;
-      }
       if (category == LotEditorCategory.Buildings ||
           category == LotEditorCategory.Buildings3D)
       {
@@ -5850,32 +5753,6 @@ namespace CityForgeV3.UI
       Show(AppScreen.LotEditor);
     }
 
-    private void PlaceGovernmentHouse()
-    {
-      _lotWorld.PlaceGovernmentHouseAtCenter();
-      _lotStatus = "Government House placed at lot center";
-      Show(AppScreen.LotEditor);
-    }
-
-    private void PlaceNewEnglandHouse()
-    {
-      _lotStatus = _lotWorld.PlaceBuildingAtCenter(BuildingCatalog.NewEnglandHouseId)
-          ? "New England House 1720 added to the nearest open site"
-          : "No open site remains • move or delete a building first";
-      Show(AppScreen.LotEditor);
-    }
-
-    private void PlaceBuilding(BuildingCatalogEntry entry)
-    {
-      _buildingPlacementPending = _lotWorld.BeginBuildingPlacementAtCenter(entry.Id);
-      _lotStatus = _buildingPlacementPending
-          ? $"{entry.Name} ready • move the mouse and click to place"
-          : "No open site remains • move or delete a building first";
-      if (_buildingPlacementPending)
-        _lotEditorCategoryExpanded = false;
-      Show(AppScreen.LotEditor);
-    }
-
     private void ToggleRegistrationDiagnostics()
     {
       _lotWorld.ToggleRegistrationDiagnostics();
@@ -6238,7 +6115,7 @@ namespace CityForgeV3.UI
       var typeField = new CityForgeChoiceField(
           _root,
           "LOT TYPE",
-          new List<string> { "Residential", "Commercial", "Industrial", "Mixed", "Transportation" },
+          new List<string> { "Residential", "Commercial", "Industrial", "Mixed", "Transportation", "Civics" },
           0);
       panel.Add(typeField);
 
@@ -6837,6 +6714,7 @@ namespace CityForgeV3.UI
       LotType.Industrial => "Industrial",
       LotType.Mixed => "Mixed",
       LotType.Agricultural => "Agricultural",
+      LotType.Civics => "Civics",
       _ => "Transportation"
     };
 

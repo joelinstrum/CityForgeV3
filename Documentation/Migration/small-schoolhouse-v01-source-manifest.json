@@ -1,0 +1,13 @@
+{
+  "sourceArchive": "/Users/joelinstrum/Downloads/buildings/schoolhouse/small-school.zip",
+  "archiveSha256": "dbe07ff2462074d7293174ca698a7f94af5131934710c56044a89dd9988ffb33",
+  "extractedMembersSha256": {
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbx": "bd4b09cf262602d8de690c5ad82f169907412615b657380244e924df8d2dc25d",
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbm/tripo_image_72d71cb0_0.jpg": "314e244074768d103d64b84b3bb3c3bed7796645dc76beb140c47e2123fd7e5b",
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbm/tripo_image_72d71cb0-7a79-4b65-9cf4-d52626fcebb5_0_Metallic.jpg": "f301a734c9a82c7db5e887e6d7068d653b3ba7023aa44c83733a41d20afbb3d0",
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbm/tripo_image_72d71cb0-7a79-4b65-9cf4-d52626fcebb5_0_Roughness.jpg": "83deb3208988b2eff453acbf636a07ca204c8ff01004dd422a7b2dbd84a6d71e",
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbm/tripo_image_72d71cb0_1.jpg": "2022f130f74cc16baae338765003c086c241acd88c9c115b9fc80970f1452753",
+    "tripo_convert_72d71cb0-7a79-4b65-9cf4-d52626fcebb5.fbm/tripo_image_72d71cb0_2.png": "6e3a9886da3d5314173d09d5cb2d608e85043d0dac19776de4e501a43eefcab2"
+  },
+  "sourcePolicy": "Canonical supplied FBX and textures; never edit in place."
+}

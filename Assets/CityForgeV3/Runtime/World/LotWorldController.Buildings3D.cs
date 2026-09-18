@@ -81,6 +81,7 @@ namespace CityForgeV3.World
         public const float KingKongEnclosureVisibleBoundsScale = 0.58f;
         private readonly List<GameObject> _experimentalBuilding3DRoots = new();
         private readonly List<GameObject> _experimentalBuilding3DVisibleRoots = new();
+        private readonly List<FarZoomBuildingBillboard> _farBuildingBillboards = new();
         private readonly List<Material> _experimentalBuilding3DMaterials = new();
         private readonly Dictionary<GameObject, GameObject>
             _experimentalBuilding3DGroundShadows = new();
@@ -754,6 +755,7 @@ namespace CityForgeV3.World
                     DestroyForCurrentMode(root);
             _experimentalBuilding3DRoots.Clear();
             _experimentalBuilding3DVisibleRoots.Clear();
+            _farBuildingBillboards.Clear();
             _building3DSelectionOutline = null;
             _experimentalBuilding3DGroundShadows.Clear();
             _buildingFootprintContours.Clear();
@@ -845,6 +847,24 @@ namespace CityForgeV3.World
                 _experimentalBuilding3DVisibleRoots.Add(root);
                 BuildExperimentalBuilding3DReceiverShadowCaster(root);
                 BuildExperimentalBuilding3DProjectedGroundShadow(root);
+                if (!string.IsNullOrWhiteSpace(content?.farBillboardResourceRoot))
+                {
+                    var far = root.AddComponent<FarZoomBuildingBillboard>();
+                    if (far.Configure(content.farBillboardResourceRoot,
+                            content.farBillboardPixelsPerMeter,
+                            turns + content.farBillboardYawOffset, _camera))
+                    {
+                        _farBuildingBillboards.Add(far);
+                        far.SetFar(_districtHosted && ZoomLevel >= LotZoomLevel.Far);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Missing far views for '{content.id}'; " +
+                                         "keeping its 3D model visible.");
+                        if (Application.isPlaying) Destroy(far);
+                        else DestroyImmediate(far);
+                    }
+                }
             }
             RebuildEffectPresentations();
             // Lot reconstruction may run after SetTimeOfDay (the QA helpers

@@ -5699,6 +5699,22 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CivicsLotContractPersistsWithoutChangingExistingLotTypeIds()
+        {
+            Assert.That((int)LotType.Agricultural, Is.EqualTo(5));
+            Assert.That((int)LotType.Civics, Is.EqualTo(6));
+            var contract = LotTypeCatalog.For(LotType.Civics);
+            Assert.That(contract.DisplayName, Is.EqualTo("CIVICS LOT"));
+            Assert.That(contract.IsValid, Is.True);
+
+            var session = new LotEditorSession();
+            session.NewLot("Small Schoolhouse", LotType.Civics, 20);
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            Assert.That(restored.Data.LotType, Is.EqualTo(LotType.Civics));
+        }
+
+        [Test]
         public void LegacySquareV2SaveMigratesToV3Dimensions()
         {
             const string legacy = "{\"Schema\":\"cityforge-v3-lot-save-v2\",\"LotSizeMeters\":40,\"LotType\":1}";

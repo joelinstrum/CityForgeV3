@@ -283,6 +283,24 @@
       "smoothness": 0.17
     },
     {
+      "id": "small-schoolhouse-3d-v01",
+      "displayName": "Small Schoolhouse",
+      "category": "Civics",
+      "subcategory": "Education",
+      "description": "One-room schoolhouse • source-derived 3D model",
+      "modelResourcePath": "CityForgeV3/Buildings3D/SmallSchoolV01/Source/small-school-v01",
+      "thumbnailResourcePath": "CityForgeV3/Buildings3D/SmallSchoolV01/thumbnail",
+      "pitchDegrees": -90,
+      "baseYawDegrees": 90,
+      "normalizeAxis": "height",
+      "normalizeMeters": 11,
+      "materialMode": "pbr",
+      "textureRoot": "CityForgeV3/Buildings3D/SmallSchoolV01/Textures/small-school",
+      "farBillboardResourceRoot": "CityForgeV3/Buildings3D/SmallSchoolV01/FarViews",
+      "farBillboardPixelsPerMeter": 50,
+      "smoothness": 0.18
+    },
+    {
       "id": "art-museum-production-v01",
       "displayName": "City Forge Art Museum",
       "category": "Civics",
