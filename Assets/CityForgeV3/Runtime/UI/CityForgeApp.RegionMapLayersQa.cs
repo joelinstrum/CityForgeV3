@@ -55,7 +55,7 @@ namespace CityForgeV3.UI
             if(command=="river-perf-refresh")
             {
                 var tile=FindSelectedRegionTile();var timer=System.Diagnostics.Stopwatch.StartNew();
-                _districtWorld.RefreshRivers(tile,preservePresentations:true);
+                _districtWorld.RebuildAllRiverPresentations(tile,DistrictBulkRebuildReason.TestFixture,preservePresentations:true);
                 File.AppendAllText("/tmp/cityforge-river-performance.txt",$"{tile.Name}: {tile.Rivers.Count} rivers, {tile.Rivers.Sum(r=>r.Points.Count)} points, refresh {timer.ElapsedMilliseconds} ms\n");return;
             }
             if(command=="surface-cache-roads")
@@ -69,7 +69,7 @@ namespace CityForgeV3.UI
                 DistrictRoadPlacementModel.TryPlace(tile.Roads,7,7,DistrictScale.Columns(tile.Width),DistrictScale.Columns(tile.Height),DistrictRoadPlacementModel.DirtFamily,ref treasury);
                 _districtWorld.RefreshRoads(tile,deferSurfaceRefresh:true);
                 if(_districtWorld.SurfaceCacheRevision!=revision)throw new Exception("Road drag flushed surface cache");
-                _districtWorld.CommitSurfaceChanges();
+                _districtWorld.CommitLocalSurfaceChanges();
                 if(_districtWorld.SurfaceCacheRevision!=revision+1 || roads[new Vector2Int(2,2)]!=first)throw new Exception("Road edit invalidated unrelated state");
                 _districtWorld.RefreshRoads(tile);
                 if(_districtWorld.SurfaceCacheRevision!=revision+1 || roads[new Vector2Int(2,2)]!=first)throw new Exception("No-op road refresh rebuilt objects");
@@ -78,14 +78,14 @@ namespace CityForgeV3.UI
             if(command=="surface-cache-hills")
             {
                 var tile=FindSelectedRegionTile();tile.Hills=new(){HeightMeters=45,Coverage=.8f};
-                _districtWorld.CommitSurfaceChanges();return;
+                _districtWorld.CommitLocalSurfaceChanges();return;
             }
             if(command=="surface-cache-check")
             {
                 var tile=FindSelectedRegionTile();var decoration=_districtWorld.GetComponentInChildren<DistrictGroundDecals>();
                 var meshes=_districtWorld.GetComponentsInChildren<MeshFilter>().Where(f=>f.name.StartsWith("District Leaves")).ToDictionary(f=>f.name,f=>f.sharedMesh.GetInstanceID());
                 int revision=_districtWorld.SurfaceCacheRevision;
-                _districtWorld.CommitSurfaceChanges();
+                _districtWorld.CommitLocalSurfaceChanges();
                 if(_districtWorld.SurfaceCacheRevision!=revision)throw new Exception("No-op changed cache revision");
                 foreach(var filter in decoration.GetComponentsInChildren<MeshFilter>())if(filter.name.StartsWith("District Leaves") && meshes[filter.name]!=filter.sharedMesh.GetInstanceID())throw new Exception("No-op rebuilt decoration");
                 // Compare incremental output to a full deterministic rebuild, not just its count.

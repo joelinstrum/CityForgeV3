@@ -1,0 +1,7 @@
+Blender low-poly boxwood prototype
+Dimensions: 3.00 x 1.00 x 1.00 m (X length, Y depth, Z height)
+Mesh vertices: 310
+Mesh polygons: 312
+Equivalent triangles: 616
+Foliage image: versioned boxwood-foliage-v01.png; exact runtime copy
+FBX and Blend are separate new V01 assets; Georgian V01 untouched

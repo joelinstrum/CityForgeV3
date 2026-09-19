@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="23" result="Passed" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.2378983">
+  <test-suite type="TestSuite" id="1000" name="DistrictStartScratch" fullname="DistrictStartScratch" runstate="Runnable" testcasecount="1050" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.237898" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2211" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-start-qa.3Vdynt/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1050" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.225312" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16128" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2212" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="912" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.208467" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2213" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="912" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.201545" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1314" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="544" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.169049" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1338" name="ArmedLotOwnsPointerWhileDefaultSelectModeIsActive" fullname="CityForgeV3.Tests.UiFoundationTests.ArmedLotOwnsPointerWhileDefaultSelectModeIsActive" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.019674" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1336" name="ArmedLotOwnsPointerWhileDefaultSelectModeIsActive(False)" fullname="CityForgeV3.Tests.UiFoundationTests.ArmedLotOwnsPointerWhileDefaultSelectModeIsActive(False)" methodname="ArmedLotOwnsPointerWhileDefaultSelectModeIsActive" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="344674702" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.015730" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1337" name="ArmedLotOwnsPointerWhileDefaultSelectModeIsActive(True)" fullname="CityForgeV3.Tests.UiFoundationTests.ArmedLotOwnsPointerWhileDefaultSelectModeIsActive(True)" methodname="ArmedLotOwnsPointerWhileDefaultSelectModeIsActive" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="879978717" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000299" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1464" name="DistrictArrowPanningMovesTheWorldInScreenDirections" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictArrowPanningMovesTheWorldInScreenDirections" methodname="DistrictArrowPanningMovesTheWorldInScreenDirections" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="113008562" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.001162" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1463" name="DistrictPanningBecomesFineAtCloseZoomLevels" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictPanningBecomesFineAtCloseZoomLevels" methodname="DistrictPanningBecomesFineAtCloseZoomLevels" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="437342915" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.001420" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1332" name="DistrictQuarterEdgePanExcludesCornersAndOutside" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.004889" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1315" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.5f,1,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.5f,1,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2115380026" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000615" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1316" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.25f,0.5f,1,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.25f,0.5f,1,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2021053221" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000049" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1317" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.75f,0.5f,-1,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.75f,0.5f,-1,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="999718539" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000044" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1318" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.5f,-1,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.5f,-1,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="601070551" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000042" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1319" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.1f,0,-1)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.1f,0,-1)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="353761878" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1320" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.25f,0,-1)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.25f,0,-1)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="734752053" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000039" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1321" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.75f,0,1)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.75f,0,1)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1774771640" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000038" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1322" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.9f,0,1)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.9f,0,1)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="929443107" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1323" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.1f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.1f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="536297067" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000040" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1324" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.1f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.1f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="593294378" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000051" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1325" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.9f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.1f,0.9f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1560622478" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1326" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.9f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.9f,0.9f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1941917836" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000039" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1327" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.5f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,0.5f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1083431167" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000038" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1328" name="DistrictQuarterEdgePanExcludesCornersAndOutside(-0.1f,0.5f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(-0.1f,0.5f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="726392398" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000041" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1329" name="DistrictQuarterEdgePanExcludesCornersAndOutside(1.1f,0.5f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(1.1f,0.5f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1404886601" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000043" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1330" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,-0.1f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,-0.1f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1430881413" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000036" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1331" name="DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,1.1f,0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanExcludesCornersAndOutside(0.5f,1.1f,0,0)" methodname="DistrictQuarterEdgePanExcludesCornersAndOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1888979852" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000036" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1335" name="DistrictQuarterEdgePanModalStopsAnExistingPan" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanModalStopsAnExistingPan" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.027309" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1333" name="DistrictQuarterEdgePanModalStopsAnExistingPan(&quot;document-modal&quot;)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanModalStopsAnExistingPan(&quot;document-modal&quot;)" methodname="DistrictQuarterEdgePanModalStopsAnExistingPan" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1272917406" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.026647" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1334" name="DistrictQuarterEdgePanModalStopsAnExistingPan(&quot;cf-choice-overlay&quot;)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictQuarterEdgePanModalStopsAnExistingPan(&quot;cf-choice-overlay&quot;)" methodname="DistrictQuarterEdgePanModalStopsAnExistingPan" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="485152693" result="Passed" start-time="2026-09-19 17:28:08Z" end-time="2026-09-19 17:28:08Z" duration="0.000244" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-start-qa.3Vdynt/edge-pan-results.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

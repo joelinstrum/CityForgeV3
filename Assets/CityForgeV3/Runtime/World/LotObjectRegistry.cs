@@ -29,7 +29,7 @@ namespace CityForgeV3.World
                 var id = type.GetField("InstanceId") ?? type.GetField("Id");
                 if (id?.FieldType == typeof(string))
                 {
-                    var label = new[] { "AssetId", "BuildingId", "PropId", "FloraId", "EffectId", "TextureId", "WaterId", "ComponentId", "DefinitionId", "PackageId" }
+                    var label = new[] { "AssetId", "BuildingId", "PropId", "FloraId", "EffectId", "TextureId", "ConnectorId", "WaterId", "ComponentId", "DefinitionId", "PackageId" }
                         .Select(n => type.GetField(n)?.GetValue(value) as string).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
                     var item = new LotObjectReference { Id = (string)id.GetValue(value), Kind = kind, Name = label ?? kind, Source = value, IdField = id };
                     switch (value)
@@ -42,6 +42,14 @@ namespace CityForgeV3.World
                         case PlacedDecal p: item.Position = new Vector3(p.PositionX, 0, p.PositionZ); item.HasPosition = true; break;
                         case CirculationNode p: item.Position = new Vector3(p.PositionMeters.x, p.ElevationMeters, p.PositionMeters.y); item.HasPosition = true; break;
                         case PlacedRoadPiece p: item.Position = new Vector3(p.GridX * 10 + 5, 0, p.GridZ * 10 + 5); item.HasPosition = true; break;
+                        case PlacedLotConnector p:
+                            var access = LotWorldController.ConnectorAccess(p,
+                                data.LotWidthCells * 10,
+                                data.LotDepthCells * 10);
+                            item.Position = new Vector3(access.Inside.x, 0,
+                                access.Inside.y);
+                            item.HasPosition = true;
+                            break;
                     }
                     result.Add(item);
                 }
@@ -72,6 +80,12 @@ namespace CityForgeV3.World
             var item = Read(data).Find(x => x.Id == point.objectId);
             if (item == null) throw new ArgumentException("Object ID not found: " + point.objectId);
             if (!item.HasPosition) throw new ArgumentException("This object cannot be used as a location: " + point.objectId);
+            // Script offsets attached to a placed prop rotate with that prop.
+            // This keeps a dock point on a barge when district placement turns
+            // the hull to follow the river.
+            if (item.Source is PlacedProp prop)
+                return item.Position + Quaternion.Euler(0,
+                    prop.RotationQuarterTurns * 90f, 0) * point.offset;
             return item.Position + point.offset;
         }
     }

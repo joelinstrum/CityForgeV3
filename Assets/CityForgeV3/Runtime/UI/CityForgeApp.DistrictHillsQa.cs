@@ -23,7 +23,7 @@ namespace CityForgeV3.UI
             var d=FindSelectedRegionTile();if(d?.Name!="Little River Bend")throw new Exception("Open Little River Bend first");
             // Joe explicitly authorized landscape replacement in this saved district.
             if(d.Rivers.Count==0)d.Rivers.Add(DistrictRiverGenerator.Generate(d,DistrictRiverDirection.WestToEast,.65f,DistrictRiverDepth.Shallow,1209).River);
-            _districtWorld.RefreshRivers(d);
+            _districtWorld.RebuildAllRiverPresentations(d,DistrictBulkRebuildReason.TestFixture);
             int cleared=d.Flora.RemoveAll(tree=>_districtWorld.IsUnderRiverWater(new Vector2(tree.NormalizedX,tree.NormalizedZ)));
             Debug.Log($"HILLS RIVER cleared {cleared} submerged flora from Little River Bend");
             ApplyDistrictHills(new(){Seed=1209,HeightMeters=45,Coverage=.75f});

@@ -1,0 +1,4 @@
+Live fountain presentations: 1
+Editor playing: True
+Editor paused: True
+Prop — stone-garden-fountain-v01: water=True, meshRenderers=4, particles=2

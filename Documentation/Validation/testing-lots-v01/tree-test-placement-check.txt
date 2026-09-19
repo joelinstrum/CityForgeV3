@@ -1,0 +1,1 @@
+PASS: read-only copy of Tree Test placed into three isolated in-memory districts at normalized 0.1, 0.5 and 0.9 with zero treasury and no charge. No world rendering or player saves.

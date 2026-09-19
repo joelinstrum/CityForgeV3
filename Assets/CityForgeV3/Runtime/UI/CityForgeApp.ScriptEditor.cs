@@ -15,7 +15,8 @@ namespace CityForgeV3.UI
             panel.AddToClassList("road-material-modal-panel"); panel.AddToClassList("flora-modal-panel");
             panel.style.width = Length.Percent(94); panel.style.maxWidth = 1500;
             var message = StyledLabel("", "inspector-note"); message.name = "script-validation"; panel.Add(message);
-            try { message.text = LotScriptCodec.Describe(LotScriptCodec.Parse(source)); } catch (Exception e) { message.text = e.Message; }
+            try { message.text = _lotWorld.DescribeBehaviorScript(source); }
+            catch (Exception e) { message.text = e.Message; }
             foreach (var heading in panel.Children()) heading.style.flexShrink = 0;
             var area = new ScrollView(ScrollViewMode.Vertical)
             { name = "lot-script-scroll", verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible };
@@ -109,7 +110,10 @@ namespace CityForgeV3.UI
                     {
                         if (!path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Choose a .json behavior script.");
                         if (new FileInfo(path).Length > LotScriptCodec.MaxCharacters * 4) throw new ArgumentException("Script file is too large.");
-                        var text = File.ReadAllText(path); if (validate != null) validate(text); else LotScriptCodec.Parse(text); loaded(text);
+                        var text = File.ReadAllText(path);
+                        if (validate != null) validate(text);
+                        else _lotWorld.DescribeBehaviorScript(text);
+                        loaded(text);
                     }
                 }
                 catch (Exception e) { error.text = e.Message; }

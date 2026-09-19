@@ -7,6 +7,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         [PerRendererData] _FloraSaturation ("Tree Saturation", Float) = 1
         [PerRendererData] _FloraBaseEllipse ("Trunk Base Ellipse", Vector) = (0,0,0,0)
         [PerRendererData] _ForestPalette ("District Forest Palette", Float) = 0
+        [PerRendererData] _DistrictFloraBatch ("Camera-Facing Flora Batch", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
@@ -56,6 +57,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             fixed4 _Color;
             half _FloraSaturation;
             half _ForestPalette;
+            half _DistrictFloraBatch;
             float4 _FloraBaseEllipse;
             half _FloraOpacity;
             half _Cutoff;
@@ -70,6 +72,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                float3 billboardOffset : TEXCOORD2;
                 fixed4 color : COLOR;
             };
 
@@ -84,6 +87,17 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
 
             v2f vert(appdata input)
             {
+                if (_DistrictFloraBatch > .5h)
+                {
+                    // Batch vertices store each tree's ground anchor. Camera-
+                    // local offsets keep every sprite upright when a hosted
+                    // Lot rotates the shared camera, with no CPU mesh rebuild.
+                    float3 center = mul(unity_ObjectToWorld, input.vertex).xyz;
+                    float3 world = center + mul(
+                        (float3x3)unity_CameraToWorld,
+                        input.billboardOffset);
+                    input.vertex = mul(unity_WorldToObject, float4(world, 1));
+                }
                 v2f output;
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;

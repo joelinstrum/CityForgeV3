@@ -29,6 +29,7 @@ namespace CityForgeV3.UI
     Effects,
     BaseTextures,
     OverlayTextures,
+    Connectors,
     Decals,
     Environment,
     View,
@@ -57,6 +58,7 @@ namespace CityForgeV3.UI
     private VisualElement _root;
     private LotWorldController _lotWorld;
     private DistrictWorldController _districtWorld;
+    private RegionCityTile _districtWorldTile;
     private string _districtWorldTileId = "";
     private string _districtWorldLotId = "";
     private string _districtWorldCompositionKey = "";
@@ -76,6 +78,7 @@ namespace CityForgeV3.UI
     private string _builderTool = DistrictRoadPlacementModel.DirtFamily;
     private bool _districtSimulationPaused;
     private bool _districtRoadPointerDown;
+    private static Texture2D _districtRoadDeleteCursorTexture;
     private Vector2Int _lastDistrictRoadDragCell;
     private readonly List<Vector2Int> _districtRoadStrokePath = new();
     private readonly HashSet<Vector2Int> _districtRoadStrokeAdded = new();
@@ -97,11 +100,15 @@ namespace CityForgeV3.UI
     private string _selectedDistrictFloraInstanceId = "";
     private string _activeDistrictRandomFloraGroupId = "";
     private bool _districtFloraPointerDown;
+    private readonly List<PlacedDistrictFlora>
+        _pendingDistrictFloraPresentations = new();
     private Vector2 _districtFloraDragOffset;
     private readonly List<DistrictSelectionRef> _districtSelection = new();
     private bool _districtMarqueeActive;
     private bool _districtSelectionDragActive;
     private bool _districtSelectionMovedRiver;
+    private bool _districtSelectionMovedRoad;
+    private bool _districtSelectionMovedLot;
     private Vector2 _districtSelectionStart;
     private Vector2 _districtSelectionLast;
     private Vector2 _districtSelectionScreenStart;
@@ -172,6 +179,8 @@ namespace CityForgeV3.UI
     private string _placementEffectId = "";
     private string _placementBuildingPropId = "";
     private string _placementOverlayTextureId = "";
+    private int _overlayLibraryFootprintCells = 1;
+    private string _placementConnectorId = "";
     private string _placementDecalCategory = "";
     private TerrainSculptMode _terrainSculptMode;
     private float _terrainBrushRadiusMeters = DefaultTerrainBrushRadiusMeters;
@@ -574,12 +583,18 @@ namespace CityForgeV3.UI
 
     private void OnApplicationFocus(bool focused)
     {
-      if (!focused) CancelDistrictSelectionPointer();
+      if (!focused)
+      {
+        _districtEdgePanDirection = Vector2Int.zero;
+        CancelDistrictSelectionPointer();
+      }
     }
 
     private void Update()
     {
       if (!EnsureUiRoot()) return;
+      if (MapPanningBlocked) _districtEdgePanDirection = Vector2Int.zero;
+      TickDistrictTimeOfDay();
       TickDistrictLabor();
       TickDistrictLotBehaviors();
       RefreshDecalCursorForControl(
@@ -739,6 +754,7 @@ namespace CityForgeV3.UI
 
     private void OnKeyDown(KeyDownEvent evt)
     {
+      if (IsTextEntryElement(evt.target as VisualElement)) return;
       if(_districtBridgeModalOpen)
       {
         if(evt.keyCode==KeyCode.Escape){RemoveDocumentModal();evt.StopImmediatePropagation();}
@@ -1087,6 +1103,7 @@ namespace CityForgeV3.UI
 
     private void OnKeyUp(KeyUpEvent evt)
     {
+      if (IsTextEntryElement(evt.target as VisualElement)) return;
       if (evt.keyCode is KeyCode.LeftControl or KeyCode.RightControl)
         RefreshDecalCursorForControl(false);
       // Repeat remains active after R is released. The next click sets
@@ -1160,12 +1177,18 @@ namespace CityForgeV3.UI
 
     private bool TextInputHasFocus()
     {
-      var focused = _root?.focusController?.focusedElement as VisualElement;
-      while (focused != null)
+      return IsTextEntryElement(
+          _root?.focusController?.focusedElement as VisualElement);
+    }
+
+    private static bool IsTextEntryElement(VisualElement element)
+    {
+      while (element != null)
       {
-        if (focused is TextField || focused.ClassListContains("unity-text-input"))
-          return true;
-        focused = focused.parent;
+        if (element is TextField or IntegerField or LongField or
+            FloatField or DoubleField ||
+            element.ClassListContains("unity-text-input")) return true;
+        element = element.parent;
       }
       return false;
     }
@@ -1249,6 +1272,8 @@ namespace CityForgeV3.UI
           _lotEditorCategory == LotEditorCategory.Props);
       _lotWorld.SetOverlayEditorContext(
           _lotEditorCategory == LotEditorCategory.OverlayTextures);
+      _lotWorld.SetConnectorEditorContext(
+          _lotEditorCategory == LotEditorCategory.Connectors);
       _lotWorld.SetCirculationEditorContext(
           _lotEditorCategory == LotEditorCategory.Paths);
       _lotWorld.SetRoadEditorContext(
@@ -1265,6 +1290,7 @@ namespace CityForgeV3.UI
               LotEditorCategory.Entertainment or LotEditorCategory.Boats or
               LotEditorCategory.BaseTextures or
               LotEditorCategory.OverlayTextures or
+              LotEditorCategory.Connectors or
               LotEditorCategory.Decals);
 
       var screen = Screen("lot-editor-screen");
@@ -1817,19 +1843,6 @@ namespace CityForgeV3.UI
             evt.StopPropagation();
             return;
           }
-          // Flora cards keep planting armed for repeated placement.
-          // An empty click while something is selected should still
-          // deselect first; the following click may plant again.
-          if (_lotEditorCategory == LotEditorCategory.Flora &&
-                    _lotWorld.ActiveObjectSelection !=
-                        LotObjectSelectionKind.None)
-          {
-            _lotWorld.DeselectAll();
-            RefreshBuildingFocusOverlay();
-            _lotStatus = "Selection cleared • click again to plant";
-            evt.StopPropagation();
-            return;
-          }
         }
         if (evt.button == 0 && !toolPlacementHasPriority &&
                   _lotWorld.BuildingFocusFreezeActive)
@@ -1922,6 +1935,17 @@ namespace CityForgeV3.UI
           _overlayPointerDown = true;
           _overlayDragPainted = false;
           viewportInput.CapturePointer(evt.pointerId);
+          evt.StopPropagation();
+          return;
+        }
+        if (_lotEditorCategory == LotEditorCategory.Connectors && evt.button == 0)
+        {
+          var placed = _lotWorld.PlaceOrSelectConnectorFromPanel(
+              _placementConnectorId, evt.position, panelSize);
+          _lotStatus = placed
+              ? "Dirt Entry placed or selected • workers and wagons may use it"
+              : "Choose a connector, then click near a lot edge";
+          Show(AppScreen.LotEditor);
           evt.StopPropagation();
           return;
         }
@@ -2078,7 +2102,8 @@ namespace CityForgeV3.UI
                    !string.IsNullOrWhiteSpace(_placementEffectId)) ||
                   (_lotEditorCategory == LotEditorCategory.Decals &&
                    !string.IsNullOrWhiteSpace(_placementDecalCategory)) ||
-                  _lotEditorCategory == LotEditorCategory.OverlayTextures;
+                  _lotEditorCategory == LotEditorCategory.OverlayTextures ||
+                  _lotEditorCategory == LotEditorCategory.Connectors;
         _lotWorld.UpdateObjectHoverFromPanel(
                   evt.position, panelSize, hoverSuppressed);
         if (_automataPointerDown)
@@ -2362,7 +2387,9 @@ namespace CityForgeV3.UI
                     ? $"{_lotWorld.LastFloraLinePlacementCount} flora items planted in a straight line"
                     : _floraDragStarted
                         ? "Flora moved and planted"
-                        : "Flora selected • drag to move";
+                        : !string.IsNullOrWhiteSpace(_placementFloraId)
+                            ? "Flora planted • click to plant another • Esc to select"
+                            : "Flora selected • drag to move";
           _floraDragStarted = false;
           Show(AppScreen.LotEditor);
           evt.StopPropagation();
@@ -2595,7 +2622,7 @@ namespace CityForgeV3.UI
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Terrain,
           "terrain-hill-v01", "Terrain"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Flora, "flora-tree-v91", "Flora"));
-      toolRailScroll.Add(CategoryButton(LotEditorCategory.Garden, "base-textures", "Garden"));
+      toolRailScroll.Add(CategoryButton(LotEditorCategory.Garden, "base-textures", "Garden/Parks"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Props, "props-lamppost-v91", "Props"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Characters,
           "buildings", "3D Characters"));
@@ -2605,6 +2632,7 @@ namespace CityForgeV3.UI
           "effects", "Effects"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.BaseTextures, "base-textures", "Base"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.OverlayTextures, "overlay-textures", "Overlays"));
+      toolRailScroll.Add(CategoryButton(LotEditorCategory.Connectors, "paths", "Connector"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Decals, "decals", "Decals"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Environment, "environment", "Environment"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.View, "view", "View"));
@@ -2619,69 +2647,12 @@ namespace CityForgeV3.UI
         var main = new VisualElement { name = "main-category-panel" };
         main.AddToClassList("context-panel");
         main.Add(StyledLabel("LOT SETTINGS", "section-label"));
-        main.Add(StyledLabel("GENERAL", "catalog-title"));
-
-        var nameField = new TextField("LOT NAME") { value = _lotWorld.CurrentLotName };
-        nameField.AddToClassList("document-field");
-        main.Add(nameField);
+        var general = CfButton.Create("GENERAL…", OpenLotGeneralModal, true, "primary");
+        general.name = "open-lot-general";
+        main.Add(general);
         var behaviors = CfButton.Create("LOT BEHAVIORS…", OpenLotBehaviorsModal, true, "primary");
         behaviors.name = "open-lot-behaviors";
         main.Add(behaviors);
-        main.Add(CfButton.Create("WATER-FACING ARROW", () =>
-        { _waterOrientationClick = 1; _lotStatus = "Click to place the arrow, then choose a direction"; RefreshLotEditor(); }, true, "primary"));
-        main.Add(StyledLabel("Click to place. Drag to move. Select the arrow to choose which side faces water.", "inspector-note"));
-        if (_waterOrientationClick > 0) main.Add(CfButton.Create("CANCEL ARROW", () => { _waterOrientationClick = 0; RefreshLotEditor(); }, true, "quiet"));
-        if (_lotWorld.HasWaterOrientation) main.Add(CfButton.Create("REMOVE WATER ARROW", () => { _lotWorld.ClearWaterOrientation(); RefreshLotEditor(); }, true, "secondary"));
-
-        var types = new List<string>
-                {
-                    "Residential", "Commercial", "Industrial", "Mixed", "Transportation", "Civics"
-                };
-        var typeField = new CityForgeChoiceField(
-            _root, "LOT TYPE", types, Mathf.Max(0, types.IndexOf(LotTypeLabel(_lotWorld.LotType))));
-        main.Add(typeField);
-
-        var eraNames = new List<string>(LotEraCatalog.DisplayNames);
-        var eraField = new CityForgeChoiceField(
-            _root, "ERA", eraNames, LotEraCatalog.IndexOf(_lotWorld.CurrentEraId));
-        main.Add(eraField);
-
-        var trafficTypes = new List<string>
-                {
-                    "None", "Suburban Street", "Parking Lot"
-                };
-        var trafficField = new CityForgeChoiceField(
-            _root, "TRAFFIC TYPE", trafficTypes,
-            Mathf.Clamp((int)_lotWorld.TrafficType, 0, trafficTypes.Count - 1));
-        main.Add(trafficField);
-
-        if (_pendingLotWidthCells < 1)
-          _pendingLotWidthCells = Mathf.Clamp(_lotWorld.LotWidthCells, 1, 8);
-        if (_pendingLotDepthCells < 1)
-          _pendingLotDepthCells = Mathf.Clamp(_lotWorld.LotDepthCells, 1, 8);
-
-        var widthField = new CityForgeCellCountField(
-            "WIDTH", _pendingLotWidthCells,
-            cells => _pendingLotWidthCells = cells);
-        main.Add(widthField);
-        var depthField = new CityForgeCellCountField(
-            "LENGTH", _pendingLotDepthCells,
-            cells => _pendingLotDepthCells = cells);
-        main.Add(depthField);
-        main.Add(StyledLabel(
-            "EACH MAJOR CELL IS 10 × 10 METERS • 1 METER MINOR GRID",
-            "lighting-note"));
-        main.Add(CfButton.Create("APPLY LOT SETTINGS", () =>
-        {
-          Enum.TryParse(typeField.value, out LotType lotType);
-          _lotWorld.ConfigureLot(nameField.value, lotType,
-                      _pendingLotWidthCells, _pendingLotDepthCells,
-                      LotEraCatalog.IdForDisplayName(eraField.value));
-          _lotWorld.SetTrafficType(
-                      TrafficLotModel.ForDisplayName(trafficField.value));
-          _lotStatus = $"Lot updated • {_pendingLotWidthCells} × {_pendingLotDepthCells} major cells";
-          Show(AppScreen.LotEditor);
-        }, true, "primary"));
         screen.Add(main);
       }
 
@@ -2943,11 +2914,15 @@ namespace CityForgeV3.UI
           grid.Add(gildedCard);
           visibleBuildingCount++;
         }
-        catalog.Add(grid);
+        var buildingScroll = new ScrollView(ScrollViewMode.Vertical)
+        { name = "building-3d-card-scroll" };
+        buildingScroll.AddToClassList("building-card-scroll");
         if (visibleBuildingCount == 0)
-          catalog.Add(StyledLabel(
+          grid.Add(StyledLabel(
               $"NO {_buildingUseCategory.ToString().ToUpperInvariant()} BUILDINGS YET",
               "catalog-empty"));
+        buildingScroll.Add(grid);
+        catalog.Add(buildingScroll);
         modal.Add(catalog);
         screen.Add(modal);
       }
@@ -4251,8 +4226,8 @@ namespace CityForgeV3.UI
         }
         if (_lotEditorCategory == LotEditorCategory.Garden)
         {
-          inspector.Add(StyledLabel("GARDEN", "inspector-title"));
-          inspector.Add(Property("LIBRARY", "COMPLETE PLANTED BEDS"));
+          inspector.Add(StyledLabel("GARDEN/PARKS", "inspector-title"));
+          inspector.Add(Property("LIBRARY", "GARDEN PIECES"));
           inspector.Add(Property("ACTIVE",
               _placementPropId == LotWorldController.GeorgianGardenSquarePropId
                   ? "MIXED SQUARE BED" :
@@ -4262,9 +4237,65 @@ namespace CityForgeV3.UI
                   ? "CLIPPED HEDGE SQUARE" :
               _placementPropId == LotWorldController.GeorgianHedgeRectanglePropId
                   ? "CLIPPED HEDGE RECTANGLE" :
+              _placementPropId == LotWorldController.NaturalGrassShortPropId
+                  ? "NATURAL GRASS SHORT" :
+              _placementPropId == LotWorldController.NaturalGrassLongPropId
+                  ? "NATURAL GRASS LONG" :
+              _placementPropId == LotWorldController.NaturalGrassSquarePropId
+                  ? "NATURAL GRASS SQUARE" :
+              _placementPropId == LotWorldController.NaturalGrassLargeSquarePropId
+                  ? "NATURAL GRASS LARGE SQUARE" :
+              _placementPropId == LotWorldController.NaturalGrassCirclePropId
+                  ? "NATURAL GRASS CIRCLE" :
+              _placementPropId == LotWorldController.HedgedGrassShortPropId
+                  ? "HEDGED GRASS SHORT" :
+              _placementPropId == LotWorldController.HedgedGrassLongPropId
+                  ? "HEDGED GRASS LONG" :
+              _placementPropId == LotWorldController.HedgedGrassSquarePropId
+                  ? "HEDGED GRASS SQUARE" :
+              _placementPropId == LotWorldController.HedgedGrassLargeSquarePropId
+                  ? "HEDGED GRASS LARGE SQUARE" :
+              _placementPropId == LotWorldController.HedgedGrassCirclePropId
+                  ? "HEDGED GRASS CIRCLE" :
+              _placementPropId == LotWorldController.StoneGardenFountainPropId
+                  ? "STONE FOUNTAIN" :
+              _placementPropId == LotWorldController.LowPolyBoxwoodHedgePropId
+                  ? "BOXWOOD HEDGE 3 × 1 M" :
+              _placementPropId == LotWorldController.FoundationRearHedgePropId
+                  ? "FOUNDATION HEDGE & FLOWERS" :
+              _placementPropId == LotWorldController.FoundationFramedHedgePropId
+                  ? "FRAMED FOUNDATION FLOWERS" :
+              _placementPropId == LotWorldController.FoundationOpenRosesPropId
+                  ? "OPEN ROSE BUSHES" :
+              _placementPropId == LotWorldController.FoundationPicketRoseShrubsPropId
+                  ? "PICKET ROSE & SHRUBS" :
+              _placementPropId == LotWorldController.FoundationPicketCottageFlowersPropId
+                  ? "PICKET COTTAGE FLOWERS" :
+              _placementPropId == LotWorldController.FoundationPicketRosePairPropId
+                  ? "PICKET ROSE PAIR" :
+              _placementPropId == LotWorldController.FoundationPicketRoundedShrubsPropId
+                  ? "PICKET ROUNDED SHRUBS" :
+              _placementPropId == LotWorldController.WhitePicketRoseStripPropId
+                  ? "WHITE PICKET ROSES" :
+              _placementPropId == LotWorldController.WhitePicketCottageStripPropId
+                  ? "WHITE PICKET COTTAGE" :
+              _placementPropId == LotWorldController.WhitePicketMixedStripPropId
+                  ? "WHITE PICKET MIXED" :
+              _placementPropId == LotWorldController.WhitePicketConeflowerStripPropId
+                  ? "WHITE PICKET CONEFLOWERS" :
+              _placementPropId == LotWorldController.WhitePicketDaisyStripPropId
+                  ? "WHITE PICKET DAISIES" :
+              _placementPropId == LotWorldController.WhitePicketSusanStripPropId
+                  ? "WHITE PICKET BLACK-EYED SUSANS" :
+              _placementPropId == LotWorldController.WhitePicketHostaFernStripPropId
+                  ? "WHITE PICKET HOSTA & FERN" :
+              _placementPropId == LotWorldController.WhitePicketClematisStripPropId
+                  ? "WHITE PICKET CLEMATIS" :
+              _placementPropId == LotWorldController.WhitePicketFullCottageStripPropId
+                  ? "WHITE PICKET FULL COTTAGE" :
               _placementPropId == LotWorldController.GeorgianGardenBorderPropId
                   ? "FLOWER & THICKET BORDER" : "NONE"));
-          inspector.Add(CfButton.Create("GARDEN LIBRARY…",
+          inspector.Add(CfButton.Create("GARDEN/PARKS LIBRARY…",
               OpenGardenModal, true, "primary"));
           var gardenSelected = LotWorldController.IsGardenPropId(
               _lotWorld.SelectedPropId);
@@ -4445,12 +4476,12 @@ namespace CityForgeV3.UI
           inspector.Add(Property("ACTIVE", string.IsNullOrWhiteSpace(_lotWorld.BaseTextureId)
               ? "DEFAULT GROUND" : _lotWorld.BaseTextureId.Replace('-', ' ').ToUpperInvariant()));
           inspector.Add(Property("SCOPE", "ENTIRE LOT"));
-          inspector.Add(CfButton.Create("CHOOSE GRASS…", OpenBaseTextureModal, true, "primary"));
+          inspector.Add(CfButton.Create("CHOOSE BASE…", OpenBaseTextureModal, true, "primary"));
         }
         if (_lotEditorCategory == LotEditorCategory.OverlayTextures)
         {
           inspector.Add(StyledLabel("OVERLAY TEXTURES", "inspector-title"));
-          inspector.Add(Property("PLACED", $"{_lotWorld.OverlayTextureCount} TILES"));
+          inspector.Add(Property("PLACED", $"{_lotWorld.OverlayTextureCount} PIECES"));
           inspector.Add(Property("ACTIVE", string.IsNullOrWhiteSpace(_placementOverlayTextureId)
               ? "NONE"
               : LotWorldController.ResolveOverlayTexture(
@@ -4463,6 +4494,24 @@ namespace CityForgeV3.UI
               _lotWorld.SelectedOverlayTextureIndex >= 0, "danger"));
           inspector.Add(Property("ROTATE",
               "LEFT = CLOCKWISE • RIGHT = COUNTER-CLOCKWISE"));
+        }
+        if (_lotEditorCategory == LotEditorCategory.Connectors)
+        {
+          inspector.Add(StyledLabel("CONNECTORS", "inspector-title"));
+          inspector.Add(Property("PLACED", _lotWorld.ConnectorCount.ToString()));
+          inspector.Add(Property("ACTIVE", string.IsNullOrWhiteSpace(
+              _placementConnectorId) ? "NONE" : LotWorldController
+              .ResolveConnector(_placementConnectorId).DisplayName.ToUpperInvariant()));
+          inspector.Add(Property("ACCESS", "PEDESTRIANS • WAGONS"));
+          inspector.Add(Property("EXTENSION", "2.5 M OUTSIDE LOT"));
+          inspector.Add(CfButton.Create("CHOOSE CONNECTOR…",
+              OpenConnectorModal, true, "primary"));
+          inspector.Add(CfButton.Create("DELETE SELECTED [DELETE]", () =>
+          {
+            _lotStatus = _lotWorld.DeleteSelectedConnector()
+                ? "Connector removed" : "Select a connector before deleting";
+            Show(AppScreen.LotEditor);
+          }, _lotWorld.SelectedConnectorIndex >= 0, "danger"));
         }
         if (_lotEditorCategory == LotEditorCategory.Decals)
         {
@@ -4749,8 +4798,9 @@ namespace CityForgeV3.UI
         garden.AddToClassList(selected
             ? "cf-image-button--tool-category-selected"
             : "cf-image-button--tool-category");
-        var gardenCaption = new Label("GARDEN") { pickingMode = PickingMode.Ignore };
+        var gardenCaption = new Label("GARDEN/PARKS") { pickingMode = PickingMode.Ignore };
         gardenCaption.AddToClassList("tool-category-caption");
+        gardenCaption.AddToClassList("tool-category-caption--garden-parks");
         garden.Add(gardenCaption);
         AttachToolCategoryHoverInfo(garden, category, label);
         return garden;
@@ -4894,7 +4944,7 @@ namespace CityForgeV3.UI
           LotEditorCategory.Water => "Water — create ponds, lakes, rivers, and swamps",
           LotEditorCategory.Terrain => "Terrain — raise and lower the land",
           LotEditorCategory.Flora => "Flora — place trees, shrubs, and planting",
-          LotEditorCategory.Garden => "Garden — hedges, flower beds, and planted arrangements",
+          LotEditorCategory.Garden => "Garden/Parks — hedges, flower beds, lawns, and park pieces",
           LotEditorCategory.Props => "Props — place lot and 3D building props",
           LotEditorCategory.Characters => "3D Characters — place people and characters",
           LotEditorCategory.Automata => "Automata — place animated scenes on the lot",
@@ -4902,6 +4952,7 @@ namespace CityForgeV3.UI
           LotEditorCategory.Effects => "Effects — add atmospheric and lighting effects",
           LotEditorCategory.BaseTextures => "Base — paint base terrain textures",
           LotEditorCategory.OverlayTextures => "Overlays — paint surface overlays",
+          LotEditorCategory.Connectors => "Connector — place lot access at an edge",
           LotEditorCategory.Decals => "Decals — paint randomized surface details",
           LotEditorCategory.Environment => "Environment — adjust time, season, and lighting",
           LotEditorCategory.View => "View — adjust the lot camera and diagnostics",
@@ -4971,7 +5022,7 @@ namespace CityForgeV3.UI
         _lotInspectorVisible = true;
       _lotStatus = $"{category} tools opened";
       if (category == LotEditorCategory.Buildings3D &&
-          _lotWorld.LotType == LotType.Civics)
+          _lotWorld.LotType is LotType.Civics or LotType.CivicsParks)
         _buildingUseCategory = BuildingUseCategory.Civics;
       if (category == LotEditorCategory.Buildings3D)
         _buildingSubcategory = string.Empty;
@@ -5008,6 +5059,8 @@ namespace CityForgeV3.UI
         OpenBaseTextureModal();
       else if (category == LotEditorCategory.OverlayTextures)
         OpenOverlayTextureModal();
+      else if (category == LotEditorCategory.Connectors)
+        OpenConnectorModal();
     }
 
     private void ComposeTerrainPanel(VisualElement screen)
@@ -5261,9 +5314,9 @@ namespace CityForgeV3.UI
     private void OpenBaseTextureModal()
     {
       var panel = CreateDocumentModal("BASE TEXTURES",
-          "Choose a grass texture for the entire lot. The selection is applied immediately.");
+          "Choose a surface for the entire lot. The selection is applied immediately.");
       panel.AddToClassList("road-material-modal-panel");
-      panel.Add(StyledLabel("GRASSES", "road-material-role"));
+      panel.Add(StyledLabel("GROUND SURFACES", "road-material-role"));
       var grid = new VisualElement();
       grid.AddToClassList("road-material-grid");
       foreach (var option in LotWorldController.GrassBaseTextures)
@@ -5298,14 +5351,50 @@ namespace CityForgeV3.UI
 
     private void OpenOverlayTextureModal()
     {
+      var maximumFootprint = Mathf.Min(
+          _lotWorld.LotWidthCells, _lotWorld.LotDepthCells);
+      if (_overlayLibraryFootprintCells > maximumFootprint)
+        _overlayLibraryFootprintCells = maximumFootprint >= 2 ? 2 : 1;
       var panel = CreateDocumentModal("OVERLAY TEXTURES",
-          "Choose an overlay, then click a 10 × 10 meter lot tile to place it above the base texture.");
+          _overlayLibraryFootprintCells == 1
+              ? "Choose a 1 × 1 overlay, then paint 10 × 10 meter tiles on the lot or one tile beyond its edge."
+              : $"Choose a {_overlayLibraryFootprintCells} × {_overlayLibraryFootprintCells} overlay, then click the lot to place one {_overlayLibraryFootprintCells * 10} × {_overlayLibraryFootprintCells * 10} meter surface.");
       panel.AddToClassList("road-material-modal-panel");
-      panel.Add(StyledLabel("SURFACE OVERLAYS", "road-material-role"));
+      var categories = new VisualElement();
+      categories.AddToClassList("inspector-actions");
+      categories.Add(CfButton.Create("1 × 1", () =>
+      {
+        _overlayLibraryFootprintCells = 1;
+        OpenOverlayTextureModal();
+      }, true, _overlayLibraryFootprintCells == 1 ? "mode-selected" : "quiet"));
+      if (LotWorldController.OverlayFootprintFitsLot(2,
+              _lotWorld.LotWidthCells, _lotWorld.LotDepthCells))
+      {
+        categories.Add(CfButton.Create("2 × 2", () =>
+        {
+          _overlayLibraryFootprintCells = 2;
+          OpenOverlayTextureModal();
+        }, true, _overlayLibraryFootprintCells == 2 ? "mode-selected" : "quiet"));
+      }
+      if (LotWorldController.OverlayFootprintFitsLot(4,
+              _lotWorld.LotWidthCells, _lotWorld.LotDepthCells))
+      {
+        categories.Add(CfButton.Create("4 × 4", () =>
+        {
+          _overlayLibraryFootprintCells = 4;
+          OpenOverlayTextureModal();
+        }, true, _overlayLibraryFootprintCells == 4 ? "mode-selected" : "quiet"));
+      }
+      panel.Add(categories);
+      panel.Add(StyledLabel($"{_overlayLibraryFootprintCells} × {_overlayLibraryFootprintCells} OVERLAYS",
+          "road-material-role"));
       var grid = new VisualElement();
       grid.AddToClassList("road-material-grid");
+      var visibleOverlayCount = 0;
       foreach (var option in LotWorldController.OverlayTextures)
       {
+        if (option.FootprintWidthCells != _overlayLibraryFootprintCells ||
+            option.FootprintDepthCells != _overlayLibraryFootprintCells) continue;
         var captured = option;
         var card = new VisualElement();
         card.AddToClassList("road-material-card");
@@ -5317,10 +5406,52 @@ namespace CityForgeV3.UI
         card.Add(CfButton.Create(captured.DisplayName.ToUpperInvariant(), () =>
         {
           _placementOverlayTextureId = captured.Id;
-          _lotStatus = $"{captured.DisplayName} selected • click a lot tile to place";
+          _lotStatus = captured.FootprintWidthCells == 1
+              ? $"{captured.DisplayName} selected • click a lot tile to place"
+              : $"{captured.DisplayName} selected • click the lot to place its {captured.FootprintWidthCells} × {captured.FootprintDepthCells} surface";
           RemoveDocumentModal();
           ComposeLotEditor();
         }, true, _placementOverlayTextureId == captured.Id ? "mode-selected" : "quiet"));
+        grid.Add(card);
+        visibleOverlayCount++;
+      }
+      if (visibleOverlayCount == 0)
+        grid.Add(StyledLabel(
+            $"NO {_overlayLibraryFootprintCells} × {_overlayLibraryFootprintCells} OVERLAYS YET",
+            "catalog-empty"));
+      panel.Add(grid);
+      var actions = DocumentModalActions();
+      actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
+      panel.Add(actions);
+    }
+
+    private void OpenConnectorModal()
+    {
+      var panel = CreateDocumentModal("CONNECTORS",
+          "Choose an access piece, then click near a lot edge. Connectors extend 2.5 metres outside the lot so they can meet district roads and paths.");
+      panel.AddToClassList("road-material-modal-panel");
+      panel.Add(StyledLabel("LOT ACCESS", "road-material-role"));
+      var grid = new VisualElement();
+      grid.AddToClassList("road-material-grid");
+      foreach (var option in LotWorldController.Connectors)
+      {
+        var captured = option;
+        var card = new VisualElement();
+        card.AddToClassList("road-material-card");
+        var preview = new VisualElement();
+        preview.AddToClassList("road-material-swatch");
+        preview.style.backgroundImage = new StyleBackground(
+            Resources.Load<Texture2D>(captured.TextureResourcePath));
+        card.Add(preview);
+        card.Add(CfButton.Create(captured.DisplayName.ToUpperInvariant(), () =>
+        {
+          _placementConnectorId = captured.Id;
+          _lotStatus = $"{captured.DisplayName} selected • click near a lot edge";
+          RemoveDocumentModal();
+          ComposeLotEditor();
+        }, true, _placementConnectorId == captured.Id
+            ? "mode-selected" : "quiet"));
+        card.Add(StyledLabel(captured.Description, "catalog-meta"));
         grid.Add(card);
       }
       panel.Add(grid);
@@ -5331,10 +5462,14 @@ namespace CityForgeV3.UI
 
     private void OpenGardenModal()
     {
-      var panel = CreateDocumentModal("GARDEN LIBRARY",
-          "Choose a complete planted bed, then click the lot to place it.");
+      var panel = CreateDocumentModal("GARDEN/PARKS LIBRARY",
+          "Choose a garden piece, then click the lot to place it.");
       panel.name = "garden-library-panel";
       panel.AddToClassList("road-material-modal-panel");
+      panel.AddToClassList("garden-library-modal-panel");
+      var scroll = new ScrollView(ScrollViewMode.Vertical);
+      scroll.name = "garden-library-scroll";
+      scroll.AddToClassList("garden-library-scroll");
       var grid = new VisualElement();
       grid.AddToClassList("road-material-grid");
       AddGardenBedCard(grid, "garden-card-georgian-square",
@@ -5346,6 +5481,86 @@ namespace CityForgeV3.UI
           "Wide bed • 6 × 3 m • shrubs & flowers",
           LotWorldController.GeorgianGardenRectanglePropId,
           "CityForgeV3/Garden/GeorgianBedsV01/rectangle-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-rear-hedge",
+          "FOUNDATION HEDGE & FLOWERS",
+          "House-front bed • 2 × 1 m • low hedge behind flowers",
+          LotWorldController.FoundationRearHedgePropId,
+          "CityForgeV3/Garden/GeorgianBorderV01/planting-canopy-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-framed-hedges",
+          "FRAMED FOUNDATION FLOWERS",
+          "House-front bed • 2 × 1 m • hedge ends frame flowers",
+          LotWorldController.FoundationFramedHedgePropId,
+          "CityForgeV3/Garden/GeorgianBorderV01/flowers-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-open-roses",
+          "OPEN ROSE BUSHES",
+          "House-front bed • 2 × 1 m • three roses, no fence",
+          LotWorldController.FoundationOpenRosesPropId,
+          "CityForgeV3/Garden/FoundationPlantingsV01/rose-bush-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-picket-rose-shrubs",
+          "PICKET ROSE & SHRUBS",
+          "House-front bed • 2 × 1 m • rose, rounded shrubs & pickets",
+          LotWorldController.FoundationPicketRoseShrubsPropId,
+          "CityForgeV3/Garden/FoundationPlantingsV01/rose-bush-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-picket-cottage",
+          "PICKET COTTAGE FLOWERS",
+          "House-front bed • 2 × 1 m • tall purple flowers & pickets",
+          LotWorldController.FoundationPicketCottageFlowersPropId,
+          "CityForgeV3/Garden/FoundationPlantingsV01/purple-phlox-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-picket-rose-pair",
+          "PICKET ROSE PAIR",
+          "House-front bed • 2 × 1 m • paired roses & rounded shrub",
+          LotWorldController.FoundationPicketRosePairPropId,
+          "CityForgeV3/Garden/FoundationPlantingsV01/rose-bush-summer");
+      AddGardenBedCard(grid, "garden-card-foundation-picket-round-shrubs",
+          "PICKET ROUNDED SHRUBS",
+          "House-front bed • 2 × 1 m • three shrubs & purple accents",
+          LotWorldController.FoundationPicketRoundedShrubsPropId,
+          "CityForgeV3/Garden/FoundationPlantingsV01/purple-phlox-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-roses",
+          "WHITE PICKET ROSES",
+          "Straight white fence • 2 m • roses & grass on both sides",
+          LotWorldController.WhitePicketRoseStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/aged-painted-wood");
+      AddGardenBedCard(grid, "garden-card-white-picket-cottage",
+          "WHITE PICKET COTTAGE",
+          "Straight white fence • 2 m • purple & pink flowers both sides",
+          LotWorldController.WhitePicketCottageStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-mixed",
+          "WHITE PICKET MIXED",
+          "Straight white fence • 2 m • roses, flowers & grass both sides",
+          LotWorldController.WhitePicketMixedStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-coneflowers",
+          "WHITE PICKET CONEFLOWERS",
+          "Aged fence • 2 m • coneflowers & layered groundcover",
+          LotWorldController.WhitePicketConeflowerStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-daisies",
+          "WHITE PICKET DAISIES",
+          "Aged fence • 2 m • white daisies & cottage groundcover",
+          LotWorldController.WhitePicketDaisyStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-susans",
+          "WHITE PICKET BLACK-EYED SUSANS",
+          "Aged fence • 2 m • golden flowers & cottage groundcover",
+          LotWorldController.WhitePicketSusanStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-hosta-fern",
+          "WHITE PICKET HOSTA & FERN",
+          "Aged fence • 2 m • leafy shade border & purple accent",
+          LotWorldController.WhitePicketHostaFernStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-clematis",
+          "WHITE PICKET CLEMATIS",
+          "Aged fence • 2 m • flowering vines climb through pickets",
+          LotWorldController.WhitePicketClematisStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
+      AddGardenBedCard(grid, "garden-card-white-picket-full-cottage",
+          "WHITE PICKET FULL COTTAGE",
+          "Aged fence • 2 m • dense mixed flowers on both sides",
+          LotWorldController.WhitePicketFullCottageStripPropId,
+          "CityForgeV3/Garden/AgedWhitePicketV01/cottage-planting-summer");
       AddGardenBedCard(grid, "garden-card-hedge-square",
           "CLIPPED HEDGE SQUARE",
           "Formal hedge plot • 4 × 4 m",
@@ -5356,7 +5571,49 @@ namespace CityForgeV3.UI
           "Formal hedge plot • 6 × 3 m",
           LotWorldController.GeorgianHedgeRectanglePropId,
           "CityForgeV3/Garden/GeorgianClippedHedgesV01/clipped-leaves");
-      panel.Add(grid);
+      AddGardenBedCard(grid, "garden-card-stone-fountain",
+          "STONE FOUNTAIN", "Stone garden fountain • 3 m diameter",
+          LotWorldController.StoneGardenFountainPropId,
+          "CityForgeV3/Garden/StoneFountainV01/preview");
+      AddGardenBedCard(grid, "garden-card-low-poly-boxwood",
+          "BOXWOOD HEDGE", "Clipped boxwood • 3 × 1 m • low-poly mesh",
+          LotWorldController.LowPolyBoxwoodHedgePropId,
+          "CityForgeV3/Garden/LowPolyBoxwoodHedgeV01/preview");
+      var grassPreview = LotWorldController.GrassBaseTextures[0].ResourcePath;
+      AddGardenBedCard(grid, "garden-card-grass-short",
+          "NATURAL GRASS — SHORT", "Grass patch • 4 × 2 m • soft edge",
+          LotWorldController.NaturalGrassShortPropId, grassPreview);
+      AddGardenBedCard(grid, "garden-card-grass-long",
+          "NATURAL GRASS — LONG", "Grass patch • 6 × 3 m • soft edge",
+          LotWorldController.NaturalGrassLongPropId, grassPreview);
+      AddGardenBedCard(grid, "garden-card-grass-square",
+          "NATURAL GRASS — SQUARE", "Grass patch • 4 × 4 m • soft edge",
+          LotWorldController.NaturalGrassSquarePropId, grassPreview);
+      AddGardenBedCard(grid, "garden-card-grass-large-square",
+          "NATURAL GRASS — LARGE SQUARE", "Grass patch • 6 × 6 m • soft edge",
+          LotWorldController.NaturalGrassLargeSquarePropId, grassPreview);
+      AddGardenBedCard(grid, "garden-card-grass-circle",
+          "NATURAL GRASS — CIRCLE", "Grass patch • 4 m diameter • muted edge",
+          LotWorldController.NaturalGrassCirclePropId, grassPreview);
+      var hedgePreview =
+          "CityForgeV3/Garden/GeorgianClippedHedgesV01/clipped-leaves";
+      AddGardenBedCard(grid, "garden-card-hedged-grass-short",
+          "HEDGED GRASS — SHORT", "Open lawn • 4 × 2 m • clipped hedge border",
+          LotWorldController.HedgedGrassShortPropId, hedgePreview);
+      AddGardenBedCard(grid, "garden-card-hedged-grass-long",
+          "HEDGED GRASS — LONG", "Open lawn • 6 × 3 m • clipped hedge border",
+          LotWorldController.HedgedGrassLongPropId, hedgePreview);
+      AddGardenBedCard(grid, "garden-card-hedged-grass-square",
+          "HEDGED GRASS — SQUARE", "Open lawn • 4 × 4 m • clipped hedge border",
+          LotWorldController.HedgedGrassSquarePropId, hedgePreview);
+      AddGardenBedCard(grid, "garden-card-hedged-grass-large-square",
+          "HEDGED GRASS — LARGE SQUARE", "Open lawn • 6 × 6 m • clipped hedge border",
+          LotWorldController.HedgedGrassLargeSquarePropId, hedgePreview);
+      AddGardenBedCard(grid, "garden-card-hedged-grass-circle",
+          "HEDGED GRASS — CIRCLE", "Open lawn • 4 m diameter • clipped hedge ring",
+          LotWorldController.HedgedGrassCirclePropId, hedgePreview);
+      scroll.Add(grid);
+      panel.Add(scroll);
       var actions = DocumentModalActions();
       actions.Add(CfButton.Create("DONE", RemoveDocumentModal, true, "quiet"));
       panel.Add(actions);
@@ -5463,7 +5720,7 @@ namespace CityForgeV3.UI
         {
           _placementFloraId = captured.Id;
           _lotWorld.SetFloraPlacementPreview(captured.Id);
-          _lotStatus = $"{captured.Name} armed • click to plant • select it and press R to repeat";
+          _lotStatus = $"{captured.Name} armed • click to plant • Esc to select or move";
           RemoveDocumentModal();
           ComposeLotEditor();
         }, true, _placementFloraId == item.Id ? "mode-selected" : "quiet");
@@ -5489,7 +5746,7 @@ namespace CityForgeV3.UI
     }
 
     private void AddPropLibraryCard(VisualElement grid, string title, string propId,
-        string description, bool available = true)
+        string description, bool available = true, string previewResource = null)
     {
       var card = new VisualElement { name = "prop-card-" + propId };
       card.AddToClassList("road-material-card");
@@ -5511,7 +5768,8 @@ namespace CityForgeV3.UI
       var image = new Image
       {
         name = "prop-preview-" + propId,
-        image = Resources.Load<Texture2D>("CityForgeV3/UI/PropThumbnails/" + propId),
+        image = Resources.Load<Texture2D>(previewResource ??
+            "CityForgeV3/UI/PropThumbnails/" + propId),
         scaleMode = ScaleMode.ScaleToFit,
         pickingMode = PickingMode.Ignore
       };
@@ -5569,7 +5827,10 @@ namespace CityForgeV3.UI
       AddPropLibraryCard(fortress, "PALISADE GATE", LotWorldController.WoodenPalisadeGatePropId, "Timber entrance gate");
       AddPropLibraryCard(fortress, "MEDIEVAL TORCH", LotWorldController.MedievalTorchPropId, "Lights at evening and night");
       var flora = Group("FLORA PROPS");
-      AddPropLibraryCard(flora, "3D HEDGE", LotWorldController.Hedge3DPropId, "Garden hedge");
+      AddPropLibraryCard(flora, "BOXWOOD HEDGE",
+          LotWorldController.LowPolyBoxwoodHedgePropId,
+          "Clipped dark-green boxwood • 3 × 1 m", true,
+          "CityForgeV3/Garden/LowPolyBoxwoodHedgeV01/preview");
       var seasonal = Group("SEASONAL PROPS");
       var available = PropSeasonCatalog.IsAvailable(LotWorldController.PumpkinJackOLanternPropId, _lotWorld.Season);
       AddPropLibraryCard(seasonal, "JACK-O'-LANTERN", LotWorldController.PumpkinJackOLanternPropId,
@@ -5692,6 +5953,8 @@ namespace CityForgeV3.UI
           "IDLE • PATROL WALK • LOOK AROUND");
       AddCharacterLibraryCard(people, "MUSKETMAN", LotWorldController.MusketmanCharacterId,
           "PERIOD MILITIA • IDLE • WALK");
+      AddCharacterLibraryCard(people, "LUMBERJACK", LotWorldController.LumberjackCharacterId,
+          "3D AXEMAN • AXE • IDLE • WALK");
       AddCharacterLibraryCard(people, "FOUNDERS FARMER", LotWorldController.FarmerCharacterId,
           "WALK • HOE • IDLE • FARM WORKER");
       var animals = Group("ANIMALS & RIDERS");
@@ -5710,6 +5973,8 @@ namespace CityForgeV3.UI
           "DRIVER • ROLLING WHEELS");
       AddCharacterLibraryCard(vehicles, "HORSE & CARRIAGE", LotWorldController.HorseCarriagePropId,
           "ONE HORSE • DRIVE • SLOW / FAST");
+      AddCharacterLibraryCard(vehicles, "FORESTRY CART", LotWorldController.HorseForestryWagonPropId,
+          "HORSE-DRAWN CART • TIMBER COLLECTION");
       AddCharacterLibraryCard(vehicles, "HORSE & LUMBER WAGON", LotWorldController.HorseLumberWagonPropId,
           "WORK WAGON • DRIVER • LUMBER LOAD");
       AddCharacterLibraryCard(vehicles, "TWO HORSES & COVERED WAGON", LotWorldController.HorseCoveredWagonPropId,
@@ -6005,6 +6270,9 @@ namespace CityForgeV3.UI
         category == LotEditorCategory.Roads ||
         category == LotEditorCategory.Railroad ||
         category == LotEditorCategory.OverlayTextures ||
+        category == LotEditorCategory.Connectors ||
+        (category == LotEditorCategory.Flora &&
+            !string.IsNullOrWhiteSpace(floraId)) ||
         ((category is LotEditorCategory.Garden or LotEditorCategory.Props or LotEditorCategory.Characters or
               LotEditorCategory.Entertainment or LotEditorCategory.Boats) &&
             !string.IsNullOrWhiteSpace(propId));
@@ -6349,6 +6617,8 @@ namespace CityForgeV3.UI
       _placementPropId = "";
       _placementBuildingPropId = "";
       _placementOverlayTextureId = "";
+      _placementConnectorId = "";
+      _lotWorld.ClearConnectorSelection();
       _lotWorld.EndCirculationPathDrawing();
       _lotWorld.SetBuildingPropPlacementPreview("");
       _lotWorld.DeselectAll();
@@ -6407,6 +6677,14 @@ namespace CityForgeV3.UI
           _lotWorld.SelectedOverlayTextureIndex >= 0)
       {
         DeleteSelectedOverlayTexture();
+        return true;
+      }
+      if (_lotEditorCategory == LotEditorCategory.Connectors &&
+          _lotWorld.SelectedConnectorIndex >= 0)
+      {
+        _lotStatus = _lotWorld.DeleteSelectedConnector()
+            ? "Connector removed" : "Select a connector before deleting";
+        Show(AppScreen.LotEditor);
         return true;
       }
       return false;
@@ -6608,12 +6886,17 @@ namespace CityForgeV3.UI
       nameField.AddToClassList("document-field");
       panel.Add(nameField);
 
-      var typeField = new CityForgeChoiceField(
-          _root,
-          "LOT TYPE",
-          new List<string> { "Residential", "Commercial", "Industrial", "Mixed", "Transportation", "Civics" },
-          0);
-      panel.Add(typeField);
+      var parentTypes = LotTypeParentChoices();
+      var parentField = new CityForgeChoiceField(
+          _root, "PARENT CATEGORY", parentTypes, 0);
+      panel.Add(parentField);
+      var subcategoryField = new CityForgeChoiceField(
+          _root, "CIVICS SUBCATEGORY",
+          new List<string> { "General", "Park" }, 0);
+      subcategoryField.style.display = DisplayStyle.None;
+      parentField.changed += _ => subcategoryField.style.display =
+          parentField.value == "Civics" ? DisplayStyle.Flex : DisplayStyle.None;
+      panel.Add(subcategoryField);
 
       var cellChoices = new List<string>();
       for (var cells = 1; cells <= 8; cells++) cellChoices.Add($"{cells} cell{(cells == 1 ? "" : "s")}");
@@ -6639,7 +6922,8 @@ namespace CityForgeV3.UI
           return;
         }
 
-        Enum.TryParse(typeField.value, out LotType lotType);
+        var lotType = LotTypeFromCategorySelection(
+            parentField.value, subcategoryField.value);
         var lotName = string.IsNullOrWhiteSpace(nameField.value)
                   ? "Untitled Lot"
                   : nameField.value.Trim();
@@ -7211,9 +7495,37 @@ namespace CityForgeV3.UI
       LotType.Commercial => "Commercial",
       LotType.Industrial => "Industrial",
       LotType.Mixed => "Mixed",
-      LotType.Agricultural => "Agricultural",
+      LotType.Agricultural => "Farm",
       LotType.Civics => "Civics",
+      LotType.CivicsParks => "Civics / Parks",
       _ => "Transportation"
+    };
+
+    private static List<string> LotTypeParentChoices() => new()
+    {
+      "Residential", "Commercial", "Industrial", "Mixed Use", "Farms",
+      "Transportation", "Civics"
+    };
+
+    private static string LotTypeParentLabel(LotType type) => type switch
+    {
+      LotType.Mixed => "Mixed Use",
+      LotType.Agricultural => "Farms",
+      LotType.CivicsParks => "Civics",
+      _ => LotTypeLabel(type)
+    };
+
+    private static LotType LotTypeFromCategorySelection(string parent,
+        string subcategory) => parent switch
+    {
+      "Commercial" => LotType.Commercial,
+      "Industrial" => LotType.Industrial,
+      "Mixed Use" => LotType.Mixed,
+      "Farms" => LotType.Agricultural,
+      "Transportation" => LotType.Transportation,
+      "Civics" when subcategory == "Park" => LotType.CivicsParks,
+      "Civics" => LotType.Civics,
+      _ => LotType.Residential
     };
 
     private sealed class CityForgeChoiceField : VisualElement
@@ -7226,6 +7538,7 @@ namespace CityForgeV3.UI
 
       public int index { get; private set; }
       public string value => _choices[index];
+      public event Action<string> changed;
 
       public CityForgeChoiceField(
           VisualElement overlayHost,
@@ -7303,6 +7616,7 @@ namespace CityForgeV3.UI
             index = choiceIndex;
             _field.text = $"{value}   ▼";
             CloseMenu(true);
+            changed?.Invoke(value);
           })
           { text = (i == index ? "✓  " : "    ") + _choices[i] };
           option.AddToClassList("cf-choice-option");

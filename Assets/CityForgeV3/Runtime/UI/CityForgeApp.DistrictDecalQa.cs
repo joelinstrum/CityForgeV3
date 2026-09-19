@@ -55,7 +55,7 @@ namespace CityForgeV3.UI
             var before = _districtWorld.GetComponentInChildren<DistrictGroundDecals>();
             var count = before?.PatchCount ?? 0;
             if (count == 0) throw new Exception("Default district decals missing");
-            _districtWorld.Build(saved);
+            _districtWorld.RebuildEntireDistrict(saved,DistrictBulkRebuildReason.TestFixture);
             _districtWorld.SetZoom(_terraformZoomLevel);
             _districtWorld.SetPan(_terraformPanOffset);
             // ClearWorld destroys old content at end of frame; inspect only the

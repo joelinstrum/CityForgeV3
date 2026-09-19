@@ -99,18 +99,25 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 uint k = h * 3266489917u; k ^= k >> 16;
                 return float2(h & 65535u, k & 65535u) / 65536.0;
             }
+            void MeadowGradients(float2 uv, out float2 dx, out float2 dy)
+            {
+                dx = ddx(uv); dy = ddy(uv);
+                // Smooth in both texture directions: the shallow camera angle
+                // otherwise preserves grain along the anisotropic short axis.
+                // Coarse mip filtering retains broad colour without extra samples.
+                float footprint = max(.125, max(length(dx), length(dy)));
+                dx = lerp(dx, float2(footprint, 0), _DistantMeadow);
+                dy = lerp(dy, float2(0, footprint), _DistantMeadow);
+            }
+
             fixed4 Meadow(sampler2D meadowSampler, float2 uv)
             {
                 // The source covers 40m. Neighbouring compositions receive
                 // stable offsets and overlap smoothly, independent of lots.
                 float2 cell = floor(uv);
                 float2 weight = smoothstep(.15, .85, frac(uv));
-                float2 dx = ddx(uv), dy = ddy(uv);
-                // At the overview, average subpixel artwork before the offset-cell blend.
-                // This suppresses its repeating patch lattice without extra samples.
-                float footprint=max(length(dx),length(dy));
-                float filterScale=lerp(1.0,max(1.0,.125/max(.00001,footprint)),_DistantMeadow);
-                dx*=filterScale; dy*=filterScale;
+                float2 dx, dy;
+                MeadowGradients(uv, dx, dy);
                 fixed4 a = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell), dx, dy);
                 fixed4 b = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(1,0)), dx, dy);
                 fixed4 c = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(0,1)), dx, dy);
@@ -190,7 +197,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // One extra sample on flat ground. Broad masking hides repetition;
                 // mipmapped world-space detail never changes scale with camera zoom.
                 float2 patchUV=input.meadowMetres/40.0;
-                fixed3 thin=tex2Dgrad(_HillTex,patchUV,ddx(patchUV),ddy(patchUV)).rgb;
+                float2 patchDx, patchDy;
+                MeadowGradients(patchUV, patchDx, patchDy);
+                fixed3 thin=tex2Dgrad(_HillTex,patchUV,patchDx,patchDy).rgb;
                 #endif
                 if (_GrassHueShift > 0) surface.rgb=ShiftGrassHue(surface.rgb);
                 #if defined(MEADOW_PATCHES)

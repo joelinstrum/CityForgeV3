@@ -7,6 +7,67 @@ namespace CityForgeV3.Tests.EditMode
 public class DistrictLotSimulationTests
 {
     static LotSaveData House(int residents = 100) => new LotSaveData { LotType=LotType.Residential,Stats=new LotStats { Residents=residents } };
+    [TestCase(LotType.Residential)]
+    [TestCase(LotType.Commercial)]
+    [TestCase(LotType.Industrial)]
+    [TestCase(LotType.Mixed)]
+    [TestCase(LotType.Civics)]
+    [TestCase(LotType.Agricultural)]
+    [TestCase(LotType.Transportation)]
+    [TestCase(LotType.CivicsParks)]
+    public void EveryLotTypeAddsAndRemovesItsAuthoredPopulation(LotType type)
+    {
+        var district = new RegionCityTile();
+        var lot = new LotSaveData
+        {
+            LotId = "population-lot",
+            LotType = type,
+            Stats = new LotStats { Residents = 10 }
+        };
+        var simulation = DistrictLotSimulation.For(district, _ => null);
+
+        simulation.Add("placed", lot);
+        Assert.That(simulation.Population.Population, Is.EqualTo(10));
+        Assert.That(simulation.Population.HousingCapacity, Is.EqualTo(10));
+
+        simulation.Remove("placed");
+        Assert.That(simulation.Population.Population, Is.Zero);
+        Assert.That(simulation.Population.HousingCapacity, Is.Zero);
+    }
+    [Test]
+    public void FounderLotSuppressesReusableDefinitionPopulation()
+    {
+        var district = new RegionCityTile
+        {
+            Founded = true,
+            FounderBuildingId = "fortress",
+            LotId = "founder-lot"
+        };
+        district.Lots.Add(new PlacedDistrictLot
+        {
+            InstanceId = "founder",
+            LotId = "founder-lot"
+        });
+        var definition = new LotSaveData
+        {
+            LotId = "founder-lot",
+            Stats = new LotStats { Residents = 999 }
+        };
+        var simulation = DistrictLotSimulation.Rebuild(district,
+            _ => definition);
+
+        Assert.That(simulation.Population.Population, Is.Zero);
+        Assert.That(district.Lots[0].HasPopulationOverride, Is.True,
+            "Older founder placements migrate to the population-free contract.");
+        var restored = JsonUtility.FromJson<RegionCityTile>(
+            JsonUtility.ToJson(district));
+        simulation = DistrictLotSimulation.Rebuild(restored,
+            _ => definition);
+        Assert.That(simulation.Population.Population, Is.Zero);
+        definition.Stats.Residents = 42;
+        DistrictLotSimulation.SavedDefinitionChanged(restored, definition);
+        Assert.That(simulation.Population.Population, Is.Zero);
+    }
     [Test] public void PlacementRemovalAndReloadDoNotDuplicateResidents()
     {
         var d=new RegionCityTile();var house=House();var sim=DistrictLotSimulation.For(d,_=>house);
@@ -46,6 +107,53 @@ public class DistrictLotSimulationTests
         Assert.That(Quote("founders",true,true,out _),Is.False);Assert.That(Quote("industrial",false,true,out _),Is.False);Assert.That(Quote("industrial",true,false,out _),Is.False);
         Assert.That(d.Treasury,Is.EqualTo(100));Assert.That(d.Labor.Wood,Is.EqualTo(10));Assert.That(Quote("industrial",true,true,out var required),Is.True);
         DistrictLotRequirements.Consume(d,required);Assert.That(d.Labor.Wood,Is.Zero);Assert.That(Quote("industrial",true,true,out _),Is.False);
+    }
+    [Test] public void PopulationEducationAndMultipleStockpilesGateConstruction()
+    {
+        var d = new RegionCityTile { Treasury = 500 };
+        d.Population.Population = 199;
+        d.Population.Education = 49.5f;
+        d.Labor.Wood = 200;
+        d.ResourceInventory.Bricks = 1;
+        d.ResourceInventory.Coal = 2;
+        var lot = House(0);
+        lot.BasePlopCost = 50;
+        lot.Stats.MinimumEraId = "industrial";
+        lot.Stats.MinimumPopulation = 200;
+        lot.Stats.MinimumEducationScore = 50;
+        lot.Stats.ConstructionResources.Add(new ContentResourceAmount
+            { resourceId = "lumber", amount = 200 });
+        lot.Stats.ConstructionResources.Add(new ContentResourceAmount
+            { resourceId = "brick", amount = 1 });
+        lot.Stats.ConstructionResources.Add(new ContentResourceAmount
+            { resourceId = "coal", amount = 2 });
+        bool Quote(out long[] resources, out string reason) =>
+            DistrictLotRequirements.Quote(d, lot, "industrial", 1, 1, 2, 2,
+                null, null, Vector2.zero, out resources, out reason);
+
+        Assert.That(Quote(out _, out var reason), Is.False);
+        Assert.That(reason, Does.Contain("population 200"));
+        d.Population.Population = 200;
+        Assert.That(Quote(out _, out reason), Is.False);
+        Assert.That(reason, Does.Contain("education score 50"));
+        d.Population.Education = 50f;
+        d.ResourceInventory.Bricks = 0;
+        Assert.That(Quote(out _, out reason), Is.False);
+        Assert.That(reason, Does.Contain("bricks"));
+        Assert.That(d.Treasury, Is.EqualTo(500));
+        Assert.That(d.Labor.Wood, Is.EqualTo(200));
+        Assert.That(d.ResourceInventory.Coal, Is.EqualTo(2));
+
+        d.ResourceInventory.Bricks = 1;
+        Assert.That(Quote(out var required, out reason), Is.True, reason);
+        DistrictLotRequirements.Consume(d, required);
+        Assert.That(d.Labor.Wood, Is.Zero);
+        Assert.That(d.ResourceInventory.Bricks, Is.Zero);
+        Assert.That(d.ResourceInventory.Coal, Is.Zero);
+        Assert.That(d.Treasury, Is.EqualTo(500),
+            "Resource consumption does not perform an implicit Save or cash charge");
+        Assert.That(Quote(out _, out _), Is.False,
+            "The same stockpile cannot fund a second placement");
     }
     [Test] public void DeliveryBenefitsExcludeExistingYieldAndStopAfterRemoval()
     {

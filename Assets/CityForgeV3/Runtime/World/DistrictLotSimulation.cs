@@ -50,14 +50,24 @@ namespace CityForgeV3.World
         sealed class Profile
         {
             public int Residents, Jobs, Cost, Revenue, Wage, Capacity;
+            public bool HasPopulationOverride;
+            public int PopulationOverride;
             public string Service, DefinitionId;
             public readonly long[] Seasonal = new long[4], Delivery = new long[4];
-            public static Profile From(LotSaveData lot)
+            public static Profile From(LotSaveData lot,
+                bool hasPopulationOverride = false,
+                int populationOverride = 0)
             {
                 var rates = DistrictBusinessEconomy.Rates(lot);
                 var stats = lot?.Stats;
                 var p = new Profile { DefinitionId = lot?.LotId ?? "",
-                    Residents = lot != null && (lot.LotType == LotType.Residential || lot.LotType == LotType.Mixed) ? Math.Max(0, stats?.Residents ?? 0) : 0,
+                    // Population is an authored Lot contribution rather than a
+                    // category assumption. A fort, work camp, civic complex,
+                    // or future custom Lot can therefore bring residents too.
+                    Residents = Math.Max(0, hasPopulationOverride
+                        ? populationOverride : stats?.Residents ?? 0),
+                    HasPopulationOverride = hasPopulationOverride,
+                    PopulationOverride = Math.Max(0, populationOverride),
                     Jobs = Math.Max(0, rates?.Employees ?? 0), Cost = Math.Max(0, rates?.SeasonalCost ?? 0), Revenue = Math.Max(0, rates?.SeasonalRevenue ?? 0),
                     Wage = Math.Max(0, stats?.SeasonalWagePerJob ?? 150), Capacity = Math.Max(0, stats?.ServiceCapacity ?? 0), Service = stats?.Service ?? "None"
                 };
@@ -84,10 +94,25 @@ namespace CityForgeV3.World
             int previousCapacity = state.HousingCapacity;
             state.HousingCapacity = 0;
             var sim = new DistrictLotSimulation(d); read ??= LotContentCatalog.Read;
+            if ((d.FounderBuildingId == "fortress" ||
+                 d.FounderBuildingId == "city-charter-house") &&
+                !string.IsNullOrEmpty(d.LotId))
+            {
+                // Compatibility for founder Lots placed before the explicit
+                // zero-population override was stored on their placement.
+                var founder = d.Lots?.Find(placed => placed != null &&
+                    placed.LotId == d.LotId);
+                if (founder != null && !founder.HasPopulationOverride)
+                {
+                    founder.HasPopulationOverride = true;
+                    founder.PopulationOverride = 0;
+                }
+            }
             foreach (var lot in d.Lots ?? new List<PlacedDistrictLot>())
                 if (lot != null)
                 { if (string.IsNullOrEmpty(lot.InstanceId) || sim.profiles.ContainsKey(lot.InstanceId)) lot.InstanceId = Guid.NewGuid().ToString("N");
-                  var p = Profile.From(read(lot.LotId)); p.DefinitionId = lot.LotId; sim.profiles.Add(lot.InstanceId, p); sim.Index(lot.InstanceId, p.DefinitionId); sim.Accumulate(p, 1); }
+                  var p = Profile.From(read(lot.LotId), lot.HasPopulationOverride,
+                      lot.PopulationOverride); p.DefinitionId = lot.LotId; sim.profiles.Add(lot.InstanceId, p); sim.Index(lot.InstanceId, p.DefinitionId); sim.Accumulate(p, 1); }
             int currentSeason = DistrictLabor.State(d).SeasonIndex;
             if (!state.Initialized) { state.Initialized = true; state.LastSeason = currentSeason; previousCapacity = 0; }
             if (d.Founded && !state.FoundingClockInitialized) { state.FoundedSeason = 0; state.FoundingClockInitialized = true; }
@@ -97,8 +122,14 @@ namespace CityForgeV3.World
         }
         public void Add(string instanceId, LotSaveData lot)
         {
+            Add(instanceId, lot, false, 0);
+        }
+        public void Add(string instanceId, LotSaveData lot,
+            bool hasPopulationOverride, int populationOverride)
+        {
             if (profiles.ContainsKey(instanceId)) return;
-            var p = Profile.From(lot); profiles.Add(instanceId, p); Index(instanceId, p.DefinitionId); Accumulate(p, 1); ChangePopulation(p.Residents);
+            var p = Profile.From(lot, hasPopulationOverride,
+                populationOverride); profiles.Add(instanceId, p); Index(instanceId, p.DefinitionId); Accumulate(p, 1); ChangePopulation(p.Residents);
         }
         public void Remove(string instanceId)
         {
@@ -119,7 +150,9 @@ namespace CityForgeV3.World
             foreach (var id in ids)
             {
                 sim.Accumulate(sim.profiles[id], -1);
-                var profile = Profile.From(lot); sim.profiles[id] = profile; sim.Accumulate(profile, 1);
+                var old = sim.profiles[id];
+                var profile = Profile.From(lot, old.HasPopulationOverride,
+                    old.PopulationOverride); sim.profiles[id] = profile; sim.Accumulate(profile, 1);
             }
             sim.ChangePopulation(sim.Population.HousingCapacity - capacityBefore);
         }

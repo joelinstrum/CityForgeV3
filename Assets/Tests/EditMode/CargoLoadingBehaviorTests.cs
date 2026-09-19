@@ -57,12 +57,29 @@ namespace CityForgeV3.Tests.EditMode
    var go=MakeRiver(false,50,out var w);try{
     var d=new LotSaveData{HasWaterOrientation=true,WaterOrientationLand=new Vector3(100,0,100),WaterOrientationWater=new Vector3(90,0,100)};
     d.Buildings3D.Add(new PlacedBuilding3D{X=15,Z=0});d.Props.Add(new PlacedProp{PropId="wooden-lumber-barge-v01",PositionX=5,PositionZ=0});
-    Assert.IsTrue(w.ValidateLotBoatPlacement(new RegionCityTile{Width=1,Height=1},new PlacedDistrictLot{GridX=31,GridZ=31},d,out _));
+    var placement=new PlacedDistrictLot{GridX=31,GridZ=31};
+    Assert.IsTrue(w.ValidateLotBoatPlacement(new RegionCityTile{Width=1,Height=1},placement,d,out _));
     d.WaterOrientationWater=new Vector3(110,0,100);Assert.IsFalse(w.ValidateLotBoatPlacement(new RegionCityTile{Width=1,Height=1},new PlacedDistrictLot{GridX=31,GridZ=31},d,out _));
    }finally{UnityEngine.Object.DestroyImmediate(go);}
   }
   [Test] public void ShorelineAlignmentOffsetSurvivesSaveAndMovesLotCenter()
   {var p=new PlacedDistrictLot{GridX=31,GridZ=31,ShoreOffsetX=2,ShoreOffsetZ=-4};p=JsonUtility.FromJson<PlacedDistrictLot>(JsonUtility.ToJson(p));Assert.AreEqual(new Vector2(2,-4),DistrictWorldController.DistrictLotCenterMeters(new RegionCityTile{Width=1,Height=1},p,new LotSaveData{LotWidthCells=2,LotDepthCells=2}));}
+  [Test] public void PositiveShoreOffsetMovesCenterWithoutChangingFootprintSpan()
+  {var p=new PlacedDistrictLot{GridX=31,GridZ=31,ShoreOffsetX=2,ShoreOffsetZ=4};Assert.AreEqual(new Vector2(2,4),DistrictWorldController.DistrictLotCenterMeters(new RegionCityTile{Width=1,Height=1},p,new LotSaveData{LotWidthCells=2,LotDepthCells=2}));}
+  [Test] public void LegacyDistrictDockOverrideRotatesButDoesNotMoveTheAuthoredBarge()
+  {
+   var source=new LotSaveData();source.Props.Add(new PlacedProp{InstanceId="boat",PropId="wooden-lumber-barge-v01",PositionX=7,PositionZ=-4});
+   var placement=JsonUtility.FromJson<PlacedDistrictLot>(JsonUtility.ToJson(new PlacedDistrictLot{HasBoatDockOverride=true,BoatDockLocalX=2,BoatDockLocalZ=3,BoatDockRotationQuarterTurns=1,BoatMooringLocalX=4,BoatMooringLocalZ=5}));
+   var go=new GameObject("runtime dock override");var world=go.AddComponent<LotWorldController>();
+   try{world.LoadRuntimeLot(source);world.ApplyDistrictBoatDockOverride(placement);var session=(LotEditorSession)typeof(LotWorldController).GetField("_session",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(world);Assert.AreEqual(7,session.Data.Props[0].PositionX);Assert.AreEqual(-4,session.Data.Props[0].PositionZ);Assert.AreEqual(1,session.Data.Props[0].RotationQuarterTurns);var dock=LotObjectRegistry.ResolvePoint(session.Data,new LotScriptPoint{objectId="boat",offset=new Vector3(-2,.06f,-2.5f)});Assert.That(Vector3.Distance(dock,new Vector3(4.5f,.06f,-2)),Is.LessThan(.001f));Assert.AreEqual(7,source.Props[0].PositionX);Assert.AreEqual(-4,source.Props[0].PositionZ);Assert.AreEqual(0,source.Props[0].RotationQuarterTurns);}
+   finally{UnityEngine.Object.DestroyImmediate(go);}
+  }
+  [Test] public void ScriptDockRemainsAttachedToAuthoredBarge()
+  {
+   var data=new LotSaveData();data.Props.Add(new PlacedProp{InstanceId="barge",PropId="wooden-lumber-barge-v01",PositionX=7,PositionZ=-4});
+   var point=new LotScriptPoint{objectId="barge",offset=new Vector3(-2,.06f,-2.5f)};
+   Assert.AreEqual(new Vector3(5,.06f,-6.5f),LotObjectRegistry.ResolvePoint(data,point));
+  }
   [TestCase(1)] [TestCase(12)] [TestCase(13)] public void WorkersNeverOverfillAndWaitWithoutRiver(int capacity){var d=new CargoLoadingDefinition{capacity=capacity};var s=CargoLoadingSimulation.Create(d);for(int i=0;i<4000;i++){CargoLoadingSimulation.Step(d,s,.1f,2,true,false,0);Assert.LessOrEqual(s.Loaded+s.Workers.Count(x=>x.Carrying),capacity);}Assert.AreEqual(capacity,s.Loaded);Assert.IsTrue(s.Workers.All(x=>x.Phase=="idle"));Assert.IsFalse(s.Departing);}
   [Test] public void FullBoatDepartsOnlyAfterWorkersReturn(){var d=new CargoLoadingDefinition{capacity=2};var s=CargoLoadingSimulation.Create(d);for(int i=0;i<1000&&!s.Departing;i++)CargoLoadingSimulation.Step(d,s,.1f,3,true,true,100);Assert.IsTrue(s.Departing);Assert.IsTrue(s.Workers.All(x=>x.Phase=="idle"&&!x.Carrying));Assert.AreEqual(2,s.Loaded);}
   [Test] public void RouteLossPausesShipmentWithoutLosingCargo(){var d=new CargoLoadingDefinition{capacity=1};var s=CargoLoadingSimulation.Create(d);CargoLoadingSimulation.Step(d,s,100,1,true,true,1000);Assert.IsTrue(s.Departing);var distance=s.Distance;CargoLoadingSimulation.Step(d,s,20,1,true,false,0);Assert.AreEqual(distance,s.Distance);Assert.AreEqual(1,s.Loaded);CargoLoadingSimulation.Step(d,s,2,1,true,true,1000);Assert.Greater(s.Distance,distance);}
@@ -85,6 +102,6 @@ namespace CityForgeV3.Tests.EditMode
     } finally { UnityEngine.Object.DestroyImmediate(go); }
   }
   [Test] public void DepartureRouteAndDistanceSurviveSave(){var b=new LotBehaviorInstance{State=new CargoLoadingState{Departing=true,Distance=32,Loaded=12},DepartureRoute=new List<Vector3>{Vector3.zero,new Vector3(0,0,100)}};var copy=JsonUtility.FromJson<LotBehaviorInstance>(JsonUtility.ToJson(b));Assert.AreEqual(32,copy.State.Distance);Assert.AreEqual(new Vector3(0,0,100),copy.DepartureRoute[1]);}
-  static GameObject MakeRiver(bool reversed,float end,out DistrictWorldController world){var go=new GameObject("river route test");world=go.AddComponent<DistrictWorldController>();var f=BindingFlags.NonPublic|BindingFlags.Instance;var t=typeof(DistrictWorldController);t.GetField("_content",f).SetValue(world,go.transform);t.GetField("_widthMeters",f).SetValue(world,100f);t.GetField("_depthMeters",f).SetValue(world,100f);var points=new List<Vector2>{new Vector2(0,-end),new Vector2(0,0),new Vector2(0,end)};if(reversed)points.Reverse();var nested=t.GetNestedType("RuntimeRiverSurface",BindingFlags.NonPublic);var river=Activator.CreateInstance(nested,new object[]{points,12f,10f,8f,0f,.1f,1f,false});((IList)t.GetField("_riverSurfaces",f).GetValue(world)).Add(river);return go;}
+  static GameObject MakeRiver(bool reversed,float end,out DistrictWorldController world){var go=new GameObject("river route test");world=go.AddComponent<DistrictWorldController>();var f=BindingFlags.NonPublic|BindingFlags.Instance;var t=typeof(DistrictWorldController);t.GetField("_content",f).SetValue(world,go.transform);t.GetField("_widthMeters",f).SetValue(world,100f);t.GetField("_depthMeters",f).SetValue(world,100f);var points=new List<Vector2>{new Vector2(0,-end),new Vector2(0,0),new Vector2(0,end)};if(reversed)points.Reverse();var nested=t.GetNestedType("RuntimeRiverSurface",BindingFlags.NonPublic);var river=Activator.CreateInstance(nested,new object[]{points,12f,10f,8f,0f,.1f,1f,false});((IList)t.GetField("_riverSurfaces",f).GetValue(world)).Add(river);var index=t.GetField("_riverSurfaceIndex",f).GetValue(world);index.GetType().GetMethod("Add").Invoke(index,new[]{(object)new Rect(-12,-end-12,24,end*2+24),river,true});return go;}
  }
 }

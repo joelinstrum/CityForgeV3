@@ -12,6 +12,15 @@ construction again. Road/waterfront conditions are placement requirements, not
 ongoing operating gates. Frontier samples query the existing road presentation
 index and river surface system only on placement, never during every hover.
 
+Placement now also checks the district's current population and education score
+against each Lot's authored minimums. Construction checks cover all ten displayed
+stockpiles: food, lumber, stone, bricks, coal, iron ore, gold, oil, jewels and
+cloth. Lumber still uses the existing labor wood balance. A rejected placement
+does not charge cash or materials; a successful placement deducts its quoted
+materials once, in memory until the ordinary district Save. A focused EditMode
+run passed 10/10 on September 18, 2026, including threshold failures, stockpile
+failure, exact consumption and JSON defaults. It did not modify a player save.
+
 Population is saved in 101 fixed age buckets with four people per modeled
 household. New residents use a deterministic 20% age-10 / 65% age-35 / 15% age-70
 arrival mix (integer remainder goes to working-age residents). Ages advance one
@@ -61,3 +70,13 @@ stability or resolve the previously unexplained game lockup.
 
 The isolated review uses the latest manually saved Testy region; tests do not
 write player saves. Lot and region saves remain explicit. Changes are uncommitted.
+
+September 19, 2026: founder Lots persist an explicit zero-population override,
+so neither the Fort nor future Town Center adds residents even if its reusable
+Lot definition later receives an authored population. Older founder placements
+adopt the zero-population override when their simulation rebuilds. Placing a Fort
+establishes a minimum food reserve of 250; placing a Town Center establishes 500. A larger
+existing stockpile is preserved. Ordinary residents continue to consume food at
+season boundaries from the cached population total. Focused isolated validation
+passed 22/22 across district simulation, founder placement, zero-population
+persistence, and both starting-food reserves. No player save was written.

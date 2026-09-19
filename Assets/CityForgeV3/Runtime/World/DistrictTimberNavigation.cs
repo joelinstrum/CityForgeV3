@@ -12,6 +12,7 @@ namespace CityForgeV3.World
         readonly Func<Vector2, bool> water;
         readonly Func<string,LotSaveData> readLot;
         readonly Dictionary<Vector2Int, PlacedRoadPiece> roads;
+        readonly List<(PlacedDistrictLot Placement, LotSaveData Data)> mills = new();
         readonly float width, depth;
         public DistrictTimberNavigation(RegionCityTile district, Func<Vector2, bool> water, Func<string,LotSaveData> readLot = null)
         {
@@ -20,6 +21,16 @@ namespace CityForgeV3.World
             roads = new();
             foreach (var road in district.Roads ?? new())
                 if (road != null) roads[new Vector2Int(road.GridX, road.GridZ)] = road;
+            // Build the receiver matrix once with the road graph. Routine cart
+            // retries route only to known mills instead of rescanning all Lots.
+            foreach (var placed in district.Lots ?? new())
+            {
+                if (placed == null) continue;
+                var data = this.readLot(placed.LotId);
+                if (data?.Buildings3D?.Any(b =>
+                        b.AssetId == "lumber-mill-v01") == true)
+                    mills.Add((placed, data));
+            }
         }
         public Vector2 Center(Vector2Int cell) => new((cell.x + .5f) * 10 - width / 2, (cell.y + .5f) * 10 - depth / 2);
         Vector2Int Cell(Vector2 p) => new(Mathf.FloorToInt((p.x + width / 2) / 10), Mathf.FloorToInt((p.y + depth / 2) / 10));
@@ -87,10 +98,9 @@ namespace CityForgeV3.World
         public List<TimberDestination> Mills(Vector2 from)
         {
             var roads=DistrictRoadDelivery.For(district);var result=new List<TimberDestination>();
-            foreach(var placed in district.Lots??new())
+            foreach(var mill in mills)
             {
-                var data=readLot(placed.LotId);
-                if(data==null||!(data.Buildings3D?.Any(b=>b.AssetId=="lumber-mill-v01")??false))continue;
+                var placed=mill.Placement;var data=mill.Data;
                 var center=DistrictWorldController.DistrictLotCenterMeters(district,placed,data);
                 float x=data.LotWidthCells*10,z=data.LotDepthCells*10;
                 if(placed.RotationQuarterTurns%2!=0)(x,z)=(z,x);
@@ -99,5 +109,6 @@ namespace CityForgeV3.World
             }
             return result.OrderBy(r=>r.Distance).ToList();
         }
+        public int MillCount => mills.Count;
     }
 }

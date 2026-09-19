@@ -1,0 +1,1 @@
+PASS: catalog lookup, original FBX loads, all material slots have albedo, shared building contract height=3.2, bounds=(3.59, 3.20, 5.10). Unity render generated. No player saves.

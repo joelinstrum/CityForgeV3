@@ -1,0 +1,2 @@
+Unity imported mesh: 422 vertices, 616 triangles; initial renderer bounds 3.000 x 1.000 x 1.000 m. Foliage resource 1254 x 1254.
+Left: current foliage/tint on a 3 x 1 x 1 m control block. Right: new Blender mesh and V01 foliage. Isolated stage, Lot session untouched, no Save.

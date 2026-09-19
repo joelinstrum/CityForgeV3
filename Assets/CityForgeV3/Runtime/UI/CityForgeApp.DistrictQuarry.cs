@@ -62,7 +62,9 @@ namespace CityForgeV3.UI
             EnsureDistrictUndo(d);
             if(built){if(!_districtWorld.BuildQuarry(d,site))return;}
             else{DistrictQuarry.Demolish(site);}
-            SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);SelectDistrictCategory("Select");Show(AppScreen.DistrictTerraform);FocusQuarry(site);
+            SaveDistrictEdit();_districtWorld.PresentQuarries(d);
+            _districtWorldCompositionKey=DistrictCompositionKey(d);_laborNavigation=null;
+            SelectDistrictCategory("Select");Show(AppScreen.DistrictTerraform);FocusQuarry(site);
         }
         void QuarryScriptEditor(DistrictStoneSite site,string source=null)
         {

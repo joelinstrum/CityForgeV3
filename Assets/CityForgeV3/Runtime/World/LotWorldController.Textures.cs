@@ -26,6 +26,9 @@ namespace CityForgeV3.World
             public readonly PedestrianOverlayLayout PedestrianLayout;
             public readonly float PedestrianWidthMeters;
             public readonly float StairRiseMeters;
+            public readonly float BaseRepeatMeters;
+            public readonly int FootprintWidthCells;
+            public readonly int FootprintDepthCells;
 
             public LotTextureOption(string id, string displayName, string resourcePath,
                 string springResourcePath = null, string summerResourcePath = null,
@@ -33,7 +36,10 @@ namespace CityForgeV3.World
                 PedestrianOverlayLayout pedestrianLayout =
                     PedestrianOverlayLayout.None,
                 float pedestrianWidthMeters = 1.8f,
-                float stairRiseMeters = 0f)
+                float stairRiseMeters = 0f,
+                float baseRepeatMeters = 5f,
+                int footprintWidthCells = 1,
+                int footprintDepthCells = 1)
             {
                 Id = id; DisplayName = displayName; ResourcePath = resourcePath;
                 SpringResourcePath = springResourcePath;
@@ -43,6 +49,9 @@ namespace CityForgeV3.World
                 PedestrianLayout = pedestrianLayout;
                 PedestrianWidthMeters = pedestrianWidthMeters;
                 StairRiseMeters = stairRiseMeters;
+                BaseRepeatMeters = baseRepeatMeters;
+                FootprintWidthCells = Mathf.Max(1, footprintWidthCells);
+                FootprintDepthCells = Mathf.Max(1, footprintDepthCells);
             }
 
             public bool HasResourceForSeason(SeasonPreset season) =>
@@ -75,8 +84,14 @@ namespace CityForgeV3.World
 
         public static readonly IReadOnlyList<LotTextureOption> GrassBaseTextures = new[]
         {
-            new LotTextureOption("default-grass", "Default Grass",
+            new LotTextureOption("default-grass", "Natural Grass",
                 DistrictWorldController.DefaultGrassResource),
+            new LotTextureOption("brick-paving-v01", "Brick Paving",
+                "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1",
+                baseRepeatMeters: 10f),
+            new LotTextureOption("dark-cobblestone-v01", "Cobblestone",
+                "CityForgeV3/LotTextures/CobblestoneSuppliedV01/cobblestone-texture",
+                baseRepeatMeters: 10f),
             new LotTextureOption("wild-grass-lawn", "Wild Grass Lawn",
                 "CityForgeV3/LotTextures/RuralOverlaysV01/wild-grass-lawn"),
             new LotTextureOption("grass-poor", "Natural Grass — Poor", "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2"),
@@ -97,6 +112,10 @@ namespace CityForgeV3.World
                 pedestrianLayout: PedestrianOverlayLayout.Centerline);
         public static readonly IReadOnlyList<LotTextureOption> OverlayTextures = new[]
         {
+            new LotTextureOption("brick-paving-v01", "Brick Paving",
+                "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1"),
+            new LotTextureOption("dark-cobblestone-v01", "Cobblestone",
+                "CityForgeV3/LotTextures/CobblestoneSuppliedV01/cobblestone-texture"),
             new LotTextureOption("brick-sidewalk-straight", "Brick Sidewalk — Straight",
                 "CityForgeV3/LotTextures/BrickSidewalkV01/brick-sidewalk-straight"),
             new LotTextureOption("brick-sidewalk-corner", "Brick Sidewalk — Corner",
@@ -127,6 +146,9 @@ namespace CityForgeV3.World
                 "CityForgeV3/LotTextures/UrbanOverlaysV01/concrete-sidewalk",
                 pedestrianLayout: PedestrianOverlayLayout.Stairs,
                 pedestrianWidthMeters: 2.2f, stairRiseMeters: 3.2f),
+            new LotTextureOption("camp-overlay-4x4", "Camp Ground",
+                "CityForgeV3/LotTextures/CampOverlayV01/camp-overlay-4x4",
+                footprintWidthCells: 2, footprintDepthCells: 2),
         };
         public static LotTextureOption BrickWalkwayOverlay =>
             LegacyBrickWalkwayOverlay;
@@ -216,8 +238,8 @@ namespace CityForgeV3.World
 
         public bool BeginOverlayPaintAtCell(string armedTextureId, int cellX, int cellZ)
         {
-            if (!_overlayEditorActive || cellX < 0 || cellX >= LotWidthCells ||
-                cellZ < 0 || cellZ >= LotDepthCells) return false;
+            if (!_overlayEditorActive || !OverlayCellInPaintRange(cellX, cellZ))
+                return false;
             var cell = new Vector2Int(cellX, cellZ);
             var existing = OverlayTextureIndexAtCell(cell);
             if (existing >= 0)
@@ -230,10 +252,11 @@ namespace CityForgeV3.World
             else
             {
                 if (string.IsNullOrWhiteSpace(armedTextureId)) return false;
-                AddOverlayTextureAtCell(armedTextureId, cell,
-                    _overlayPaintRotationQuarterTurns);
+                if (!AddOverlayTextureAtCell(armedTextureId, cell,
+                        _overlayPaintRotationQuarterTurns)) return false;
                 _overlayPaintTextureId = armedTextureId;
             }
+            var option = ResolveOverlayTexture(_overlayPaintTextureId);
             _lastOverlayPaintCell = cell;
             _overlayPaintStrokeActive = true;
             ApplyOverlayTextureSelection();
@@ -250,8 +273,12 @@ namespace CityForgeV3.World
         public bool PaintOverlayStrokeCell(int cellX, int cellZ)
         {
             var cell = new Vector2Int(cellX, cellZ);
-            if (!_overlayPaintStrokeActive || cellX < 0 || cellX >= LotWidthCells ||
-                cellZ < 0 || cellZ >= LotDepthCells || cell == _lastOverlayPaintCell) return false;
+            if (!_overlayPaintStrokeActive ||
+                !OverlayCellInPaintRange(cellX, cellZ) ||
+                cell == _lastOverlayPaintCell) return false;
+            var paintOption = ResolveOverlayTexture(_overlayPaintTextureId);
+            if (paintOption.FootprintWidthCells > 1 ||
+                paintOption.FootprintDepthCells > 1) return false;
             _lastOverlayPaintCell = cell;
             var existing = OverlayTextureIndexAtCell(cell);
             if (existing >= 0)
@@ -312,6 +339,9 @@ namespace CityForgeV3.World
             int rotationQuarterTurns = 0)
         {
             _session.Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
+            var option = ResolveOverlayTexture(textureId);
+            if (!TryNormalizeOverlayAnchor(option, rotationQuarterTurns, cell,
+                    out cell)) return false;
             var existing = OverlayTextureIndexAtCell(cell);
             if (existing >= 0)
             {
@@ -337,22 +367,86 @@ namespace CityForgeV3.World
         {
             cell = default;
             if (!TryLotPointFromPanel(panelPosition, panelSize, out var point) ||
-                point.x < -LotWidthMeters * 0.5f || point.x >= LotWidthMeters * 0.5f ||
-                point.z < -LotDepthMeters * 0.5f || point.z >= LotDepthMeters * 0.5f) return false;
+                point.x < -LotWidthMeters * 0.5f - 10f ||
+                point.x >= LotWidthMeters * 0.5f + 10f ||
+                point.z < -LotDepthMeters * 0.5f - 10f ||
+                point.z >= LotDepthMeters * 0.5f + 10f) return false;
             cell = new Vector2Int(
                 Mathf.FloorToInt((point.x + LotWidthMeters * 0.5f) / 10f),
                 Mathf.FloorToInt((point.z + LotDepthMeters * 0.5f) / 10f));
-            return true;
+            return OverlayCellInPaintRange(cell.x, cell.y);
         }
+
+        private bool OverlayCellInPaintRange(int cellX, int cellZ) =>
+            cellX >= -1 && cellX <= LotWidthCells &&
+            cellZ >= -1 && cellZ <= LotDepthCells;
 
         private int OverlayTextureIndexAtCell(Vector2Int cell)
         {
             for (var index = OverlayTextureCount - 1; index >= 0; index--)
             {
                 var placed = _session.Data.OverlayTextures[index];
-                if (placed.CellX == cell.x && placed.CellZ == cell.y) return index;
+                var size = OverlayFootprintCells(placed);
+                if (cell.x >= placed.CellX && cell.x < placed.CellX + size.x &&
+                    cell.y >= placed.CellZ && cell.y < placed.CellZ + size.y)
+                    return index;
             }
             return -1;
+        }
+
+        public static Vector2Int OverlayFootprintCells(PlacedOverlayTexture placed)
+        {
+            if (placed == null) return Vector2Int.one;
+            var option = ResolveOverlayTexture(placed.TextureId);
+            return OverlayFootprintCells(option, placed.RotationQuarterTurns);
+        }
+
+        public static Vector2Int OverlayFootprintCells(LotTextureOption option,
+            int rotationQuarterTurns = 0)
+        {
+            if (option == null) return Vector2Int.one;
+            return Mathf.Abs(rotationQuarterTurns) % 2 == 0
+                ? new Vector2Int(option.FootprintWidthCells,
+                    option.FootprintDepthCells)
+                : new Vector2Int(option.FootprintDepthCells,
+                    option.FootprintWidthCells);
+        }
+
+        public static bool OverlayFootprintFitsLot(int footprintCells,
+            int lotWidthCells, int lotDepthCells) =>
+            footprintCells >= 1 && footprintCells <= lotWidthCells &&
+            footprintCells <= lotDepthCells;
+
+        private bool TryNormalizeOverlayAnchor(LotTextureOption option,
+            int rotationQuarterTurns, Vector2Int clickedCell,
+            out Vector2Int anchor)
+        {
+            var size = OverlayFootprintCells(option, rotationQuarterTurns);
+            if (size == Vector2Int.one)
+            {
+                anchor = clickedCell;
+                return OverlayCellInPaintRange(anchor.x, anchor.y);
+            }
+            if (size.x > LotWidthCells || size.y > LotDepthCells)
+            {
+                anchor = default;
+                return false;
+            }
+            anchor = new Vector2Int(
+                Mathf.Clamp(clickedCell.x - size.x / 2, 0,
+                    LotWidthCells - size.x),
+                Mathf.Clamp(clickedCell.y - size.y / 2, 0,
+                    LotDepthCells - size.y));
+            var candidate = new RectInt(anchor, size);
+            foreach (var placed in _session.Data.OverlayTextures)
+            {
+                if (placed == null) continue;
+                var placedRect = new RectInt(
+                    new Vector2Int(placed.CellX, placed.CellZ),
+                    OverlayFootprintCells(placed));
+                if (candidate.Overlaps(placedRect)) return false;
+            }
+            return true;
         }
 
         private void RebuildPedestrianNetworkFromOverlays()
@@ -480,8 +574,10 @@ namespace CityForgeV3.World
             var texture = option == null ? null : Resources.Load<Texture2D>(
                 option.ResolveResourcePath(Season));
             _groundRenderer.sharedMaterial.mainTexture = texture;
+            var repeatMeters = option?.BaseRepeatMeters ?? 5f;
             _groundRenderer.sharedMaterial.mainTextureScale = new Vector2(
-                Mathf.Max(1f, LotWidthMeters / 5f), Mathf.Max(1f, LotDepthMeters / 5f));
+                Mathf.Max(1f, LotWidthMeters / repeatMeters),
+                Mathf.Max(1f, LotDepthMeters / repeatMeters));
             ApplyTimeOfDay();
         }
 
@@ -500,14 +596,19 @@ namespace CityForgeV3.World
             _overlayTextureRenderers.Clear();
             foreach (var placed in _session.Data.OverlayTextures ?? new List<PlacedOverlayTexture>())
             {
+                var option = ResolveOverlayTexture(placed.TextureId);
+                var size = OverlayFootprintCells(option,
+                    placed.RotationQuarterTurns);
                 var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
                 quad.name = $"Overlay — {placed.TextureId}";
                 quad.transform.SetParent(_overlayTextureRoot, false);
                 quad.transform.localPosition = new Vector3(
-                    -LotWidthMeters * 0.5f + placed.CellX * 10f + 5f, 0.006f,
-                    -LotDepthMeters * 0.5f + placed.CellZ * 10f + 5f);
+                    -LotWidthMeters * 0.5f + (placed.CellX + size.x * 0.5f) * 10f,
+                    0.006f,
+                    -LotDepthMeters * 0.5f + (placed.CellZ + size.y * 0.5f) * 10f);
                 quad.transform.localRotation = Quaternion.Euler(90f, placed.RotationQuarterTurns * 90f, 0f);
-                quad.transform.localScale = new Vector3(10f, 10f, 1f);
+                quad.transform.localScale = new Vector3(
+                    size.x * 10f, size.y * 10f, 1f);
                 quad.GetComponent<Collider>().enabled = false;
                 var material = ShadowReceivingLotMaterial(LotTextureTint(TimeOfDay));
                 // Experimental 3D lots promote their authored grass receiver
@@ -515,7 +616,6 @@ namespace CityForgeV3.World
                 // receiver (and below roads at 2430), otherwise the grass
                 // overwrites brick/concrete on Art Museum LOD lots.
                 material.renderQueue = 2001;
-                var option = ResolveOverlayTexture(placed.TextureId);
                 material.mainTexture = Resources.Load<Texture2D>(option.ResourcePath);
                 var renderer = quad.GetComponent<Renderer>();
                 renderer.sharedMaterial = material;
@@ -559,9 +659,13 @@ namespace CityForgeV3.World
             _overlayTextureSelection.gameObject.SetActive(visible);
             if (!visible) return;
             var placed = _session.Data.OverlayTextures[SelectedOverlayTextureIndex];
+            var size = OverlayFootprintCells(placed);
             _overlayTextureSelection.localPosition = new Vector3(
-                -LotWidthMeters * 0.5f + placed.CellX * 10f + 5f, 0.009f,
-                -LotDepthMeters * 0.5f + placed.CellZ * 10f + 5f);
+                -LotWidthMeters * 0.5f + (placed.CellX + size.x * 0.5f) * 10f,
+                0.009f,
+                -LotDepthMeters * 0.5f + (placed.CellZ + size.y * 0.5f) * 10f);
+            _overlayTextureSelection.localScale = new Vector3(
+                size.x * 10f, size.y * 10f, 1f);
         }
 
         private void UpdateLotTextureLighting()
@@ -569,6 +673,8 @@ namespace CityForgeV3.World
             var tint = SeasonLighting.GroundColor(
                 Season, LotTextureTint(TimeOfDay));
             foreach (var renderer in _overlayTextureRenderers)
+                if (renderer != null) renderer.sharedMaterial.color = tint;
+            foreach (var renderer in _connectorRenderers)
                 if (renderer != null) renderer.sharedMaterial.color = tint;
         }
 

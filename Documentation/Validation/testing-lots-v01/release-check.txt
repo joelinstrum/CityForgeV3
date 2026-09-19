@@ -1,0 +1,1 @@
+PASS: release player scripts compiled; testing bypass returns false; testing Lots button is absent from compiled assembly.

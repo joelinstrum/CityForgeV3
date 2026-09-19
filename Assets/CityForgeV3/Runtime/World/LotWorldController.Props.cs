@@ -34,7 +34,37 @@ namespace CityForgeV3.World
         public const string GeorgianGardenRectanglePropId = "georgian-mixed-garden-rectangle-v01";
         public const string GeorgianHedgeSquarePropId = "georgian-clipped-hedge-square-v01";
         public const string GeorgianHedgeRectanglePropId = "georgian-clipped-hedge-rectangle-v01";
+        public const string NaturalGrassShortPropId = "natural-grass-short-rectangle-v01";
+        public const string NaturalGrassLongPropId = "natural-grass-long-rectangle-v01";
+        public const string NaturalGrassSquarePropId = "natural-grass-square-v01";
+        public const string NaturalGrassLargeSquarePropId = "natural-grass-large-square-v01";
+        public const string NaturalGrassCirclePropId = "natural-grass-circle-v01";
+        public const string HedgedGrassShortPropId = "natural-grass-hedged-short-rectangle-v01";
+        public const string HedgedGrassLongPropId = "natural-grass-hedged-long-rectangle-v01";
+        public const string HedgedGrassSquarePropId = "natural-grass-hedged-square-v01";
+        public const string HedgedGrassLargeSquarePropId = "natural-grass-hedged-large-square-v01";
+        public const string HedgedGrassCirclePropId = "natural-grass-hedged-circle-v01";
+        public const string StoneGardenFountainPropId = "stone-garden-fountain-v01";
+        public const string LowPolyBoxwoodHedgePropId = "low-poly-boxwood-hedge-3x1-v01";
+        public const string FoundationRearHedgePropId = "foundation-garden-rear-hedge-2x1-v01";
+        public const string FoundationFramedHedgePropId = "foundation-garden-framed-hedges-2x1-v01";
+        public const string FoundationOpenRosesPropId = "foundation-open-rose-bushes-2x1-v01";
+        public const string FoundationPicketRoseShrubsPropId = "foundation-picket-rose-shrubs-2x1-v01";
+        public const string FoundationPicketCottageFlowersPropId = "foundation-picket-cottage-flowers-2x1-v01";
+        public const string FoundationPicketRosePairPropId = "foundation-picket-rose-pair-2x1-v01";
+        public const string FoundationPicketRoundedShrubsPropId = "foundation-picket-rounded-shrubs-2x1-v01";
+        public const string WhitePicketRoseStripPropId = "white-picket-rose-garden-2m-v01";
+        public const string WhitePicketCottageStripPropId = "white-picket-cottage-garden-2m-v01";
+        public const string WhitePicketMixedStripPropId = "white-picket-mixed-garden-2m-v01";
+        public const string WhitePicketConeflowerStripPropId = "white-picket-coneflower-garden-2m-v01";
+        public const string WhitePicketDaisyStripPropId = "white-picket-daisy-garden-2m-v01";
+        public const string WhitePicketSusanStripPropId = "white-picket-black-eyed-susan-garden-2m-v01";
+        public const string WhitePicketHostaFernStripPropId = "white-picket-hosta-fern-garden-2m-v01";
+        public const string WhitePicketClematisStripPropId = "white-picket-clematis-garden-2m-v01";
+        public const string WhitePicketFullCottageStripPropId = "white-picket-full-cottage-garden-2m-v01";
         public static bool IsGardenPropId(string propId) =>
+            FoundationGardenBed.TryStyle(propId, out _) ||
+            WhitePicketGardenStrip.TryStyle(propId, out _) ||
             string.Equals(propId, GeorgianGardenBorderPropId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, GeorgianGardenSquarePropId,
@@ -42,6 +72,21 @@ namespace CityForgeV3.World
             string.Equals(propId, GeorgianGardenRectanglePropId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, GeorgianHedgeSquarePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, NaturalGrassShortPropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, NaturalGrassLongPropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, NaturalGrassSquarePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, NaturalGrassLargeSquarePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, NaturalGrassCirclePropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            HedgeBorderedGrassPatch.TryDimensions(propId, out _, out _) ||
+            string.Equals(propId, StoneGardenFountainPropId,
+                StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(propId, LowPolyBoxwoodHedgePropId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, GeorgianHedgeRectanglePropId,
                 StringComparison.OrdinalIgnoreCase);
@@ -62,6 +107,8 @@ namespace CityForgeV3.World
         public const string BearAnimalId = "bear-animated-v01";
         public const string HorseAnimalId = "horse-animated-v01";
         public const string FarmerCharacterId = "founders-farmer-v01";
+        public const string LumberjackCharacterId = "axeman-labor-v01";
+        public static bool IsLumberjack(string propId) => string.Equals(propId, LumberjackCharacterId, StringComparison.OrdinalIgnoreCase);
         private const string FarmerResourcePath = "CityForgeV3/Props/Characters/FarmerV01/Farmer_Animated_v01";
         public static bool IsFarmer(string propId) => string.Equals(propId, FarmerCharacterId, StringComparison.OrdinalIgnoreCase);
         public bool SelectedPropIsFarmer => SelectedPropIsThreeDimensionalCharacter && IsFarmer(_session.Data.Props[SelectedPropIndex].PropId);
@@ -220,7 +267,7 @@ namespace CityForgeV3.World
                 : CharacterBehaviorScript.BusinessAsUsual;
 
         public static bool IsThreeDimensionalCharacter(string propId) =>
-            IsFarmer(propId) ||
+            IsFarmer(propId) || IsLumberjack(propId) ||
             string.Equals(propId, VictorianGentlemanCharacterId,
                 StringComparison.OrdinalIgnoreCase) ||
             string.Equals(propId, HooliganCharacterId,
@@ -266,6 +313,7 @@ namespace CityForgeV3.World
             IsKingKong(propId) ? KingKongGroundOffsetMeters : 0.055f;
 
         private static string CharacterResourcePath(string propId) =>
+            IsLumberjack(propId) ? DistrictWorldController.AxemanResource :
             IsFarmer(propId) ? FarmerResourcePath :
             IsKingKong(propId) ? KingKongResourcePath :
             IsHooligan(propId) ? HooliganResourcePath :
@@ -1623,6 +1671,19 @@ namespace CityForgeV3.World
             UpdateEffectAttachmentTransforms();
         }
 
+        public void ApplyDistrictBoatDockOverride(PlacedDistrictLot placement)
+        {
+            if (placement == null || !placement.HasBoatDockOverride ||
+                _session?.Data?.Props == null) return;
+            var boat = _session.Data.Props.Find(prop =>
+                BoatCatalog.Find(prop.PropId) != null);
+            if (boat == null) return;
+            // Legacy position fields remain readable, but no longer detach the
+            // barge from the position authored in the Lot Editor.
+            boat.RotationQuarterTurns = placement.BoatDockRotationQuarterTurns;
+            RebuildPropPresentations();
+        }
+
         private void RefreshPropSeasonVisibility()
         {
             var placedProps = _session.Data.Props ?? new List<PlacedProp>();
@@ -1637,8 +1698,15 @@ namespace CityForgeV3.World
                 if (presentation != null)
                 {
                     presentation.GetComponent<GeorgianGardenBorder>()?.SetSeason(Season);
+                    presentation.GetComponent<FoundationGardenBed>()?.SetSeason(Season);
+                    presentation.GetComponent<WhitePicketGardenStrip>()?.SetAppearance(
+                        Season, TimeOfDay, NaturalGrassSunDirection());
                     presentation.GetComponent<GeorgianGardenBed>()?.SetSeason(Season);
                     presentation.GetComponent<GeorgianClippedHedgeGarden>()?.SetSeason(Season);
+                    presentation.GetComponent<NaturalGrassGardenPatch>()?.SetAppearance(
+                        Season, TimeOfDay, NaturalGrassSunDirection());
+                    presentation.GetComponent<HedgeBorderedGrassPatch>()?.SetAppearance(
+                        Season, TimeOfDay, NaturalGrassSunDirection());
                     presentation.gameObject.SetActive(
                         PropSeasonCatalog.IsAvailable(
                             placedProps[index].PropId, Season));
@@ -1648,6 +1716,29 @@ namespace CityForgeV3.World
             ApplyCharacterZoomVisibility();
             UpdatePropProjectedShadows();
         }
+
+        private void RefreshNaturalGrassPatchLighting()
+        {
+            foreach (var presentation in _propPresentations)
+            {
+                if (presentation != null)
+                    presentation.GetComponent<NaturalGrassGardenPatch>()?
+                        .SetAppearance(Season, TimeOfDay, NaturalGrassSunDirection());
+                if (presentation != null)
+                    presentation.GetComponent<HedgeBorderedGrassPatch>()?
+                        .SetAppearance(Season, TimeOfDay, NaturalGrassSunDirection());
+            }
+            if (_propPreview != null)
+            {
+                _propPreview.GetComponent<NaturalGrassGardenPatch>()?
+                    .SetAppearance(Season, TimeOfDay, NaturalGrassSunDirection());
+                _propPreview.GetComponent<HedgeBorderedGrassPatch>()?
+                    .SetAppearance(Season, TimeOfDay, NaturalGrassSunDirection());
+            }
+        }
+
+        private Vector3 NaturalGrassSunDirection() => _sun == null
+            ? Vector3.up : -_sun.transform.forward.normalized;
 
         private void ApplyPropBuildingFrontRecovery(
             Transform presentation, PlacedProp prop)
@@ -1743,6 +1834,18 @@ namespace CityForgeV3.World
 
         public Transform CreatePropPresentation(string propId, string name, float alpha)
         {
+            if (FoundationGardenBed.TryStyle(propId, out var foundationStyle))
+                return FoundationGardenBed.Create(name, foundationStyle,
+                    alpha, Season);
+            if (WhitePicketGardenStrip.TryStyle(propId, out var picketStyle))
+                return WhitePicketGardenStrip.Create(name, picketStyle,
+                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+            if (string.Equals(propId, LowPolyBoxwoodHedgePropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return LowPolyBoxwoodHedge.Create(name, alpha);
+            if (string.Equals(propId, StoneGardenFountainPropId,
+                    StringComparison.OrdinalIgnoreCase))
+                return StoneGardenFountain.Create(name, alpha);
             if (string.Equals(propId, GeorgianGardenBorderPropId,
                     StringComparison.OrdinalIgnoreCase))
                 return GeorgianGardenBorder.Create(name, alpha, Season);
@@ -1758,6 +1861,17 @@ namespace CityForgeV3.World
             if (string.Equals(propId, GeorgianHedgeRectanglePropId,
                     StringComparison.OrdinalIgnoreCase))
                 return GeorgianClippedHedgeGarden.Create(name, true, alpha, Season);
+            if (HedgeBorderedGrassPatch.TryDimensions(propId,
+                    out var hedgedWidth, out var hedgedDepth))
+                return HedgeBorderedGrassPatch.Create(name, hedgedWidth,
+                    hedgedDepth, HedgeBorderedGrassPatch.IsCircle(propId),
+                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+            if (NaturalGrassGardenPatch.TryDimensions(propId,
+                    out var grassWidth, out var grassDepth))
+                return NaturalGrassGardenPatch.Create(name, grassWidth,
+                    grassDepth, alpha, Season, TimeOfDay,
+                    NaturalGrassSunDirection(),
+                    NaturalGrassGardenPatch.IsCircle(propId));
             var boat = BoatCatalog.Find(propId);
             if (boat != null) return CreateBoatPresentation(boat, name, alpha);
             if (IsHorseWagon(propId)) return CreateHorseCarriagePresentation(name, alpha, propId);
@@ -1841,6 +1955,7 @@ namespace CityForgeV3.World
                         ? "Historic Policeman Animated Model"
                     : IsMusketman(propId)
                         ? "Musketman Animated Model"
+                    : IsLumberjack(propId) ? "Lumberjack Animated Model"
                     : IsFarmer(propId) ? "Founders Farmer Animated Model"
                         : "Victorian Gentleman Animated Model"
                 : string.Equals(propId, OrnateBenchPropId,
@@ -1929,6 +2044,7 @@ namespace CityForgeV3.World
                 if (IsKingKong(propId))
                     NormalizeStaticPropToHeight(model.transform,
                         KingKongHeightMeters);
+                else if (IsLumberjack(propId)) model.transform.localScale = Vector3.one * 1.85f;
                 else
                     NormalizeCharacterToHumanScale(model.transform);
                 ConfigureCharacterAnimation(root, model, propId, "idle");
@@ -2272,6 +2388,29 @@ namespace CityForgeV3.World
             float alpha, bool valid)
         {
             if (root == null) return;
+            if (FoundationGardenBed.TryStyle(propId, out _))
+            {
+                root.GetComponent<FoundationGardenBed>()?.SetOpacity(alpha, Season);
+                return;
+            }
+            if (WhitePicketGardenStrip.TryStyle(propId, out _))
+            {
+                root.GetComponent<WhitePicketGardenStrip>()?.SetOpacity(
+                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+                return;
+            }
+            if (string.Equals(propId, LowPolyBoxwoodHedgePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                root.GetComponent<LowPolyBoxwoodHedge>()?.SetOpacity(alpha);
+                return;
+            }
+            if (string.Equals(propId, StoneGardenFountainPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                root.GetComponent<StoneGardenFountain>()?.SetOpacity(alpha);
+                return;
+            }
             if (string.Equals(propId, GeorgianGardenBorderPropId,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -2292,6 +2431,18 @@ namespace CityForgeV3.World
                     StringComparison.OrdinalIgnoreCase))
             {
                 root.GetComponent<GeorgianClippedHedgeGarden>()?.SetOpacity(alpha, Season);
+                return;
+            }
+            if (NaturalGrassGardenPatch.TryDimensions(propId, out _, out _))
+            {
+                root.GetComponent<NaturalGrassGardenPatch>()?.SetOpacity(
+                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+                return;
+            }
+            if (HedgeBorderedGrassPatch.TryDimensions(propId, out _, out _))
+            {
+                root.GetComponent<HedgeBorderedGrassPatch>()?.SetOpacity(
+                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
                 return;
             }
             var simpleLamppost = string.Equals(propId, SimpleStreetLamppostPropId,
@@ -2320,6 +2471,8 @@ namespace CityForgeV3.World
                 StringComparison.OrdinalIgnoreCase);
             var corner = string.Equals(propId, FenceCornerPropId,
                 StringComparison.OrdinalIgnoreCase);
+            var wroughtIronFence = corner || string.Equals(propId,
+                FencePropId, StringComparison.OrdinalIgnoreCase);
             var picket = string.Equals(propId, PicketFencePropId,
                 StringComparison.OrdinalIgnoreCase);
             var oldWoodenFence = string.Equals(propId, OldWoodenFencePropId,
@@ -2334,6 +2487,8 @@ namespace CityForgeV3.World
                 // Meshy FBXs refer to model.fbm aliases that are not present in
                 // the supplied archive. Always bind the stable City Forge
                 // texture contract instead of inheriting that white fallback.
+                var lumberjackAxe = IsLumberjack(propId) && renderer.sharedMaterial != null &&
+                    (renderer.sharedMaterial.name.Contains("3ece3eba") || renderer.sharedMaterial.name.Contains("Lumberjack Axe"));
                 var materialShader = kingKongEnclosure
                     ? Shader.Find("CityForgeV3/KingKongEnclosurePBR")
                     : Shader.Find("Standard");
@@ -2414,8 +2569,11 @@ namespace CityForgeV3.World
                         : ornateCorner
                         ? "CityForgeV3/Props/WroughtIronVariationsV01/gate-base-color"
                         : $"CityForgeV3/Props/WroughtIronFenceV01/{texturePrefix}base-color");
+                if (IsLumberjack(propId))
+                    baseColor = Resources.Load<Texture2D>("Characters/AxemanLaborV01/" +
+                        (lumberjackAxe ? "AxeBaseColor" : "AxemanBaseColor"));
                 if (baseColor != null) material.mainTexture = baseColor;
-                var normal = animal ? null : Resources.Load<Texture2D>(
+                var normal = animal || IsLumberjack(propId) ? null : Resources.Load<Texture2D>(
                     kingKongEnclosure
                         ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/normal"
                     : kingKong
@@ -2477,7 +2635,7 @@ namespace CityForgeV3.World
                     material.SetFloat("_SmoothnessScale", 0.16f);
                     material.SetFloat("_CavityStrength", 0.38f);
                 }
-                var metallicSmoothness = barn || animal || IsFarmer(propId) ? null : Resources.Load<Texture2D>(
+                var metallicSmoothness = barn || animal || IsFarmer(propId) || IsLumberjack(propId) ? null : Resources.Load<Texture2D>(
                     kingKongEnclosure
                         ? "CityForgeV3/Props/Entertainment/KingKongEnclosureV01/Textures/metallic"
                     : kingKong
@@ -2540,9 +2698,11 @@ namespace CityForgeV3.World
                         : oldWoodenFence ? 0.12f
                         : picket ? 0.18f : bench ? 0.42f : 0.72f);
                 if (barn) material.SetFloat("_Glossiness", 0.12f);
-                if (IsFarmer(propId))
+                if (IsFarmer(propId) || IsLumberjack(propId))
                 {
-                    material.name = "CF Farmer Original Color";
+                    material.name = IsLumberjack(propId)
+                        ? lumberjackAxe ? "CF Lumberjack Axe" : "CF Lumberjack Original Color"
+                        : "CF Farmer Original Color";
                     material.SetFloat("_Metallic", 0f);
                     material.SetFloat("_Glossiness", .12f);
                     material.SetFloat("_SpecularHighlights", 0f);
@@ -2595,6 +2755,8 @@ namespace CityForgeV3.World
                             ? MusketmanTint
                         : oldWoodenFence
                             ? new Color(0.88f, 0.72f, 0.54f)
+                        : wroughtIronFence
+                            ? new Color(0.25f, 0.25f, 0.25f)
                         : woodenPalisade || woodenPalisadeGate || medievalTorch
                             ? FortressTimberTint
                         : Color.white
@@ -2886,6 +3048,24 @@ namespace CityForgeV3.World
                     GeorgianGardenBorderDepthMeters;
                 return;
             }
+            if (FoundationGardenBed.TryStyle(propId, out _))
+            {
+                var oddGarden = Mathf.Abs(turns) % 2 == 1;
+                width = oddGarden ? FoundationGardenBed.DepthMeters :
+                    FoundationGardenBed.WidthMeters;
+                depth = oddGarden ? FoundationGardenBed.WidthMeters :
+                    FoundationGardenBed.DepthMeters;
+                return;
+            }
+            if (WhitePicketGardenStrip.TryStyle(propId, out _))
+            {
+                var oddGarden = Mathf.Abs(turns) % 2 == 1;
+                width = oddGarden ? WhitePicketGardenStrip.DepthMeters :
+                    WhitePicketGardenStrip.WidthMeters;
+                depth = oddGarden ? WhitePicketGardenStrip.WidthMeters :
+                    WhitePicketGardenStrip.DepthMeters;
+                return;
+            }
             if (string.Equals(propId, GeorgianGardenSquarePropId,
                     StringComparison.OrdinalIgnoreCase))
             {
@@ -2912,6 +3092,36 @@ namespace CityForgeV3.World
                 var oddGarden = Mathf.Abs(turns) % 2 == 1;
                 width = oddGarden ? 3f : 6f;
                 depth = oddGarden ? 6f : 3f;
+                return;
+            }
+            if (NaturalGrassGardenPatch.TryDimensions(propId,
+                    out width, out depth))
+            {
+                if (Mathf.Abs(turns) % 2 == 1)
+                    (width, depth) = (depth, width);
+                return;
+            }
+            if (HedgeBorderedGrassPatch.TryDimensions(propId,
+                    out width, out depth))
+            {
+                if (Mathf.Abs(turns) % 2 == 1)
+                    (width, depth) = (depth, width);
+                return;
+            }
+            if (string.Equals(propId, StoneGardenFountainPropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                width = depth = StoneGardenFountain.FootprintMeters;
+                return;
+            }
+            if (string.Equals(propId, LowPolyBoxwoodHedgePropId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var oddHedge = Mathf.Abs(turns) % 2 == 1;
+                width = oddHedge ? LowPolyBoxwoodHedge.DepthMeters :
+                    LowPolyBoxwoodHedge.LengthMeters;
+                depth = oddHedge ? LowPolyBoxwoodHedge.LengthMeters :
+                    LowPolyBoxwoodHedge.DepthMeters;
                 return;
             }
             if (string.Equals(propId, WoodenPalisadeGatePropId,

@@ -1,0 +1,1 @@
+Isolated 45-degree fountain render. Three water surfaces, 18 two-plane falling ribbons, two splash systems, and half-opacity preview verified. Two shader motion phases captured while the Editor remained paused. Active Lot session untouched; no Save. EditorPlaying=True, EditorPaused=True, Time=609.948.

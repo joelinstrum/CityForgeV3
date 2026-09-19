@@ -15,37 +15,14 @@ namespace CityForgeV3.World
         public static string Label(SeasonPreset preset) =>
             preset.ToString().ToUpperInvariant();
 
+        // Season chooses artwork and weather, not a second lighting palette.
+        // Time-of-day and environment controls remain the sole light/color grade.
         public static Color GroundColor(SeasonPreset preset, Color baseline) =>
-            preset switch
-            {
-                SeasonPreset.Spring => Multiply(baseline,
-                    new Color(0.94f, 1.08f, 0.91f, 1f)),
-                SeasonPreset.Autumn => Multiply(baseline,
-                    new Color(0.76f, 0.68f, 0.48f, 1f)),
-                SeasonPreset.Winter => Color.Lerp(baseline,
-                    new Color(0.78f, 0.82f, 0.82f, baseline.a), 0.82f),
-                _ => baseline
-            };
+            baseline;
 
-        public static Color FloraTint(SeasonPreset preset) => preset switch
-        {
-            // Tree artwork now carries its own spring buds and autumn leaf
-            // colors. A second season-wide wash made every Lot Editor tree
-            // unnaturally green in spring and orange in autumn.
-            SeasonPreset.Spring or SeasonPreset.Autumn => Color.white,
-            // Winter trees already provide authored leafless bark colors.
-            // Preserve that variation and apply only a restrained cool cast.
-            SeasonPreset.Winter => new Color(0.90f, 0.93f, 0.96f, 1f),
-            _ => Color.white
-        };
+        public static Color FloraTint(SeasonPreset preset) => Color.white;
 
-        public static Color BuildingTint(SeasonPreset preset) => preset switch
-        {
-            SeasonPreset.Spring => new Color(0.98f, 1.02f, 0.97f, 1f),
-            SeasonPreset.Autumn => new Color(1f, 0.91f, 0.78f, 1f),
-            SeasonPreset.Winter => new Color(0.90f, 0.95f, 1f, 1f),
-            _ => Color.white
-        };
+        public static Color BuildingTint(SeasonPreset preset) => Color.white;
 
         public static Color Multiply(Color left, Color right) => new(
             left.r * right.r,

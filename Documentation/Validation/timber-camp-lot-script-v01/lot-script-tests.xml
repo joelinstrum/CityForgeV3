@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="22" result="Passed" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.1229948">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.122995" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2241" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-timber-library-qa.772rEm/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.114048" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38841" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2242" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="936" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.106539" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2243" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="936" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.100895" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2244" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="267" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.082969" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2170" name="LotScriptTests" fullname="CityForgeV3.Tests.EditMode.LotScriptTests" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.075765" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2173" name="EditingOneScriptPreservesItsIdAndResetsProgress" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.EditingOneScriptPreservesItsIdAndResetsProgress" methodname="EditingOneScriptPreservesItsIdAndResetsProgress" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1984701959" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.027425" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2171" name="ImportedScriptIsPausedAndUsesItsOwnConfiguration" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.ImportedScriptIsPausedAndUsesItsOwnConfiguration" methodname="ImportedScriptIsPausedAndUsesItsOwnConfiguration" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1560174916" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000945" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="2187" name="InvalidScriptDocumentsRejected" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.InvalidScriptDocumentsRejected" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.003952" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="2184" name="InvalidScriptDocumentsRejected(&quot;{}&quot;)" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.InvalidScriptDocumentsRejected(&quot;{}&quot;)" methodname="InvalidScriptDocumentsRejected" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="404668906" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.002018" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2185" name="InvalidScriptDocumentsRejected(&quot;not json&quot;)" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.InvalidScriptDocumentsRejected(&quot;not json&quot;)" methodname="InvalidScriptDocumentsRejected" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="919362005" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000367" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2186" name="InvalidScriptDocumentsRejected(&quot;{\&quot;schema\&quot;:\&quot;wrong\&quot;}&quot;)" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.InvalidScriptDocumentsRejected(&quot;{\&quot;schema\&quot;:\&quot;wrong\&quot;}&quot;)" methodname="InvalidScriptDocumentsRejected" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1677882736" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000228" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="2172" name="InvalidTargetIsRejectedWithoutChangingLot" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.InvalidTargetIsRejectedWithoutChangingLot" methodname="InvalidTargetIsRejectedWithoutChangingLot" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="886805296" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000975" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2182" name="LegacyObjectsAndAttachmentsReceiveStableUniqueIds" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.LegacyObjectsAndAttachmentsReceiveStableUniqueIds" methodname="LegacyObjectsAndAttachmentsReceiveStableUniqueIds" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="2121713105" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.002366" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2188" name="LegacyRoutineUsesExistingBindingsAfterUnityRoundTrip" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.LegacyRoutineUsesExistingBindingsAfterUnityRoundTrip" methodname="LegacyRoutineUsesExistingBindingsAfterUnityRoundTrip" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1079270108" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.007882" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2183" name="ObjectPointReferencesFollowPlacedObjectMovement" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.ObjectPointReferencesFollowPlacedObjectMovement" methodname="ObjectPointReferencesFollowPlacedObjectMovement" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1503585530" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000696" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2189" name="OutsideLotAnchorIsRejected" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.OutsideLotAnchorIsRejected" methodname="OutsideLotAnchorIsRejected" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1525245154" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000413" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2193" name="PlacedTimberCampCreatesOneBoundDistrictCrew" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.PlacedTimberCampCreatesOneBoundDistrictCrew" methodname="PlacedTimberCampCreatesOneBoundDistrictCrew" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="242614167" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.008070" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2177" name="RunDoesNotRestartFullWaitingCrew" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.RunDoesNotRestartFullWaitingCrew" methodname="RunDoesNotRestartFullWaitingCrew" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="2101438043" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001243" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2178" name="RunPreservesPausedRepeatCountdown" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.RunPreservesPausedRepeatCountdown" methodname="RunPreservesPausedRepeatCountdown" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1868612451" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001025" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2175" name="RunResumesAndRerunResets" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.RunResumesAndRerunResets" methodname="RunResumesAndRerunResets" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="888078273" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000958" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2176" name="RunWakesRepositionedWorkersAndPreservesCargoAndHomes" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.RunWakesRepositionedWorkersAndPreservesCargoAndHomes" methodname="RunWakesRepositionedWorkersAndPreservesCargoAndHomes" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="647136674" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001757" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2181" name="ScriptAndStableIdsSurviveSaveAndCopy" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.ScriptAndStableIdsSurviveSaveAndCopy" methodname="ScriptAndStableIdsSurviveSaveAndCopy" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1284564065" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000993" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2174" name="SecondScriptCannotClaimSameBoat" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.SecondScriptCannotClaimSameBoat" methodname="SecondScriptCannotClaimSameBoat" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1455506700" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000547" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2190" name="TimberCampLibraryBuildsEditableScriptFromLotObjects" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.TimberCampLibraryBuildsEditableScriptFromLotObjects" methodname="TimberCampLibraryBuildsEditableScriptFromLotObjects" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="1402657536" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000819" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2191" name="TimberCampRequiresAuthoredActorsAndVehicleConnector" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.TimberCampRequiresAuthoredActorsAndVehicleConnector" methodname="TimberCampRequiresAuthoredActorsAndVehicleConnector" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="918804293" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.000849" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2192" name="TimberCampScriptSurvivesLotJsonRoundTrip" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.TimberCampScriptSurvivesLotJsonRoundTrip" methodname="TimberCampScriptSurvivesLotJsonRoundTrip" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="224612486" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001342" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2180" name="WaterArrowDragClampsBothEndpointsInsideLot" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.WaterArrowDragClampsBothEndpointsInsideLot" methodname="WaterArrowDragClampsBothEndpointsInsideLot" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="951248433" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001229" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2179" name="WaterArrowMovesBothAnchorsAndRotatesFourDirections" fullname="CityForgeV3.Tests.EditMode.LotScriptTests.WaterArrowMovesBothAnchorsAndRotatesFourDirections" methodname="WaterArrowMovesBothAnchorsAndRotatesFourDirections" classname="CityForgeV3.Tests.EditMode.LotScriptTests" runstate="Runnable" seed="2068485885" result="Passed" start-time="2026-09-19 19:20:56Z" end-time="2026-09-19 19:20:56Z" duration="0.001497" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-timber-script-tests.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

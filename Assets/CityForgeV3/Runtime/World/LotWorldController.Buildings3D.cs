@@ -87,6 +87,8 @@ namespace CityForgeV3.World
             _experimentalBuilding3DGroundShadows = new();
         private readonly Dictionary<GameObject, List<Vector2>>
             _buildingFootprintContours = new();
+        private readonly Dictionary<GameObject, Bounds>
+            _buildingFloraBounds = new();
         private float _shadowDistanceBeforeExperimental3D;
         private int _shadowCascadesBeforeExperimental3D;
         private bool _experimental3DShadowDistanceApplied;
@@ -821,6 +823,7 @@ namespace CityForgeV3.World
             _building3DSelectionOutline = null;
             _experimentalBuilding3DGroundShadows.Clear();
             _buildingFootprintContours.Clear();
+            _buildingFloraBounds.Clear();
             foreach (var material in _experimentalBuilding3DMaterials)
                 if (material != null)
                 {
@@ -1916,13 +1919,14 @@ namespace CityForgeV3.World
         }
 
         private static Bounds CombinedRendererBounds(GameObject root,
-            out bool hasBounds)
+            out bool hasBounds, bool includeDisabled = false)
         {
             var bounds = default(Bounds);
             hasBounds = false;
             foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
             {
-                if (!renderer.enabled || IsPackageShadowRenderer(renderer)) continue;
+                if ((!includeDisabled && !renderer.enabled) ||
+                    IsPackageShadowRenderer(renderer)) continue;
                 if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
                 else bounds.Encapsulate(renderer.bounds);
             }
@@ -1947,6 +1951,50 @@ namespace CityForgeV3.World
             return contour != null && contour.Count >= 3;
         }
 
+        private bool Building3DFootprintContains(Vector2 point)
+        {
+            var worldAnchor = transform.TransformPoint(
+                new Vector3(point.x, 0f, point.y));
+            var worldPoint = new Vector2(worldAnchor.x, worldAnchor.z);
+            foreach (var root in _experimentalBuilding3DVisibleRoots)
+            {
+                if (root == null) continue;
+                var geometry = BuildingSelectionGeometryRoot(root);
+                if (!_buildingFloraBounds.TryGetValue(geometry, out var bounds))
+                {
+                    bounds = CombinedRendererBounds(geometry,
+                        out var hasBounds, includeDisabled: true);
+                    if (!hasBounds) continue;
+                    _buildingFloraBounds[geometry] = bounds;
+                }
+                if (worldPoint.x < bounds.min.x ||
+                    worldPoint.x > bounds.max.x ||
+                    worldPoint.y < bounds.min.z ||
+                    worldPoint.y > bounds.max.z) continue;
+                if (!TryGetProjectedMeshFootprint(geometry, out var contour))
+                    return true;
+                if (PointInFootprint(worldPoint, contour)) return true;
+            }
+            return false;
+        }
+
+        private static bool PointInFootprint(Vector2 point,
+            IReadOnlyList<Vector2> contour)
+        {
+            var inside = false;
+            for (int i = 0, previous = contour.Count - 1;
+                 i < contour.Count; previous = i++)
+            {
+                var a = contour[previous];
+                var b = contour[i];
+                if ((a.y > point.y) == (b.y > point.y)) continue;
+                var crossingX = a.x + (point.y - a.y) *
+                    (b.x - a.x) / (b.y - a.y);
+                if (point.x < crossingX) inside = !inside;
+            }
+            return inside;
+        }
+
         private static List<Vector2> BuildProjectedMeshFootprint(GameObject root,
             int resolution)
         {
@@ -1958,7 +2006,7 @@ namespace CityForgeV3.World
             {
                 var renderer = filter.GetComponent<Renderer>();
                 var mesh = filter.sharedMesh;
-                if (mesh == null || renderer == null || !renderer.enabled ||
+                if (mesh == null || renderer == null ||
                     !mesh.isReadable || IsPackageShadowRenderer(renderer)) continue;
                 var vertices = mesh.vertices;
                 var triangles = mesh.triangles;

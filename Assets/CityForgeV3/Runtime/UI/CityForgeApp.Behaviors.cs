@@ -20,8 +20,8 @@ namespace CityForgeV3.UI
             var scroll = new ScrollView(ScrollViewMode.Vertical); scroll.AddToClassList("flora-modal-scroll"); panel.Add(scroll);
             foreach (var instance in _lotWorld.LotBehaviors)
             {
-                var definition = _lotWorld.BehaviorDefinition(instance);
-                scroll.Add(StyledLabel(definition?.displayName ?? instance.DefinitionId, "inspector-title"));
+                scroll.Add(StyledLabel(_lotWorld.BehaviorDisplayName(instance),
+                    "inspector-title"));
                 var status = StyledLabel("", "inspector-note"); status.name = "behavior-status-" + instance.InstanceId;
                 void UpdateStatus() => status.text = _lotWorld.BehaviorStatus(instance.InstanceId);
                 UpdateStatus(); status.schedule.Execute(UpdateStatus).Every(250); scroll.Add(status);
@@ -47,6 +47,14 @@ namespace CityForgeV3.UI
         {
             var panel = CreateDocumentModal("BEHAVIOR LIBRARY", "Choose a starting routine, then edit its Script.");
             var error = StyledLabel("", "inspector-note"); panel.Add(error);
+            var timber = CfButton.Create("Lumberjack Camp", () =>
+            {
+                if (_lotWorld.AddTimberCampBehavior(out var message))
+                    OpenLotBehaviorsModal();
+                else error.text = message;
+            }, true, "secondary");
+            timber.name = "add-timber-camp-behavior";
+            panel.Add(timber);
             foreach (var definition in LotBehaviorCatalog.All)
                 panel.Add(CfButton.Create(definition.displayName, () =>
                 {

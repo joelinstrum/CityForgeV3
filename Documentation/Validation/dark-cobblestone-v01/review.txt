@@ -1,0 +1,1 @@
+PASS: actual Lot base and overlay render paths; 1254x1254 resource; isolated session round trip. Overlay material color=RGBA(1.000, 1.000, 1.000, 1.000). Temporary fixture destroyed; no Save.

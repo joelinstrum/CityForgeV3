@@ -8,11 +8,591 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.TestTools;
+using UnityEngine.UIElements;
 
 namespace CityForgeV3.Tests
 {
     public sealed class UiFoundationTests
     {
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ExplicitRegionSaveButtonPersistsDistrictNameAndStartState(bool started)
+        {
+            var folder = Path.Combine(Path.GetTempPath(), "cityforge-save-button-" + System.Guid.NewGuid().ToString("N"));
+            var go = new GameObject("Isolated Save button"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var region = RegionSaveStore.Create("Scratch region", 8, 8);
+                var district = region.Tiles[0];
+                district.Name = "Named scratch district";
+                district.Founded = started;
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_openRegion", flags).SetValue(app, region);
+                typeof(CityForgeApp).GetField("_districtUndoQaSaveRoot", flags).SetValue(app, folder);
+                var save = (Button)typeof(CityForgeApp).GetMethod("CreateRegionSaveButton", flags)
+                    .Invoke(app, new object[] { "scratch-save", "primary" });
+                Assert.That(Directory.Exists(folder), Is.False, "Creating the button must not save.");
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(save.clickable, new object[] { null, 0 });
+                var restored = RegionSaveStore.Load(region.RegionId, folder);
+                Assert.That(restored.Tiles[0].Name, Is.EqualTo(district.Name));
+                Assert.That(restored.Tiles[0].Founded, Is.EqualTo(started));
+                district.Name = "Renamed scratch district";
+                Assert.That(RegionSaveStore.Load(region.RegionId, folder).Tiles[0].Name,
+                    Is.EqualTo("Named scratch district"), "Renaming must not autosave.");
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(save.clickable, new object[] { null, 0 });
+                Assert.That(RegionSaveStore.Load(region.RegionId, folder).Tiles[0].Name,
+                    Is.EqualTo("Renamed scratch district"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+
+        [TestCase(.1f, .5f, 1, 0)]
+        [TestCase(.25f, .5f, 1, 0)]
+        [TestCase(.75f, .5f, -1, 0)]
+        [TestCase(.9f, .5f, -1, 0)]
+        [TestCase(.5f, .1f, 0, -1)]
+        [TestCase(.5f, .25f, 0, -1)]
+        [TestCase(.5f, .75f, 0, 1)]
+        [TestCase(.5f, .9f, 0, 1)]
+        [TestCase(.1f, .1f, 0, 0)]
+        [TestCase(.9f, .1f, 0, 0)]
+        [TestCase(.1f, .9f, 0, 0)]
+        [TestCase(.9f, .9f, 0, 0)]
+        [TestCase(.5f, .5f, 0, 0)]
+        [TestCase(-.1f, .5f, 0, 0)]
+        [TestCase(1.1f, .5f, 0, 0)]
+        [TestCase(.5f, -.1f, 0, 0)]
+        [TestCase(.5f, 1.1f, 0, 0)]
+        public void DistrictQuarterEdgePanExcludesCornersAndOutside(float x, float y, int dx, int dy)
+        {
+            Assert.That(DistrictZoom.EdgePanWorldMotion(new Vector2(x, y)), Is.EqualTo(new Vector2Int(dx, dy)));
+        }
+
+        [TestCase("document-modal")]
+        [TestCase("cf-choice-overlay")]
+        public void DistrictQuarterEdgePanModalStopsAnExistingPan(string modalName)
+        {
+            var go = new GameObject("Isolated modal pan guard"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement(); var modal = new VisualElement { name = modalName }; root.Add(modal);
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                var direction = typeof(CityForgeApp).GetField("_districtEdgePanDirection", flags);
+                var offset = typeof(CityForgeApp).GetField("_terraformPanOffset", flags);
+                direction.SetValue(app, Vector2Int.right); offset.SetValue(app, new Vector2(15, 30));
+                typeof(CityForgeApp).GetMethod("PollTerraformViewKeys", flags).Invoke(app, null);
+                Assert.That(direction.GetValue(app), Is.EqualTo(Vector2Int.zero));
+                Assert.That(offset.GetValue(app), Is.EqualTo(new Vector2(15, 30)));
+                var blocked = typeof(CityForgeApp).GetProperty("MapPanningBlocked", flags);
+                Assert.That(blocked.GetValue(app), Is.EqualTo(true));
+                modal.RemoveFromHierarchy();
+                Assert.That(blocked.GetValue(app), Is.EqualTo(false));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void ArmedLotOwnsPointerWhileDefaultSelectModeIsActive(bool testing, bool founder)
+        {
+            var go = new GameObject("Isolated armed Lot pointer"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_terraformCategory", flags).SetValue(app, "Select");
+                typeof(CityForgeApp).GetField("_terraformTool", flags).SetValue(app, "Select");
+                Assert.That(typeof(CityForgeApp).GetMethod("DistrictSelectToolActive", flags).Invoke(app, null), Is.EqualTo(true));
+                var pending = typeof(CityForgeApp).GetField(founder ? "_pendingFounderBuildingId" : "_pendingDistrictLotId", flags);
+                pending.SetValue(app, founder ? "fortress" : "tree-test");
+                typeof(CityForgeApp).GetField("_pendingDistrictLotIsTest", flags).SetValue(app, testing);
+                var handle = typeof(CityForgeApp).GetMethod("HandleArmedDistrictLotPointer", flags);
+                using var click = PointerDownEvent.GetPooled();
+                Assert.That(handle.Invoke(app, new object[] { new RegionCityTile(), click }), Is.EqualTo(true));
+                Assert.That(click.isImmediatePropagationStopped, Is.True,
+                    "Even an invalid ground click must not fall through to selection or object inspection");
+                pending.SetValue(app, "");
+                using var idleClick = PointerDownEvent.GetPooled();
+                Assert.That(handle.Invoke(app, new object[] { new RegionCityTile(), idleClick }), Is.EqualTo(false));
+                Assert.That(idleClick.isImmediatePropagationStopped, Is.False);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void FortPlacementStartsTownAtPreviewFootprint()
+        {
+            var go = new GameObject("Isolated Fort placement"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                var district = new RegionCityTile { TileId = "scratch", Name = "Fixture town", Width = 4, Height = 4 };
+                district.ResourceInventory.Food = 7;
+                var lot = new LotSaveData { LotId = "fortress-lot", LotWidthCells = 4, LotDepthCells = 6 };
+                typeof(CityForgeApp).GetField("_pendingFounderLot", flags).SetValue(app, lot);
+                typeof(CityForgeApp).GetField("_pendingFounderBuildingId", flags).SetValue(app, "fortress");
+                var args = new object[] { district, .5f, .5f, 0, 0, 0, 0 };
+                Assert.That(typeof(CityForgeApp).GetMethod("TryFounderFootprint", flags).Invoke(app, args), Is.True);
+                Assert.That(district.Founded, Is.False, "Preview must not start the town.");
+                typeof(CityForgeApp).GetMethod("PlaceFounderBuilding", flags).Invoke(app, new object[] { district, .5f, .5f });
+                Assert.That(district.Lots.Count, Is.EqualTo(1));
+                Assert.That(district.Lots[0].GridX, Is.EqualTo(args[3]));
+                Assert.That(district.Lots[0].GridZ, Is.EqualTo(args[4]));
+                Assert.That(district.Founded, Is.True);
+                Assert.That(district.Designation, Is.EqualTo(RegionPlaceDesignation.Town));
+                Assert.That(district.FounderBuildingId, Is.EqualTo("fortress"));
+                Assert.That(district.Lots[0].HasPopulationOverride, Is.True);
+                Assert.That(district.Lots[0].PopulationOverride, Is.Zero);
+                Assert.That(DistrictLotSimulation.For(district).Population.Population,
+                    Is.Zero);
+                Assert.That(district.ResourceInventory.Food, Is.EqualTo(250));
+                Assert.That(district.Name, Is.EqualTo("Fixture town"));
+                Assert.That(root.Q("fort-next-steps"), Is.Not.Null);
+                var close = root.Q<Button>("fort-next-steps-close");
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(close.clickable, new object[] { null, 0 });
+                Assert.That(root.Q("fort-next-steps"), Is.Null, "Close removes the panel immediately.");
+                Assert.That(district.Founded, Is.True, "Dismissing help must not undo founding.");
+                Assert.That(typeof(CityForgeApp).GetField("_pendingFounderBuildingId", flags).GetValue(app), Is.EqualTo(""));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [TestCase("fortress", 7, 250)]
+        [TestCase("fortress", 300, 300)]
+        [TestCase("city-charter-house", 7, 500)]
+        [TestCase("city-charter-house", 700, 700)]
+        public void FounderBuildingEstablishesMinimumFoodReserve(
+            string founderId, int existingFood, int expectedFood)
+        {
+            var district = new RegionCityTile();
+            district.ResourceInventory.Food = existingFood;
+            typeof(CityForgeApp).GetMethod("ApplyFounderStartingFood",
+                    BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { district, founderId });
+            Assert.That(district.ResourceInventory.Food,
+                Is.EqualTo(expectedFood));
+        }
+
+        [Test]
+        public void TimberMillWarningOffersImmediatePlacementAndCloses()
+        {
+            var go = new GameObject("Isolated timber warning"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                var invoked = false;
+                typeof(CityForgeApp).GetMethod("ShowTimberMillWarning", flags)
+                    .Invoke(app, new object[] { (System.Action)(() => invoked = true) });
+                var panel = root.Q("timber-mill-warning");
+                Assert.That(panel, Is.Not.Null);
+                Assert.That(panel.Q<Label>(className: "fort-next-steps-title").text,
+                    Is.EqualTo("Lumber cart has no mill to drive to"));
+                var place = panel.Q<Button>("timber-mill-warning-place");
+                Assert.That(place.text, Is.EqualTo("Place Lumber Mill"));
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(place.clickable, new object[] { null, 0 });
+                Assert.That(invoked, Is.True);
+                Assert.That(root.Q("timber-mill-warning"), Is.Null);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void WaterfrontLotSearchCoversTheWholeClickedMajorCell()
+        {
+            var lot = new LotSaveData
+            {
+                HasWaterOrientation = true,
+                WaterOrientationLand = Vector3.zero,
+                WaterOrientationWater = Vector3.right
+            };
+            var method = typeof(CityForgeApp).GetMethod(
+                "DistrictLotShoreOffsets", BindingFlags.Static | BindingFlags.NonPublic);
+            var offsets = ((IEnumerable<Vector2>)method.Invoke(null,
+                new object[] { lot, 0 })).ToList();
+            Assert.That(offsets, Does.Contain(new Vector2(10, 0)));
+            Assert.That(offsets, Does.Contain(new Vector2(-10, 0)));
+            Assert.That(offsets, Does.Contain(new Vector2(20, 0)));
+            Assert.That(offsets, Does.Contain(new Vector2(-20, 0)));
+            Assert.That(offsets, Has.Count.EqualTo(21),
+                "The shoreline search stays bounded during pointer movement.");
+        }
+
+        [TestCase("cost")]
+        [TestCase("era")]
+        [TestCase("population")]
+        [TestCase("education")]
+        [TestCase("materials")]
+        [TestCase("road")]
+        [TestCase("waterfront")]
+        public void TestingLotsBypassRequirementsWithoutLeakingIntoBuild(string requirement)
+        {
+            var go = new GameObject("Isolated test lot quote"); go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_openRegion", flags).SetValue(app,
+                    new RegionSaveData { EraId = "founders" });
+                var district = new RegionCityTile { Treasury = 0 };
+                var lot = new LotSaveData { LotId = "fixture", BasePlopCost = 0, Stats = new LotStats() };
+                switch (requirement)
+                {
+                    case "cost": lot.BasePlopCost = 100; break;
+                    case "era": lot.Stats.MinimumEraId = "industrial"; break;
+                    case "population": lot.Stats.MinimumPopulation = 100; break;
+                    case "education": lot.Stats.MinimumEducationScore = 50; break;
+                    case "materials": lot.Stats.ConstructionResources.Add(new ContentResourceAmount
+                        { resourceId = "lumber", amount = 100 }); break;
+                    case "road": lot.Stats.RequiresRoad = true; break;
+                    case "waterfront": lot.Stats.RequiresWaterfront = true; break;
+                }
+                var quote = typeof(CityForgeApp).GetMethod("QuotePendingDistrictLot", flags);
+                object[] Args() => new object[] { district, lot, 1, 1, 2, 2, 0, null, null };
+                var pending = typeof(CityForgeApp).GetField("_pendingDistrictLotId", flags);
+                var testing = typeof(CityForgeApp).GetField("_pendingDistrictLotIsTest", flags);
+                pending.SetValue(app, lot.LotId);
+                var args = Args();
+                Assert.That(quote.Invoke(app, args), Is.EqualTo(false), requirement);
+                string before = JsonUtility.ToJson(district);
+                testing.SetValue(app, true); args = Args();
+                Assert.That(quote.Invoke(app, args), Is.EqualTo(true), requirement);
+                Assert.That(args[6], Is.EqualTo(0));
+                Assert.That(args[7], Is.Null);
+                Assert.That(JsonUtility.ToJson(district), Is.EqualTo(before));
+                pending.SetValue(app, "");
+                Assert.That(quote.Invoke(app, Args()), Is.EqualTo(false), "Cancel removes the bypass");
+                pending.SetValue(app, lot.LotId); testing.SetValue(app, false);
+                Assert.That(quote.Invoke(app, Args()), Is.EqualTo(false), "Build still enforces requirements for the same Lot");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void DistrictStartNamingRequiresOkAndUpdatesExistingHeading(bool town)
+        {
+            var go = new GameObject("Isolated naming dialog"); go.SetActive(false);
+            var window = ScriptableObject.CreateInstance<UnityEditor.EditorWindow>();
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                window.Show();
+                var root = window.rootVisualElement;
+                var header = new VisualElement { name = "map-header" };
+                var heading = new Label("Default name"); heading.AddToClassList("cf-map-location");
+                header.Add(heading); root.Add(header);
+                var district = new RegionCityTile { TileId = "scratch", Name = "Default name" };
+                var region = new RegionSaveData(); region.Tiles.Add(district);
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetField("_openRegion", flags).SetValue(app, region);
+                typeof(CityForgeApp).GetField("_selectedRegionTileId", flags).SetValue(app, district.TileId);
+                void Open() => typeof(CityForgeApp).GetMethod("ComposeDistrictNamingModal", flags)
+                    .Invoke(app, new object[] { town });
+                void Click(Button button) => typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(button.clickable, new object[] { null, 0 });
+                Open();
+                var input = root.Q<TextField>("district-start-name");
+                Assert.That(input.value, Is.EqualTo("Default name"));
+                input.value = "Discarded draft";
+                Assert.That(district.Name, Is.EqualTo("Default name"));
+                Click(root.Query<Button>().ToList().Find(b => b.text == "CANCEL"));
+                Assert.That(district.Founded, Is.False);
+                Assert.That(district.Name, Is.EqualTo("Default name"));
+                Open(); input = root.Q<TextField>("district-start-name");
+                input.value = "   ";
+                Assert.That(root.Q<Button>("district-start-name-ok").enabledSelf, Is.False);
+                input.value = "  New name  ";
+                Click(root.Q<Button>("district-start-name-ok"));
+                Assert.That(district.Name, Is.EqualTo("New name"));
+                Assert.That(heading.text, Is.EqualTo("New name"));
+                Assert.That(root.Q("map-header"), Is.SameAs(header));
+                Assert.That(district.Founded, Is.EqualTo(!town));
+            }
+            finally { window.Close(); Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void DistrictStartDialogDoesNotChangeDataAndOffersBothChoices()
+        {
+            var go = new GameObject("Isolated district start dialog");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var root = new UnityEngine.UIElements.VisualElement();
+                var district = new RegionCityTile { TileId = "scratch", Name = "Scratch" };
+                var region = new RegionSaveData(); region.Tiles.Add(district);
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetField("_openRegion", flags).SetValue(app, region);
+                typeof(CityForgeApp).GetField("_selectedRegionTileId", flags).SetValue(app, district.TileId);
+                string before = JsonUtility.ToJson(district);
+                typeof(CityForgeApp).GetMethod("ComposeDistrictStartModal", flags).Invoke(app, null);
+                var buttons = root.Query<UnityEngine.UIElements.Button>().ToList();
+                var start = buttons.Find(b => b.name == "start-district-button");
+                var town = buttons.Find(b => b.name == "start-town-button");
+                Assert.That(start.enabledSelf, Is.True);
+                Assert.That(town.enabledSelf, Is.True);
+                Assert.That(start.tooltip, Does.Contain("later"));
+                Assert.That(town.tooltip, Does.Contain("Fort or City Center"));
+                Assert.That(JsonUtility.ToJson(district), Is.EqualTo(before));
+                district.Founded = true;
+                typeof(CityForgeApp).GetMethod("ComposeDistrictStartModal", flags).Invoke(app, null);
+                buttons = root.Query<UnityEngine.UIElements.Button>().ToList();
+                Assert.That(buttons.Find(b => b.name == "start-district-button").enabledSelf, Is.False);
+                Assert.That(buttons.Find(b => b.name == "start-town-button").enabledSelf, Is.True);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void DistrictStartPreservesContentsAndDoesNotResetAnExistingCalendar()
+        {
+            var district = new RegionCityTile { Name = "Scratch", Treasury = 12345 };
+            district.Labor.SeasonIndex = 3;
+            district.Lots.Add(new PlacedDistrictLot { InstanceId = "existing", LotId = "fixture" });
+            var start = typeof(CityForgeApp).GetMethod("InitializeDistrictStart",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            start.Invoke(null, new object[] { district, 1750 });
+            Assert.That(district.Founded, Is.True);
+            Assert.That(district.FoundingYear, Is.EqualTo(1750));
+            Assert.That(district.Population.FoundedSeason, Is.EqualTo(3));
+            Assert.That(district.FounderBuildingId, Is.Empty);
+            Assert.That(district.Treasury, Is.EqualTo(12345));
+            Assert.That(district.Lots[0].InstanceId, Is.EqualTo("existing"));
+            district.Labor.SeasonIndex = 8;
+            start.Invoke(null, new object[] { district, 1760 });
+            Assert.That(district.FoundingYear, Is.EqualTo(1750));
+            Assert.That(district.Population.FoundedSeason, Is.EqualTo(3));
+            Assert.That(district.Labor.SeasonIndex, Is.EqualTo(8));
+            var restored = JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(district));
+            Assert.That(restored.Founded, Is.True);
+            Assert.That(restored.FounderBuildingId, Is.Empty);
+            Assert.That(restored.FoundingYear, Is.EqualTo(1750));
+            Assert.That(restored.Lots[0].InstanceId, Is.EqualTo("existing"));
+        }
+
+        [TestCase(false, RegionPlaceDesignation.District)]
+        [TestCase(false, RegionPlaceDesignation.Town)]
+        [TestCase(true, RegionPlaceDesignation.District)]
+        [TestCase(true, RegionPlaceDesignation.Town)]
+        public void DistrictStartControlsRegionNameVisibility(bool started, RegionPlaceDesignation designation)
+        {
+            var host = new UnityEngine.UIElements.VisualElement();
+            var district = new RegionCityTile { TileId = "fixture", Name = "Fixture Place",
+                Founded = started, Designation = designation };
+            typeof(CityForgeApp).GetMethod("AddRegionPlaceLabel", BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { host, district, 8, 8 });
+            Assert.That(host.childCount, Is.EqualTo(started ? 1 : 0));
+            Assert.That(district.Name, Is.EqualTo("Fixture Place"));
+        }
+
+        [Test]
+        public void RegionTownLabelKeepsItsTextColorWhenOutlined()
+        {
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+            StringAssert.Contains(
+                ".region-town-name {\n    color: rgb(239, 236, 215);\n" +
+                "    -unity-text-outline-width: 0px;",
+                styles);
+            StringAssert.Contains(
+                ".region-town-name-outline {\n    color: rgb(0, 0, 0);\n" +
+                "    -unity-text-outline-width: 1.5px;",
+                styles);
+            var host = new VisualElement();
+            var town = new RegionCityTile
+            {
+                TileId = "ivory-town",
+                Name = "Ivory Town",
+                Founded = true,
+                Designation = RegionPlaceDesignation.Town
+            };
+            typeof(CityForgeApp).GetMethod("AddRegionPlaceLabel",
+                BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { host, town, 8, 8 });
+            var label = host.Q<Label>("region-place-name-ivory-town");
+            var outline = host.Q<Label>("region-place-name-outline-ivory-town");
+            Assert.That(label, Is.Not.Null);
+            Assert.That(outline, Is.Not.Null);
+            Assert.That(outline.parent.IndexOf(outline),
+                Is.LessThan(label.parent.IndexOf(label)),
+                "The opaque face must draw after the outlined backing label.");
+            var color = label.style.color.value;
+            Assert.That(color.r, Is.EqualTo(239f / 255f).Within(.001f));
+            Assert.That(color.g, Is.EqualTo(236f / 255f).Within(.001f));
+            Assert.That(color.b, Is.EqualTo(215f / 255f).Within(.001f));
+            Assert.That(color.a, Is.EqualTo(1f).Within(.001f),
+                "The foreground town face must remain fully opaque.");
+            Assert.That(outline.style.color.value, Is.EqualTo(Color.black));
+        }
+
+        [Test]
+        public void SelectedLotDetailsStayOpenAcrossRotationRefreshAndCloseKeepsSelection()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.ObjectSelection.cs");
+            StringAssert.Contains(
+                "value = _districtSelectionDetailsExpanded", source);
+            StringAssert.Contains(
+                "_districtSelectionDetailsExpanded = evt.newValue", source);
+            StringAssert.Contains(
+                "var result = action.Execute();", source);
+            StringAssert.Contains(
+                "RefreshSelectedObjectPanel();", source);
+
+            var go = new GameObject("Selected Lot Details Test");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                var screen = new VisualElement();
+                screen.AddToClassList("district-terraform-screen");
+                var panel = new VisualElement { name = "selected-object-panel" };
+                screen.Add(panel); root.Add(screen);
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetField("_districtSelectionDetailsExpanded", flags)
+                    .SetValue(app, true);
+                var selection = (System.Collections.IList)typeof(CityForgeApp)
+                    .GetField("_districtSelection", flags).GetValue(app);
+                selection.Add(new DistrictSelectionRef(DistrictSelectionKind.Lot,
+                    "fixture-lot"));
+
+                typeof(CityForgeApp).GetMethod("CloseSelectedObjectPanel", flags)
+                    .Invoke(app, null);
+
+                Assert.That(screen.Q("selected-object-panel"), Is.Null);
+                Assert.That(selection.Count, Is.EqualTo(1),
+                    "Closing the panel must not clear the selected Lot.");
+                Assert.That(typeof(CityForgeApp)
+                    .GetField("_districtSelectionPanelDismissed", flags)
+                    .GetValue(app), Is.EqualTo(true));
+                Assert.That(typeof(CityForgeApp)
+                    .GetField("_districtSelectionDetailsExpanded", flags)
+                    .GetValue(app), Is.EqualTo(false));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [TestCase(0, 0, 45f)]
+        [TestCase(2, 3, 135f)]
+        [TestCase(4, 2, 225f)]
+        [TestCase(6, 1, 315f)]
+        public void DistrictLotPlacementPreservesSavedDiagonalView(
+            int orbitOctant, int expectedTurns, float expectedViewDegrees)
+        {
+            var placementSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.RegionEditor.cs");
+            StringAssert.Contains(
+                "var authoredRotation = DistrictLotRotationFromSavedView(lot);",
+                placementSource);
+            StringAssert.Contains(
+                "var turns = (authoredRotation + attempt) & 3;",
+                placementSource);
+            var lot = new LotSaveData
+            {
+                EditorView = new LotEditorViewState
+                {
+                    Valid = true,
+                    OrbitOctant = orbitOctant
+                }
+            };
+
+            var turns = CityForgeApp.DistrictLotRotationFromSavedView(lot);
+
+            Assert.That(turns, Is.EqualTo(expectedTurns));
+            var districtRelativeView = Mathf.Repeat(45f - turns * 90f, 360f);
+            Assert.That(districtRelativeView,
+                Is.EqualTo(expectedViewDegrees).Within(.001f));
+        }
+
+        [Test]
+        public void LegacyAndTopDownLotsKeepGridDefaultOrientation()
+        {
+            Assert.That(CityForgeApp.DistrictLotRotationFromSavedView(
+                new LotSaveData()), Is.Zero);
+            Assert.That(CityForgeApp.DistrictLotRotationFromSavedView(
+                new LotSaveData
+                {
+                    EditorView = new LotEditorViewState
+                    {
+                        Valid = true,
+                        TopDown = true,
+                        OrbitOctant = 6
+                    }
+                }), Is.Zero);
+        }
+
+        [TestCase(TimeOfDayPreset.Morning, 60f, TimeOfDayPreset.Noon)]
+        [TestCase(TimeOfDayPreset.Noon, 300f, TimeOfDayPreset.Afternoon)]
+        [TestCase(TimeOfDayPreset.Afternoon, 60f, TimeOfDayPreset.Evening)]
+        [TestCase(TimeOfDayPreset.Evening, 10f, TimeOfDayPreset.Night)]
+        [TestCase(TimeOfDayPreset.Night, 30f, TimeOfDayPreset.Morning)]
+        public void DistrictDayCycleUsesAuthoredDurations(
+            TimeOfDayPreset preset, float duration, TimeOfDayPreset next)
+        {
+            var district = new RegionCityTile
+            {
+                Founded = true,
+                TimeOfDay = preset
+            };
+            Assert.That(DistrictDayCycle.Duration(preset), Is.EqualTo(duration));
+            Assert.That(DistrictDayCycle.Advance(district, duration - .01f),
+                Is.False);
+            Assert.That(district.TimeOfDay, Is.EqualTo(preset));
+            Assert.That(DistrictDayCycle.Advance(district, .01f), Is.True);
+            Assert.That(district.TimeOfDay, Is.EqualTo(next));
+            Assert.That(district.TimeOfDaySeconds, Is.EqualTo(0f).Within(.001f));
+        }
+
+        [Test]
+        public void DistrictDayCycleProgressPersistsAndManualChoiceRestartsPeriod()
+        {
+            var district = new RegionCityTile
+            {
+                Founded = true,
+                TimeOfDay = TimeOfDayPreset.Morning
+            };
+            Assert.That(DistrictDayCycle.Advance(district, 20f), Is.False);
+            var restored = JsonUtility.FromJson<RegionCityTile>(
+                JsonUtility.ToJson(district));
+            Assert.That(restored.TimeOfDay, Is.EqualTo(TimeOfDayPreset.Morning));
+            Assert.That(restored.TimeOfDaySeconds, Is.EqualTo(20f));
+            DistrictDayCycle.Set(restored, TimeOfDayPreset.Evening);
+            Assert.That(restored.TimeOfDaySeconds, Is.Zero);
+            Assert.That(DistrictDayCycle.Advance(restored, 40f), Is.True);
+            Assert.That(restored.TimeOfDay, Is.EqualTo(TimeOfDayPreset.Morning));
+            Assert.That(restored.TimeOfDaySeconds, Is.Zero);
+
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.RegionEditor.cs");
+            StringAssert.Contains("_districtSimulationPaused) return;", source);
+            StringAssert.DoesNotContain(
+                "DistrictDayCycle.Advance(district, Mathf.Min(Time.deltaTime, .1f));\n      SaveDistrictEdit();",
+                source, "Clock progress must remain manual-save only.");
+        }
+
         [TestCase(0.00f, BusinessAsUsualAction.Walk)]
         [TestCase(0.74f, BusinessAsUsualAction.Walk)]
         [TestCase(0.75f, BusinessAsUsualAction.Wait)]
@@ -1034,6 +1614,30 @@ namespace CityForgeV3.Tests
                 Is.LessThan(DistrictZoom.PanStepMeters(DistrictZoomLevel.LOD2)));
             Assert.That(DistrictZoom.PanStepMeters(DistrictZoomLevel.LOD2),
                 Is.LessThan(DistrictZoom.PanStepMeters(DistrictZoomLevel.LOD4)));
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD0),
+                Is.EqualTo(0.35f));
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD1),
+                Is.EqualTo(0.525f),
+                "Zoom 2 is 50% faster than its previous fine-control rate.");
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD2),
+                Is.EqualTo(1.3f), "Zoom 3 is 30% faster than its original pan rate.");
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD3),
+                Is.EqualTo(1f), "More distant zoom levels keep their existing pan rate.");
+        }
+
+        [Test]
+        public void DistrictBuildingCardsRemainSeparateInsideScrollViews()
+        {
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+            StringAssert.Contains(
+                ".district-lot-entry {\n    min-height: 108px;\n    flex-shrink: 0;",
+                styles);
+            StringAssert.Contains(
+                ".industry-resource-card {\n    flex-direction: row;\n" +
+                "    align-items: center;\n    min-height: 212px;\n    flex-shrink: 0;",
+                styles);
+            StringAssert.Contains(".district-industry-scroll {", styles);
         }
 
         [Test]
@@ -1047,9 +1651,109 @@ namespace CityForgeV3.Tests
             Assert.That(worldLeft, Is.EqualTo(-worldRight));
             Assert.That(worldDown, Is.EqualTo(-worldUp));
             Assert.That(worldRight.magnitude, Is.EqualTo(10f).Within(0.001f));
-            Assert.That(worldUp.magnitude, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(worldUp.magnitude,
+                Is.EqualTo(10f / Mathf.Sin(20f * Mathf.Deg2Rad))
+                    .Within(0.001f));
             Assert.That(Vector2.Dot(worldRight, worldUp),
                 Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void DistrictRiverWaterRetainsItsBlueColorGrade()
+        {
+            var tint = DistrictWorldController.RiverWaterTint;
+            Assert.That(tint.b, Is.GreaterThan(tint.g));
+            Assert.That(tint.g, Is.GreaterThan(tint.r));
+            Assert.That(tint.b - tint.r, Is.GreaterThanOrEqualTo(0.35f));
+        }
+
+        [Test]
+        public void PaintedForestGroupsMixInHarvestableTrees()
+        {
+            var temperate = Enumerable.Range(0, 20).Count(roll =>
+                CityForgeApp.DistrictForestHarvestableTree(
+                    RegionClimate.Temperate, FloraFamilies.Deciduous,
+                    true, roll) == "cilician-fir");
+            Assert.That(temperate, Is.EqualTo(4));
+            Assert.That(CityForgeApp.DistrictForestHarvestableTree(
+                RegionClimate.Tropical, FloraFamilies.Mountain,
+                false, 0), Is.Empty);
+            Assert.That(CityForgeApp.DistrictForestHarvestableTree(
+                RegionClimate.Temperate, FloraFamilies.Mountain,
+                false, 3), Is.EqualTo("cilician-fir"),
+                "Every Fir and Mountain group needs a harvestable tree.");
+            Assert.That(CityForgeApp.DistrictForestHarvestableTree(
+                RegionClimate.Temperate, FloraFamilies.Mountain,
+                true, 3), Is.Empty,
+                "After the guaranteed tree, the normal random mix resumes.");
+        }
+
+        [Test]
+        public void DistrictRoadMenuOffersDeleteToolAndEscapeCancelsIt()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.RegionEditor.cs");
+            StringAssert.Contains("district-road-delete", source);
+            StringAssert.DoesNotContain("list.Add(delete);", source);
+            StringAssert.Contains("actions.Add(delete);", source,
+                "Delete Road must stay in the fixed action bar below the scrolling road cards.");
+            StringAssert.Contains("IsDistrictRoadDeleteToolActive()", source);
+            StringAssert.Contains("SetDistrictRoadDeleteCursor(false);", source);
+            StringAssert.Contains("else ReturnToQuietDistrict();", source);
+            StringAssert.Contains("DeleteDistrictRoadAt(district, cell)", source);
+            StringAssert.Contains("_districtWorld?.CommitRoadSurfaceChanges();", source);
+
+            var elevationSource = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/DistrictWorldController.Elevation.cs");
+            StringAssert.Contains("public void CommitRoadSurfaceChanges()", elevationSource);
+            StringAssert.Contains("rebuildDecals:false", elevationSource);
+            StringAssert.Contains("rebuildGrid:false", elevationSource);
+        }
+
+        [Test]
+        public void LocalDistrictEditsDoNotRequestACompleteWorldRebuild()
+        {
+            var editor = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.RegionEditor.cs");
+            StringAssert.Contains("MoveDistrictFloraPresentations(movedFlora", editor);
+            StringAssert.DoesNotContain("_districtWorld?.RefreshFlora(district,\n" +
+                "          _selectedDistrictFloraInstanceId);", editor);
+            StringAssert.Contains("CommitLocalSurfaceChanges()", editor);
+
+            foreach (var path in new[]
+            {
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.DistrictIndustry.cs",
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.DistrictQuarry.cs",
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.DistrictBrickworks.cs"
+            })
+            {
+                var source = File.ReadAllText(path);
+                StringAssert.DoesNotContain("EnsureDistrictWorld(d)", source, path);
+                StringAssert.DoesNotContain("_districtWorldCompositionKey=\"\"", source,
+                    path);
+            }
+        }
+
+        [Test]
+        public void CompleteDistrictPaintApisRequireAnExplicitBulkReason()
+        {
+            var world = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/DistrictWorldController.cs");
+            StringAssert.DoesNotContain("public void Build(RegionCityTile", world);
+            StringAssert.DoesNotContain("public void RefreshFlora(", world);
+            StringAssert.DoesNotContain("public void RefreshRivers(", world);
+            StringAssert.Contains("RebuildEntireDistrict(RegionCityTile district,\n" +
+                "            DistrictBulkRebuildReason reason)", world);
+            StringAssert.Contains("RebuildAllFloraPresentations(RegionCityTile district,\n" +
+                "            DistrictBulkRebuildReason reason", world);
+            StringAssert.Contains("RebuildAllRiverPresentations(RegionCityTile district,\n" +
+                "            DistrictBulkRebuildReason reason", world);
+            StringAssert.Contains("RequireBulkRebuildReason(reason);", world);
+
+            var elevation = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/World/DistrictWorldController.Elevation.cs");
+            StringAssert.DoesNotContain("CommitSurfaceChanges", elevation);
+            StringAssert.Contains("CommitLocalSurfaceChanges", elevation);
         }
 
         [Test]
@@ -1104,12 +1808,12 @@ namespace CityForgeV3.Tests
             try
             {
                 var world = root.AddComponent<DistrictWorldController>();
-                world.Build(new RegionCityTile
+                world.RebuildEntireDistrict(new RegionCityTile
                 {
                     Width = 4,
                     Height = 4,
                     TimeOfDay = TimeOfDayPreset.Afternoon
-                });
+                }, DistrictBulkRebuildReason.TestFixture);
 
                 var ray = world.WorldSun.transform.rotation * Vector3.forward;
                 var horizontalRay = Vector3.ProjectOnPlane(ray, Vector3.up)
@@ -1134,7 +1838,7 @@ namespace CityForgeV3.Tests
             try
             {
                 var world = root.AddComponent<DistrictWorldController>();
-                world.Build(new RegionCityTile
+                world.RebuildEntireDistrict(new RegionCityTile
                 {
                     Width = 4,
                     Height = 4,
@@ -1149,7 +1853,7 @@ namespace CityForgeV3.Tests
                             NormalizedZ = .5f
                         }
                     }
-                });
+                }, DistrictBulkRebuildReason.TestFixture);
 
                 var shadow = Find(root.transform, "District Flora Shadow")
                     .GetComponent<SpriteRenderer>();
@@ -2903,27 +3607,23 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void SeasonsHaveDeterministicNonAccumulatingPresentationContracts()
+        public void SeasonsKeepTheSameLightingTintWhileArtworkChanges()
         {
             var baseline = new Color(0.4f, 0.6f, 0.3f, 1f);
 
             Assert.That(SeasonLighting.Label(SeasonPreset.Spring),
                 Is.EqualTo("SPRING"));
-            Assert.That(SeasonLighting.GroundColor(
-                SeasonPreset.Summer, baseline), Is.EqualTo(baseline));
-            Assert.That(SeasonLighting.BuildingTint(SeasonPreset.Summer),
-                Is.EqualTo(Color.white));
-            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Spring),
-                Is.EqualTo(Color.white));
-            Assert.That(SeasonLighting.FloraTint(SeasonPreset.Autumn),
-                Is.EqualTo(Color.white));
-            var winterFlora = SeasonLighting.FloraTint(SeasonPreset.Winter);
-            Assert.That(winterFlora.r, Is.GreaterThanOrEqualTo(0.90f));
-            Assert.That(winterFlora.b, Is.GreaterThan(winterFlora.r),
-                "Winter should preserve authored bark color with only a restrained cool cast.");
-            Assert.That(SeasonLighting.GroundColor(
-                    SeasonPreset.Winter, baseline).b,
-                Is.GreaterThan(baseline.b));
+            foreach (var season in new[] { SeasonPreset.Spring,
+                         SeasonPreset.Summer, SeasonPreset.Autumn,
+                         SeasonPreset.Winter })
+            {
+                Assert.That(SeasonLighting.GroundColor(season, baseline),
+                    Is.EqualTo(baseline));
+                Assert.That(SeasonLighting.BuildingTint(season),
+                    Is.EqualTo(Color.white));
+                Assert.That(SeasonLighting.FloraTint(season),
+                    Is.EqualTo(Color.white));
+            }
         }
 
         [TestCase(TimeOfDayPreset.Morning, "MORNING", 24f, 90f)]
@@ -4049,7 +4749,68 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void NewFloraAndFenceMayBePlacedAtOccludedGroundPoint()
+        public void ArmedTreePlantsOnFirstClickEvenWithSelectionAndWaterBelow()
+        {
+            var root = new GameObject("First-click tree placement test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.SetFloraEditorContext(true);
+                world.Session.Data.WaterAreas.Add(new PlacedWaterArea
+                {
+                    Boundary = new List<WaterBoundaryPoint>
+                    {
+                        new(-3f, -3f), new(3f, -3f),
+                        new(3f, 3f), new(-3f, 3f)
+                    }
+                });
+                var camera = root.GetComponentInChildren<Camera>();
+                var panelSize = new Vector2(camera.pixelWidth,
+                    camera.pixelHeight);
+                var pixel = camera.WorldToScreenPoint(Vector3.zero);
+                var panelPoint = new Vector2(pixel.x,
+                    panelSize.y - pixel.y);
+
+                Assert.That(world.BeginFloraDragFromPanel("maple",
+                    panelPoint, panelSize), Is.True);
+                world.EndFloraDrag();
+                Assert.That(world.FloraCount, Is.EqualTo(1));
+                Assert.That(world.BeginFloraDragFromPanel("maple",
+                    panelPoint, panelSize), Is.True,
+                    "The second armed click must plant, even over a selected canopy.");
+                world.EndFloraDrag();
+                Assert.That(world.FloraCount, Is.EqualTo(2));
+                Assert.That(world.BeginFloraDragFromPanel("",
+                    panelPoint, panelSize), Is.True,
+                    "Disarming the tool still permits tree selection.");
+                world.EndFloraDrag();
+                Assert.That(world.FloraCount, Is.EqualTo(2));
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void ThreeDimensionalBuildingFootprintBlocksTreeAnchor()
+        {
+            var root = new GameObject("3D building tree exclusion test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.NewEmptyLot("3D building tree QA", LotType.Residential, 20);
+                Assert.That(world.AddExperimentalBuilding3D(
+                    LotWorldController.BrownstoneBuilding22kId, 0f, 0f, 0),
+                    Is.True);
+                Assert.That(world.CanPlaceFloraAt(Vector2.zero), Is.False);
+                Assert.That(world.CanPlaceFloraAt(new Vector2(-9f, 9f)),
+                    Is.True);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void BuildingFootprintBlocksNewFloraButNotOrdinaryProps()
         {
             var root = new GameObject("Church Edge Placement Assistance Test");
             try
@@ -4069,14 +4830,11 @@ namespace CityForgeV3.Tests
 
                 world.SetFloraEditorContext(true);
                 Assert.That(world.BeginFloraDragFromPanel(
-                    "maple", centerPanelPoint, panelSize), Is.True,
-                    "A tree may be placed at an occluded ground point.");
-                world.EndFloraDrag();
-                var tree = world.Session.Data.Flora[0];
-                Assert.That(world.CanPlaceFloraAt(
-                    new Vector2(tree.PositionX, tree.PositionZ)), Is.True);
-                Assert.That(new Vector2(tree.PositionX, tree.PositionZ).magnitude,
-                    Is.LessThan(0.01f));
+                    "maple", centerPanelPoint, panelSize), Is.False,
+                    "A tree must not be planted inside a building footprint.");
+                Assert.That(world.FloraCount, Is.Zero);
+                Assert.That(world.CanPlaceFloraAt(new Vector2(-12f, 12f)),
+                    Is.True, "Other lot ground remains plantable.");
 
                 world.SetPropEditorContext(true);
                 world.SetPropPlacementPreview("wrought-iron-fence-straight-v01");
@@ -4139,8 +4897,8 @@ namespace CityForgeV3.Tests
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
                 LotEditorCategory.Roads, "", ""), Is.True);
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
-                LotEditorCategory.Flora, "maple", ""), Is.False,
-                "Visible flora must remain directly selectable while planting is armed.");
+                LotEditorCategory.Flora, "maple", ""), Is.True,
+                "An armed tree tool must plant on the first click.");
             Assert.That(CityForgeApp.ShouldPrioritizeToolPlacement(
                 LotEditorCategory.Flora, "", ""), Is.False,
                 "Escape must disarm flora placement and restore object selection.");
@@ -4181,7 +4939,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void FloraMayShareBuildingFootprintsAndUsesCameraDepthSorting()
+        public void FloraAvoidsBuildingFootprintsAndUsesCameraDepthSorting()
         {
             var root = new GameObject("Flora Occupancy and Depth Test");
             try
@@ -4190,8 +4948,8 @@ namespace CityForgeV3.Tests
                 world.Build();
                 Assert.That(world.PlaceBuildingAtCenter(
                     BuildingCatalog.ColonialGovernmentHouseId), Is.True);
-                Assert.That(world.CanPlaceFloraAt(Vector2.zero), Is.True,
-                    "A tree anchor may occupy a building footprint even when hidden.");
+                Assert.That(world.CanPlaceFloraAt(Vector2.zero), Is.False,
+                    "A new tree cannot occupy a building footprint.");
 
                 var camera = root.GetComponentInChildren<Camera>();
                 var behind = new Vector2(camera.transform.forward.x,
@@ -5716,13 +6474,234 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void CivicsParksLotHasDistinctSavedCategoryAndCivicAccess()
+        {
+            Assert.That((int)LotType.CivicsParks, Is.EqualTo(7));
+            var contract = LotTypeCatalog.For(LotType.CivicsParks);
+            Assert.That(contract.Type, Is.EqualTo(LotType.CivicsParks));
+            Assert.That(contract.DisplayName, Is.EqualTo("CIVICS / PARKS LOT"));
+            Assert.That(contract.IsValid, Is.True);
+
+            var session = new LotEditorSession();
+            session.NewLot("Garden Test", LotType.CivicsParks, 30);
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            Assert.That(restored.Data.LotType, Is.EqualTo(LotType.CivicsParks));
+            Assert.That(LotTypeCatalog.For(LotType.Civics).DisplayName,
+                Is.EqualTo("CIVICS LOT"), "Existing Civics saves retain their type");
+            var app = typeof(CityForgeApp);
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            var choices = (List<string>)app.GetMethod("LotTypeParentChoices", flags)
+                .Invoke(null, null);
+            Assert.That(choices, Does.Contain("Civics"));
+            Assert.That(choices, Does.Not.Contain("Civics / Parks"));
+            Assert.That(app.GetMethod("LotTypeParentLabel", flags)
+                .Invoke(null, new object[] { LotType.CivicsParks }),
+                Is.EqualTo("Civics"));
+            Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
+                .Invoke(null, new object[] { "Civics", "Park" }),
+                Is.EqualTo(LotType.CivicsParks));
+            Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
+                .Invoke(null, new object[] { "Civics", "General" }),
+                Is.EqualTo(LotType.Civics));
+        }
+
+        [TestCase("Residential", "General", LotType.Residential)]
+        [TestCase("Commercial", "General", LotType.Commercial)]
+        [TestCase("Industrial", "General", LotType.Industrial)]
+        [TestCase("Mixed Use", "General", LotType.Mixed)]
+        [TestCase("Farms", "General", LotType.Agricultural)]
+        [TestCase("Transportation", "General", LotType.Transportation)]
+        public void ParentCategoryRetainsExistingLotSaveType(string parent,
+            string subcategory, LotType expected)
+        {
+            var app = typeof(CityForgeApp);
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            Assert.That(app.GetMethod("LotTypeParentLabel", flags)
+                .Invoke(null, new object[] { expected }), Is.EqualTo(parent));
+            Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
+                .Invoke(null, new object[] { parent, subcategory }),
+                Is.EqualTo(expected));
+        }
+
+        [TestCase("wood", "lumber")]
+        [TestCase("bricks", "brick")]
+        [TestCase("iron ore", "iron-ore")]
+        [TestCase("jewel", "jewels")]
+        public void GeneralRequirementsRecognizeLegacyResourceNames(
+            string authored, string slot)
+        {
+            var method = typeof(CityForgeApp).GetMethod(
+                "SameConstructionResourceSlot",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method.Invoke(null, new object[] { authored, slot }),
+                Is.EqualTo(true));
+        }
+
+        [Test]
+        public void NumericAndTextFieldsReserveKeysForTyping()
+        {
+            var method = typeof(CityForgeApp).GetMethod("IsTextEntryElement",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            foreach (var field in new UnityEngine.UIElements.VisualElement[]
+            {
+                new UnityEngine.UIElements.TextField(),
+                new UnityEngine.UIElements.IntegerField(),
+                new UnityEngine.UIElements.FloatField()
+            })
+            {
+                var input = new UnityEngine.UIElements.VisualElement();
+                field.Add(input);
+                Assert.That(method.Invoke(null, new object[] { input }),
+                    Is.EqualTo(true), field.GetType().Name);
+            }
+            Assert.That(method.Invoke(null, new object[]
+            {
+                new UnityEngine.UIElements.Button()
+            }), Is.EqualTo(false));
+        }
+
+        [Test]
+        public void ApprovedBoxwoodUsesDarkSharedMaterialAndPreviewOpacity()
+        {
+            var root = LowPolyBoxwoodHedge.Create("Approved boxwood fixture", 1f);
+            Assert.That(root, Is.Not.Null);
+            try
+            {
+                var hedge = root.GetComponent<LowPolyBoxwoodHedge>();
+                var renderer = root.GetComponentInChildren<MeshRenderer>();
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.mainTexture,
+                    Is.EqualTo(Resources.Load<Texture2D>(
+                        LowPolyBoxwoodHedge.FoliageResource)));
+                var opaque = renderer.sharedMaterial;
+                Assert.That(opaque.color.g, Is.LessThan(0.4f));
+                hedge.SetOpacity(.5f);
+                Assert.That(renderer.sharedMaterial, Is.Not.EqualTo(opaque));
+                var block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                Assert.That(block.GetColor("_Color").a,
+                    Is.EqualTo(.5f).Within(.001f));
+                hedge.SetOpacity(1f);
+                Assert.That(renderer.sharedMaterial, Is.EqualTo(opaque));
+            }
+            finally { Object.DestroyImmediate(root.gameObject); }
+        }
+
+        [TestCase("Zoning", "Browse Residential", LotType.Residential)]
+        [TestCase("Zoning", "Browse Commercial", LotType.Commercial)]
+        [TestCase("Zoning", "Browse Industrial", LotType.Industrial)]
+        [TestCase("Zoning", "Browse Mixed Use", LotType.Mixed)]
+        [TestCase("Parks", "Browse Parks", LotType.CivicsParks)]
+        [TestCase("Farms", "Browse Farms", LotType.Agricultural)]
+        [TestCase("Transit", "Browse Transit Lots", LotType.Transportation)]
+        [TestCase("Civic", "Browse Civic Lots", LotType.Civics)]
+        public void SavedLotBrowserLivesInItsBuildCategory(string category,
+            string tool, LotType expected)
+        {
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            var app = typeof(CityForgeApp);
+            var tools = ((string Name, string Glyph)[])app
+                .GetMethod("BuilderTools", flags).Invoke(null,
+                    new object[] { category });
+            Assert.That(tools.Select(item => item.Name), Does.Contain(tool));
+            var args = new object[] { category, tool, null };
+            Assert.That(app.GetMethod("TryBuilderLotBrowserType", flags)
+                .Invoke(null, args), Is.EqualTo(true));
+            Assert.That(args[2], Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void DistrictIndustryListIncludesOnlySavedIndustrialLots()
+        {
+            var method = typeof(CityForgeApp).GetMethod("IsSavedIndustrialLot",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            Assert.That(method.Invoke(null, new object[] { new LotSaveSummary
+            {
+                LotId = "lumberjack-camp",
+                Name = "Lumberjack Camp",
+                LotType = LotType.Industrial
+            }}), Is.EqualTo(true));
+            Assert.That(method.Invoke(null, new object[] { new LotSaveSummary
+            {
+                LotId = "house",
+                Name = "House",
+                LotType = LotType.Residential
+            }}), Is.EqualTo(false));
+        }
+
+        [Test]
+        public void FarmLotTypeCanBeAuthoredAndKeepsItsSavedId()
+        {
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            var app = typeof(CityForgeApp);
+            var categoriesMethod = app.GetMethod("DistrictEditorCategories", flags);
+            var builder = System.Enum.Parse(
+                categoriesMethod.GetParameters()[0].ParameterType, "Builder");
+            var categories = ((string Name, string Glyph, string Tip)[])
+                categoriesMethod.Invoke(null, new[] { builder });
+            Assert.That(categories.Select(item => item.Name), Does.Contain("Farms"));
+            Assert.That(categories.Select(item => item.Name),
+                Does.Not.Contain("Lots"));
+            var choices = (List<string>)app.GetMethod("LotTypeParentChoices", flags)
+                .Invoke(null, null);
+            Assert.That(choices, Does.Contain("Farms"));
+            Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
+                .Invoke(null, new object[] { "Farms", "General" }),
+                Is.EqualTo(LotType.Agricultural));
+            var session = new LotEditorSession();
+            session.NewLot("Farm fixture", LotType.Agricultural, 30);
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            Assert.That(restored.Data.LotType, Is.EqualTo(LotType.Agricultural));
+        }
+
+        [Test]
+        public void RotatedHostedLotRealignsItsTreeBillboardsBeforeZoom()
+        {
+            var stage = new GameObject("Isolated hosted lot rotation");
+            try
+            {
+                var cameraObject = new GameObject("District camera");
+                cameraObject.transform.SetParent(stage.transform);
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.transform.rotation = Quaternion.Euler(25f, 45f, 0f);
+                var sunObject = new GameObject("District sun");
+                sunObject.transform.SetParent(stage.transform);
+                var sun = sunObject.AddComponent<Light>();
+                sun.type = LightType.Directional;
+                var lotObject = new GameObject("Hosted lot");
+                lotObject.transform.SetParent(stage.transform);
+                var lot = lotObject.AddComponent<LotWorldController>();
+                lot.BuildAsDistrictHosted(camera, sun);
+                lot.NewEmptyLot("Garden Test", LotType.CivicsParks, 4, 4);
+                Assert.That(lot.PlaceFloraForQa("maple", 2f, 2f), Is.True);
+                var tree = lotObject.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("Flora — maple"));
+                Assert.That(Quaternion.Angle(tree.transform.rotation,
+                    camera.transform.rotation), Is.LessThan(.01f));
+
+                lot.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                Assert.That(Quaternion.Angle(tree.transform.rotation,
+                    camera.transform.rotation), Is.GreaterThan(80f),
+                    "The parent rotation reproduces the visible slant");
+                lot.RefreshHostedPresentationFacing();
+                Assert.That(Quaternion.Angle(tree.transform.rotation,
+                    camera.transform.rotation), Is.LessThan(.01f),
+                    "The tree must face the shared camera immediately");
+            }
+            finally { Object.DestroyImmediate(stage); }
+        }
+
+        [Test]
         public void LegacySquareV2SaveMigratesToV3Dimensions()
         {
             const string legacy = "{\"Schema\":\"cityforge-v3-lot-save-v2\",\"LotSizeMeters\":40,\"LotType\":1}";
             var restored = new LotEditorSession();
             restored.Restore(legacy);
 
-            Assert.That(restored.Data.Schema, Is.EqualTo("cityforge-v3-lot-save-v6"));
+            Assert.That(restored.Data.Schema, Is.EqualTo("cityforge-v3-lot-save-v9"));
             Assert.That(restored.Data.LotWidthCells, Is.EqualTo(4));
             Assert.That(restored.Data.LotDepthCells, Is.EqualTo(4));
             Assert.That(restored.Data.LotType, Is.EqualTo(LotType.Commercial));
@@ -7435,7 +8414,7 @@ namespace CityForgeV3.Tests
             var restored = new LotEditorSession();
             restored.Restore(source.Serialize());
 
-            Assert.That(restored.Data.Schema, Is.EqualTo("cityforge-v3-lot-save-v6"));
+            Assert.That(restored.Data.Schema, Is.EqualTo("cityforge-v3-lot-save-v9"));
             Assert.That(restored.Data.TrafficType,
                 Is.EqualTo(TrafficLotType.SuburbanStreet));
             Assert.That(restored.Data.OutsideRoadConnectors.Count, Is.EqualTo(1));
@@ -7822,7 +8801,9 @@ namespace CityForgeV3.Tests
                 new[] { "Main", "Buildings", "Buildings3D", "Roads",
                     "Railroad", "Paths", "Water", "Terrain", "Flora", "Props",
                     "Characters", "Entertainment", "Effects", "BaseTextures",
-                    "OverlayTextures", "Decals", "Environment", "View" },
+                    "OverlayTextures", "Connectors", "Decals", "Environment",
+                    "View", "Transport", "Vehicles", "Boats", "Garden",
+                    "Automata" },
                 System.Enum.GetNames(typeof(LotEditorCategory)));
 
             // Main and Environment intentionally use the owned gear and sun glyphs.
@@ -7948,13 +8929,33 @@ namespace CityForgeV3.Tests
         [Test]
         public void LegacyGrassBasesAndUrbanOverlaysApplyAndPersist()
         {
-            Assert.That(LotWorldController.GrassBaseTextures.Count, Is.EqualTo(8));
+            Assert.That(LotWorldController.GrassBaseTextures.Count, Is.EqualTo(10));
             foreach (var option in LotWorldController.GrassBaseTextures)
                 Assert.That(Resources.Load<Texture2D>(option.ResourcePath), Is.Not.Null,
                     $"Missing legacy grass texture {option.Id}");
             Assert.That(Resources.Load<Texture2D>(
                 LotWorldController.BrickWalkwayOverlay.ResourcePath), Is.Not.Null);
-            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(12));
+            Assert.That(LotWorldController.OverlayTextures.Count, Is.EqualTo(15));
+            var brickBase = LotWorldController.ResolveBaseTexture("brick-paving-v01");
+            var brickOverlay = LotWorldController.ResolveOverlayTexture("brick-paving-v01");
+            Assert.That(brickBase.DisplayName, Is.EqualTo("Brick Paving"));
+            Assert.That(brickBase.BaseRepeatMeters, Is.EqualTo(10f));
+            Assert.That(brickBase.ResourcePath, Is.EqualTo(brickOverlay.ResourcePath));
+            Assert.That(Resources.Load<Texture2D>(brickOverlay.ResourcePath), Is.Not.Null);
+            var brickSession = new LotEditorSession();
+            brickSession.Data.BaseTextureId = brickBase.Id;
+            brickSession.Data.OverlayTextures.Add(new PlacedOverlayTexture
+            {
+                TextureId = brickOverlay.Id, CellX = 1, CellZ = 2,
+                RotationQuarterTurns = 1
+            });
+            var restoredBrick = new LotEditorSession();
+            restoredBrick.Restore(brickSession.Serialize());
+            Assert.That(restoredBrick.Data.BaseTextureId, Is.EqualTo(brickBase.Id));
+            Assert.That(restoredBrick.Data.OverlayTextures.Single().TextureId,
+                Is.EqualTo(brickOverlay.Id));
+            Assert.That(restoredBrick.Data.OverlayTextures.Single().RotationQuarterTurns,
+                Is.EqualTo(1));
             Assert.That(LotWorldController.OverlayTextures.Any(option =>
                 option.Id == "brick-walkway"), Is.False);
             foreach (var id in new[]
@@ -8023,6 +9024,88 @@ namespace CityForgeV3.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        [Test]
+        public void SuppliedCobblestoneSharesOneTextureAcrossBaseAndOverlay()
+        {
+            const string id = "dark-cobblestone-v01";
+            var baseOption = LotWorldController.ResolveBaseTexture(id);
+            var overlayOption = LotWorldController.ResolveOverlayTexture(id);
+            Assert.That(baseOption, Is.Not.Null);
+            Assert.That(overlayOption.DisplayName, Is.EqualTo("Cobblestone"));
+            Assert.That(baseOption.ResourcePath, Is.EqualTo(overlayOption.ResourcePath));
+            Assert.That(baseOption.BaseRepeatMeters, Is.EqualTo(10f));
+            Assert.That(overlayOption.PedestrianLayout,
+                Is.EqualTo(LotWorldController.PedestrianOverlayLayout.None));
+            var texture = Resources.Load<Texture2D>(baseOption.ResourcePath);
+            Assert.That(texture, Is.Not.Null);
+            Assert.That(texture.width, Is.EqualTo(1250));
+            Assert.That(texture.height, Is.EqualTo(1250));
+            var session = new LotEditorSession();
+            session.Data.BaseTextureId = id;
+            session.Data.OverlayTextures.Add(new PlacedOverlayTexture
+            {
+                TextureId = id, CellX = 1, CellZ = 2,
+                RotationQuarterTurns = 1
+            });
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            Assert.That(restored.Data.BaseTextureId, Is.EqualTo(id));
+            Assert.That(restored.Data.OverlayTextures.Single().TextureId,
+                Is.EqualTo(id));
+            Assert.That(restored.Data.OverlayTextures.Single().RotationQuarterTurns,
+                Is.EqualTo(1));
+        }
+
+        [Test]
+        public void StoneGardenFountainLoadsAtGroundScaleAndPersists()
+        {
+            Assert.That(LotWorldController.IsGardenPropId(
+                LotWorldController.StoneGardenFountainPropId), Is.True);
+            Assert.That(Resources.Load<GameObject>(StoneGardenFountain.ModelResource),
+                Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(
+                "CityForgeV3/Garden/StoneFountainV01/preview"), Is.Not.Null);
+            var fountain = StoneGardenFountain.Create("Fountain test", 1f);
+            Assert.That(fountain, Is.Not.Null);
+            try
+            {
+                var renderer = fountain.GetComponentInChildren<MeshRenderer>();
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(renderer.sharedMaterial.mainTexture,
+                    Is.EqualTo(Resources.Load<Texture2D>(
+                        StoneGardenFountain.AlbedoResource)));
+                Assert.That(renderer.bounds.size.x,
+                    Is.EqualTo(StoneGardenFountain.FootprintMeters).Within(0.05f));
+                Assert.That(renderer.bounds.min.y, Is.EqualTo(0f).Within(0.02f));
+                var water = fountain.Find("Running fountain water");
+                Assert.That(water, Is.Not.Null);
+                Assert.That(water.GetComponentsInChildren<MeshRenderer>().Length,
+                    Is.EqualTo(4));
+                Assert.That(water.GetComponentsInChildren<ParticleSystem>().Length,
+                    Is.EqualTo(2));
+                fountain.GetComponent<StoneGardenFountain>().SetOpacity(.5f);
+                var block = new MaterialPropertyBlock();
+                water.Find("Lower basin water").GetComponent<MeshRenderer>()
+                    .GetPropertyBlock(block);
+                Assert.That(block.GetFloat("_Opacity"), Is.EqualTo(.5f));
+                var session = new LotEditorSession();
+                session.Data.Props.Add(new PlacedProp
+                {
+                    InstanceId = "fountain-test",
+                    PropId = LotWorldController.StoneGardenFountainPropId,
+                    PositionX = 2f, PositionZ = -3f,
+                    RotationQuarterTurns = 1
+                });
+                var restored = new LotEditorSession();
+                restored.Restore(session.Serialize());
+                Assert.That(restored.Data.Props.Single().PropId,
+                    Is.EqualTo(LotWorldController.StoneGardenFountainPropId));
+                Assert.That(restored.Data.Props.Single().RotationQuarterTurns,
+                    Is.EqualTo(1));
+            }
+            finally { Object.DestroyImmediate(fountain.gameObject); }
         }
 
         [Test]
@@ -8174,6 +9257,211 @@ namespace CityForgeV3.Tests
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        [Test]
+        public void BaseSurfaceEndsAtLotLineWhileOverlaysCanContinueOutside()
+        {
+            var root = new GameObject("Lot boundary and overlay apron test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Bounded Base", LotType.Residential, 3, 3);
+                world.SetBaseTexture("brick-paving-v01");
+                var ground = Find(root.transform, "Lot Surface");
+                var bounds = ground.GetComponent<MeshFilter>().sharedMesh.bounds;
+                Assert.That(bounds.min.x, Is.EqualTo(-15f).Within(.001f));
+                Assert.That(bounds.max.x, Is.EqualTo(15f).Within(.001f));
+                Assert.That(bounds.min.z, Is.EqualTo(-15f).Within(.001f));
+                Assert.That(bounds.max.z, Is.EqualTo(15f).Within(.001f));
+                Assert.That(ground.GetComponent<Renderer>().sharedMaterial.mainTexture,
+                    Is.EqualTo(Resources.Load<Texture2D>(
+                        LotWorldController.ResolveBaseTexture("brick-paving-v01")
+                            .ResourcePath)));
+
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell("brick-paving-v01", 2, 1),
+                    Is.True);
+                Assert.That(world.PaintOverlayStrokeCell(3, 1), Is.True);
+                Assert.That(world.PaintOverlayStrokeCell(4, 1), Is.False);
+                world.EndOverlayPaint();
+                Assert.That(world.OverlayTextureCount, Is.EqualTo(2));
+                Assert.That(world.Session.Data.OverlayTextures[1].CellX,
+                    Is.EqualTo(3));
+                var outsideTile = root.GetComponentsInChildren<Transform>(true)
+                    .Single(t => t.name == "Placed Overlay Textures")
+                    .GetChild(1);
+                Assert.That(outsideTile.localPosition.x, Is.EqualTo(20f));
+                Assert.That(outsideTile.localScale.x, Is.EqualTo(10f));
+                var restored = new LotEditorSession();
+                restored.Restore(world.Session.Serialize());
+                Assert.That(restored.Data.BaseTextureId,
+                    Is.EqualTo("brick-paving-v01"));
+                Assert.That(restored.Data.OverlayTextures[1].CellX, Is.EqualTo(3));
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void CampOverlayIsOneTwoByTwoPieceAndPersists()
+        {
+            var option = LotWorldController.ResolveOverlayTexture(
+                "camp-overlay-4x4");
+            Assert.That(option.DisplayName, Is.EqualTo("Camp Ground"));
+            Assert.That(option.FootprintWidthCells, Is.EqualTo(2));
+            Assert.That(option.FootprintDepthCells, Is.EqualTo(2));
+            Assert.That(Resources.Load<Texture2D>(option.ResourcePath), Is.Not.Null);
+            Assert.That(LotWorldController.OverlayFootprintFitsLot(2, 2, 2),
+                Is.True);
+            Assert.That(LotWorldController.OverlayFootprintFitsLot(4, 2, 2),
+                Is.False, "A 2x2 lot must not offer a 4x4 overlay category.");
+
+            var root = new GameObject("Camp Overlay 2x2 Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Camp", LotType.Industrial, 2, 2);
+                world.SetOverlayEditorContext(true);
+
+                Assert.That(world.BeginOverlayPaintAtCell(option.Id, 1, 1),
+                    Is.True);
+                Assert.That(world.PaintOverlayStrokeCell(3, 3), Is.False,
+                    "A 2x2 surface places as one piece instead of drag-painting copies.");
+                world.EndOverlayPaint();
+                Assert.That(world.OverlayTextureCount, Is.EqualTo(1));
+                var placed = world.Session.Data.OverlayTextures.Single();
+                Assert.That(placed.CellX, Is.EqualTo(0));
+                Assert.That(placed.CellZ, Is.EqualTo(0));
+                Assert.That(LotWorldController.OverlayFootprintCells(placed),
+                    Is.EqualTo(new Vector2Int(2, 2)));
+
+                var quad = root.GetComponentsInChildren<Transform>(true)
+                    .Single(t => t.name == "Placed Overlay Textures")
+                    .GetChild(0);
+                Assert.That(quad.localPosition.x, Is.EqualTo(0f).Within(.001f));
+                Assert.That(quad.localPosition.z, Is.EqualTo(0f).Within(.001f));
+                Assert.That(quad.localScale.x, Is.EqualTo(20f).Within(.001f));
+                Assert.That(quad.localScale.y, Is.EqualTo(20f).Within(.001f));
+
+                Assert.That(world.BeginOverlayPaintAtCell("", 1, 1), Is.True,
+                    "Any covered cell should select the single large overlay.");
+                world.EndOverlayPaint();
+                Assert.That(world.OverlayTextureCount, Is.EqualTo(1));
+
+                var restored = new LotEditorSession();
+                restored.Restore(world.Session.Serialize());
+                Assert.That(restored.Data.OverlayTextures.Single().TextureId,
+                    Is.EqualTo(option.Id));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+
+            var undersizedRoot = new GameObject("Undersized Camp Overlay Test");
+            try
+            {
+                var world = undersizedRoot.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Small Camp", LotType.Industrial, 1, 2);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell(option.Id, 1, 1),
+                    Is.False);
+                Assert.That(world.OverlayTextureCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(undersizedRoot);
+            }
+        }
+
+        [Test]
+        public void DeletingAColumnCoveredByLargeOverlayRemovesTheWholePiece()
+        {
+            var root = new GameObject("Large Overlay Resize Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Wide Camp", LotType.Industrial, 4, 2);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell(
+                    "camp-overlay-4x4", 2, 1), Is.True);
+                world.EndOverlayPaint();
+                Assert.That(world.Session.Data.OverlayTextures.Single().CellX,
+                    Is.EqualTo(1));
+
+                Assert.That(world.DeleteMajorColumn(2), Is.True);
+                Assert.That(world.Session.Data.OverlayTextures, Is.Empty,
+                    "Deleting any strip through a large overlay must remove the piece.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void ExpandingLotKeepsOverlayCenteredAndCameraAngleStable()
+        {
+            var root = new GameObject("Lot Resize Framing Test");
+            try
+            {
+                var world = root.AddComponent<LotWorldController>();
+                world.Build();
+                world.ConfigureLot("Small Camp", LotType.Industrial, 2, 2);
+                world.SetOverlayEditorContext(true);
+                Assert.That(world.BeginOverlayPaintAtCell(
+                    "camp-overlay-4x4", 1, 1), Is.True);
+                world.EndOverlayPaint();
+                var cameraBefore = world.CaptureCameraFraming();
+
+                world.ConfigureLot("Expanded Camp", LotType.Industrial, 4, 4);
+
+                var placed = world.Session.Data.OverlayTextures.Single();
+                Assert.That(placed.CellX, Is.EqualTo(1));
+                Assert.That(placed.CellZ, Is.EqualTo(1));
+                var quad = root.GetComponentsInChildren<Transform>(true)
+                    .Single(t => t.name == "Placed Overlay Textures")
+                    .GetChild(0);
+                Assert.That(quad.localPosition.x, Is.EqualTo(0f).Within(.001f));
+                Assert.That(quad.localPosition.z, Is.EqualTo(0f).Within(.001f));
+
+                var cameraAfter = world.CaptureCameraFraming();
+                Assert.That(cameraAfter.Position,
+                    Is.EqualTo(cameraBefore.Position));
+                Assert.That(cameraAfter.Rotation,
+                    Is.EqualTo(cameraBefore.Rotation));
+                Assert.That(cameraAfter.OrthographicSize,
+                    Is.EqualTo(cameraBefore.OrthographicSize).Within(.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void BuildingLibraryPinsCategoriesAboveScrollableCards()
+        {
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            StringAssert.Contains(
+                "new ScrollView(ScrollViewMode.Vertical)\n        { name = \"building-3d-card-scroll\" }",
+                source);
+            StringAssert.Contains("buildingScroll.Add(grid);", source);
+            StringAssert.Contains("catalog.Add(buildingScroll);", source);
+
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+            StringAssert.Contains(
+                ".building-library-modal-panel > .building-use-tabs",
+                styles);
+            StringAssert.Contains(
+                ".building-card-scroll .unity-scroll-view__content-viewport",
+                styles);
         }
 
         [Test]
@@ -8574,8 +9862,11 @@ namespace CityForgeV3.Tests
                 Assert.That(world.LotWidthCells, Is.EqualTo(5));
                 Assert.That(world.LotDepthCells, Is.EqualTo(5));
                 var ground = Find(root.transform, "Lot Surface");
-                Assert.That(ground.localScale.x, Is.EqualTo(5.4f).Within(0.001f));
-                Assert.That(ground.localScale.z, Is.EqualTo(5.4f).Within(0.001f));
+                var bounds = ground.GetComponent<MeshFilter>().sharedMesh.bounds;
+                Assert.That(bounds.size.x, Is.EqualTo(50f).Within(0.001f));
+                Assert.That(bounds.size.z, Is.EqualTo(50f).Within(0.001f));
+                Assert.That(bounds.center.x, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(bounds.center.z, Is.EqualTo(0f).Within(0.001f));
             }
             finally
             {

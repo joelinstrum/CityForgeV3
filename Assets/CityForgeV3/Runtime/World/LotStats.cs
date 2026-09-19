@@ -7,6 +7,8 @@ namespace CityForgeV3.World
     public sealed class LotStats
     {
         public string MinimumEraId = "founders";
+        public int MinimumPopulation;
+        public int MinimumEducationScore;
         public bool RequiresRoad;
         public bool RequiresWaterfront;
         public int Residents;

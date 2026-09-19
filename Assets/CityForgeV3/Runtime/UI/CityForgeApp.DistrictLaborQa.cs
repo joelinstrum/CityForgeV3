@@ -36,7 +36,7 @@ namespace CityForgeV3.UI
             if(_districtUndoQaSaveRoot==null)return;var d=FindSelectedRegionTile();SaveDistrictEdit();
             var before=JsonUtility.ToJson(d);var loaded=RegionSaveStore.Load(_openRegion.RegionId,_districtUndoQaSaveRoot);var next=loaded.Tiles.Find(t=>t.TileId==d.TileId);
             if(JsonUtility.ToJson(next)!=before)throw new Exception("Labor saved district differs");
-            _openRegion=loaded;ClearDistrictUndo();_laborNavigation=null;_districtWorld.Build(next);_districtWorldCompositionKey=DistrictCompositionKey(next);Show(AppScreen.DistrictTerraform);_districtWorld.SetPan(next.Labor.Camp);_districtWorld.WorldCamera.orthographicSize=15f;
+            _openRegion=loaded;ClearDistrictUndo();_laborNavigation=null;_districtWorld.RebuildEntireDistrict(next,DistrictBulkRebuildReason.TestFixture);_districtWorldCompositionKey=DistrictCompositionKey(next);Show(AppScreen.DistrictTerraform);_districtWorld.SetPan(next.Labor.Camp);_districtWorld.WorldCamera.orthographicSize=15f;
             Debug.Log($"LABOR QA RELOAD PASS workers={next.Labor.Workers.Count} wood={next.Labor.Wood} treasury={next.Treasury}");
         }
         public void CheckDistrictWoodHudQa()

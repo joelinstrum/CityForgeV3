@@ -55,6 +55,66 @@ public class DistrictLotSiteTests
     }
 
     [Test]
+    public void PlacedLotTreesStayCameraFacingThroughInitialPlacementAndRotation()
+    {
+        var owner = new GameObject("Isolated district lot rotation fixture");
+        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+            System.Guid.NewGuid() + ".json");
+        try
+        {
+            var data = new LotSaveData
+            {
+                LotId = "park-rotation-" + System.Guid.NewGuid().ToString("N"),
+                Name = "Garden Test",
+                LotType = LotType.CivicsParks,
+                LotWidthCells = 3, LotDepthCells = 3, LotSizeMeters = 30
+            };
+            data.Flora.Add(new PlacedFlora
+            {
+                FloraId = "maple", PositionX = 2f, PositionZ = 2f
+            });
+            System.IO.File.WriteAllText(path, JsonUtility.ToJson(data));
+            _ = LotContentCatalog.All;
+            typeof(LotContentCatalog).GetMethod("Add",
+                System.Reflection.BindingFlags.Static |
+                System.Reflection.BindingFlags.NonPublic).Invoke(null,
+                new object[] { new LotSaveSummary
+                    { LotId = data.LotId, Name = data.Name },
+                    path, "", "isolated test", false, false });
+
+            var district = new RegionCityTile { Width = 1, Height = 1 };
+            var placement = new PlacedDistrictLot
+            {
+                InstanceId = "park", LotId = data.LotId,
+                GridX = 30, GridZ = 30
+            };
+            var world = owner.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            district.Lots.Add(placement);
+            Assert.That(world.AddPlacedLot(district, placement), Is.True);
+            var tree = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name.StartsWith("Flora — maple"));
+            Assert.That(Quaternion.Angle(tree.transform.rotation,
+                world.WorldCamera.transform.rotation), Is.LessThan(.01f),
+                "Initial Lot placement must not leave trees edge-on");
+
+            placement.RotationQuarterTurns = 1;
+            Assert.That(world.UpdatePlacedLotTransform(district, placement,
+                allowPlacementConflicts: true, deferSurfaceRefresh: true),
+                Is.True);
+            Assert.That(Quaternion.Angle(tree.transform.rotation,
+                world.WorldCamera.transform.rotation), Is.LessThan(.01f),
+                "Rotating the placed Lot must update its trees before zoom");
+        }
+        finally
+        {
+            Object.DestroyImmediate(owner);
+            System.IO.File.Delete(path);
+            LotContentCatalog.InvalidateCache();
+        }
+    }
+
+    [Test]
     public void PlacingRotatedLotClearsDistrictFloraAndCompletesDirtSurface()
     {
         var owner = new GameObject("District placement fixture");
@@ -75,7 +135,7 @@ public class DistrictLotSiteTests
             void Tree(string id, float x, float z) => district.Flora.Add(new PlacedDistrictFlora {
                 InstanceId = id, FloraId = "cilician-fir", NormalizedX = .5f + (center.x+x)/size, NormalizedZ = .5f + (center.y+z)/size });
             Tree("inside", 15, 5); Tree("outside", 5, 15);
-            var world = owner.AddComponent<DistrictWorldController>(); world.Build(district);
+            var world = owner.AddComponent<DistrictWorldController>(); world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
             district.Lots.Add(placement);
             Assert.IsTrue(world.AddPlacedLot(district, placement));
             CollectionAssert.AreEqual(new[] { "outside" }, district.Flora.Select(x => x.InstanceId));

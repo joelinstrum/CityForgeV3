@@ -6,6 +6,16 @@ using UnityEngine.Rendering;
 
 namespace CityForgeV3.World
 {
+    public enum DistrictBulkRebuildReason
+    {
+        None,
+        LoadSwitchOrStateRestore,
+        DistrictWideTerrainReplacement,
+        DistrictWideFloraReplacement,
+        RiverGeometryReplacement,
+        TestFixture
+    }
+
     public readonly struct RiverSurfaceSample
     {
         public readonly bool InsideChannel;
@@ -70,6 +80,8 @@ namespace CityForgeV3.World
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
         public const float DistrictGrassTextureWorldSizeMeters = 40f;
+        public static readonly Color RiverWaterTint =
+            new(0.82f, 1.04f, 1.18f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;
 
         [Header("River Water")]
@@ -90,7 +102,7 @@ namespace CityForgeV3.World
         [SerializeField, Min(0.25f), InspectorName("Water Texture Tiling")]
         private float _waterTextureTiling = 18f;
         [SerializeField, InspectorName("Water Tint")]
-        private Color _waterTint = new(0.94f, 1.02f, 1.06f, 1f);
+        private Color _waterTint = RiverWaterTint;
         [SerializeField, Range(0.1f, 2f), InspectorName("Brightness")]
         private float _waterBrightness = 1.08f;
         [SerializeField, Range(0f, 1f), InspectorName("Smoothness")]
@@ -128,6 +140,7 @@ namespace CityForgeV3.World
         private Material _antiqueDiagonalMaterial;
         private readonly List<RuntimeRiverSurface> _riverSurfaces = new();
         private readonly DistrictSpatialIndex<RuntimeRiverSurface> _riverSurfaceIndex = new(64);
+        private readonly HashSet<RuntimeRiverSurface> _riverPlacementCandidates = new();
         private readonly List<Renderer> _riverGrassEdgeRenderers = new();
         private Camera _camera;
         private Light _sun;
@@ -262,8 +275,12 @@ namespace CityForgeV3.World
         public TimeOfDayPreset TimeOfDay { get; private set; } =
             TimeOfDayPreset.Noon;
 
-        public void Build(RegionCityTile district)
+        // This is intentionally named as an expensive operation. Local edits
+        // must use the cell/ID presentation APIs and local surface commits.
+        public void RebuildEntireDistrict(RegionCityTile district,
+            DistrictBulkRebuildReason reason)
         {
+            RequireBulkRebuildReason(reason);
             ClearWorld();
             if (district == null) return;
             DistrictRoadPlacementModel.InvalidateNetwork(district.Roads);
@@ -282,10 +299,10 @@ namespace CityForgeV3.World
             _elevation = new DistrictElevation(district);
             _buildingDistrict = true;
             BuildGround();
-            RefreshRivers(district);
+            RebuildAllRiverPresentations(district, reason);
             RefreshRoads(district);
             BuildDistrictBridges(district);
-            RefreshFlora(district);
+            RebuildAllFloraPresentations(district, reason);
             RefreshNaturalResources(district);
             BuildGrid();
             var placements = district.Lots ?? new List<PlacedDistrictLot>();
@@ -295,8 +312,16 @@ namespace CityForgeV3.World
                     continue;
                 var lot = LotContentCatalog.Read(placement.LotId);
                 if (lot == null) continue;
+                // Older district saves predate river-tangent dock poses. Resolve
+                // one in memory while composing the district; disk persistence
+                // remains tied to the player's explicit Save action.
+                if (lot.HasWaterOrientation &&
+                    (!placement.HasBoatDockOverride ||
+                     placement.BoatDockContractVersion < 2))
+                    ValidateLotBoatPlacement(district, placement, lot, out _);
                 var hosted = AddLot(lot, DistrictLotCenterMeters(district, placement, lot),
-                    placement.RotationQuarterTurns, placement.InstanceId);
+                    placement.RotationQuarterTurns, placement.InstanceId,
+                    placement: placement);
                 hosted.BindDistrictBehaviors(placement, district);
             }
             // Region v1 stored only its founder lot. Preserve those saves by
@@ -365,8 +390,11 @@ namespace CityForgeV3.World
             prior.SetActive(false);if(Application.isPlaying)Destroy(prior);else DestroyImmediate(prior);
         }
 
-        public void RefreshRivers(RegionCityTile district, bool preservePresentations = false)
+        public void RebuildAllRiverPresentations(RegionCityTile district,
+            DistrictBulkRebuildReason reason,
+            bool preservePresentations = false)
         {
+            RequireBulkRebuildReason(reason);
             if (_content == null || district == null) return;
 #if UNITY_EDITOR
             var riverTimer=System.Diagnostics.Stopwatch.StartNew();
@@ -410,9 +438,11 @@ namespace CityForgeV3.World
 
         private DistrictFloraBatches _floraBatches;
 
-        public void RefreshFlora(RegionCityTile district,
+        public void RebuildAllFloraPresentations(RegionCityTile district,
+            DistrictBulkRebuildReason reason,
             string selectedInstanceId = "")
         {
+            RequireBulkRebuildReason(reason);
             if (_content == null || district == null) return;
             DistrictHarvestIndex.For(district); // Warm at load/bulk-edit boundaries, never on each small edit.
             _floraClimate = district.Climate;
@@ -428,6 +458,8 @@ namespace CityForgeV3.World
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
             _pendingForestSeason = null;
+            _pendingTimeOfDayShadows = null;
+            _pendingTimeOfDayShadowIndex = 0;
             _districtFloraRoot = new GameObject("District Flora").transform;
             _districtFloraRoot.SetParent(_content, false);
             foreach (var placed in district.Flora ??
@@ -436,8 +468,17 @@ namespace CityForgeV3.World
             PrepareForestSeason(district);
             UpdateDistrictFloraShadows();
             _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
-            _floraBatches.Build(_districtFloraPresentations.Values);
+            _floraBatches.Build(_districtFloraPresentations.Values, _camera);
             BuildDistrictFloraSelection(selectedInstanceId);
+        }
+
+        private static void RequireBulkRebuildReason(
+            DistrictBulkRebuildReason reason)
+        {
+            if (reason == DistrictBulkRebuildReason.None)
+                throw new ArgumentException(
+                    "A complete district presentation rebuild requires an explicit bulk reason.",
+                    nameof(reason));
         }
 
         public string FindDistrictFloraAt(Vector2 normalized,
@@ -508,17 +549,60 @@ namespace CityForgeV3.World
             BuildDistrictFloraSelection(instanceId);
         }
 
+        public void AddDistrictFloraPresentations(
+            IReadOnlyList<PlacedDistrictFlora> additions,
+            string selectedInstanceId = "")
+        {
+            if (_districtFloraRoot == null || additions == null ||
+                additions.Count == 0) return;
+            _floraBatches?.BeginChanges();
+            try
+            {
+                foreach (var placed in additions)
+                {
+                    if (placed == null || _districtFloraPresentations.ContainsKey(
+                            placed.InstanceId)) continue;
+                    AddDistrictFloraPresentation(placed);
+                    if (_districtFloraPresentations.TryGetValue(
+                            placed.InstanceId, out var renderer))
+                        _floraBatches?.Add(renderer);
+                }
+            }
+            finally { _floraBatches?.EndChanges(); }
+            BuildDistrictFloraSelection(selectedInstanceId);
+        }
+
         public void MoveDistrictFlora(PlacedDistrictFlora placed)
         {
-            if (placed == null || !_districtFloraPresentations.TryGetValue(
-                    placed.InstanceId, out var renderer) || renderer == null)
-                return;
-            _floraBatches?.Remove(renderer);
-            renderer.transform.localPosition = DistrictFloraPosition(placed);
-            renderer.sortingOrder = DistrictFloraSortingOrder(
-                renderer.transform.localPosition);
-            UpdateDistrictFloraShadowsFor(new[] { renderer });
-            BuildDistrictFloraSelection(placed.InstanceId);
+            if (placed == null) return;
+            MoveDistrictFloraPresentations(new[] { placed }, placed.InstanceId);
+        }
+
+        public void MoveDistrictFloraPresentations(
+            IReadOnlyList<PlacedDistrictFlora> placements,
+            string selectedInstanceId = "")
+        {
+            if (placements == null || placements.Count == 0) return;
+            var changed = new List<SpriteRenderer>(placements.Count);
+            _floraBatches?.BeginChanges();
+            try
+            {
+                foreach (var placed in placements)
+                {
+                    if (placed == null || !_districtFloraPresentations.TryGetValue(
+                            placed.InstanceId, out var renderer) || renderer == null)
+                        continue;
+                    _floraBatches?.Remove(renderer);
+                    renderer.transform.localPosition = DistrictFloraPosition(placed);
+                    renderer.sortingOrder = DistrictFloraSortingOrder(
+                        renderer.transform.localPosition);
+                    changed.Add(renderer);
+                }
+                UpdateDistrictFloraShadowsFor(changed);
+                foreach (var renderer in changed) _floraBatches?.Add(renderer);
+            }
+            finally { _floraBatches?.EndChanges(); }
+            BuildDistrictFloraSelection(selectedInstanceId);
         }
 
         public void ShowDistrictSelection(RegionCityTile district,
@@ -1154,6 +1238,7 @@ namespace CityForgeV3.World
 
             // Only segments whose channel bounds touch the query cell can contain water.
             private readonly DistrictSpatialIndex<int> _segmentsByCell=new();
+            private readonly HashSet<int> _nearbySegments = new();
             private readonly float[] _segmentLengths;
             private readonly float[] _segmentStarts;
             private readonly List<Vector2> _points;
@@ -1211,18 +1296,48 @@ namespace CityForgeV3.World
                     Mathf.InverseLerp(d3, HalfWidth, distance));
             }
 
-            public ClosestPoint FindClosest(Vector2 point)
+            public float ShoreHalfWidth(ClosestPoint point)
+            {
+                var left = point.SignedLateral >= 0f;
+                return WaterHalfWidth * RiverShoreWidthScale(
+                    point.DistanceAlong, WaterHalfWidth * 2f, left);
+            }
+
+            public float NavigableHalfWidth(ClosestPoint point,
+                float minimumDepth)
+            {
+                var high = ShoreHalfWidth(point);
+                var low = 0f;
+                for (var iteration = 0; iteration < 12; iteration++)
+                {
+                    var middle = (low + high) * .5f;
+                    if (WaterElevation - BedElevation(middle) >= minimumDepth)
+                        low = middle;
+                    else high = middle;
+                }
+                return low;
+            }
+
+            public ClosestPoint FindClosest(Vector2 point,
+                float searchRadius = 0f)
             {
                 var bestDistance = float.PositiveInfinity;
                 var bestSigned = 0f;
                 var bestAlong = 0f;
                 var bestTangent = Vector2.up;
-                var candidates=_segmentsByCell.Query(point);
+                IReadOnlyCollection<int> candidates;
+                if (searchRadius > 0f)
+                {
+                    _segmentsByCell.QueryBounds(new Rect(
+                        point - Vector2.one * searchRadius,
+                        Vector2.one * searchRadius * 2f), _nearbySegments);
+                    candidates = _nearbySegments;
+                }
+                else candidates = _segmentsByCell.Query(point);
                 if(candidates.Count==0)
                     return new ClosestPoint(bestDistance,0,0,Vector2.up);
-                for(int candidateIndex=0;candidateIndex<candidates.Count;candidateIndex++)
+                foreach (var i in candidates)
                 {
-                    int i=candidates[candidateIndex];
                     var segment = _points[i + 1] - _points[i];
                     var length = _segmentLengths[i];
                     if (length <= .0001f) continue;
@@ -1926,17 +2041,21 @@ namespace CityForgeV3.World
         }
 
         public bool AddPlacedLot(RegionCityTile district,
-            PlacedDistrictLot placement)
+            PlacedDistrictLot placement, bool testPlacement = false)
         {
             if (_content == null || district == null || placement == null ||
                 string.IsNullOrWhiteSpace(placement.LotId)) return false;
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
-            if (!ValidateLotBoatPlacement(district, placement, data, out _)) return false;
-            RefreshElevation();
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            testPlacement = false;
+#endif
+            if (!testPlacement && !ValidateLotBoatPlacement(district, placement, data, out _)) return false;
+            CommitLocalSurfaceChanges();
             var lot = AddLot(data,
                 DistrictLotCenterMeters(district, placement, data),
-                placement.RotationQuarterTurns, placement.InstanceId, true);
+                placement.RotationQuarterTurns, placement.InstanceId, true,
+                placement);
             if (lot == null) return false;
             var size = new Vector2(data.LotWidthCells, data.LotDepthCells) * LotMetricScale.MajorGridMeters;
             if ((placement.RotationQuarterTurns & 1) != 0) size = new Vector2(size.y, size.x);
@@ -1947,6 +2066,7 @@ namespace CityForgeV3.World
             lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);
+            InvalidateTimberNavigation();
             return true;
         }
 
@@ -1959,12 +2079,18 @@ namespace CityForgeV3.World
             var data = LotContentCatalog.Read(placement.LotId);
             if (data == null) return false;
             if (!allowPlacementConflicts && !ValidateLotBoatPlacement(district, placement, data, out _)) return false;
-            if(!deferSurfaceRefresh)RefreshElevation();
+            if(!deferSurfaceRefresh)CommitLocalSurfaceChanges();
             var center = DistrictLotCenterMeters(district, placement, data);
             lot.transform.localPosition = new Vector3(center.x, 0.04f, center.y);
-            lot.transform.localRotation = Quaternion.Euler(0f,
+            var rotation = Quaternion.Euler(0f,
                 placement.RotationQuarterTurns * 90f +
                 HostedLotFacingOffsetDegrees, 0f);
+            var rotated = Quaternion.Angle(lot.transform.localRotation,
+                rotation) > .01f;
+            lot.transform.localRotation = rotation;
+            lot.ApplyDistrictBoatDockOverride(placement);
+            if (rotated) lot.RefreshHostedPresentationFacing();
+            InvalidateTimberNavigation();
             return true;
         }
 
@@ -2309,7 +2435,7 @@ namespace CityForgeV3.World
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
             _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
-            UpdateDistrictFloraShadows();
+            PrepareTimeOfDayPresentation();
         }
 
         public static Vector2 DistrictLotCenterMeters(RegionCityTile district,
@@ -2332,9 +2458,9 @@ namespace CityForgeV3.World
             var width = DistrictScale.SizeMeters(district.Width);
             var depth = DistrictScale.SizeMeters(district.Height);
             var spanX = DistrictScale.GridSpanForMeters(
-                lot.LotWidthCells * LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
+                lot.LotWidthCells * LotMetricScale.MajorGridMeters);
             var spanZ = DistrictScale.GridSpanForMeters(
-                lot.LotDepthCells * LotMetricScale.MajorGridMeters + placement.ShoreOffsetZ);
+                lot.LotDepthCells * LotMetricScale.MajorGridMeters);
             if ((placement.RotationQuarterTurns & 1) != 0) (spanX, spanZ) = (spanZ, spanX);
             var nudge=DistrictLotNudge.GetOffset(district,DistrictSelectionKind.Lot,placement.InstanceId);
             return new Vector2(
@@ -2365,7 +2491,8 @@ namespace CityForgeV3.World
 
         private LotWorldController AddLot(LotSaveData data, Vector2 center,
             int rotationQuarterTurns, string instanceId,
-            bool animateConstruction = false)
+            bool animateConstruction = false,
+            PlacedDistrictLot placement = null)
         {
             var host = new GameObject($"District Lot — {data.Name}");
             host.transform.SetParent(_content, false);
@@ -2377,12 +2504,14 @@ namespace CityForgeV3.World
             lot.ConfigureDistrictRiverSurfaceSampler(SampleRiverSurface);
             lot.ConfigureBoatRouteProvider(FindDownstreamBoatRoute);
             lot.LoadRuntimeLot(data);
+            lot.ApplyDistrictBoatDockOverride(placement);
             lot.ConfigureAsDistrictHosted(_camera, _sun,
                 PresentationLevel(DistrictZoom.DefaultLevel));
             host.transform.localPosition = new Vector3(center.x, 0.04f, center.y);
             host.transform.localRotation = Quaternion.Euler(0f,
                 rotationQuarterTurns * 90f + HostedLotFacingOffsetDegrees,
                 0f);
+            lot.RefreshHostedPresentationFacing();
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
@@ -2584,10 +2713,12 @@ namespace CityForgeV3.World
         private void ClearWorld()
         {
             ClearDistrictBridges();
-            _cachedTimberNavigation=null;_timberNavigationDistrict=null;
+            InvalidateTimberNavigation();
             _rainStorm = null;
             _clouds = null;
             _floraBatches = null;
+            _pendingTimeOfDayShadows = null;
+            _pendingTimeOfDayShadowIndex = 0;
             _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();

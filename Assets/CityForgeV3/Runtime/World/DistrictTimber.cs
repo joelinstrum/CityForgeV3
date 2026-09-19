@@ -38,6 +38,8 @@ namespace CityForgeV3.World
     {
         public string Id = Guid.NewGuid().ToString("N");
         public string WagonId = Guid.NewGuid().ToString("N");
+        public string SourceLotInstanceId = "";
+        public string SourceBehaviorInstanceId = "";
         public string Name = "Axemen";
         public Vector2 Camp;
         public Vector2 WagonHome;
@@ -93,6 +95,30 @@ namespace CityForgeV3.World
                 worker.Route = new(); worker.TreeId = ""; worker.Cargo = 0; worker.CargoTrees = 0;
             }
             return crew;
+        }
+        public static int RemoveLotCrews(RegionCityTile district,
+            string lotInstanceId)
+        {
+            if (district == null || string.IsNullOrWhiteSpace(lotInstanceId))
+                return 0;
+            var state = DistrictLabor.State(district);
+            state.TimberCrews ??= new();
+            var crewIds = new HashSet<string>(state.TimberCrews
+                .Where(c => c.SourceLotInstanceId == lotInstanceId)
+                .Select(c => c.Id));
+            if (crewIds.Count == 0) return 0;
+            var removedWorkers = state.Workers.RemoveAll(w =>
+                crewIds.Contains(w.CrewId));
+            state.TimberCrews.RemoveAll(c => crewIds.Contains(c.Id));
+            state.AssignedAxemen = Math.Max(0,
+                state.AssignedAxemen - removedWorkers);
+            state.PaidSlots = Math.Min(state.PaidSlots,
+                state.AssignedAxemen);
+            for (var i = 0; i < state.Workers.Count; i++)
+                state.Workers[i].Slot = i;
+            if (state.TimberCrews.Count == 0 && state.Workers.Count == 0)
+                state.CampPlaced = false;
+            return crewIds.Count;
         }
         // Motion callback returns arrival only after the wagon actually reaches the road endpoint.
         public static bool Tick(RegionCityTile d, DistrictTimberCrew crew, float dt,

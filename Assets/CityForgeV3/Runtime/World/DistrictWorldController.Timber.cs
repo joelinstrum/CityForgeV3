@@ -130,6 +130,14 @@ namespace CityForgeV3.World
         DistrictTimberNavigation _cachedTimberNavigation;
         RegionCityTile _timberNavigationDistrict;
         int _timberNavigationKey;
+        readonly HashSet<string> timberCrewsWithoutMill = new();
+        public bool HasTimberCrewWaitingForMill => timberCrewsWithoutMill.Count > 0;
+        void InvalidateTimberNavigation()
+        {
+            _cachedTimberNavigation=null;
+            _timberNavigationDistrict=null;
+            timberCrewsWithoutMill.Clear();
+        }
         public bool TickTimber(RegionCityTile district, LotWorldController factory, bool running, float dt)
         {
             if (_content == null) return false;
@@ -149,8 +157,8 @@ namespace CityForgeV3.World
             if(timberRoot==null||timberRoot.parent!=_content)
             {timberRoot=new GameObject("Timber Wagons").transform;timberRoot.SetParent(_content,false);timberViews.Clear();}
             foreach(var id in timberViews.Keys.Where(id=>!crews.Any(c=>c.Id==id)).ToArray())
-            {if(timberViews[id].Wagon!=null)Destroy(timberViews[id].Wagon.gameObject);timberViews.Remove(id);}
-            if (crews.Count == 0) return false;
+            {if(timberViews[id].Wagon!=null)Destroy(timberViews[id].Wagon.gameObject);timberViews.Remove(id);timberCrewsWithoutMill.Remove(id);}
+            if (crews.Count == 0) { timberCrewsWithoutMill.Clear(); return false; }
             int roadKey=DistrictRoadPlacementModel.NetworkKey(district);
             if(_cachedTimberNavigation==null || _timberNavigationDistrict!=district || _timberNavigationKey!=roadKey)
             {
@@ -162,6 +170,8 @@ namespace CityForgeV3.World
             foreach(var crew in crews)
             {
                 crew.Script ??= new TimberScript();
+                if(crew.Phase!="dispatch" || crew.CargoTrees<=0)
+                    timberCrewsWithoutMill.Remove(crew.Id);
                 if(!timberViews.TryGetValue(crew.Id,out var view)||view.Wagon==null)
                 {
                     var root=factory.CreateHorseCarriagePresentation("Lumber Wagon "+crew.WagonId,1,LotWorldController.HorseForestryWagonPropId,TimberGround);
@@ -177,14 +187,19 @@ namespace CityForgeV3.World
                     timberViews[crew.Id]=view;
                 }
                 if(view.RoadKey!=roadKey){view.RoadKey=roadKey;view.Route=null;view.Retry=0;}
+                // Lumber hauling is intentionally twice the baseline cart
+                // pace; the script's fastWagon option remains an extra gait.
+                view.Wagon.MotionSpeedMultiplier = 2f;
                 view.Wagon.Fast=crew.Script.fastWagon;
                 if(running && crew.Enabled)
                 {
                     durable |= DistrictTimber.Tick(district,crew,dt,
                         c=>{
                             foreach(var target in nav.Mills(c.WagonPosition))
-                                if(PlanTimber(view,c,target.Route,nav))return target;
-                            c.Status="Waiting for a road connection to a Lumber Mill";return null;
+                                if(PlanTimber(view,c,target.Route,nav))
+                                {timberCrewsWithoutMill.Remove(c.Id);return target;}
+                            timberCrewsWithoutMill.Add(c.Id);
+                            c.Status="Lumber cart has no mill to drive to";return null;
                         },
                         (c,to)=>{var route=nav.Route(c.WagonPosition,to);return PlanTimber(view,c,route,nav)?route:null;},
                         (c,step)=>{

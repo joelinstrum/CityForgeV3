@@ -118,14 +118,14 @@ namespace CityForgeV3.UI
             var close = new Button(() => PreviewRegionTile("")) { text = "×", tooltip = "Clear selection", name = "quiet-region-close" };
             close.AddToClassList("cf-quiet-close"); panel.Add(close);
             panel.Add(StyledLabel("REGIONAL MAP", "cf-map-kicker"));
-            panel.Add(CfMapChrome.Title(district?.Name ?? _openRegion.Name, "cf-map-heading"));
+            panel.Add(CfMapChrome.Title(district.Founded ? district.Name : "Not started", "cf-map-heading"));
             var picture = CfMapChrome.Icon(district == null ? "Region" : "Terrain");
             picture.AddToClassList("cf-map-portrait"); panel.Add(picture);
             if (district == null)
                 panel.Add(StyledLabel("Select a district to view its details and enter your settlement.", "cf-map-copy"));
             else
             {
-                panel.Add(Property("STATUS", district.Founded ? "Founded" : "Not founded"));
+                panel.Add(Property("STATUS", district.Founded ? "Started" : "Not started"));
                 panel.Add(Property("CLIMATE", district.Climate.ToString()));
                 panel.Add(Property("ERA", LotEraCatalog.DisplayName(_openRegion.EraId)));
                 panel.Add(Property("SIZE", $"{district.Width} × {district.Height}"));
@@ -142,6 +142,19 @@ namespace CityForgeV3.UI
             _mapMetrics.Clear();
             screen.AddToClassList("cf-quiet-map");
             var header = MapHeader(district.Name);
+            header.AddToClassList("cf-map-district-header");
+            var season = StyledLabel("", "cf-map-season");
+            season.name = "district-labor-season";
+            _mapSeasonLabel = season;
+            var start = new Button(ComposeDistrictStartModal)
+            {
+                name = "district-start-status",
+                tooltip = "Start this district or establish a town"
+            };
+            start.AddToClassList("cf-map-start-status");
+            season.pickingMode = PickingMode.Ignore;
+            start.Add(season);
+            header.Add(start);
             var regionLink = new Button(LeaveDistrictEditor)
             {
                 name = "district-region-link",
@@ -149,12 +162,12 @@ namespace CityForgeV3.UI
                 tooltip = "Return to region map: " + _openRegion.Name
             };
             regionLink.AddToClassList("cf-map-region-link");
-            header.Insert(0, regionLink);
             header.Add(CfMapChrome.Action("Statistics", "Statistics", ComposeDistrictStats, "district-statistics"));
             AddMapSave(header, "district-save-button");
             header.Add(CfMapChrome.Action("Menu", "Menu", () => ShowMapMenu(true), "district-menu"));
             screen.Add(header);
             var resources = CfMapChrome.Panel("map-resources", "cf-map-resources");
+            resources.Add(regionLink);
             void Metric(string label, string name, string value)
             {
                 var item = new Button(label == "POPULATION" ? (System.Action)ComposeDistrictStats : ComposeDistrictResourcesModal);
@@ -174,7 +187,6 @@ namespace CityForgeV3.UI
             management.Add(CfMapChrome.Action("Resources", "Resources", ComposeDistrictResourcesModal, "district-resource-bar"));
             screen.Add(management);
             var footer = CfMapChrome.Panel("map-time", "cf-map-time");
-            var season = StyledLabel("", "cf-map-season"); season.name = "district-labor-season"; _mapSeasonLabel = season; footer.Add(season);
             var pause = new Button(() => SetDistrictSimulationPaused(true)) { text = "Pause", name = "district-simulation-pause" };
             pause.AddToClassList("district-time-button"); footer.Add(pause);
             var play = new Button(() => SetDistrictSimulationPaused(false)) { text = "Play", name = "district-simulation-go" };
@@ -210,7 +222,9 @@ namespace CityForgeV3.UI
             if (season != null)
             {
                 int index = DistrictLabor.State(district).SeasonIndex;
-                season.text = district.Founded ? $"{DistrictLabor.SeasonName(index)} · Year {district.FoundingYear + index / 4}" : "Not founded";
+                season.text = district.Founded
+                    ? $"Year {district.FoundingYear + index / 4} · {DistrictLabor.SeasonName(index)} · {TimeOfDayLighting.For(district.TimeOfDay).Label}"
+                    : "Not started";
             }
         }
         static readonly string[] MapStockNames = { "FOOD", "LUMBER", "STONE", "BRICK" };
@@ -244,7 +258,7 @@ namespace CityForgeV3.UI
             if (toggle != null) toggle.style.display = DisplayStyle.None;
             bool inspecting = screen.Q("selected-object-panel") != null;
             screen.Query<VisualElement>(className: "district-simulation-panel").ForEach(element =>
-                element.style.display = _districtInterfaceVisible && !inspecting && !_districtInfoVisible && (_districtPaletteOpen || !string.IsNullOrEmpty(_pendingDistrictLotId)) ? DisplayStyle.Flex : DisplayStyle.None);
+                element.style.display = _districtInterfaceVisible && !inspecting && !_districtInfoVisible && (_districtPaletteOpen || !string.IsNullOrEmpty(_pendingDistrictLotId) || !string.IsNullOrEmpty(_pendingFounderBuildingId)) ? DisplayStyle.Flex : DisplayStyle.None);
             var hide = screen.Q<Button>("district-interface-toggle");
             if (hide != null) hide.text = _districtInterfaceVisible ? "Hide UI" : "Show UI";
         }
@@ -275,7 +289,7 @@ namespace CityForgeV3.UI
                 panel.Add(CfMapChrome.Action("Resources", "Resources", ComposeDistrictResourcesModal, "quiet-resources"));
                 var d = FindSelectedRegionTile();
                 int season = DistrictLabor.State(d).SeasonIndex;
-                panel.Add(StyledLabel(d.Founded ? $"{DistrictLabor.SeasonName(season)} · Year {d.FoundingYear + season / 4}" : "Not founded", "cf-map-copy"));
+                panel.Add(StyledLabel(d.Founded ? $"{DistrictLabor.SeasonName(season)} · Year {d.FoundingYear + season / 4}" : "Not started", "cf-map-copy"));
                 var pause = CfButton.Create(_districtSimulationPaused ? "RESUME" : "PAUSE", () =>
                 { SetDistrictSimulationPaused(!_districtSimulationPaused); RemoveDocumentModal(); }, d.Founded, "quiet");
                 panel.Add(pause);

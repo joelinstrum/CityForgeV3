@@ -170,7 +170,7 @@ namespace CityForgeV3.Tests
             try
             {
                 var world = host.AddComponent<DistrictWorldController>();
-                world.Build(district);
+                world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
 
                 var center = world.SampleRiverSurface(Vector3.zero);
                 Assert.That(center.HasValue, Is.True);

@@ -122,7 +122,8 @@ namespace CityForgeV3.UI
                             _districtSelection.Clear(); _selectedDistrictFloraInstanceId = ""; _activeDistrictRandomFloraGroupId = "";
                             _pendingDistrictFloraId = ""; _pendingDistrictFloraMode = 0;
                             _terraformCategory = "Flora"; _terraformTool = "Forest";
-                            _districtWorld?.RefreshFlora(district);
+                            _districtWorld?.RebuildAllFloraPresentations(district,
+                                DistrictBulkRebuildReason.DistrictWideFloraReplacement);
                             _districtWorld?.ShowDistrictSelection(district, _districtSelection);
                             _districtWorldCompositionKey = DistrictCompositionKey(district);
                             RemoveDocumentModal(); Show(AppScreen.DistrictTerraform);

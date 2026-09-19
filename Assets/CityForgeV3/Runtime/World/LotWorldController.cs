@@ -427,6 +427,7 @@ namespace CityForgeV3.World
             BuildLighting();
             BuildGround();
             BuildLotTextureRoot();
+            BuildConnectorRoot();
             BuildGrid();
             BuildNeighborhoodRoadSlice();
             BuildRoadArtworkSlice();
@@ -457,6 +458,7 @@ namespace CityForgeV3.World
             _buildingPackage = HybridBuildingPackageRegistry.GovernmentHouse;
             BuildGround();
             BuildLotTextureRoot();
+            BuildConnectorRoot();
             BuildGrid();
             BuildNeighborhoodRoadSlice();
             BuildRoadArtworkSlice();
@@ -537,6 +539,16 @@ namespace CityForgeV3.World
                     if (billboard != null)
                         billboard.SetFar(level >= LotZoomLevel.Far);
             ApplyCharacterZoomVisibility();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+        }
+
+        public void RefreshHostedPresentationFacing()
+        {
+            if (!_districtHosted || _camera == null) return;
+            // Rotating the parent lot also rotates its child sprite planes.
+            // Restore their world-space facing before the next rendered frame.
+            AlignBuildingPresentationsToCamera();
             AlignFloraToCamera();
             UpdatePresentationDepthOrdering();
         }
@@ -651,7 +663,10 @@ namespace CityForgeV3.World
                 return false;
             var pixel = PanelToCameraPixel(panelPosition, panelSize,
                 new Vector2(_camera.pixelWidth, _camera.pixelHeight));
-            SelectedFloraIndex = FloraIndexAtCameraPixel(pixel);
+            // An armed tree tool means plant. A broad existing canopy must
+            // not consume the first click as a selection or drag.
+            SelectedFloraIndex = string.IsNullOrWhiteSpace(floraId)
+                ? FloraIndexAtCameraPixel(pixel) : -1;
             var repeatingExisting = repeatPlacement && SelectedFloraIndex >= 0;
             var createdForPlacement = SelectedFloraIndex < 0 &&
                 !string.IsNullOrWhiteSpace(floraId);
@@ -900,10 +915,21 @@ namespace CityForgeV3.World
 
         public bool CanPlaceFloraAt(Vector2 position)
         {
-            // Placement and visibility are independent. An in-bounds ground
-            // anchor may overlap a building footprint or be completely hidden;
-            // depth rendering decides what is visible after the drop.
-            return true;
+            if (Mathf.Abs(position.x) > LotWidthMeters * 0.5f ||
+                Mathf.Abs(position.y) > LotDepthMeters * 0.5f) return false;
+            if (_session?.Data?.Buildings != null)
+            foreach (var placed in _session.Data.Buildings)
+            {
+                if (placed == null) continue;
+                var entry = BuildingCatalog.Find(placed.BuildingId);
+                var package = HybridBuildingPackageRegistry.Load(
+                    entry.PackageResourcePath);
+                if (package != null && BuildingFootprintContains(position,
+                        new Vector2(placed.CellX, placed.CellZ),
+                        package.WidthMeters, package.DepthMeters,
+                        placed.RotationQuarterTurns)) return false;
+            }
+            return !Building3DFootprintContains(position);
         }
 
         public bool EndFloraDrag()
@@ -2350,6 +2376,10 @@ namespace CityForgeV3.World
                 _propPreview.GetComponent<GeorgianGardenBorder>()?.SetSeason(Season);
                 _propPreview.GetComponent<GeorgianGardenBed>()?.SetSeason(Season);
                 _propPreview.GetComponent<GeorgianClippedHedgeGarden>()?.SetSeason(Season);
+                _propPreview.GetComponent<NaturalGrassGardenPatch>()?.SetAppearance(
+                    Season, TimeOfDay, NaturalGrassSunDirection());
+                _propPreview.GetComponent<HedgeBorderedGrassPatch>()?.SetAppearance(
+                    Season, TimeOfDay, NaturalGrassSunDirection());
             }
             if (_floraPreview != null &&
                 !string.IsNullOrWhiteSpace(_floraPreviewId))
@@ -2463,14 +2493,27 @@ namespace CityForgeV3.World
 
         public void SetLotDimensions(int widthCells, int depthCells)
         {
+            var cameraFraming = CaptureCameraFraming();
+            var oldWidthCells = LotWidthCells;
+            var oldDepthCells = LotDepthCells;
             _session.SetLotDimensions(widthCells, depthCells);
+            RemapOverlayAnchorsForLotResize(oldWidthCells, oldDepthCells,
+                LotWidthCells, LotDepthCells);
             if (HasBuilding) MoveBuildingTo(
                 Mathf.RoundToInt(_session.Data.CellX),
                 Mathf.RoundToInt(_session.Data.CellZ));
             ResizeGround();
             ApplyBaseTexturePresentation();
             BuildGrid();
-            ApplyCameraFacing();
+            RebuildOverlayTexturePresentations();
+            RebuildConnectorPresentations();
+            if (cameraFraming.Valid)
+            {
+                _camera.farClipPlane = FarClipPlaneForLot(LotSizeMeters);
+                RestoreCameraFraming(cameraFraming.Position,
+                    cameraFraming.Rotation, cameraFraming.OrthographicSize);
+            }
+            else ApplyCameraFacing();
             ClampRoadCursorToLot();
             _session.Data.RoadPieces.RemoveAll(piece => piece == null ||
                 piece.GridX < RoadPlacementModel.MinimumCellForLot(LotWidthMeters) ||
@@ -2481,6 +2524,49 @@ namespace CityForgeV3.World
             RebuildRoadVehicleNetwork();
             ApplyRoadCursor();
             NotifyStateChanged();
+        }
+
+        private void RemapOverlayAnchorsForLotResize(int oldWidthCells,
+            int oldDepthCells, int newWidthCells, int newDepthCells)
+        {
+            var overlays = _session.Data.OverlayTextures;
+            if (overlays == null || overlays.Count == 0 ||
+                oldWidthCells <= 0 || oldDepthCells <= 0 ||
+                oldWidthCells == newWidthCells && oldDepthCells == newDepthCells)
+                return;
+
+            overlays.RemoveAll(placed =>
+            {
+                if (placed == null) return true;
+                var size = OverlayFootprintCells(placed);
+                if (size.x > newWidthCells || size.y > newDepthCells)
+                    return true;
+
+                var oldCenterX = -oldWidthCells * 5f +
+                    (placed.CellX + size.x * 0.5f) * 10f;
+                var oldCenterZ = -oldDepthCells * 5f +
+                    (placed.CellZ + size.y * 0.5f) * 10f;
+                placed.CellX = Mathf.FloorToInt(
+                    (oldCenterX + newWidthCells * 5f) / 10f -
+                    size.x * 0.5f + 0.5f);
+                placed.CellZ = Mathf.FloorToInt(
+                    (oldCenterZ + newDepthCells * 5f) / 10f -
+                    size.y * 0.5f + 0.5f);
+
+                if (size == Vector2Int.one)
+                {
+                    placed.CellX = Mathf.Clamp(placed.CellX, -1, newWidthCells);
+                    placed.CellZ = Mathf.Clamp(placed.CellZ, -1, newDepthCells);
+                }
+                else
+                {
+                    placed.CellX = Mathf.Clamp(placed.CellX, 0,
+                        newWidthCells - size.x);
+                    placed.CellZ = Mathf.Clamp(placed.CellZ, 0,
+                        newDepthCells - size.y);
+                }
+                return false;
+            });
         }
 
         public bool TryMajorCellFromPanel(Vector2 panelPosition,
@@ -2613,8 +2699,14 @@ namespace CityForgeV3.World
                 if (alongX) connector.GridX = RemapCell(connector.GridX);
                 else connector.GridZ = RemapCell(connector.GridZ);
             }
-            _session.Data.OverlayTextures.RemoveAll(overlay => overlay == null ||
-                (alongX ? overlay.CellX : overlay.CellZ) == stripIndex);
+            _session.Data.OverlayTextures.RemoveAll(overlay =>
+            {
+                if (overlay == null) return true;
+                var footprint = OverlayFootprintCells(overlay);
+                var start = alongX ? overlay.CellX : overlay.CellZ;
+                var length = alongX ? footprint.x : footprint.y;
+                return stripIndex >= start && stripIndex < start + length;
+            });
             foreach (var overlay in _session.Data.OverlayTextures)
             {
                 if (alongX && overlay.CellX > stripIndex) overlay.CellX--;
@@ -6141,27 +6233,41 @@ namespace CityForgeV3.World
             // active time-of-day lighting and let the building participate in
             // it like every other placed object.
             RestoreExperimentalBuilding3DStudioEnvironment();
-            RenderSettings.ambientMode =
-                UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = ambientLight *
-                _environmentAmbientIntensityScale;
-
-            if (TimeOfDay == TimeOfDayPreset.Noon && ExperimentalBuilding3DCount > 0)
+            if (_districtHosted && !IsRaining)
             {
-                // Sky fill keeps upward surfaces readable; less horizon and
-                // ground bounce preserves depth under siding and window trim.
-                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-                var fill = _environmentAmbientIntensityScale * (IsRaining ? 0.7f : 1f);
-                RenderSettings.ambientSkyColor = new Color(0.42f, 0.44f, 0.47f) * fill;
-                RenderSettings.ambientEquatorColor = new Color(0.30f, 0.305f, 0.315f) * fill;
-                RenderSettings.ambientGroundColor = new Color(0.12f, 0.115f, 0.105f) * fill;
+                // The shared district camera must show the same ambient fill
+                // while a lot is edited as it does after returning to the map.
+                DistrictWorldController.ApplyRegionEnvironment(TimeOfDay, null);
+            }
+            else
+            {
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+                RenderSettings.ambientLight = ambientLight *
+                    _environmentAmbientIntensityScale;
+
+                if (TimeOfDay == TimeOfDayPreset.Noon && ExperimentalBuilding3DCount > 0)
+                {
+                    // Sky fill keeps upward surfaces readable; less horizon and
+                    // ground bounce preserves depth under siding and window trim.
+                    RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+                    var fill = _environmentAmbientIntensityScale * (IsRaining ? 0.7f : 1f);
+                    RenderSettings.ambientSkyColor = new Color(0.42f, 0.44f, 0.47f) * fill;
+                    RenderSettings.ambientEquatorColor = new Color(0.30f, 0.305f, 0.315f) * fill;
+                    RenderSettings.ambientGroundColor = new Color(0.12f, 0.115f, 0.105f) * fill;
+                }
             }
 
             if (_sun != null)
             {
                 var sunIntensity = spec.SunIntensity;
                 var sunColor = spec.SunColor;
-                if (ExperimentalBuilding3DCount > 0)
+                if (_districtHosted && !IsRaining)
+                {
+                    sunIntensity = DistrictWorldController.RegionSunIntensity(TimeOfDay);
+                    if (TimeOfDay == TimeOfDayPreset.Morning)
+                        sunColor = new Color(1f, .985f, .96f);
+                }
+                else if (ExperimentalBuilding3DCount > 0)
                 {
                     sunIntensity = TimeOfDay switch
                     {
@@ -6351,6 +6457,7 @@ namespace CityForgeV3.World
             UpdateBuildingPropNightLighting();
             UpdateWindowEffectLighting();
             UpdateLotTextureLighting();
+            RefreshNaturalGrassPatchLighting();
             if (_floraPreview != null)
                 _floraPreview.color = FloraColorForTime(1f);
             if (_roadArtworkRoot != null)
@@ -7345,6 +7452,7 @@ namespace CityForgeV3.World
             SynchronizeAutomataPresentations();
             RebuildEffectPresentations();
             RebuildOverlayTexturePresentations();
+            RebuildConnectorPresentations();
             RebuildPedestrianNetworkFromOverlays();
             UpdatePresentationDepthOrdering();
             // Selection swaps the primary presentation and reconstructs the

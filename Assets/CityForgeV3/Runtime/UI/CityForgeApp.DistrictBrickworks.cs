@@ -42,7 +42,9 @@ namespace CityForgeV3.UI
             if(!string.IsNullOrEmpty(reason)){ShowDistrictNotice(reason);return;}
             EnsureDistrictUndo(d);
             if(!DistrictBrickworks.Build(d,site,LaborNavigation(d).Walkable))return;
-            CancelBrickworksPlacement();SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);Show(AppScreen.DistrictTerraform);
+            CancelBrickworksPlacement();SaveDistrictEdit();_districtWorld.PresentBrickworks(d);
+            _districtWorldCompositionKey=DistrictCompositionKey(d);_laborNavigation=null;
+            Show(AppScreen.DistrictTerraform);
             ShowDistrictNotice("Brickworks placed. Connect a road route from the quarry for stone deliveries.");
         }
         void ComposeBrickworksManagement()
@@ -56,7 +58,7 @@ namespace CityForgeV3.UI
                 var actions=DocumentModalActions();
                 actions.Add(CfButton.Create("VIEW",()=>{RemoveDocumentModal();_terraformPanOffset=DistrictBrickworks.Point(d,b);_terraformZoomLevel=DistrictZoomLevel.LOD0;_districtWorld.SetPan(_terraformPanOffset);_districtWorld.SetZoom(_terraformZoomLevel);_districtWorld.WorldCamera.orthographicSize=20;},true,"quiet"));
                 actions.Add(CfButton.Create(b.Enabled?"PAUSE":"RUN",()=>{b.Enabled=!b.Enabled;SaveDistrictEdit();ComposeBrickworksManagement();},true,"quiet"));
-                actions.Add(CfButton.Create("REMOVE",()=>{EnsureDistrictUndo(d);d.Brickworks.Remove(b);SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);ComposeBrickworksManagement();},true,"quiet"));
+                actions.Add(CfButton.Create("REMOVE",()=>{EnsureDistrictUndo(d);d.Brickworks.Remove(b);SaveDistrictEdit();_districtWorld.PresentBrickworks(d);_districtWorldCompositionKey=DistrictCompositionKey(d);_laborNavigation=null;ComposeBrickworksManagement();},true,"quiet"));
                 row.Add(actions);scroll.Add(row);
             }
             panel.Add(CfButton.Create("BACK",ComposeDistrictIndustryModal,true,"quiet"));
