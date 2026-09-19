@@ -1513,3 +1513,12 @@ benchmark. Details, timings, captures and reproducible helpers are recorded in
 `Documentation/Validation/town-center-v01/`; source lineage is recorded in
 `Documentation/Migration/TOWN_CENTER_V01.md`. This change uses the automatic
 committed Regions Review handoff, without pushing or merging.
+
+### September 19 — brighter Town Center windows
+
+Raised Town Center interior emission from 0.62 to 2.0 and attic emission from
+1.3 to 2.4 in the builder and all near/distant/catalog prefab representations.
+Day remains unlit; lanterns, people, light counts and culling are unchanged.
+Updated the focused lighting assertions for both interior and attic emission.
+The original geometry repair used Blender's background Python interface; its
+editable master remains under `Authoring/Buildings/TownCenterV01/`.

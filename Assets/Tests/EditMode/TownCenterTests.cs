@@ -39,7 +39,10 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(root.GetComponentsInChildren<Light>().Count(l=>l.enabled),Is.EqualTo(amount>0?5:0));
                 var room=root.GetComponentsInChildren<Renderer>().First(r=>r.name=="TC_Interior");
                 var block=new MaterialPropertyBlock();room.GetPropertyBlock(block,0);
-                Assert.That(block.GetColor("_EmissionColor").r,Is.EqualTo(.62f*amount).Within(.001));
+                Assert.That(block.GetColor("_EmissionColor").r,Is.EqualTo(2f*amount).Within(.001));
+                var attic=root.GetComponentsInChildren<Renderer>().First(r=>r.name=="TC_AtticGlow");
+                attic.GetPropertyBlock(block,0);
+                Assert.That(block.GetColor("_EmissionColor").r,Is.EqualTo(2.4f*amount).Within(.001));
             }
             Assert.That(material.GetColor("_EmissionColor"),Is.EqualTo(original));
         }

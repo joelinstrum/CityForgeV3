@@ -1,5 +1,13 @@
 # Town Center V01 validation
 
+Follow-up window brightness: interior emission is now 2.0 (previously 0.62),
+attic emission 2.4 (previously 1.3). `lot-night-brighter.png` and
+`lot-night-brighter-moving.png` are the updated graphics-enabled actual Lot
+camera captures. Earlier captures below retain the original comparison baseline.
+`tests-brighter.xml` records the repeated focused suite with assertions for both
+interior and attic brightness at night/evening/day. No lights, meshes or runtime
+work were added by this adjustment; the original performance run was not repeated.
+
 All Unity work used the disposable project
 `/tmp/cityforge-town-center-fGIMMc/UnityQa` with Unity 6000.1.12f1.
 Blender 5.1.2 ran in separate background processes. No player Lot, district or

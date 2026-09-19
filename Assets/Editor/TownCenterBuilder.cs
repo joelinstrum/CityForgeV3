@@ -90,8 +90,8 @@ public static class TownCenterBuilder
                 ctl.ConfigureTuning(intensity,0,0,0,0);ctl.SetNightAmount(0);controls.Add(ctl);return ctl;
             }
             var warm=new Color(1f,.55f,.24f);
-            Control("Warm interior",renderers.Single(r=>r.name=="TC_Interior"),warm,.62f);
-            Control("Attic windows",renderers.Single(r=>r.name=="TC_AtticGlow"),warm,1.3f);
+            Control("Warm interior",renderers.Single(r=>r.name=="TC_Interior"),warm,2f);
+            Control("Attic windows",renderers.Single(r=>r.name=="TC_AtticGlow"),warm,2.4f);
             var lamps=Control("Porch lanterns",renderers.Single(r=>r.name=="TC_LanternGlass"),warm,2.8f);
             var positions=new[] { new Vector3(-.14f,3.52f,4.55f), new Vector3(6.84f,6.02f,-2.91f), new Vector3(5.28f,3.1f,-2.86f), new Vector3(-5.30f,3.30f,4.12f), new Vector3(4.50f,3.30f,4.12f) };
             var anchors=new List<Transform>();
