@@ -12,7 +12,8 @@ namespace CityForgeV3.World
         [Serializable] sealed class BridgePackage
         {
             public float bayLength, capLength, rightCapLength;
-            public bool singleMiddle;
+            public bool singleMiddle, fixedModel;
+            public float fixedLength, halfWidth;
             public float sourceMin, sourceMax, leftCut, rightCut;
             public float leftEndDeck, rightEndDeck;
             public float[] deckHeights;
@@ -55,6 +56,14 @@ namespace CityForgeV3.World
                     height+=StoneDeckOffset(assets.Package,
                         Vector2.Distance(DistrictBridgePlanner.Center(_terrainDistrict,b.Start),
                             DistrictBridgePlanner.Center(_terrainDistrict,b.End)),along);
+                if(b.FixedModel && _bridgeAssets.TryGetValue(b.StyleId,out var whole) &&
+                    along>=b.NearApproach && along<=b.NearApproach+whole.Package.fixedLength)
+                {
+                    var profile=whole.Package.deckHeights;
+                    float t=Mathf.Clamp01((along-b.NearApproach)/whole.Package.fixedLength)*(profile.Length-1);
+                    int i=Mathf.Min(Mathf.FloorToInt(t),profile.Length-2);
+                    height=b.DeckHeight+Mathf.Lerp(profile[i],profile[i+1],t-i);
+                }
                 return height;
             }
             return TerrainElevation(p.x,p.y)+.02f;
@@ -147,6 +156,36 @@ namespace CityForgeV3.World
             var assets=new BridgeAssets{Package=JsonUtility.FromJson<BridgePackage>(source.text),Material=mat};
             _bridgeAssets[id]=assets;return assets;
         }
+        public bool TryFitBridgeStyle(RegionCityTile district,PlacedDistrictBridge crossing,string styleId,
+            Func<Vector2,bool> occupied,out PlacedDistrictBridge fitted,out string reason)
+        {
+            fitted=null;reason="Bridge model is unavailable.";
+            var assets=LoadBridgeAssets(styleId);if(assets==null)return false;
+            if(assets.Package.fixedModel)
+            {
+                if(!DistrictBridgePlanner.TryFitFixed(district,crossing,assets.Package.fixedLength,assets.Package.rightEndDeck,
+                    SampleBridgeSurface,occupied,out fitted,out reason))return false;
+            }
+            else {fitted=JsonUtility.FromJson<PlacedDistrictBridge>(JsonUtility.ToJson(crossing));reason="";}
+            fitted.StyleId=styleId;return true;
+        }
+        GameObject CreateWholeBridge(RegionCityTile district,PlacedDistrictBridge b,BridgeAssets assets,bool preview)
+        {
+            if(!b.FixedModel)return null;
+            var a=DistrictBridgePlanner.Center(district,b.Start);var end=DistrictBridgePlanner.Center(district,b.End);
+            var axis=(end-a).normalized;float span=Vector2.Distance(a,end);
+            if(Mathf.Abs(span-b.NearApproach-b.FarApproach-assets.Package.fixedLength)>.01f)return null;
+            var root=new GameObject((preview?"Preview — ":"")+DistrictBridgeCatalog.Find(b.StyleId).Name);
+            root.transform.SetParent(_content,false);root.transform.localPosition=new Vector3(a.x,b.DeckHeight,a.y);
+            root.transform.localRotation=Quaternion.LookRotation(new Vector3(axis.x,0,axis.y));
+            var source=assets.Package.modules[0];var vertices=new Vector3[source.vertices.Length];
+            for(int i=0;i<vertices.Length;i++)vertices[i]=source.vertices[i]+Vector3.forward*b.NearApproach;
+            var mesh=new Mesh{name="Original complete bridge",indexFormat=IndexFormat.UInt32};
+            mesh.vertices=vertices;mesh.normals=source.normals;mesh.uv=source.uv;mesh.triangles=source.triangles;mesh.RecalculateBounds();
+            var body=new GameObject("Bridge span");body.transform.SetParent(root.transform,false);
+            body.AddComponent<MeshFilter>().sharedMesh=mesh;body.AddComponent<MeshRenderer>().sharedMaterial=assets.Material;
+            AddBridgeRamps(root.transform,b,span);AddBridgeEarthApproaches(root.transform,b,span);return root;
+        }
         GameObject CreateBridge(RegionCityTile district,PlacedDistrictBridge b,bool preview)
         {
             var assets=LoadBridgeAssets(b.StyleId);if(assets==null||_content==null)return null;
@@ -154,6 +193,7 @@ namespace CityForgeV3.World
             var axis=(end-a).normalized;var span=Vector2.Distance(a,end);
             if(span<DistrictBridgePlanner.MinLength || span>DistrictBridgePlanner.MaxLength)return null;
             var package=assets.Package;
+            if(package.fixedModel)return CreateWholeBridge(district,b,assets,preview);
             float rightCap=package.singleMiddle?package.rightCapLength:package.capLength;
             float usable=span-2*DistrictBridgePlanner.RampLength-package.capLength-rightCap;
             if(usable<=0)return null;
@@ -250,8 +290,8 @@ namespace CityForgeV3.World
                 tris.AddRange(new[]{start,start+1,start+2,start,start+2,start+3});
 
             }
-            Ramp(0,b.StartHeight-b.DeckHeight,DistrictBridgePlanner.RampLength,0);
-            Ramp(span-DistrictBridgePlanner.RampLength,0,span,b.EndHeight-b.DeckHeight);
+            Ramp(0,b.StartHeight-b.DeckHeight,b.FixedModel?b.NearApproach:DistrictBridgePlanner.RampLength,0);
+            Ramp(span-(b.FixedModel?b.FarApproach:DistrictBridgePlanner.RampLength),b.FixedModel?b.EndDeckOffset:0,span,b.EndHeight-b.DeckHeight);
             var mesh=new Mesh{name="Bridge approaches"};mesh.SetVertices(verts);mesh.SetUVs(0,uv);mesh.SetTriangles(tris,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
             var go=new GameObject("Approaches");go.transform.SetParent(root,false);go.AddComponent<MeshFilter>().sharedMesh=mesh;go.AddComponent<MeshRenderer>().sharedMaterial=rampMaterial;
         }
@@ -268,8 +308,10 @@ namespace CityForgeV3.World
                 for(int row=0;row<=8;row++)
                 {
                     float t=row/8f;
-                    float along=end==0?t*DistrictBridgePlanner.RampLength:span-DistrictBridgePlanner.RampLength+t*DistrictBridgePlanner.RampLength;
-                    float crest=Mathf.Lerp(end==0?b.StartHeight-b.DeckHeight:0,
+                    float ramp=b.FixedModel?(end==0?b.NearApproach:b.FarApproach):DistrictBridgePlanner.RampLength;
+                    float farDeck=b.FixedModel?b.EndDeckOffset:0;
+                    float along=end==0?t*ramp:span-ramp+t*ramp;
+                    float crest=Mathf.Lerp(end==0?b.StartHeight-b.DeckHeight:farDeck,
                         end==0?0:b.EndHeight-b.DeckHeight,t)-.06f;
                     var center=_content.InverseTransformPoint(root.TransformPoint(new Vector3(0,crest,along)));
                     float rise=Mathf.Max(0,center.y-TerrainElevation(center.x,center.z));

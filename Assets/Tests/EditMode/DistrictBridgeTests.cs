@@ -22,6 +22,35 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(DistrictBridgePlanner.Height(d,b,20),Is.EqualTo(b.DeckHeight));
         }
         [Test]
+        public void FixedBridgeUsesOriginalLengthAndRejectsWiderWater()
+        {
+            var d=District();var crossing=new PlacedDistrictBridge{Start=new(60,64),End=new(68,64),DeckHeight=1.5f};
+            bool Fit(float length,float waterWidth,out PlacedDistrictBridge fitted)=>DistrictBridgePlanner.TryFitFixed(d,crossing,length,.5f,
+                p=>new DistrictBridgePlanner.Surface(Mathf.Abs(p.x)<waterWidth*.5f+3,Mathf.Abs(p.x)<waterWidth*.5f,0,0),
+                _=>false,out fitted,out _);
+            Assert.That(Fit(34.33f,24,out var shortBridge),Is.True);
+            Assert.That(Fit(34.33f,42,out _),Is.False);
+            Assert.That(Fit(50.37f,42,out var longBridge),Is.True);
+            Assert.That(Fit(50.37f,64,out _),Is.False);
+            float Total(PlacedDistrictBridge b)=>Vector2.Distance(DistrictBridgePlanner.Center(d,b.Start),DistrictBridgePlanner.Center(d,b.End));
+            Assert.That(Total(shortBridge)-shortBridge.NearApproach-shortBridge.FarApproach,Is.EqualTo(34.33f).Within(.001f));
+            var restored=JsonUtility.FromJson<PlacedDistrictBridge>(JsonUtility.ToJson(longBridge));
+            Assert.That(restored.FixedModel,Is.True);
+            Assert.That(Total(restored)-restored.NearApproach-restored.FarApproach,Is.EqualTo(50.37f).Within(.001f));
+        }
+        [TestCase(1,1)][TestCase(1,-1)][TestCase(-1,1)][TestCase(-1,-1)]
+        public void FixedBridgeFitsDiagonalWithoutChangingModelLength(int x,int y)
+        {
+            var d=District();var direction=new Vector2Int(x,y);var axis=((Vector2)direction).normalized;
+            var crossing=new PlacedDistrictBridge{Start=new Vector2Int(64,64)-direction*3,End=new Vector2Int(64,64)+direction*3,DeckHeight=1.5f};
+            int queries=0;
+            DistrictBridgePlanner.Surface Sample(Vector2 p)
+            {queries++;float along=Vector2.Dot(p-new Vector2(5,5),axis);return new(Mathf.Abs(along)<15,Mathf.Abs(along)<12,0,0);}
+            Assert.That(DistrictBridgePlanner.TryFitFixed(d,crossing,34.33f,.5f,Sample,_=>false,out var b,out var reason),Is.True,reason);
+            Assert.That(Vector2.Distance(DistrictBridgePlanner.Center(d,b.Start),DistrictBridgePlanner.Center(d,b.End))-b.NearApproach-b.FarApproach,Is.EqualTo(34.33f).Within(.001f));
+            Assert.That(queries,Is.LessThan(1000));
+        }
+        [Test]
         public void GradedApproachReservesShoulderSpaceOutsideRoadWidth()
         {
             var d=District();
@@ -92,7 +121,8 @@ namespace CityForgeV3.Tests.EditMode
             foreach(var s in DistrictBridgeCatalog.Styles)
             {
                 var data=Resources.Load<TextAsset>(s.Resource+"/modules");Assert.That(data,Is.Not.Null);
-                Assert.That(data.text,Does.Contain("Entrance_Start"));Assert.That(data.text,Does.Contain("Middle_Bay"));
+                if(s.Id.StartsWith("stone-"))Assert.That(data.text,Does.Contain("Whole"));
+                else { Assert.That(data.text,Does.Contain("Entrance_Start"));Assert.That(data.text,Does.Contain("Middle_Bay")); }
                 Assert.That(Resources.Load<Texture2D>(s.Resource+"/albedo"),Is.Not.Null);
             }
         }

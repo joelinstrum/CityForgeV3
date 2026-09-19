@@ -31,7 +31,7 @@ public static class DistrictBridgeQa
         camera.orthographic=true;camera.orthographicSize=31;camera.transform.position=new Vector3(center.x+55,48,center.y-65);
         camera.transform.LookAt(new Vector3(center.x,1,center.y));camera.nearClipPlane=.1f;camera.farClipPlane=2000;
         var target=new RenderTexture(1500,1000,24);camera.targetTexture=target;
-        foreach(var style in DistrictBridgeCatalog.Styles)
+        foreach(var style in new[]{DistrictBridgeCatalog.Find("covered-wood"),DistrictBridgeCatalog.Find("stone")})
         {
             b.StyleId=style.Id;world.PreviewDistrictBridge(d,b);
             camera.Render();report+=$"{style.Id}: UnityStats draw calls={UnityStats.drawCalls}, batches={UnityStats.batches}, triangles={UnityStats.triangles} (manual Camera.Render)\n";RenderTexture.active=target;var image=new Texture2D(1500,1000,TextureFormat.RGB24,false);

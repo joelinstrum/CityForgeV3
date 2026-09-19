@@ -50,7 +50,18 @@ namespace CityForgeV3.UI
         void ComposeDistrictBridgeModal(PlacedDistrictBridge proposal=null)
         {
             var d=FindSelectedRegionTile();if(d==null)return;
-            float length=proposal==null?0:Vector2.Distance(DistrictBridgePlanner.Center(d,proposal.Start),DistrictBridgePlanner.Center(d,proposal.End));
+            var options=new Dictionary<string,PlacedDistrictBridge>();
+            if(proposal!=null)
+            {
+                foreach(var candidate in DistrictBridgeCatalog.Styles)
+                    if(_districtWorld.TryFitBridgeStyle(d,proposal,candidate.Id,p=>DistrictBridgeOccupied(d,p),out var fit,out _))
+                        options[candidate.Id]=fit;
+                if(!options.ContainsKey(proposal.StyleId))
+                    foreach(var candidate in DistrictBridgeCatalog.Styles)
+                        if(options.ContainsKey(candidate.Id)){proposal.StyleId=candidate.Id;break;}
+            }
+            PlacedDistrictBridge selected=proposal!=null&&options.TryGetValue(proposal.StyleId,out var choice)?choice:null;
+            float length=proposal==null?0:Vector2.Distance(DistrictBridgePlanner.Center(d,(selected??proposal).Start),DistrictBridgePlanner.Center(d,(selected??proposal).End));
             var panel=CreateDocumentModal("BRIDGES",proposal==null?
                 "Choose a bridge, then drag a road from dry ground across a river. You will review the crossing before building.":
                 $"{length:N0} meter crossing • Approaches included. Choose a bridge to preview it over the river.");
@@ -60,6 +71,7 @@ namespace CityForgeV3.UI
             var list=new ScrollView(ScrollViewMode.Vertical);list.style.flexShrink=1;
             foreach(var style in DistrictBridgeCatalog.Styles)
             {
+                if(proposal!=null&&!options.ContainsKey(style.Id))continue;
                 var chosen=style;
                 var card=new Button(()=>
                 {
@@ -74,7 +86,7 @@ namespace CityForgeV3.UI
                 image.style.backgroundImage=new StyleBackground(Resources.Load<Texture2D>(style.Resource+"/preview"));card.Add(image);
                 var copy=new VisualElement();copy.style.flexShrink=1;
                 copy.Add(StyledLabel(style.Name.ToUpperInvariant(),"district-road-family-name"));
-                copy.Add(StyledLabel(proposal==null?$"FROM ${style.BaseCost:N0} + ${style.CostPerMeter}/M":$"${style.Price(length):N0}","district-road-family-price"));
+                copy.Add(StyledLabel(proposal==null?$"FROM ${style.BaseCost:N0} + ${style.CostPerMeter}/M":$"${style.Price(Vector2.Distance(DistrictBridgePlanner.Center(d,options[style.Id].Start),DistrictBridgePlanner.Center(d,options[style.Id].End))):N0}","district-road-family-price"));
                 var detail=StyledLabel(style.Description,"document-modal-copy");detail.style.whiteSpace=WhiteSpace.Normal;copy.Add(detail);card.Add(copy);list.Add(card);
             }
             panel.Add(list);
@@ -83,7 +95,8 @@ namespace CityForgeV3.UI
                 panel.style.width=480;panel.style.marginRight=18;
                 panel.parent.style.alignItems=Align.FlexEnd;
                 panel.parent.style.backgroundColor=new Color(0,0,0,.12f);
-                _districtWorld.PreviewDistrictBridge(d,proposal);
+                if(selected!=null)_districtWorld.PreviewDistrictBridge(d,selected);
+                else panel.Add(StyledLabel("No bridge can span this crossing. Try a narrower stretch of river.","document-modal-copy"));
                 panel.RegisterCallback<DetachFromPanelEvent>(_=>_districtWorld?.HideDistrictBridgePreview());
             }
             else if(d.Bridges?.Count>0)
@@ -106,24 +119,30 @@ namespace CityForgeV3.UI
                     _builderCategory="Roads";if(!IsDistrictRoadToolActive())_builderTool=DistrictRoadPlacementModel.AntiqueBrickFamily;
                     RemoveDocumentModal();Show(AppScreen.DistrictTerraform);
                 }));
-            else
+            else if(selected!=null)
             {
-                var price=DistrictBridgeCatalog.Find(proposal.StyleId).Price(length);
+                var price=DistrictBridgeCatalog.Find(selected.StyleId).Price(length);
                 int reserve=2*DistrictRoadPlacementModel.CostPerTile(proposal.RoadFamily);
                 if(d.Treasury<price+reserve)panel.Add(StyledLabel($"Requires ${price+reserve:N0} including connecting road tiles.","document-modal-copy"));
-                actions.Add(CfButton.Create($"BUILD — ${price:N0}",()=>BuildDistrictBridge(d,proposal),d.Treasury>=price+reserve));
+                actions.Add(CfButton.Create($"BUILD — ${price:N0}",()=>BuildDistrictBridge(d,selected),d.Treasury>=price+reserve));
             }
             panel.Add(actions);
         }
         void BuildDistrictBridge(RegionCityTile d,PlacedDistrictBridge b)
         {
+            if(b.StyleId.StartsWith("stone-")&&!b.FixedModel)return;
             var direction=new Vector2Int(System.Math.Sign(b.End.x-b.Start.x),System.Math.Sign(b.End.y-b.Start.y));
             // Check the captured footprint again before making any edits (simulation may have continued behind the modal).
             var a=DistrictBridgePlanner.Center(d,b.Start);var z=DistrictBridgePlanner.Center(d,b.End);
             var axis=(z-a).normalized;var side=new Vector2(-axis.y,axis.x);int steps=Mathf.CeilToInt(Vector2.Distance(a,z)/2);
             for(int i=0;i<=steps;i++)for(int lane=-2;lane<=2;lane++)
-                if(DistrictBridgeOccupied(d,Vector2.Lerp(a,z,(float)i/steps)+side*(lane*DistrictBridgePlanner.HalfWidth*.5f)))
+            {
+                float along=Vector2.Distance(a,z)*i/steps;
+                bool approach=along<=(b.FixedModel?b.NearApproach:DistrictBridgePlanner.RampLength)||along>=Vector2.Distance(a,z)-(b.FixedModel?b.FarApproach:DistrictBridgePlanner.RampLength);
+                var point=Vector2.Lerp(a,z,(float)i/steps)+side*(lane*(approach?DistrictBridgePlanner.ApproachHalfWidth:DistrictBridgePlanner.HalfWidth)*.5f);
+                if(DistrictBridgeOccupied(d,point)||(approach&&_districtWorld.SampleBridgeSurface(point).Water))
                 {RemoveDocumentModal();return;}
+            }
             int price=DistrictBridgeCatalog.Find(b.StyleId).Price(Vector2.Distance(a,z));
             if(d.Treasury<price+2*DistrictRoadPlacementModel.CostPerTile(b.RoadFamily))return;
             var session=DistrictRoadSession(d);int treasury=d.Treasury-price;
