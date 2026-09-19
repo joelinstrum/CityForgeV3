@@ -19,6 +19,8 @@ public static class FixedStoneBridgeQa
             var d=new RegionCityTile{Width=1,Height=1,TileId="fixed-bridge-qa"};
             d.Rivers.Add(new(){InstanceId="river",WidthMeters=width,Depth=DistrictRiverDepth.Deep,Points=new(){new(.5f,.1f),new(.5f,.9f)}});
             var host=new GameObject("Fixed bridge QA");var world=host.AddComponent<DistrictWorldController>();world.Build(d);
+            if((world.WorldCamera.depthTextureMode&DepthTextureMode.Depth)==0)
+                throw new Exception("River depth transparency camera texture is disabled");
             if(!DistrictBridgePlanner.TryPlan(d,new(27,32),Vector2Int.right,world.SampleBridgeSurface,_=>false,out var proposal,out var reason))throw new Exception(reason);
             bool shortFits=false,longFits=false;
             foreach(var style in DistrictBridgeCatalog.Styles.Where(s=>s.Id.StartsWith("stone-")))

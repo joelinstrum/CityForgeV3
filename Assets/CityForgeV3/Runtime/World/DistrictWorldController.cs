@@ -2405,6 +2405,9 @@ namespace CityForgeV3.World
             _camera.nearClipPlane = 0.1f;
             _camera.farClipPlane = 10000f;
             _camera.depth = 10f;
+            // River transparency samples opaque scene depth so bridge piers
+            // and banks remain visible just beneath the water surface.
+            _camera.depthTextureMode |= DepthTextureMode.Depth;
         }
 
         private void BuildSun()
