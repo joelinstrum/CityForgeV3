@@ -36,6 +36,17 @@ public static class DistrictBridgeQa
             b.StyleId=style.Id;world.PreviewDistrictBridge(d,b);
             camera.Render();report+=$"{style.Id}: UnityStats draw calls={UnityStats.drawCalls}, batches={UnityStats.batches}, triangles={UnityStats.triangles} (manual Camera.Render)\n";RenderTexture.active=target;var image=new Texture2D(1500,1000,TextureFormat.RGB24,false);
             image.ReadPixels(new Rect(0,0,1500,1000),0,0);image.Apply();File.WriteAllBytes(Path.Combine(output,style.Id+".png"),image.EncodeToPNG());Object.DestroyImmediate(image);
+            if(style.Id=="stone")
+            {
+                world.HideDistrictBridgePreview();var originalEnd=b.End;b.End=b.Start+Vector2Int.right*12;
+                var longEnd=DistrictBridgePlanner.Center(d,b.End);var longCenter=(a+longEnd)*.5f;
+                world.PreviewDistrictBridge(d,b);camera.orthographicSize=70;
+                camera.transform.position=new Vector3(longCenter.x+100,82,longCenter.y-115);camera.transform.LookAt(new Vector3(longCenter.x,1,longCenter.y));
+                camera.Render();RenderTexture.active=target;var repeated=new Texture2D(1500,1000,TextureFormat.RGB24,false);
+                repeated.ReadPixels(new Rect(0,0,1500,1000),0,0);repeated.Apply();File.WriteAllBytes(Path.Combine(output,"stone-repeated.png"),repeated.EncodeToPNG());Object.DestroyImmediate(repeated);
+                world.HideDistrictBridgePreview();b.End=originalEnd;camera.orthographicSize=31;
+                camera.transform.position=new Vector3(center.x+55,48,center.y-65);camera.transform.LookAt(new Vector3(center.x,1,center.y));
+            }
             world.HideDistrictBridgePreview();GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();var watch=Stopwatch.StartNew();long before=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();
             world.AddDistrictBridge(d,b);watch.Stop();long allocated=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-before;
             int renderers=go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches");

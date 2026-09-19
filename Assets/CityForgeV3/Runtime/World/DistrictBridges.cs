@@ -33,7 +33,7 @@ namespace CityForgeV3.World
             new("covered-wood", "Covered Wooden Bridge", "CityForgeV3/Bridges/CoveredWoodenV01",
                 "A sheltered timber crossing with repeating roof bays and river piers.", 800, 35),
             new("stone", "Stone Arch Bridge", "CityForgeV3/Bridges/StoneV02",
-                "The supplied masonry bridge with original ends and one fitted center arch.", 1600, 60)
+                "The supplied masonry bridge with original ends and repeating center arches.", 1600, 60)
         };
         public static DistrictBridgeStyle Find(string id)
         { foreach(var style in Styles) if(style.Id==id) return style; return null; }

@@ -70,7 +70,10 @@ namespace CityForgeV3.World
             {sourceX=package.sourceMin+(along-DistrictBridgePlanner.RampLength)/35f;shift=package.leftEndDeck;}
             else if(along<connector+usable)
             {
-                float t=(along-connector)/usable;
+                int bays=Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
+                float bay=usable/bays;
+                float t=Mathf.Repeat(along-connector,bay)/bay;
+                if(Mathf.Approximately(along,connector+usable))t=1;
                 sourceX=Mathf.Lerp(package.leftCut,package.rightCut,t);
                 shift=Mathf.Lerp(package.leftEndDeck,package.rightEndDeck,t);
             }
@@ -149,7 +152,7 @@ namespace CityForgeV3.World
             float rightCap=package.singleMiddle?package.rightCapLength:package.capLength;
             float usable=span-2*DistrictBridgePlanner.RampLength-package.capLength-rightCap;
             if(usable<=0)return null;
-            int bays=package.singleMiddle?1:Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
+            int bays=Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
             float bay=usable/bays;
             var root=new GameObject((preview?"Preview — ":"")+DistrictBridgeCatalog.Find(b.StyleId).Name);
             root.transform.SetParent(_content,false);root.transform.localPosition=new Vector3(a.x,b.DeckHeight,a.y);
@@ -194,7 +197,8 @@ namespace CityForgeV3.World
                     float rightShift=-package.rightEndDeck;
                     if(module.name=="Entrance_Start")Append(module,connector,1,leftShift,leftShift);
                     else if(module.name=="Entrance_End")Append(module,connector+usable-package.bayLength,1,rightShift,rightShift);
-                    else if(module.name=="Middle_Bay")Append(module,connector,usable/package.bayLength,leftShift,rightShift);
+                    else if(module.name=="Middle_Bay")
+                        for(int i=0;i<bays;i++)Append(module,connector+i*bay,bay/package.bayLength,leftShift,rightShift);
                 }
                 else if(module.name=="Entrance_Start")Append(module,connector,1);
                 else if(module.name=="Entrance_End")Append(module,connector+usable,1);
