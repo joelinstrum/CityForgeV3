@@ -1,0 +1,12 @@
+24 m river / stone-original: available
+  Original topology and all 7006 vertices preserved; length 34.33 m; approaches 27.83/27.83 m.
+24 m river / stone-long: available
+  Original topology and all 13581 vertices preserved; length 50.37 m; approaches 19.81/19.81 m.
+  Build, in-memory undo, and serialized reload passed.
+42 m river / stone-original: This bridge cannot reach dry ground on both banks.
+42 m river / stone-long: available
+  Original topology and all 13581 vertices preserved; length 50.37 m; approaches 19.81/19.81 m.
+  Build, in-memory undo, and serialized reload passed.
+  25 long bridges: 75 renderers; camera CPU submission median 0.71 ms / max 1.12 ms; 100,000 travel queries 56.00 ms / heap delta 0 bytes. GPU/full frame time unverified.
+64 m river / stone-original: This bridge cannot reach dry ground on both banks.
+64 m river / stone-long: This bridge cannot reach dry ground on both banks.

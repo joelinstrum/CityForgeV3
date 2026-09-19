@@ -192,6 +192,8 @@ namespace CityForgeV3.World
         public List<DistrictLotNudge> LotNudges = new();
         public List<PlacedRoadPiece> Roads = new();
         public List<PlacedDistrictRiver> Rivers = new();
+        public List<PlacedDistrictBridge> Bridges = new();
+        public int BridgeRevision;
         public bool RiversEditedLocally;
         public List<PlacedDistrictFlora> Flora = new();
         public int Treasury = 280000;

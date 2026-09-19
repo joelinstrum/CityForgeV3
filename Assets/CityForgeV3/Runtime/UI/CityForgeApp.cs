@@ -602,6 +602,8 @@ namespace CityForgeV3.UI
         // the player clicks directly in the district Game view. Poll
         // the physical key here so G works regardless of which visual
         // element last owned focus.
+        if(_districtBridgeModalOpen)
+        { if(Input.GetKeyDown(KeyCode.Escape))RemoveDocumentModal();return; }
         if (_districtMarqueeActive)
         {
           if (Input.GetKeyDown(KeyCode.Escape)) CancelDistrictSelectionPointer();
@@ -737,6 +739,12 @@ namespace CityForgeV3.UI
 
     private void OnKeyDown(KeyDownEvent evt)
     {
+      if(_districtBridgeModalOpen)
+      {
+        if(evt.keyCode==KeyCode.Escape){RemoveDocumentModal();evt.StopImmediatePropagation();}
+        else if(evt.keyCode is KeyCode.Delete or KeyCode.Backspace or KeyCode.Z or KeyCode.R)evt.StopImmediatePropagation();
+        return;
+      }
       if (_drawingNationalPike && evt.keyCode == KeyCode.Escape)
       { CancelNationalPike(); evt.StopImmediatePropagation(); return; }
       if(_placingBrickworks && (evt.keyCode==KeyCode.R||evt.keyCode==KeyCode.Escape))
@@ -7185,6 +7193,8 @@ namespace CityForgeV3.UI
 
     private void RemoveDocumentModal()
     {
+      _districtBridgeModalOpen=false;
+      _districtWorld?.HideDistrictBridgePreview();
       _root?.Q<VisualElement>("document-modal")?.RemoveFromHierarchy();
     }
 

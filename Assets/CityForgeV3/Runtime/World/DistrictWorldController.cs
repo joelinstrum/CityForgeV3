@@ -127,6 +127,7 @@ namespace CityForgeV3.World
         private readonly Dictionary<int, Mesh> _antiqueDiagonalMeshes = new();
         private Material _antiqueDiagonalMaterial;
         private readonly List<RuntimeRiverSurface> _riverSurfaces = new();
+        private readonly DistrictSpatialIndex<RuntimeRiverSurface> _riverSurfaceIndex = new(64);
         private readonly List<Renderer> _riverGrassEdgeRenderers = new();
         private Camera _camera;
         private Light _sun;
@@ -265,6 +266,7 @@ namespace CityForgeV3.World
         {
             ClearWorld();
             if (district == null) return;
+            DistrictRoadPlacementModel.InvalidateNetwork(district.Roads);
             DistrictLotSimulation.Rebuild(district);
             _widthMeters = DistrictScale.SizeMeters(district.Width);
             _depthMeters = DistrictScale.SizeMeters(district.Height);
@@ -282,6 +284,7 @@ namespace CityForgeV3.World
             BuildGround();
             RefreshRivers(district);
             RefreshRoads(district);
+            BuildDistrictBridges(district);
             RefreshFlora(district);
             RefreshNaturalResources(district);
             BuildGrid();
@@ -378,6 +381,7 @@ namespace CityForgeV3.World
             _riverRoot = new GameObject("District Rivers").transform;
             _riverRoot.SetParent(_content, false);
             _riverSurfaces.Clear();
+            _riverSurfaceIndex.Clear();
             _riverGrassEdgeRenderers.Clear();
             foreach (var river in district.Rivers ??
                      new List<PlacedDistrictRiver>())
@@ -1064,9 +1068,16 @@ namespace CityForgeV3.World
                 break;
             }
             var waterWidth = Mathf.Max(.01f, waterHalfWidth - .10f) * 2f;
-            _riverSurfaces.Add(new RuntimeRiverSurface(centerline, halfWidth,
+            var runtimeSurface = new RuntimeRiverSurface(centerline, halfWidth,
                 dirtOuterDistance, waterWidth * .5f, waterElevation,
-                terrainSurface, depthScale, deep));
+                terrainSurface, depthScale, deep);
+            _riverSurfaces.Add(runtimeSurface);
+            for(int i=1;i<centerline.Count;i++)
+            {
+                var min=Vector2.Min(centerline[i-1],centerline[i])-Vector2.one*halfWidth;
+                var max=Vector2.Max(centerline[i-1],centerline[i])+Vector2.one*halfWidth;
+                _riverSurfaceIndex.Add(Rect.MinMaxRect(min.x,min.y,max.x,max.y),runtimeSurface,true);
+            }
             AddRiverWaterSurface(centerline, waterWidth, waterElevation,
                 waterTexture, $"River Water — {river.InstanceId}", deep);
         }
@@ -1083,10 +1094,12 @@ namespace CityForgeV3.World
             RuntimeRiverSurface best = null;
             RuntimeRiverSurface.ClosestPoint closest = default;
             var bestDistance = float.PositiveInfinity;
-            foreach (var river in _riverSurfaces)
+            var nearbyRivers=_riverSurfaceIndex.Query(new Vector2(local.x,local.z));
+            for(int riverIndex=0;riverIndex<nearbyRivers.Count;riverIndex++)
             {
+                var river=nearbyRivers[riverIndex];
                 var candidate = river.FindClosest(new Vector2(local.x, local.z));
-                if (candidate.AbsoluteLateral >= bestDistance) continue;
+                if (candidate.AbsoluteLateral > river.HalfWidth || candidate.AbsoluteLateral >= bestDistance) continue;
                 best = river;
                 closest = candidate;
                 bestDistance = candidate.AbsoluteLateral;
@@ -1207,8 +1220,9 @@ namespace CityForgeV3.World
                 var candidates=_segmentsByCell.Query(point);
                 if(candidates.Count==0)
                     return new ClosestPoint(bestDistance,0,0,Vector2.up);
-                foreach(var i in candidates)
+                for(int candidateIndex=0;candidateIndex<candidates.Count;candidateIndex++)
                 {
+                    int i=candidates[candidateIndex];
                     var segment = _points[i + 1] - _points[i];
                     var length = _segmentLengths[i];
                     if (length <= .0001f) continue;
@@ -2265,13 +2279,15 @@ namespace CityForgeV3.World
         }
 
         private void OnDisable() => RestoreAfternoonSceneLights();
-        private void OnDestroy() => RestoreAfternoonSceneLights();
+        private void OnDestroy() { ClearDistrictBridges();RestoreAfternoonSceneLights(); }
         private void OnEnable()
         { if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay); }
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             TimeOfDay = preset;
+            foreach(var bridgeRamp in _bridgeRampMaterials.Values)
+                bridgeRamp.SetColor("_TimeTint",TimeOfDayLighting.For(preset).NeutralArtworkTint);
             if (_antiqueDiagonalMaterial != null)
                 _antiqueDiagonalMaterial.SetColor("_TimeTint",
                     TimeOfDayLighting.For(preset).NeutralArtworkTint);
@@ -2389,6 +2405,9 @@ namespace CityForgeV3.World
             _camera.nearClipPlane = 0.1f;
             _camera.farClipPlane = 10000f;
             _camera.depth = 10f;
+            // River transparency samples opaque scene depth so bridge piers
+            // and banks remain visible just beneath the water surface.
+            _camera.depthTextureMode |= DepthTextureMode.Depth;
         }
 
         private void BuildSun()
@@ -2564,6 +2583,8 @@ namespace CityForgeV3.World
 
         private void ClearWorld()
         {
+            ClearDistrictBridges();
+            _cachedTimberNavigation=null;_timberNavigationDistrict=null;
             _rainStorm = null;
             _clouds = null;
             _floraBatches = null;
@@ -2590,6 +2611,7 @@ namespace CityForgeV3.World
             // replacement roads to the old, inactive root awaiting destruction.
             _roadArtworkRoot = null;
             _riverSurfaces.Clear();
+            _riverSurfaceIndex.Clear();
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
             _pendingForestSeason = null;

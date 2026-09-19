@@ -73,7 +73,7 @@ namespace CityForgeV3.World
         float TimberGround(Vector3 world)
         {
             var local = _content.InverseTransformPoint(world);
-            return _content.TransformPoint(new Vector3(local.x, TerrainElevation(local.x,local.z) + .02f, local.z)).y;
+            return _content.TransformPoint(new Vector3(local.x, TravelElevation(new Vector2(local.x,local.z)), local.z)).y;
         }
         Vector3 TimberWorld(Vector2 p) => _content.TransformPoint(new Vector3(p.x,0,p.y));
         Vector2 TimberLocal(Vector3 p) { var local = _content.InverseTransformPoint(p); return new Vector2(local.x,local.z); }
@@ -111,7 +111,7 @@ namespace CityForgeV3.World
 #if UNITY_EDITOR
         public string DiagnoseTimber(RegionCityTile d)
         {
-            var nav=new DistrictTimberNavigation(d,IsUnderRiverWater);
+            var nav=new DistrictTimberNavigation(d,IsBlockedByRiverForTravel);
             var report="";
             foreach(var c in d.Labor.TimberCrews){
                 var targets=nav.Mills(c.WagonPosition);
@@ -127,6 +127,9 @@ namespace CityForgeV3.World
             return report;
         }
 #endif
+        DistrictTimberNavigation _cachedTimberNavigation;
+        RegionCityTile _timberNavigationDistrict;
+        int _timberNavigationKey;
         public bool TickTimber(RegionCityTile district, LotWorldController factory, bool running, float dt)
         {
             if (_content == null) return false;
@@ -148,9 +151,13 @@ namespace CityForgeV3.World
             foreach(var id in timberViews.Keys.Where(id=>!crews.Any(c=>c.Id==id)).ToArray())
             {if(timberViews[id].Wagon!=null)Destroy(timberViews[id].Wagon.gameObject);timberViews.Remove(id);}
             if (crews.Count == 0) return false;
-            var nav=new DistrictTimberNavigation(district,IsUnderRiverWater);
-            int roadKey=17;
-            unchecked{foreach(var road in district.Roads??new())roadKey=roadKey*31+road.GridX*397+road.GridZ;}
+            int roadKey=DistrictRoadPlacementModel.NetworkKey(district);
+            if(_cachedTimberNavigation==null || _timberNavigationDistrict!=district || _timberNavigationKey!=roadKey)
+            {
+                _cachedTimberNavigation=new DistrictTimberNavigation(district,IsBlockedByRiverForTravel);
+                _timberNavigationDistrict=district;_timberNavigationKey=roadKey;
+            }
+            var nav=_cachedTimberNavigation;
             bool durable=false;
             foreach(var crew in crews)
             {
@@ -159,7 +166,7 @@ namespace CityForgeV3.World
                 {
                     var root=factory.CreateHorseCarriagePresentation("Lumber Wagon "+crew.WagonId,1,LotWorldController.HorseForestryWagonPropId,TimberGround);
                     if(root==null){crew.Status="Lumber wagon model unavailable";continue;}
-                    root.SetParent(timberRoot,false);root.localPosition=new Vector3(crew.WagonPosition.x,TerrainElevation(crew.WagonPosition.x,crew.WagonPosition.y)+.02f,crew.WagonPosition.y);
+                    root.SetParent(timberRoot,false);root.localPosition=new Vector3(crew.WagonPosition.x,TravelElevation(crew.WagonPosition),crew.WagonPosition.y);
                     var wagon=root.GetComponent<HorseCarriageController>();wagon.RestoreHeadings(crew.HorseHeading,crew.BodyHeading,crew.FrontHeading);
                     view=new TimberView{Wagon=wagon,Cargo=new GameObject("Timber Cargo").transform};
                     view.Cargo.SetParent(wagon.Carriage,false);

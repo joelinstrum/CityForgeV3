@@ -88,10 +88,9 @@ namespace CityForgeV3.World
         public bool TickQuarryDeliveries(RegionCityTile d,bool running,float dt)
         {
             if(!running||dt<=0||d.StoneSites==null||!d.StoneSites.Any(s=>s.Built&&s.Enabled&&(s.Phase=="full"||s.Phase=="delivering"||s.Phase=="unloading"||s.Phase=="returning")))return false;bool changed=false;
-            int navigationKey=17;
+            int navigationKey=DistrictRoadPlacementModel.NetworkKey(d);
             unchecked
             {
-                foreach(var road in d.Roads??new())navigationKey=navigationKey*31+road.GridX*397+road.GridZ;
                 foreach(var q in d.StoneSites??new())navigationKey=navigationKey*31+q.Yaw.GetHashCode()+DistrictQuarry.Point(d,q).GetHashCode();
                 foreach(var b in d.Brickworks??new())navigationKey=navigationKey*31+b.Id.GetHashCode()+b.NormalizedX.GetHashCode()+b.NormalizedZ.GetHashCode()+b.Yaw.GetHashCode()+DistrictBrickworks.Point(d,b).GetHashCode();
             }

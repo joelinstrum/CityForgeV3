@@ -12,6 +12,9 @@ Shader "CityForgeV3/RiverWaterSurface"
         _DeepWaterStart ("Deep Water Start", Range(0,1)) = 0.24
         _DeepWaterStrength ("Deep Water Strength", Range(0,1)) = 0.58
         _DepthBlendSoftness ("Depth Blend Softness", Range(0.02,1)) = 0.56
+        _SubmergedOpacity ("Near Submerged Opacity", Range(0,1)) = 0.60
+        _SubmergedFadeStart ("Submerged Fade Start", Range(0,4)) = 0.12
+        _SubmergedFadeEnd ("Submerged Fade End", Range(0.2,12)) = 2.2
         _FlowSpeed ("Flow Speed", Range(-0.1,0.1)) = 0.06
         _WaveDistortion ("Wave Distortion", Range(0,0.08)) = 0.025
         _WaveScale ("Wave Scale", Range(0.1,4)) = 0.75
@@ -59,11 +62,14 @@ Shader "CityForgeV3/RiverWaterSurface"
                 fixed4 color : COLOR;
                 float3 worldPosition : TEXCOORD1;
                 float3 worldNormal : TEXCOORD2;
+                float4 screenPosition : TEXCOORD4;
+                float eyeDepth : TEXCOORD5;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
             sampler2D _WhitecapTex;
+            UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
             fixed4 _Color;
             float _Brightness;
             float _Smoothness;
@@ -72,6 +78,9 @@ Shader "CityForgeV3/RiverWaterSurface"
             float _DeepWaterStart;
             float _DeepWaterStrength;
             float _DepthBlendSoftness;
+            float _SubmergedOpacity;
+            float _SubmergedFadeStart;
+            float _SubmergedFadeEnd;
             float _FlowSpeed;
             float _WaveDistortion;
             float _WaveScale;
@@ -94,6 +103,8 @@ Shader "CityForgeV3/RiverWaterSurface"
                 output.flow = input.flow;
                 output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
+                output.screenPosition = ComputeScreenPos(output.position);
+                output.eyeDepth = -UnityObjectToViewPos(input.vertex).z;
                 return output;
             }
 
@@ -195,6 +206,17 @@ Shader "CityForgeV3/RiverWaterSurface"
                 float deepOpacity = lerp(_CenterOpacity, 1.0,
                     _DeepWaterStrength * 0.12);
                 water.a *= lerp(_EdgeOpacity, deepOpacity, depthBlend);
+                // Fade by the actual distance from this water pixel to the
+                // opaque surface behind it. Stone immediately under the
+                // surface remains visible; deeper riverbed and foundations
+                // progressively regain the authored water opacity.
+                float sceneEyeDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(
+                    _CameraDepthTexture, UNITY_PROJ_COORD(input.screenPosition)));
+                float submergedDepth = max(0.0, sceneEyeDepth - input.eyeDepth);
+                float submergedFade = smoothstep(_SubmergedFadeStart,
+                    max(_SubmergedFadeStart + 0.01, _SubmergedFadeEnd),
+                    submergedDepth);
+                water.a *= lerp(_SubmergedOpacity, 1.0, submergedFade);
                 return water;
             }
             ENDCG

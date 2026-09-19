@@ -37,7 +37,7 @@ namespace CityForgeV3.World
                     if(root==null)continue;
                     axemen[w.Id]=root;
                 }
-                root.transform.localPosition=new Vector3(w.Position.x,.02f+TerrainElevation(w.Position.x,w.Position.y),w.Position.y);
+                root.transform.localPosition=new Vector3(w.Position.x,TravelElevation(w.Position),w.Position.y);
                 if(w.Facing.sqrMagnitude>.01f)root.transform.localRotation=Quaternion.LookRotation(new Vector3(w.Facing.x,0,w.Facing.y));
                 var p=root.GetComponent<ThreeDimensionalCharacterAnimator>();
                 string state=w.Activity==AxemanActivity.Chopping?"chop":w.Activity is AxemanActivity.Walking or AxemanActivity.Delivering or AxemanActivity.Returning or AxemanActivity.Retreating?"walk":"idle";

@@ -15,7 +15,7 @@ namespace CityForgeV3.UI
             // Spatial edits update this key; avoid serializing the district every frame.
             var key=_districtWorldCompositionKey;
             if(_laborNavigation==null||_laborDistrict!=d||_laborComposition!=key)
-            { _laborNavigation=new DistrictLaborNavigation(d,_districtWorld.IsUnderRiverWater);_laborDistrict=d;_laborComposition=key; }
+            { _laborNavigation=new DistrictLaborNavigation(d,_districtWorld.IsBlockedByRiverForTravel);_laborDistrict=d;_laborComposition=key; }
             return _laborNavigation;
         }
         private int _pendingLaborCount;
@@ -136,7 +136,7 @@ namespace CityForgeV3.UI
                 Resources.Load<GameObject>(HorseWagonDefinition.For(LotWorldController.HorseLumberWagonPropId).ResourcePath)==null||
                 !LaborDropValid(district,normalized))return false;
             var point=new Vector2((normalized.x-.5f)*DistrictScale.SizeMeters(district.Width),(normalized.y-.5f)*DistrictScale.SizeMeters(district.Height));
-            var nav=new DistrictTimberNavigation(district,_districtWorld.IsUnderRiverWater);
+            var nav=new DistrictTimberNavigation(district,_districtWorld.IsBlockedByRiverForTravel);
             var parking=nav.ParkingNear(point);
             if(parking.HasValue&&LaborNavigation(district).Route(point,parking.Value)==null)parking=null;
             var home=parking??point;

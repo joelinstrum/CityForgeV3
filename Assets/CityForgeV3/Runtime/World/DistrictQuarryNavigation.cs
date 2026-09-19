@@ -8,7 +8,7 @@ namespace CityForgeV3.World
     {
         readonly RegionCityTile district;readonly DistrictRoadDelivery roads;
         public DistrictQuarryNavigation(RegionCityTile d,DistrictStoneSite site,Func<Vector2,bool> water)
-        {district=d;roads=new(d);}
+        {district=d;roads=DistrictRoadDelivery.For(d);}
         public void BeginQuery() { }
         public bool Segment(Vector2 a,Vector2 b)=>true; // Delivery movement follows the precomputed road route.
         public List<Vector2> Route(Vector2 from,Vector2 to)=>roads.Route(from,to);
