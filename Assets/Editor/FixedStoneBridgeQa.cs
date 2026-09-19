@@ -9,7 +9,7 @@ using Object=UnityEngine.Object;
 public static class FixedStoneBridgeQa
 {
     [Serializable] sealed class Module {public Vector3[] vertices;public int[] triangles;}
-    [Serializable] sealed class Package {public float fixedLength;public Module[] modules;}
+    [Serializable] sealed class Package {public float fixedLength,halfWidth;public Module[] modules;}
     public static void Run()
     {
         string output="/tmp/cityforge-fixed-bridge-qa";Directory.CreateDirectory(output);
@@ -38,6 +38,16 @@ public static class FixedStoneBridgeQa
                     if(Vector3.Distance(vertices[i],asset.modules[0].vertices[i]+Vector3.forward*b.NearApproach)>.0001f)
                         throw new Exception("Original bridge vertex was deformed");
                 if(Mathf.Abs(body.bounds.size.z-asset.fixedLength)>.001f)throw new Exception("Fixed bridge was stretched");
+                var approach=host.GetComponentsInChildren<MeshFilter>().Single(f=>f.name=="Approaches").sharedMesh;
+                var approachColors=approach.colors;
+                if(approach.vertexCount!=16 || approachColors.Length!=16 ||
+                    !approachColors.Any(c=>c.a<.01f) || !approachColors.Any(c=>c.a>.99f))
+                    throw new Exception("Bridge road texture does not contain its opaque-to-transparent transition strips");
+                float expectedEntry=Mathf.Max(2.5f,asset.halfWidth-.35f);
+                var approachVertices=approach.vertices;
+                if(!approachVertices.Any(v=>Mathf.Abs(Mathf.Abs(v.x)-3.81f)<.01f) ||
+                    !approachVertices.Any(v=>Mathf.Abs(Mathf.Abs(v.x)-expectedEntry)<.01f))
+                    throw new Exception("Bridge road does not taper from road width to the model entry width");
                 var a=DistrictBridgePlanner.Center(d,b.Start);var z=DistrictBridgePlanner.Center(d,b.End);var center=(a+z)*.5f;
                 foreach(float joint in new[]{b.NearApproach,Vector2.Distance(a,z)-b.FarApproach})
                     if(Mathf.Abs(world.TravelElevation(a+Vector2.right*(joint-.001f))-world.TravelElevation(a+Vector2.right*(joint+.001f)))>.02f)

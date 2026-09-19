@@ -184,7 +184,8 @@ namespace CityForgeV3.World
             mesh.vertices=vertices;mesh.normals=source.normals;mesh.uv=source.uv;mesh.triangles=source.triangles;mesh.RecalculateBounds();
             var body=new GameObject("Bridge span");body.transform.SetParent(root.transform,false);
             body.AddComponent<MeshFilter>().sharedMesh=mesh;body.AddComponent<MeshRenderer>().sharedMaterial=assets.Material;
-            AddBridgeRamps(root.transform,b,span);AddBridgeEarthApproaches(root.transform,b,span);return root;
+            AddBridgeRamps(root.transform,b,span,Mathf.Max(2.5f,assets.Package.halfWidth-.35f),assets.Package);
+            AddBridgeEarthApproaches(root.transform,b,span);return root;
         }
         GameObject CreateBridge(RegionCityTile district,PlacedDistrictBridge b,bool preview)
         {
@@ -267,32 +268,47 @@ namespace CityForgeV3.World
             AddBridgeEarthApproaches(root.transform,b,span);
             return root;
         }
-        void AddBridgeRamps(Transform root,PlacedDistrictBridge b,float span)
+        void AddBridgeRamps(Transform root,PlacedDistrictBridge b,float span,float entryHalfWidth=3.81f,BridgePackage package=null)
         {
             string surfaceId=b.RoadFamily==DistrictRoadPlacementModel.AntiqueBrickFamily?"antique-brick":"dirt";
             var surface=RoadMaterialCatalog.Resolve(surfaceId);
             if(!_bridgeRampMaterials.TryGetValue(surfaceId,out var rampMaterial))
             {
-                rampMaterial=new Material(Shader.Find("CityForgeV3/ShadowReceivingRoadOverlay"))
+                rampMaterial=new Material(Shader.Find("CityForgeV3/BridgeApproachBlend"))
                 {name="Bridge approach — "+surface.DisplayName,mainTexture=surface.LoadTexture()};
-                rampMaterial.SetFloat("_UseWorldUv",0);rampMaterial.SetFloat("_MaterialTiling",surface.TilesPerTenMeters);
+                rampMaterial.SetFloat("_MaterialTiling",surface.TilesPerTenMeters);
                 rampMaterial.SetColor("_TimeTint",TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
                 _bridgeRampMaterials[surfaceId]=rampMaterial;
             }
-            var verts=new List<Vector3>();var uv=new List<Vector2>();var tris=new List<int>();
-            void Ramp(float z0,float y0,float z1,float y1)
+            var verts=new List<Vector3>();var uv=new List<Vector2>();var colors=new List<Color>();var tris=new List<int>();
+            float tile=surface.TilesPerTenMeters/10f;
+            void Strip(float z0,float y0,float width0,float alpha0,float z1,float y1,float width1,float alpha1)
             {
-                int start=verts.Count;const float width=3.81f;
-                verts.Add(new(-width,y0,z0));verts.Add(new(-width,y1,z1));verts.Add(new(width,y1,z1));verts.Add(new(width,y0,z0));
-                float tile=surface.TilesPerTenMeters/10f;
+                int start=verts.Count;
+                verts.Add(new(-width0,y0,z0));verts.Add(new(-width1,y1,z1));verts.Add(new(width1,y1,z1));verts.Add(new(width0,y0,z0));
                 for(int i=start;i<start+4;i++)
                 {var world=root.TransformPoint(verts[i]);uv.Add(new(world.x*tile,world.z*tile));}
+                colors.Add(new(1,1,1,alpha0));colors.Add(new(1,1,1,alpha1));
+                colors.Add(new(1,1,1,alpha1));colors.Add(new(1,1,1,alpha0));
                 tris.AddRange(new[]{start,start+1,start+2,start,start+2,start+3});
-
             }
-            Ramp(0,b.StartHeight-b.DeckHeight,b.FixedModel?b.NearApproach:DistrictBridgePlanner.RampLength,0);
-            Ramp(span-(b.FixedModel?b.FarApproach:DistrictBridgePlanner.RampLength),b.FixedModel?b.EndDeckOffset:0,span,b.EndHeight-b.DeckHeight);
-            var mesh=new Mesh{name="Bridge approaches"};mesh.SetVertices(verts);mesh.SetUVs(0,uv);mesh.SetTriangles(tris,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
+            float near=b.FixedModel?b.NearApproach:DistrictBridgePlanner.RampLength;
+            float far=b.FixedModel?b.FarApproach:DistrictBridgePlanner.RampLength;
+            float blend=b.FixedModel?Mathf.Min(2f,(package?.fixedLength??4)*.12f):0;
+            float NearDeck(float metres)
+            {
+                var profile=package?.deckHeights;if(profile==null||profile.Length<2||package.fixedLength<=0)return 0;
+                float sample=Mathf.Clamp01(metres/package.fixedLength)*(profile.Length-1);
+                int index=Mathf.Min(Mathf.FloorToInt(sample),profile.Length-2);
+                return Mathf.Lerp(profile[index],profile[index+1],sample-index);
+            }
+            Strip(0,b.StartHeight-b.DeckHeight,3.81f,1,near,.025f,entryHalfWidth,1);
+            if(blend>0)Strip(near,.025f,entryHalfWidth,1,near+blend,NearDeck(blend)+.025f,entryHalfWidth,0);
+            float bodyEnd=span-far;
+            if(blend>0)Strip(bodyEnd-blend,NearDeck(package.fixedLength-blend)+.025f,entryHalfWidth,0,
+                bodyEnd,b.EndDeckOffset+.025f,entryHalfWidth,1);
+            Strip(bodyEnd,b.FixedModel?b.EndDeckOffset+.025f:0,entryHalfWidth,1,span,b.EndHeight-b.DeckHeight,3.81f,1);
+            var mesh=new Mesh{name="Bridge approaches"};mesh.SetVertices(verts);mesh.SetUVs(0,uv);mesh.SetColors(colors);mesh.SetTriangles(tris,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
             var go=new GameObject("Approaches");go.transform.SetParent(root,false);go.AddComponent<MeshFilter>().sharedMesh=mesh;go.AddComponent<MeshRenderer>().sharedMaterial=rampMaterial;
         }
 
