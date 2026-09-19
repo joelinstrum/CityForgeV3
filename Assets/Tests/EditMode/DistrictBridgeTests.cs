@@ -22,6 +22,22 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(DistrictBridgePlanner.Height(d,b,20),Is.EqualTo(b.DeckHeight));
         }
         [Test]
+        public void GradedApproachReservesShoulderSpaceOutsideRoadWidth()
+        {
+            var d=District();
+            Assert.That(DistrictBridgePlanner.TryPlan(d,new(62,64),Vector2Int.right,River,
+                p=>p.x<-20 && Mathf.Abs(p.y-5)>6,out _,out _),Is.False,
+                "A lot on the grass shoulder must block construction, even when the road is clear.");
+            var bridge=new PlacedDistrictBridge{Start=new(61,64),End=new(66,64)};
+            var start=DistrictBridgePlanner.Center(d,bridge.Start);
+            Assert.That(DistrictBridgePlanner.Contains(d,bridge,start+new Vector2(4,7),
+                DistrictBridgePlanner.HalfWidth,out _),Is.True);
+            Assert.That(DistrictBridgePlanner.Contains(d,bridge,start+new Vector2(4,7),
+                DistrictBridgePlanner.TravelHalfWidth,out _),Is.False);
+            Assert.That(DistrictBridgePlanner.Contains(d,bridge,start+new Vector2(25,7),
+                DistrictBridgePlanner.HalfWidth,out _),Is.False);
+        }
+        [Test]
         public void RejectsWaterWithoutAnOppositeBankWithinBudget()
         {
             int queries=0;var d=District();

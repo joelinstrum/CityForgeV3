@@ -44,6 +44,7 @@ namespace CityForgeV3.World
     public static class DistrictBridgePlanner
     {
         public const float HalfWidth = 4.5f;
+        public const float ApproachHalfWidth = 7.5f;
         public const float TravelHalfWidth = 2.5f;
         public const float RampLength = 8f;
         public const float MaxLength = 240f;
@@ -61,14 +62,15 @@ namespace CityForgeV3.World
         public static Rect Bounds(RegionCityTile d, PlacedDistrictBridge b)
         {
             var a=Center(d,b.Start);var z=Center(d,b.End);
-            return Rect.MinMaxRect(Mathf.Min(a.x,z.x)-HalfWidth,Mathf.Min(a.y,z.y)-HalfWidth,
-                Mathf.Max(a.x,z.x)+HalfWidth,Mathf.Max(a.y,z.y)+HalfWidth);
+            return Rect.MinMaxRect(Mathf.Min(a.x,z.x)-ApproachHalfWidth,Mathf.Min(a.y,z.y)-ApproachHalfWidth,
+                Mathf.Max(a.x,z.x)+ApproachHalfWidth,Mathf.Max(a.y,z.y)+ApproachHalfWidth);
         }
         public static bool Contains(RegionCityTile d, PlacedDistrictBridge b, Vector2 p, float halfWidth, out float along)
         {
             var a=Center(d,b.Start);var delta=Center(d,b.End)-a;var length=delta.magnitude;
             if(length<1){along=0;return false;}
             var axis=delta/length;along=Vector2.Dot(p-a,axis);
+            if(halfWidth>=HalfWidth && (along<=RampLength || along>=length-RampLength))halfWidth=Mathf.Max(halfWidth,ApproachHalfWidth);
             return along>=0 && along<=length && Mathf.Abs((p.x-a.x)*axis.y-(p.y-a.y)*axis.x)<=halfWidth;
         }
         public static float Height(RegionCityTile d, PlacedDistrictBridge b, float along)
@@ -99,7 +101,7 @@ namespace CityForgeV3.World
                 for(int station=0;station<=4;station++)
                 for(int lane=-2;lane<=2;lane++)
                 {
-                    var point=origin+axis*(near?1:-1)*(RampLength*station/4f)+side*(lane*HalfWidth*.5f);
+                    var point=origin+axis*(near?1:-1)*(RampLength*station/4f)+side*(lane*ApproachHalfWidth*.5f);
                     if(sample(point).Water)return false;
                 }
                 return true;
@@ -134,7 +136,8 @@ namespace CityForgeV3.World
                 float along=span*i/samples;var p=Vector2.Lerp(a,z,(float)i/samples);
                 for(int lane=-2;lane<=2;lane++)
                 {
-                    var q=p+side*(lane*HalfWidth*.5f);var s=sample(q);
+                    float corridor=(along<=RampLength||along>=span-RampLength)?ApproachHalfWidth:HalfWidth;
+                    var q=p+side*(lane*corridor*.5f);var s=sample(q);
                     if(occupied(q)){reason="Clear buildings or an existing bridge from this crossing.";return false;}
                     if((along<RampLength || along>span-RampLength) && s.Water)
                     {reason="The approach needs more dry land. Try a straighter crossing.";return false;}

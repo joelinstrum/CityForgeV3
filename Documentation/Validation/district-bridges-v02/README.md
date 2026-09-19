@@ -1,5 +1,8 @@
 # Stone bridge V02 validation
 
+Historical V02 record. See the sibling V03 documentation for matched module joints and graded earth approaches.
+
+
 Unity 6000.1.12f1, `feature/district-bridges`, September 18, 2026. Validation ran in the feature worktree; the separate main Unity editor was not controlled. [Current Unity river render](stone.png) shows the supplied bridge's three distinct arches at its shortest supported span. [Repeated-middle Unity render](stone-repeated.png) shows a 120 m assembly retaining both original ends and repeating complete center arches. [Source-mesh assembly](stone-mesh.png) shows the geometry and texture in isolation. The former mirrored StoneV01 preview is in the V01 validation record for comparison.
 
 The focused EditMode suite passed 87/87 checks, including bridge planning, river bank approaches, modal transactions, road delivery, undo, and existing river/road tests. The batch `DistrictBridgeQa.Run` passed bridge assembly, travel elevation, build/cancel/undo/reload transaction, and a 25-bridge synthetic render; see [report.txt](report.txt). That fixture produced a 50 m bridge over a 30 m authored river. The stone bridge assembled in 1.02 ms warm with two renderers. The 25-bridge render had 50 renderers and 30 synchronous camera submissions at 0.70 ms median, 1.09 ms maximum. Batch-mode UnityStats returned zero and cannot establish actual draw calls, GPU cost, or full frame timing. Dense mixed-district and long-duration profiling remain open.

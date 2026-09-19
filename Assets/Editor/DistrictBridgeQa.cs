@@ -40,17 +40,26 @@ public static class DistrictBridgeQa
             {
                 world.HideDistrictBridgePreview();var originalEnd=b.End;b.End=b.Start+Vector2Int.right*12;
                 var longEnd=DistrictBridgePlanner.Center(d,b.End);var longCenter=(a+longEnd)*.5f;
-                world.PreviewDistrictBridge(d,b);camera.orthographicSize=70;
+                world.AddDistrictBridge(d,b);
+                ValidateStoneSeams(go,world,d,b);
+                camera.orthographicSize=70;
                 camera.transform.position=new Vector3(longCenter.x+100,82,longCenter.y-115);camera.transform.LookAt(new Vector3(longCenter.x,1,longCenter.y));
                 camera.Render();RenderTexture.active=target;var repeated=new Texture2D(1500,1000,TextureFormat.RGB24,false);
                 repeated.ReadPixels(new Rect(0,0,1500,1000),0,0);repeated.Apply();File.WriteAllBytes(Path.Combine(output,"stone-repeated.png"),repeated.EncodeToPNG());Object.DestroyImmediate(repeated);
-                world.HideDistrictBridgePreview();b.End=originalEnd;camera.orthographicSize=31;
+                camera.orthographicSize=19;
+                camera.Render();RenderTexture.active=target;
+                var close=new Texture2D(1500,1000,TextureFormat.RGB24,false);close.ReadPixels(new Rect(0,0,1500,1000),0,0);close.Apply();
+                File.WriteAllBytes(Path.Combine(output,"stone-seams-close.png"),close.EncodeToPNG());Object.DestroyImmediate(close);
+                world.RemoveDistrictBridge(d,b);b.End=originalEnd;camera.orthographicSize=31;
                 camera.transform.position=new Vector3(center.x+55,48,center.y-65);camera.transform.LookAt(new Vector3(center.x,1,center.y));
             }
             world.HideDistrictBridgePreview();GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();var watch=Stopwatch.StartNew();long before=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();
             world.AddDistrictBridge(d,b);watch.Stop();long allocated=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-before;
-            int renderers=go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches");
+            int renderers=go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches"||r.name=="Graded earth approaches");
             if(world.BridgeAt(center)!=b)throw new Exception("Bridge spatial lookup failed");
+            var earth=go.GetComponentsInChildren<MeshFilter>().Single(f=>f.name=="Graded earth approaches").sharedMesh;
+            if(earth.vertexCount!=72 || earth.bounds.size.x<=7.9f)
+                throw new Exception("Graded approach shoulders are missing or exceed the fixed geometry budget");
             if(style.Id=="stone")
             {
                 var body=go.GetComponentsInChildren<MeshFilter>().First(f=>f.name=="Bridge span").sharedMesh.bounds;
@@ -104,7 +113,7 @@ public static class DistrictBridgeQa
         var frameWatch=new Stopwatch();
         for(int i=0;i<frameTimes.Length;i++){frameWatch.Restart();camera.Render();frameWatch.Stop();frameTimes[i]=frameWatch.Elapsed.TotalMilliseconds;}
         Array.Sort(frameTimes);
-        report+=$"Dense render: {d.Bridges.Count} bridges, {go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches")} bridge renderers; 30 synchronous Camera.Render calls median={frameTimes[15]:F2} ms max={frameTimes[29]:F2} ms; heap delta={UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-denseBefore}; UnityStats draw calls={UnityStats.drawCalls} batches={UnityStats.batches}. This is render submission timing, not game frame timing.\n";
+        report+=$"Dense render: {d.Bridges.Count} bridges, {go.GetComponentsInChildren<Renderer>().Count(r=>r.name=="Bridge span"||r.name=="Approaches"||r.name=="Graded earth approaches")} bridge renderers; 30 synchronous Camera.Render calls median={frameTimes[15]:F2} ms max={frameTimes[29]:F2} ms; heap delta={UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-denseBefore}; UnityStats draw calls={UnityStats.drawCalls} batches={UnityStats.batches}. This is render submission timing, not game frame timing.\n";
         RenderTexture.active=target;var denseImage=new Texture2D(1500,1000,TextureFormat.RGB24,false);denseImage.ReadPixels(new Rect(0,0,1500,1000),0,0);denseImage.Apply();File.WriteAllBytes(Path.Combine(output,"dense-bridges.png"),denseImage.EncodeToPNG());Object.DestroyImmediate(denseImage);
         frameWatch.Restart();denseBefore=UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();
         for(int i=0;i<100000;i++)world.TravelElevation(new Vector2((i%90)-45,(i%25)*20-235));
@@ -123,6 +132,38 @@ public static class DistrictBridgeQa
         timer.Stop();report+=$"Cached network (10,000 roads, 100,000 lookups): {timer.Elapsed.TotalMilliseconds:F2} ms, {UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong()-memory} heap delta bytes\n";
         File.WriteAllText(Path.Combine(output,"report.txt"),report);UnityEngine.Debug.Log(report);
         if(camera!=null)camera.targetTexture=null;RenderTexture.active=null;Object.DestroyImmediate(target);Object.DestroyImmediate(go);
+    }
+    [Serializable] sealed class QaModule { public string name;public Vector3[] vertices; }
+    [Serializable] sealed class QaPackage { public QaModule[] modules; }
+    static void ValidateStoneSeams(GameObject host,DistrictWorldController world,RegionCityTile district,PlacedDistrictBridge bridge)
+    {
+        var package=JsonUtility.FromJson<QaPackage>(Resources.Load<TextAsset>(DistrictBridgeCatalog.Find("stone").Resource+"/modules").text);
+        var mesh=host.GetComponentsInChildren<MeshFilter>().Single(f=>f.name=="Bridge span").sharedMesh;
+        var vertices=mesh.vertices;
+        int left=package.modules.Single(m=>m.name=="Entrance_Start").vertices.Length;
+        int right=package.modules.Single(m=>m.name=="Entrance_End").vertices.Length;
+        int middle=package.modules.Single(m=>m.name=="Middle_Bay").vertices.Length;
+        int count=(vertices.Length-left-right)/middle;
+        if(count<3)throw new Exception("Long-span fixture did not repeat the middle");
+        var pieces=new System.Collections.Generic.List<Vector3[]> { vertices.Take(left).ToArray() };
+        for(int i=0;i<count;i++)pieces.Add(vertices.Skip(left+i*middle).Take(middle).ToArray());
+        pieces.Add(vertices.Skip(left+count*middle).ToArray());
+        for(int i=0;i<pieces.Count-1;i++)
+        {
+            float end=pieces[i].Max(v=>v.z),start=pieces[i+1].Min(v=>v.z);
+            var origin=DistrictBridgePlanner.Center(district,bridge.Start);
+            var axis=(DistrictBridgePlanner.Center(district,bridge.End)-origin).normalized;
+            if(Mathf.Abs(world.TravelElevation(origin+axis*(end-.001f))-
+                world.TravelElevation(origin+axis*(start+.001f)))>.01f)
+                throw new Exception($"Travel height jumps at stone joint {i}");
+            if(Mathf.Abs(end-start)>.001f)throw new Exception("Longitudinal gap between bridge modules");
+            var a=pieces[i].Where(v=>Mathf.Abs(v.z-end)<.001f).ToArray();
+            var b=pieces[i+1].Where(v=>Mathf.Abs(v.z-start)<.001f).ToArray();
+            foreach(var pair in new[]{(a,b),(b,a)})foreach(var v in pair.Item1)
+                if(!pair.Item2.Any(other=>Vector3.Distance(v,other)<.002f))
+                    throw new Exception($"Unmatched bridge seam vertex at joint {i}: {v}");
+        }
+        UnityEngine.Debug.Log($"Stone seam validation: {count} middle modules, all cut-face vertices meet within 2 mm.");
     }
 }
 #endif

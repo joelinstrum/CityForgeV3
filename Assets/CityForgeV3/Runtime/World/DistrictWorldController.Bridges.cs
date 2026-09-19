@@ -59,6 +59,10 @@ namespace CityForgeV3.World
             }
             return TerrainElevation(p.x,p.y)+.02f;
         }
+        // Alternating complete center sections mates identical source cut faces.
+        // Odd counts retain the original left/right connector orientation at both ends.
+        static int StoneBayCount(float usable,float nominal) =>
+            Mathf.Clamp(2*Mathf.RoundToInt((usable/nominal-1)*.5f)+1,1,15);
         static float StoneDeckOffset(BridgePackage package,float total,float along)
         {
             float connector=DistrictBridgePlanner.RampLength+package.capLength;
@@ -70,10 +74,11 @@ namespace CityForgeV3.World
             {sourceX=package.sourceMin+(along-DistrictBridgePlanner.RampLength)/35f;shift=package.leftEndDeck;}
             else if(along<connector+usable)
             {
-                int bays=Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
+                int bays=StoneBayCount(usable,package.bayLength);
                 float bay=usable/bays;
-                float t=Mathf.Repeat(along-connector,bay)/bay;
-                if(Mathf.Approximately(along,connector+usable))t=1;
+                int bayIndex=Mathf.Min(Mathf.FloorToInt((along-connector)/bay),bays-1);
+                float t=(along-connector-bayIndex*bay)/bay;
+                if((bayIndex&1)!=0)t=1-t;
                 sourceX=Mathf.Lerp(package.leftCut,package.rightCut,t);
                 shift=Mathf.Lerp(package.leftEndDeck,package.rightEndDeck,t);
             }
@@ -152,7 +157,7 @@ namespace CityForgeV3.World
             float rightCap=package.singleMiddle?package.rightCapLength:package.capLength;
             float usable=span-2*DistrictBridgePlanner.RampLength-package.capLength-rightCap;
             if(usable<=0)return null;
-            int bays=Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
+            int bays=package.singleMiddle?StoneBayCount(usable,package.bayLength):Mathf.Clamp(Mathf.RoundToInt(usable/package.bayLength),1,16);
             float bay=usable/bays;
             var root=new GameObject((preview?"Preview — ":"")+DistrictBridgeCatalog.Find(b.StyleId).Name);
             root.transform.SetParent(_content,false);root.transform.localPosition=new Vector3(a.x,b.DeckHeight,a.y);
@@ -186,7 +191,12 @@ namespace CityForgeV3.World
                     n.z=(n.z-(shiftEnd-shiftStart)/package.bayLength*n.y)/scale;
                     normals.Add(n.normalized);uv.Add(module.uv[i]);
                 }
-                foreach(var t in module.triangles)triangles.Add(first+t);
+                for(int t=0;t<module.triangles.Length;t+=3)
+                {
+                    triangles.Add(first+module.triangles[t]);
+                    triangles.Add(first+module.triangles[t+(scale<0?2:1)]);
+                    triangles.Add(first+module.triangles[t+(scale<0?1:2)]);
+                }
             }
             float connector=DistrictBridgePlanner.RampLength+package.capLength;
             foreach(var module in package.modules)
@@ -198,7 +208,12 @@ namespace CityForgeV3.World
                     if(module.name=="Entrance_Start")Append(module,connector,1,leftShift,leftShift);
                     else if(module.name=="Entrance_End")Append(module,connector+usable-package.bayLength,1,rightShift,rightShift);
                     else if(module.name=="Middle_Bay")
-                        for(int i=0;i<bays;i++)Append(module,connector+i*bay,bay/package.bayLength,leftShift,rightShift);
+                        for(int i=0;i<bays;i++)
+                        {
+                            bool reverse=(i&1)!=0;
+                            Append(module,connector+(i+(reverse?1:0))*bay,
+                                (reverse?-1:1)*bay/package.bayLength,leftShift,rightShift);
+                        }
                 }
                 else if(module.name=="Entrance_Start")Append(module,connector,1);
                 else if(module.name=="Entrance_End")Append(module,connector+usable,1);
@@ -209,6 +224,7 @@ namespace CityForgeV3.World
             var body=new GameObject("Bridge span");body.transform.SetParent(root.transform,false);
             body.AddComponent<MeshFilter>().sharedMesh=mesh;body.AddComponent<MeshRenderer>().sharedMaterial=assets.Material;
             AddBridgeRamps(root.transform,b,span);
+            AddBridgeEarthApproaches(root.transform,b,span);
             return root;
         }
         void AddBridgeRamps(Transform root,PlacedDistrictBridge b,float span)
@@ -232,20 +248,57 @@ namespace CityForgeV3.World
                 for(int i=start;i<start+4;i++)
                 {var world=root.TransformPoint(verts[i]);uv.Add(new(world.x*tile,world.z*tile));}
                 tris.AddRange(new[]{start,start+1,start+2,start,start+2,start+3});
-                // Solid sides down to the approach base, so a sloping ramp is not a floating sheet.
-                for(int side=-1;side<=1;side+=2)
-                {
-                    int n=verts.Count;verts.Add(new(side*width,y0,z0));verts.Add(new(side*width,y1,z1));
-                    verts.Add(new(side*width,Mathf.Min(y0,y1)-.4f,z1));verts.Add(new(side*width,Mathf.Min(y0,y1)-.4f,z0));
-                    uv.Add(new(z0*tile,y0*tile));uv.Add(new(z1*tile,y1*tile));
-                    uv.Add(new(z1*tile,(Mathf.Min(y0,y1)-.4f)*tile));uv.Add(new(z0*tile,(Mathf.Min(y0,y1)-.4f)*tile));
-                    if(side<0)tris.AddRange(new[]{n,n+2,n+1,n,n+3,n+2});else tris.AddRange(new[]{n,n+1,n+2,n,n+2,n+3});
-                }
+
             }
             Ramp(0,b.StartHeight-b.DeckHeight,DistrictBridgePlanner.RampLength,0);
             Ramp(span-DistrictBridgePlanner.RampLength,0,span,b.EndHeight-b.DeckHeight);
             var mesh=new Mesh{name="Bridge approaches"};mesh.SetVertices(verts);mesh.SetUVs(0,uv);mesh.SetTriangles(tris,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
             var go=new GameObject("Approaches");go.transform.SetParent(root,false);go.AddComponent<MeshFilter>().sharedMesh=mesh;go.AddComponent<MeshRenderer>().sharedMaterial=rampMaterial;
+        }
+
+        void AddBridgeEarthApproaches(Transform root,PlacedDistrictBridge b,float span)
+        {
+            if(_groundRenderer==null)return;
+            var verts=new List<Vector3>();var uv=new List<Vector2>();var tris=new List<int>();
+            // Two small local embankments: road-width crest and 2:1 grass shoulders.
+            // Fixed station count; no terrain repaint or district-wide rebuild.
+            for(int end=0;end<2;end++)
+            {
+                int first=verts.Count;
+                for(int row=0;row<=8;row++)
+                {
+                    float t=row/8f;
+                    float along=end==0?t*DistrictBridgePlanner.RampLength:span-DistrictBridgePlanner.RampLength+t*DistrictBridgePlanner.RampLength;
+                    float crest=Mathf.Lerp(end==0?b.StartHeight-b.DeckHeight:0,
+                        end==0?0:b.EndHeight-b.DeckHeight,t)-.06f;
+                    var center=_content.InverseTransformPoint(root.TransformPoint(new Vector3(0,crest,along)));
+                    float rise=Mathf.Max(0,center.y-TerrainElevation(center.x,center.z));
+                    float toe=Mathf.Min(DistrictBridgePlanner.ApproachHalfWidth,3.95f+Mathf.Max(.5f,rise*2f));
+                    for(int col=0;col<4;col++)
+                    {
+                        float x=col==0?-toe:col==1?-3.95f:col==2?3.95f:toe;
+                        var local=_content.InverseTransformPoint(root.TransformPoint(new Vector3(x,crest,along)));
+                        if(col==0||col==3)
+                        {
+                            local.y=TerrainElevation(local.x,local.z)+.006f;
+                            var foot=root.InverseTransformPoint(_content.TransformPoint(local));
+                            verts.Add(new Vector3(x,foot.y,along));
+                        }
+                        else verts.Add(new Vector3(x,crest,along));
+                        uv.Add(new Vector2(local.x/_widthMeters+.5f,local.z/_depthMeters+.5f));
+                    }
+                }
+                for(int row=0;row<8;row++)for(int col=0;col<3;col++)
+                {
+                    int n=first+row*4+col;
+                    tris.AddRange(new[]{n,n+4,n+5,n,n+5,n+1});
+                }
+            }
+            var mesh=new Mesh{name="Graded bridge earth"};mesh.SetVertices(verts);mesh.SetUVs(0,uv);
+            mesh.SetTriangles(tris,0);mesh.RecalculateNormals();mesh.RecalculateBounds();
+            var go=new GameObject("Graded earth approaches");go.transform.SetParent(root,false);
+            go.AddComponent<MeshFilter>().sharedMesh=mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial=_groundRenderer.sharedMaterial;
         }
     }
 }

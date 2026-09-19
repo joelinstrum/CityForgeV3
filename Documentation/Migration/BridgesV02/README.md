@@ -1,5 +1,8 @@
 # Stone bridge original-end derivative — V02
 
+Historical V02 record. See the sibling V03 documentation for matched module joints and graded earth approaches.
+
+
 This replaces the reflected and flattened StoneV01 runtime package. The canonical artwork is Joe's `stone+bridge+3d+model.zip` at `/Users/joelinstrum/Downloads/buildings/bridges/`, SHA-256 `edc4d94123782898fd5cb39376e825482bea335759f803170a2ca37afe84e7b9`. The unchanged imported review scene is `stone-bridge-review-v01/bridge-review.blend` beside it. The old derivative remains available in Git history; no canonical file was edited.
 
 `Tools/export_stone_original_ends.py` cuts the source's single 9,336-triangle mesh at source X = −0.18 and +0.19. The left and right pieces retain their original vertices, UVs, texture, arches, parapets, and different profiles. An exporter check found 2,096 left and 1,387 right original source vertices at their exact positions after rigid coordinate conversion, with less than 0.0001 m error. Cut faces are tessellated. The source albedo is copied byte for byte. Runtime output is `Assets/CityForgeV3/Resources/CityForgeV3/Bridges/StoneV02/`.
