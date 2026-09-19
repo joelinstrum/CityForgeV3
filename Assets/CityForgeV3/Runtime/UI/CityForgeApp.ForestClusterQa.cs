@@ -33,7 +33,7 @@ namespace CityForgeV3.UI
         {
             var d = FindSelectedRegionTile();
             d.Flora = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193);
-            _districtWorld.RefreshFlora(d);
+            _districtWorld.RebuildAllFloraPresentations(d,DistrictBulkRebuildReason.TestFixture);
             _terraformZoomLevel = DistrictZoomLevel.LOD3; _districtWorld.SetZoom(_terraformZoomLevel);
             _districtWorld.SetTimeOfDay(TimeOfDayPreset.Afternoon);
             var shadows = _districtWorld.GetComponentsInChildren<MeshRenderer>().Where(r => r.name == "Flora shadow batch").ToArray();
@@ -77,7 +77,7 @@ namespace CityForgeV3.UI
                     long startAllocation = GC.GetAllocatedBytesForCurrentThread();
                     var refresh = System.Diagnostics.Stopwatch.StartNew();
                     int revision = _districtWorld.SurfaceCacheRevision;
-                    _districtWorld.RefreshFlora(district);
+                    _districtWorld.RebuildAllFloraPresentations(district,DistrictBulkRebuildReason.TestFixture);
                     refresh.Stop();
                     File.AppendAllText(report, $"pass={pass} records={district.Flora.Count} clusters={district.Flora.Count(t=>ForestClusterCatalog.IsCluster(t.FloraId))} harvestable={district.Flora.Count(DistrictTreeHarvest.CanFell)} refresh={refresh.Elapsed.TotalMilliseconds:F2}ms allocation={GC.GetAllocatedBytesForCurrentThread()-startAllocation}B\n");
                     if (revision != _districtWorld.SurfaceCacheRevision) throw new Exception("Flora rebuilt terrain cache");
@@ -125,7 +125,7 @@ namespace CityForgeV3.UI
             finally
             {
                 district.Flora=original; DistrictHarvestIndex.Invalidate(district);
-                _districtWorld.RefreshFlora(district); SetDistrictSimulationPaused(paused);
+                _districtWorld.RebuildAllFloraPresentations(district,DistrictBulkRebuildReason.TestFixture); SetDistrictSimulationPaused(paused);
                 File.AppendAllText(report,"Fixture flora restored. DONE\n");
             }
         }

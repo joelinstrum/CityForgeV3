@@ -101,6 +101,23 @@ namespace CityForgeV3.Tests.EditMode
             Assert.IsNotEmpty(targets);Assert.AreEqual("far",targets[0].MillId);
             Assert.False(targets.Any(x=>x.MillId=="near-off-road"));
         }
+        [Test] public void MillReceiverMatrixReadsLotDefinitionsOnlyWhenBuilt()
+        {
+            var d=new RegionCityTile{Width=1,Height=1};
+            for(int x=30;x<=35;x++)d.Roads.Add(new(){GridX=x,GridZ=32});
+            d.Lots.Add(new(){InstanceId="mill",LotId="mill",GridX=35,GridZ=33});
+            d.Lots.Add(new(){InstanceId="house",LotId="house",GridX=29,GridZ=29});
+            var mill=new LotSaveData{LotWidthCells=1,LotDepthCells=1,
+                Buildings3D=new(){new(){AssetId="lumber-mill-v01"}}};
+            var house=new LotSaveData{LotWidthCells=1,LotDepthCells=1};
+            var reads=0;
+            var nav=new DistrictTimberNavigation(d,_=>false,id=>
+            {reads++;return id=="mill"?mill:house;});
+            Assert.AreEqual(2,reads);Assert.AreEqual(1,nav.MillCount);
+            nav.Mills(new(-15,5));nav.Mills(new(-15,5));
+            Assert.AreEqual(2,reads,
+                "Cart retries use the receiver matrix instead of rescanning Lot definitions.");
+        }
         [Test] public void DistrictNineRoadInsideShoreMillLotIsAReachableDeliveryStop()
         {
             var d=new RegionCityTile{Width=4,Height=4};
@@ -158,6 +175,39 @@ namespace CityForgeV3.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(material);
             }
         }
+        [Test] public void LumberWagonIsTwiceBaselineAndTurnsAroundHorseFirst()
+        {
+            var root=new GameObject("Turnaround wagon");
+            var wagon=root.AddComponent<HorseCarriageController>();
+            try
+            {
+                var horse=new GameObject("Horse").transform;horse.SetParent(root.transform,false);
+                var body=new GameObject("Body").transform;body.SetParent(root.transform,false);
+                var fore=new GameObject("Forecarriage Steering").transform;fore.SetParent(body,false);
+                fore.localPosition=Vector3.forward*HorseWagonDefinition.Lumber.FrontAxleOffset;
+                wagon.Configure(horse,body,HorseWagonDefinition.Lumber);
+                wagon.RestoreHeadings(0,0,0);
+                var baseline=wagon.SpeedMetersPerSecond;
+                wagon.MotionSpeedMultiplier=2f;
+                Assert.AreEqual(baseline*2f,wagon.SpeedMetersPerSecond,.0001f);
+                var route=wagon.PlanRouteWithTurnaround(new[]{new Vector3(0,0,-10),new Vector3(0,0,-20)},(_,_)=>true);
+                Assert.NotNull(route);Assert.Greater(route.Count,2);
+                Assert.Greater(route.Max(point=>Mathf.Abs(point.x)),1f,
+                    "A reversing cart must drive a turning arc instead of backing up.");
+                wagon.SetRoute(route);
+                for(var i=0;i<20000&&wagon.IsMoving;i++)wagon.Step(.05f,_=>0,(_,_)=>true);
+                Assert.False(wagon.IsMoving);Assert.That(root.transform.position.z,Is.EqualTo(-20).Within(.05f));
+                Assert.Greater(Vector3.Dot(root.transform.forward,
+                    (root.transform.position-body.position).normalized),.8f,
+                    "The horse must finish ahead of the cart.");
+            }
+            finally
+            {
+                var field=typeof(HorseCarriageController).GetField("leather",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                var material=(Material)field.GetValue(wagon);field.SetValue(wagon,null);
+                UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
         [Test] public void MillReservesDeliveredTimberOnceAndWaitsAgainNextShipment()
         {
             var def=new CargoLoadingDefinition{repeat=true,restartDelaySeconds=1};
@@ -187,6 +237,20 @@ namespace CityForgeV3.Tests.EditMode
             d=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));
             for(int i=0;i<100;i++)DistrictLabor.Tick(d,.1f,(_,p)=>new(){p},_=>true);
             Assert.AreEqual(1,d.Labor.TimberCrews[0].PendingTrees);Assert.AreEqual(0,d.Labor.Wood);
+        }
+        [Test] public void RemovingSourceLotRemovesOnlyItsCrewAndWorkers()
+        {
+            var d=new RegionCityTile{Treasury=5000};
+            var first=DistrictTimber.Place(d,Vector2.zero,Vector2.zero,2,new());
+            var second=DistrictTimber.Place(d,Vector2.one*10,Vector2.one*10,1,new());
+            first.SourceLotInstanceId="lot-a";second.SourceLotInstanceId="lot-b";
+            Assert.AreEqual(1,DistrictTimber.RemoveLotCrews(d,"lot-a"));
+            Assert.AreEqual("lot-b",d.Labor.TimberCrews.Single().SourceLotInstanceId);
+            Assert.AreEqual(1,d.Labor.Workers.Count);
+            Assert.AreEqual(second.Id,d.Labor.Workers[0].CrewId);
+            Assert.AreEqual(0,d.Labor.Workers[0].Slot);
+            Assert.AreEqual(1,d.Labor.AssignedAxemen);
+            Assert.AreEqual(1,d.Labor.PaidSlots);
         }
     }
 }

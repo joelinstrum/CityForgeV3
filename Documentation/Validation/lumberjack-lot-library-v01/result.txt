@@ -1,0 +1,1 @@
+PASS: lumberjack mesh, animator, original body/axe textures, Chop clip, forestry cart/controller, and both saved prop IDs. Isolated fixture only; no harvesting or delivery simulation tested.

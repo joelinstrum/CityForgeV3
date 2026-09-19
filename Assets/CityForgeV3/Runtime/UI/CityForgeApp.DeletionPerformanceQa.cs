@@ -15,7 +15,7 @@ namespace CityForgeV3.UI
             var d=FindSelectedRegionTile(); RemoveDocumentModal();
             d.Flora.Add(new(){InstanceId="delete-one",FloraId="cilician-fir",NormalizedX=.25f,NormalizedZ=.25f});
             d.Flora.Add(new(){InstanceId="keep-one",FloraId="cilician-fir",NormalizedX=.28f,NormalizedZ=.25f});
-            _districtWorld.RefreshFlora(d);_districtWorldCompositionKey=DistrictCompositionKey(d);SaveDistrictEdit();
+            _districtWorld.RebuildAllFloraPresentations(d,DistrictBulkRebuildReason.TestFixture);_districtWorldCompositionKey=DistrictCompositionKey(d);SaveDistrictEdit();
             var keep=_districtWorld.GetComponentsInChildren<SpriteRenderer>().First(r=>r.name.StartsWith("District Flora —"));
             // Retain references to all unrelated scene objects and the existing UI screen.
             var terrain=_districtWorld.GetComponentsInChildren<MeshCollider>().Select(c=>c.sharedMesh).ToArray();

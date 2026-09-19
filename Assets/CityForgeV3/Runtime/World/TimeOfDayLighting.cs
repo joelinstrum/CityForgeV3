@@ -11,6 +11,61 @@ namespace CityForgeV3.World
         Night
     }
 
+    public static class DistrictDayCycle
+    {
+        public const float MorningSeconds = 60f;
+        public const float NoonSeconds = 300f;
+        public const float AfternoonSeconds = 60f;
+        public const float EveningSeconds = 10f;
+        public const float NightSeconds = 30f;
+        public const float TotalCycleSeconds = MorningSeconds + NoonSeconds +
+            AfternoonSeconds + EveningSeconds + NightSeconds;
+
+        public static float Duration(TimeOfDayPreset preset) => preset switch
+        {
+            TimeOfDayPreset.Morning => MorningSeconds,
+            TimeOfDayPreset.Noon => NoonSeconds,
+            TimeOfDayPreset.Afternoon => AfternoonSeconds,
+            TimeOfDayPreset.Evening => EveningSeconds,
+            TimeOfDayPreset.Night => NightSeconds,
+            _ => NoonSeconds
+        };
+
+        public static TimeOfDayPreset Next(TimeOfDayPreset preset) =>
+            preset switch
+            {
+                TimeOfDayPreset.Morning => TimeOfDayPreset.Noon,
+                TimeOfDayPreset.Noon => TimeOfDayPreset.Afternoon,
+                TimeOfDayPreset.Afternoon => TimeOfDayPreset.Evening,
+                TimeOfDayPreset.Evening => TimeOfDayPreset.Night,
+                _ => TimeOfDayPreset.Morning
+            };
+
+        public static void Set(RegionCityTile district, TimeOfDayPreset preset)
+        {
+            if (district == null) return;
+            district.TimeOfDay = preset;
+            district.TimeOfDaySeconds = 0f;
+        }
+
+        public static bool Advance(RegionCityTile district, float seconds)
+        {
+            if (district == null || !district.Founded || seconds <= 0f ||
+                !float.IsFinite(seconds)) return false;
+            district.TimeOfDaySeconds = Mathf.Max(0f,
+                district.TimeOfDaySeconds) + seconds;
+            district.TimeOfDaySeconds %= TotalCycleSeconds;
+            var changed = false;
+            while (district.TimeOfDaySeconds >= Duration(district.TimeOfDay))
+            {
+                district.TimeOfDaySeconds -= Duration(district.TimeOfDay);
+                district.TimeOfDay = Next(district.TimeOfDay);
+                changed = true;
+            }
+            return changed;
+        }
+    }
+
     public readonly struct TimeOfDayLightingSpec
     {
         public TimeOfDayLightingSpec(

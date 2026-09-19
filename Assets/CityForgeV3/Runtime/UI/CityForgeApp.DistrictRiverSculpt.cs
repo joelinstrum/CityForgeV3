@@ -136,7 +136,9 @@ namespace CityForgeV3.UI
             }
             _districtUndo.Commit(JsonUtility.ToJson(district));
             _districtSelection.Clear();_districtWorld.ShowDistrictSelection(district,_districtSelection);
-            _districtWorld.RefreshRivers(district,preservePresentations:true);
+            _districtWorld.RebuildAllRiverPresentations(district,
+                DistrictBulkRebuildReason.RiverGeometryReplacement,
+                preservePresentations:true);
             _districtWorldCompositionKey=DistrictCompositionKey(district);_laborNavigation=null;
         }
     }

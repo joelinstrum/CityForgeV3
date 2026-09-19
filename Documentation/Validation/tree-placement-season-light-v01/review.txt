@@ -1,0 +1,1 @@
+PASS: isolated armed tree first and second clicks over water; disarmed selection; hybrid and 3D building footprint exclusion and open-ground placement; equal base, flora and building lighting tint for all four seasons. Fixture destroyed; no Save.

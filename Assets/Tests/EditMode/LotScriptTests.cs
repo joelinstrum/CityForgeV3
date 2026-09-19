@@ -125,5 +125,155 @@ namespace CityForgeV3.Tests.EditMode
         }
         [Test] public void OutsideLotAnchorIsRejected()
         { var script=LotScriptCodec.Parse(Script());script.pickup.offset=new Vector3(100,0,100);Assert.Throws<ArgumentException>(()=>_world.ApplyBehaviorScript(JsonUtility.ToJson(script))); }
+
+        private void AddTimberCampObjects()
+        {
+            _session.Data.Props.Add(new PlacedProp
+            {
+                InstanceId = "axeman-1",
+                PropId = LotWorldController.LumberjackCharacterId,
+                PositionX = -2,
+                PositionZ = 1
+            });
+            _session.Data.Props.Add(new PlacedProp
+            {
+                InstanceId = "axeman-2",
+                PropId = LotWorldController.LumberjackCharacterId,
+                PositionX = 2,
+                PositionZ = 1
+            });
+            _session.Data.Props.Add(new PlacedProp
+            {
+                InstanceId = "wagon-1",
+                PropId = LotWorldController.HorseForestryWagonPropId
+            });
+            _session.Data.Connectors.Add(new PlacedLotConnector
+            {
+                InstanceId = "entry-1",
+                ConnectorId = LotWorldController.DirtEntryConnectorId,
+                Edge = LotConnectorEdge.South,
+                OffsetMeters = 20,
+                AllowsPedestrians = true,
+                AllowsVehicles = true
+            });
+        }
+
+        [Test] public void TimberCampLibraryBuildsEditableScriptFromLotObjects()
+        {
+            AddTimberCampObjects();
+            Assert.IsTrue(_world.AddTimberCampBehavior(out var error), error);
+            var behavior = _world.LotBehaviors.Single();
+            var script = TimberCampLotScriptCodec.Parse(
+                _world.BehaviorScriptSource(behavior.InstanceId));
+            CollectionAssert.AreEqual(new[] { "axeman-1", "axeman-2" },
+                script.lumberjackIds);
+            Assert.AreEqual("wagon-1", script.wagonId);
+            Assert.AreEqual("entry-1", script.connectorId);
+            Assert.AreEqual("Lumberjack Camp",
+                _world.BehaviorDisplayName(behavior));
+        }
+
+        [Test] public void TimberCampRequiresAuthoredActorsAndVehicleConnector()
+        {
+            Assert.IsFalse(_world.AddTimberCampBehavior(out var error));
+            StringAssert.Contains("Lumberjack", error);
+            Assert.IsEmpty(_world.LotBehaviors);
+        }
+
+        [Test] public void TimberCampScriptSurvivesLotJsonRoundTrip()
+        {
+            AddTimberCampObjects();
+            Assert.IsTrue(_world.AddTimberCampBehavior(out _));
+            _session.Restore(_session.Serialize());
+            var behavior = _session.Data.Behaviors.Single();
+            Assert.IsTrue(behavior.HasTimberCampScript);
+            Assert.AreEqual(2, behavior.TimberCampScript.lumberjackIds.Count);
+            Assert.AreEqual(3, behavior.TimberCampScript.harvest.treesPerLoad);
+        }
+
+        [Test] public void PlacedTimberCampCreatesOneBoundDistrictCrew()
+        {
+            AddTimberCampObjects();
+            Assert.IsTrue(_world.AddTimberCampBehavior(out _));
+            typeof(LotWorldController).GetField("_districtHosted",
+                BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(_world, true);
+            var district = new RegionCityTile { Treasury = 10000, Width = 1,
+                Height = 1 };
+            var placement = new PlacedDistrictLot
+            {
+                InstanceId = "camp-lot-1",
+                Behaviors = _session.Data.Behaviors
+            };
+            _world.BindDistrictBehaviors(placement, district);
+            _world.BindDistrictBehaviors(placement, district);
+            var crew = DistrictLabor.State(district).TimberCrews.Single();
+            Assert.AreEqual("camp-lot-1", crew.SourceLotInstanceId);
+            Assert.AreEqual(_world.LotBehaviors.Single().InstanceId,
+                crew.SourceBehaviorInstanceId);
+            Assert.AreEqual(2, DistrictLabor.State(district).Workers.Count);
+            var connector = _session.Data.Connectors.Single();
+            var outside = LotWorldController.ConnectorAccess(connector,
+                _world.LotWidthMeters, _world.LotDepthMeters).Outside;
+            Assert.That(crew.Camp, Is.EqualTo(outside),
+                "The live crew must begin beyond the Lot boundary through its Connector.");
+            Assert.That(crew.WagonHome, Is.EqualTo(outside));
+            Assert.That(DistrictLabor.State(district).Workers.All(worker =>
+                worker.Position == outside), Is.True);
+
+            // Existing saves from the first Lot-script implementation may
+            // still contain an inside-Lot camp and stranded workers.
+            crew.Camp = Vector2.zero;
+            foreach (var worker in DistrictLabor.State(district).Workers)
+                worker.Position = new Vector2(-2f, 1f);
+            _world.BindDistrictBehaviors(placement, district);
+            Assert.That(crew.Camp, Is.EqualTo(outside));
+            Assert.That(DistrictLabor.State(district).Workers.All(worker =>
+                worker.Position == outside), Is.True);
+        }
+
+        [Test]
+        public void LegacyPlacedLumberjackCampGetsBuiltInBehaviorOnce()
+        {
+            AddTimberCampObjects();
+            _session.Data.Props.Single(prop =>
+                prop.InstanceId == "wagon-1").PropId =
+                LotWorldController.HorseLumberWagonPropId;
+            typeof(LotWorldController).GetField("_districtHosted",
+                BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(_world, true);
+            var district = new RegionCityTile
+            {
+                Treasury = 10000,
+                Width = 1,
+                Height = 1
+            };
+            var placement = new PlacedDistrictLot
+            {
+                InstanceId = "legacy-camp-lot",
+                LotId = "lumberjack-camp",
+                BehaviorsInitialized = true,
+                Behaviors = new List<LotBehaviorInstance>()
+            };
+
+            _world.BindDistrictBehaviors(placement, district);
+
+            Assert.IsTrue(placement.BuiltInTimberCampChecked);
+            Assert.That(placement.Behaviors.Count, Is.EqualTo(1));
+            Assert.IsTrue(LotWorldController.IsTimberCampBehavior(
+                placement.Behaviors[0]));
+            Assert.IsTrue(placement.Behaviors[0].Enabled);
+            Assert.IsTrue(placement.Behaviors[0].HasStarted);
+            Assert.That(DistrictLabor.State(district).TimberCrews.Count,
+                Is.EqualTo(1));
+            Assert.That(DistrictLabor.State(district).Workers.Count,
+                Is.EqualTo(2));
+
+            // A later explicit removal remains removed after presentation
+            // rebuilds because the compatibility check is persisted.
+            placement.Behaviors.Clear();
+            _world.BindDistrictBehaviors(placement, district);
+            Assert.That(placement.Behaviors, Is.Empty);
+        }
     }
 }

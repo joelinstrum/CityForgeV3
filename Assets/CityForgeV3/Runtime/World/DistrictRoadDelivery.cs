@@ -101,7 +101,10 @@ namespace CityForgeV3.World
         bool SetRoadDeliveryRoute(HorseCarriageController wagon,List<Vector2> route)
         {
             if(route==null||route.Count==0)return false;
-            wagon.SetRoute(route.Select(TimberWorld).ToList());return true;
+            var planned=wagon.PlanRouteWithTurnaround(
+                route.Select(TimberWorld).ToList(),RoadDeliveryClear);
+            if(planned==null||planned.Count==0)return false;
+            wagon.SetRoute(planned);return true;
         }
         // Road connectivity is resolved once for the trip; follow its centerline directly.
         static bool RoadDeliveryClear(Vector3 from,Vector3 to)=>true;

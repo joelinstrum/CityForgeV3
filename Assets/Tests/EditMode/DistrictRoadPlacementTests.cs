@@ -283,7 +283,7 @@ namespace CityForgeV3.Tests.EditMode
             try
             {
                 var world = root.AddComponent<DistrictWorldController>();
-                world.Build(district);
+                world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
                 var renderers = System.Array.FindAll(
                     root.GetComponentsInChildren<MeshRenderer>(),
                     renderer => renderer.name == "District Antique Brick Road");
@@ -315,7 +315,7 @@ namespace CityForgeV3.Tests.EditMode
             var root = new GameObject("Straight Brick Review");
             try
             {
-                root.AddComponent<DistrictWorldController>().Build(district);
+                root.AddComponent<DistrictWorldController>().RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
                 var renderers = System.Array.FindAll(
                     root.GetComponentsInChildren<MeshRenderer>(),
                     renderer => renderer.name == "District Antique Brick Road");

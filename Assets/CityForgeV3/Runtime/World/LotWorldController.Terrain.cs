@@ -37,10 +37,10 @@ namespace CityForgeV3.World
             EnsureTerrainData();
             var sourceWidth = _session.Data.TerrainGridWidth;
             var sourceDepth = _session.Data.TerrainGridDepth;
-            // The Lot Editor intentionally renders a two-metre apron around
-            // each edge. In a district, adjacent lots share one continuous
-            // world and that apron must not cover neighboring cells.
-            var crop = _districtHosted ? 2 : 0;
+            // Keep the stored heightfield apron for sampling and editing, but
+            // render only the lot footprint. Independent overlays and props
+            // may still extend beyond it to meet roads outside the lot.
+            const int crop = 2;
             var width = sourceWidth - crop * 2;
             var depth = sourceDepth - crop * 2;
             var sourceHalfWidth = (sourceWidth - 1) * TerrainVertexSpacing * 0.5f;

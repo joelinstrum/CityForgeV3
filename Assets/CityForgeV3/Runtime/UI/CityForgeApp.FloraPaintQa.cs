@@ -13,7 +13,7 @@ namespace CityForgeV3.UI
   {
    if(_districtWorld==null)return;
    var district=FindSelectedRegionTile();
-   _districtWorld.Build(district);
+   _districtWorld.RebuildEntireDistrict(district,DistrictBulkRebuildReason.TestFixture);
    _districtWorld.SetZoom(_terraformZoomLevel);
    _districtWorld.SetPan(_terraformPanOffset);
    var rotation=_districtWorld.WorldCamera.transform.rotation;
@@ -26,7 +26,7 @@ namespace CityForgeV3.UI
   {
    if(_districtWorld==null)return;
    if(visible && _districtWorld.GetComponentsInChildren<SpriteRenderer>().Any(r=>r.name=="District Flora Shadow"))
-    _districtWorld.RefreshFlora(FindSelectedRegionTile());
+    _districtWorld.RebuildAllFloraPresentations(FindSelectedRegionTile(),DistrictBulkRebuildReason.TestFixture);
    foreach(var r in _districtWorld.GetComponentsInChildren<Renderer>().Where(r=>r.name=="District Flora Shadow"))r.enabled=visible;
    var shadows=_districtWorld.GetComponentsInChildren<Renderer>().Where(r=>r.name=="District Flora Shadow").ToArray();
    if(shadows.Length>0){var b=new MaterialPropertyBlock();shadows[0].GetPropertyBlock(b);Debug.Log("SHADOW STATE time="+_districtWorld.TimeOfDay+" count="+shadows.Length+" color="+b.GetColor("_Color")+" ray="+b.GetVector("_SunRay")+" upright="+b.GetFloat("_UprightSource")+" ground="+b.GetFloat("_GroundY"));}

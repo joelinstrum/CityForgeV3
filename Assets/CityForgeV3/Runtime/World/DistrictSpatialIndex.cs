@@ -29,5 +29,16 @@ namespace CityForgeV3.World
             }
         }
         public IReadOnlyList<T> Query(Vector2 point)=>buckets.TryGetValue(new Vector2Int(Mathf.FloorToInt(point.x/cellSize),Mathf.FloorToInt(point.y/cellSize)),out var values)?values:Array.Empty<T>();
+        public void QueryBounds(Rect bounds, HashSet<T> result)
+        {
+            result.Clear();
+            for (int x = Mathf.FloorToInt(bounds.xMin / cellSize);
+                 x <= Mathf.FloorToInt(bounds.xMax / cellSize); x++)
+            for (int y = Mathf.FloorToInt(bounds.yMin / cellSize);
+                 y <= Mathf.FloorToInt(bounds.yMax / cellSize); y++)
+                if (buckets.TryGetValue(new Vector2Int(x, y), out var values))
+                    foreach (var value in values)
+                        result.Add(value);
+        }
     }
 }

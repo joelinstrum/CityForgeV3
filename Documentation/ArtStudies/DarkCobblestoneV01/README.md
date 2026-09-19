@@ -1,0 +1,7 @@
+# Dark Cobblestone V01 source
+
+`dark-cobblestone-source.png` is a 1254 × 1254 RGB texture generated with the built-in imagegen tool by editing the existing approved `Assets/CityForgeV3/Resources/CityForgeV3/Materials/RoadsChatGPTV1/cobblestone-gray.png` as a visual reference. The original road texture was not modified. The runtime copy under `Assets/CityForgeV3/Resources/CityForgeV3/LotTextures/DarkCobblestoneV01/dark-cobblestone.png` is byte-identical, SHA-256 `74e6c206d93a7c8a2977364a3bf464b5c29ba297fc503dc903956fd341335d60`.
+
+Final imagegen prompt:
+
+> Use case: precise-object-edit. Asset type: seamless square overhead diffuse texture for City Forge V3 Lot Editor Base and 10 × 10 metre Overlays. Edit target: the supplied approved gray cobblestone road surface. Preserve its dense, small, irregular rounded cobble scale, top-down orthographic view, closely packed stone layout, and flat even illumination. Change the material color into a handsome DARK weathered charcoal-slate cobblestone surface: stones in subtly varied deep graphite, smoky warm gray, and muted slate tones; narrow dark charcoal mortar joints. Keep individual cobble edges legible at isometric game-camera distance, with restrained natural value variation and a matte dry finish. Tile seamlessly across all four image edges with no obvious repeated border or center motif. Square, full-bleed texture only. No curb, border, vignette, props, grass, puddles, wet gloss, strong cast shadows, directional lighting, labels, text, or watermark.

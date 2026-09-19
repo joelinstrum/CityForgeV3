@@ -30,7 +30,7 @@ namespace CityForgeV3.World
             return root;
         }
 
-        private static bool EnsureMaterials()
+        internal static bool EnsureMaterials()
         {
             if (_leafMaterial != null) return true;
             var leaves = Resources.Load<Texture2D>(LeafPath);
@@ -80,6 +80,21 @@ namespace CityForgeV3.World
             _previewEarthMaterial.renderQueue = (int)RenderQueue.Transparent;
             return true;
         }
+
+        internal static Material LeafMaterial(bool preview)
+        {
+            if (!EnsureMaterials()) return null;
+            return preview ? _previewLeafMaterial : _leafMaterial;
+        }
+
+        internal static Color LeafColorForSeason(SeasonPreset season,
+            float opacity) => season switch
+        {
+            SeasonPreset.Spring => new Color(0.16f, 0.32f, 0.10f, opacity),
+            SeasonPreset.Autumn => new Color(0.13f, 0.24f, 0.07f, opacity),
+            SeasonPreset.Winter => new Color(0.11f, 0.21f, 0.07f, opacity),
+            _ => new Color(0.14f, 0.29f, 0.09f, opacity)
+        };
 
         private void Build(bool wide)
         {
@@ -134,13 +149,7 @@ namespace CityForgeV3.World
                 ? _previewLeafMaterial : _leafMaterial;
             _earthRenderer.sharedMaterial = _opacity < 0.99f
                 ? _previewEarthMaterial : _earthMaterial;
-            var color = season switch
-            {
-                SeasonPreset.Spring => new Color(0.59f, 0.67f, 0.52f, _opacity),
-                SeasonPreset.Autumn => new Color(0.46f, 0.52f, 0.40f, _opacity),
-                SeasonPreset.Winter => new Color(0.38f, 0.44f, 0.36f, _opacity),
-                _ => new Color(0.52f, 0.60f, 0.46f, _opacity)
-            };
+            var color = LeafColorForSeason(season, _opacity);
             var block = new MaterialPropertyBlock();
             block.SetColor("_Color", color);
             _leafRenderer.SetPropertyBlock(block);
@@ -162,7 +171,7 @@ namespace CityForgeV3.World
             else DestroyImmediate(_mesh);
         }
 
-        private sealed class HedgeMeshBuilder
+        internal sealed class HedgeMeshBuilder
         {
             private readonly List<Vector3> _vertices = new();
             private readonly List<Vector2> _uv = new();
@@ -212,6 +221,48 @@ namespace CityForgeV3.World
                     new(x1 - bevel, top, z0 + bevel),
                     new(x1 - bevel, top, z1 - bevel),
                     new(x0 + bevel, top, z1 - bevel), Vector3.up);
+            }
+
+            internal void AddRing(float outerRadius, float thickness,
+                float height)
+            {
+                const int segments = 64;
+                var innerRadius = outerRadius - thickness;
+                var bevel = Mathf.Min(0.07f, thickness * 0.18f);
+                var shoulder = height - bevel;
+                const float bottom = 0.005f;
+                for (var i = 0; i < segments; i++)
+                {
+                    var a0 = i * Mathf.PI * 2f / segments;
+                    var a1 = (i + 1) * Mathf.PI * 2f / segments;
+                    var d0 = new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0));
+                    var d1 = new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1));
+                    var outward = (d0 + d1).normalized;
+                    Vector3 At(Vector3 direction, float radius, float y) =>
+                        direction * radius + Vector3.up * y;
+                    Face(At(d0, outerRadius, bottom),
+                        At(d1, outerRadius, bottom),
+                        At(d1, outerRadius, shoulder),
+                        At(d0, outerRadius, shoulder), outward);
+                    Face(At(d0, outerRadius, shoulder),
+                        At(d1, outerRadius, shoulder),
+                        At(d1, outerRadius - bevel, height),
+                        At(d0, outerRadius - bevel, height),
+                        outward + Vector3.up);
+                    Face(At(d0, outerRadius - bevel, height),
+                        At(d1, outerRadius - bevel, height),
+                        At(d1, innerRadius + bevel, height),
+                        At(d0, innerRadius + bevel, height), Vector3.up);
+                    Face(At(d0, innerRadius + bevel, height),
+                        At(d1, innerRadius + bevel, height),
+                        At(d1, innerRadius, shoulder),
+                        At(d0, innerRadius, shoulder),
+                        -outward + Vector3.up);
+                    Face(At(d0, innerRadius, shoulder),
+                        At(d1, innerRadius, shoulder),
+                        At(d1, innerRadius, bottom),
+                        At(d0, innerRadius, bottom), -outward);
+                }
             }
 
             private void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d,

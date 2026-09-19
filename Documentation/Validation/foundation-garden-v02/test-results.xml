@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:25Z" duration="1.4683903">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="990" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:25Z" duration="1.468390" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2142" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge - V3/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="990" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:25Z" duration="1.262487" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33758" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1062" name="FoundationGardenBedTests" fullname="FoundationGardenBedTests" classname="FoundationGardenBedTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:25Z" duration="1.078907" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1063" name="BothHouseFrontBedsUseOneShallowFootprintAndSharedPlantingArt" fullname="FoundationGardenBedTests.BothHouseFrontBedsUseOneShallowFootprintAndSharedPlantingArt" methodname="BothHouseFrontBedsUseOneShallowFootprintAndSharedPlantingArt" classname="FoundationGardenBedTests" runstate="Runnable" seed="1215692431" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:24Z" duration="0.237619" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1064" name="FiveCottageVariantsHaveRoundedPlantsAndLowPicketEnclosures" fullname="FoundationGardenBedTests.FiveCottageVariantsHaveRoundedPlantsAndLowPicketEnclosures" methodname="FiveCottageVariantsHaveRoundedPlantsAndLowPicketEnclosures" classname="FoundationGardenBedTests" runstate="Runnable" seed="2002873491" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:24Z" duration="0.105616" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1065" name="FoundationBedIdsAndQuarterTurnSurviveSessionRoundTrip" fullname="FoundationGardenBedTests.FoundationBedIdsAndQuarterTurnSurviveSessionRoundTrip" methodname="FoundationBedIdsAndQuarterTurnSurviveSessionRoundTrip" classname="FoundationGardenBedTests" runstate="Runnable" seed="2129734577" result="Passed" start-time="2026-09-18 22:30:24Z" end-time="2026-09-18 22:30:25Z" duration="0.630635" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: Documentation/Validation/foundation-garden-v02/test-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

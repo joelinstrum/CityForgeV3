@@ -371,6 +371,20 @@
       "pitchDegrees": 0,
       "baseYawDegrees": 90,
       "materialMode": "embedded"
+    },
+    {
+      "id": "work-tent-v01",
+      "displayName": "Work Tent",
+      "category": "Industrial",
+      "subcategory": "Camps",
+      "description": "Weathered canvas work tent with guy ropes and timber poles",
+      "modelResourcePath": "CityForgeV3/Buildings3D/WorkTentV01/Source/tripo_convert_d9f9e5b8-49ea-4d0c-b7fd-c97e8321421a",
+      "thumbnailResourcePath": "CityForgeV3/Buildings3D/WorkTentV01/thumbnail",
+      "pitchDegrees": -90,
+      "baseYawDegrees": 90,
+      "normalizeAxis": "height",
+      "normalizeMeters": 3.2,
+      "materialMode": "embedded"
     }
   ]
 }

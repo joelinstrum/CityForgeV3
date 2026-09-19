@@ -64,7 +64,7 @@ namespace CityForgeV3.UI
                     var def=b.HasScript&&b.Script!=null?b.Script.behavior:CityForgeV3.Behaviors.LotBehaviorCatalog.Find(b.DefinitionId);
                     b.State=CityForgeV3.Behaviors.CargoLoadingSimulation.Create(def);b.DepartureRoute.Clear();b.Enabled=true;
                 }
-                ClearDistrictUndo();_laborNavigation=null;_districtWorldCompositionKey="";_districtWorld.Build(d);Show(AppScreen.DistrictTerraform);
+                ClearDistrictUndo();_laborNavigation=null;_districtWorldCompositionKey="";_districtWorld.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);Show(AppScreen.DistrictTerraform);
                 var mill=d.Lots.First(l=>l.LotId=="lumber-mill-dock-operations-v01");
                 _terraformPanOffset=DistrictWorldController.DistrictLotCenterMeters(d,mill,LotSaveStore.Read(mill.LotId));
                 _districtWorld.SetPan(_terraformPanOffset);_districtWorld.WorldCamera.orthographicSize=12;
@@ -170,7 +170,7 @@ namespace CityForgeV3.UI
             if(command=="factory")
             {
                 if(_districtUndoQaSaveRoot==null)throw new Exception("Requires isolated review");
-                var d=FindSelectedRegionTile();_districtWorld.Build(d);
+                var d=FindSelectedRegionTile();_districtWorld.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
                 _districtWorld.TickTimber(d,null,false,0);
                 if(!_districtWorld.GetComponentsInChildren<HorseCarriageController>().Any())throw new Exception("Wagon requires lot editor");
                 File.WriteAllText("/tmp/cityforge-timber-factory.txt","PASS wagon assembled without a lot editor factory; current district assets and accepted articulation reused");

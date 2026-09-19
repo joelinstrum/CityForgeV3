@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.0947531">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.094753" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2241" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-timber-library-qa.772rEm/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.087044" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38975" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2242" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="936" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.080667" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2243" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="936" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.076396" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2244" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="267" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.063360" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2067" name="DistrictLaborTests" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-09-19 19:21:26Z" end-time="2026-09-19 19:21:27Z" duration="0.056315" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2074" name="MovedTreeIsNotChoppedRemotely" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.MovedTreeIsNotChoppedRemotely" methodname="MovedTreeIsNotChoppedRemotely" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="1581520794" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.019968" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2075" name="NavigationDetoursAroundWater" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.NavigationDetoursAroundWater" methodname="NavigationDetoursAroundWater" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="2062195792" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.004729" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2076" name="OlderSaveGetsEmptyLaborAndZeroDeltaDoesNotMove" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.OlderSaveGetsEmptyLaborAndZeroDeltaDoesNotMove" methodname="OlderSaveGetsEmptyLaborAndZeroDeltaDoesNotMove" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="1916771262" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.001913" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2072" name="ReducingAssignmentsReturnsCargoBeforeRemovingWorker" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.ReducingAssignmentsReturnsCargoBeforeRemovingWorker" methodname="ReducingAssignmentsReturnsCargoBeforeRemovingWorker" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="976732712" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.001316" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2071" name="ReloadWithCargoDeliversWithoutDuplicateWoodOrWages" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.ReloadWithCargoDeliversWithoutDuplicateWoodOrWages" methodname="ReloadWithCargoDeliversWithoutDuplicateWoodOrWages" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="1204460868" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.006719" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2069" name="SeasonChargesOnceAndInsufficientFundsStopWork" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.SeasonChargesOnceAndInsufficientFundsStopWork" methodname="SeasonChargesOnceAndInsufficientFundsStopWork" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="457858246" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.001477" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2070" name="TwoWorkersReserveDifferentTreesAndDeliverExactlyOnce" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.TwoWorkersReserveDifferentTreesAndDeliverExactlyOnce" methodname="TwoWorkersReserveDifferentTreesAndDeliverExactlyOnce" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="515297987" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.009032" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2073" name="UnreachableTreeAndMissingTargetDoNotGrantWood" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.UnreachableTreeAndMissingTargetDoNotGrantWood" methodname="UnreachableTreeAndMissingTargetDoNotGrantWood" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="1819222410" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.001429" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2068" name="WagesChargeOnlyNewPaidSlotsAndCannotOverdraw" fullname="CityForgeV3.Tests.EditMode.DistrictLaborTests.WagesChargeOnlyNewPaidSlotsAndCannotOverdraw" methodname="WagesChargeOnlyNewPaidSlotsAndCannotOverdraw" classname="CityForgeV3.Tests.EditMode.DistrictLaborTests" runstate="Runnable" seed="222564611" result="Passed" start-time="2026-09-19 19:21:27Z" end-time="2026-09-19 19:21:27Z" duration="0.000305" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-timber-labor-tests.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

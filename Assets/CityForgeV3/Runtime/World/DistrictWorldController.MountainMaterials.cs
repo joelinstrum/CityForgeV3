@@ -3,16 +3,19 @@ namespace CityForgeV3.World
 {
     public sealed partial class DistrictWorldController
     {
-        // Match the screen-space detail of the next existing camera band.
-        // Farther views keep their original world-space texture scale.
+        // User-facing stops count from one: first inherits the old second
+        // stop's texture density; second inherits the old third stop's density.
         public static float DistrictGrassWorldSizeForZoom(DistrictZoomLevel level)
         {
-            if (level != DistrictZoomLevel.LOD0 && level != DistrictZoomLevel.LOD1)
+            if (level != DistrictZoomLevel.LOD0)
                 return DistrictGrassTextureWorldSizeMeters;
-            var next = (DistrictZoomLevel)((int)level + 1);
             return DistrictGrassTextureWorldSizeMeters *
-                OrthographicSize(level, 1, 1, 1) / OrthographicSize(next, 1, 1, 1);
+                OrthographicSize(DistrictZoomLevel.LOD1, 1, 1, 1) /
+                OrthographicSize(DistrictZoomLevel.LOD2, 1, 1, 1);
         }
+
+        public static bool DistrictGrassUsesSmoothFiltering(DistrictZoomLevel level) =>
+            level >= DistrictZoomLevel.LOD2;
 
         private void ApplyDistrictGrassZoomScale()
         {
@@ -22,7 +25,7 @@ namespace CityForgeV3.World
             float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
             var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
             if (material.mainTextureScale != scale) material.mainTextureScale = scale;
-            float distant = _zoomLevel == DistrictZoomLevel.LOD5Billboard ? 1f : 0f;
+            float distant = DistrictGrassUsesSmoothFiltering(_zoomLevel) ? 1f : 0f;
             if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
                 material.SetFloat("_DistantMeadow", distant);
         }

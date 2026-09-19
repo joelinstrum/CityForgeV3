@@ -14,7 +14,7 @@ District saves remain authoritative. Derived surface data lives in memory and is
 
 1. Update the edit preview during dragging. River dragging does not change saved data or textured geometry.
 2. Apply the final model changes on release.
-3. Call the relevant world refresh once. Road/lot drag previews use `deferSurfaceRefresh: true`; completion calls `CommitSurfaceChanges()` or a non-deferred refresh.
+3. Call the relevant world refresh once. Road/lot drag previews use `deferSurfaceRefresh: true`. Local placement and movement complete through `CommitLocalSurfaceChanges()`, which updates affected terrain, collider, and decals without rebuilding the district-wide grid. Road deletion uses `CommitRoadSurfaceChanges()`, which also leaves unchanged decals alone. No public general surface-commit API exists; bulk presentation methods require a `DistrictBulkRebuildReason`.
 4. Surface refresh compares against the previous snapshot, updates local heights and decoration, and retains unaffected objects.
 5. Save through the existing operation completion path.
 
@@ -22,7 +22,7 @@ Rivers, roads, and lot placement/movement/deletion share this invalidation path.
 
 ## Remaining costs
 
-River meshes and junctions still rebuild once per completed river operation. When height values change, terrain vertex upload, normal calculation, collider cooking, and grid presentation refresh still run at commit. Terrain setting or district-size changes intentionally invalidate the full surface. This is incremental surface caching, not a promise of constant-time edits for every district.
+River meshes and junctions still rebuild once per completed river operation. When height values change, terrain vertex upload, normal calculation, and collider cooking still run at commit. General surface changes also refresh the grid presentation; road deletion defers that derived grid work until an existing bulk district or terrain rebuild. Terrain setting or district-size changes intentionally invalidate the full surface. This is incremental surface caching, not a promise of constant-time edits for every district.
 
 ## Validation — September 15, 2026
 
@@ -32,3 +32,10 @@ River meshes and junctions still rebuild once per completed river operation. Whe
 - Flat and hilly incremental decoration geometry matched full deterministic rebuilds. No-op refreshes retained mesh instances and cache revision.
 - Live road checks verified deferred refresh, one commit, and unchanged road instance retention.
 - QA used isolated fixture state and restored the original screen afterward. Timings are Unity Editor observations, not guarantees for every map.
+
+## Validation — September 19, 2026 road deletion
+
+- The Roads menu exposes **Delete Road**. Its active cursor is a red X, click-drag removes road cells, and Escape restores the normal selector and cursor.
+- Riverdale read-only profiling measured the road edit session, model deletion, and nine-cell artwork repair at about 5 ms total.
+- The former general surface commit took about 795 ms because it rebuilt the district-wide fine grid. The road-specific commit measured about 281 ms in the isolated Unity Editor fixture while still restoring 4,225 affected terrain samples and recooking the terrain collider. Unity's collider recook accounted for about 136 ms of that work.
+- The player district was read only; validation did not save it.

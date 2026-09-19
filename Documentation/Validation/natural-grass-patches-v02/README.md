@@ -1,0 +1,5 @@
+# Natural Grass borders and circle — isolated review
+
+`windowed-five-pieces.png` shows the four original grass footprints with their new muted borders plus the new 4 m circular footprint. These were temporary presentations in the current Lot's normal, windowed Unity Editor Game view. Previously instantiated grass presentations and the armed preview were hidden for the capture and restored afterward. The five review objects were destroyed and the camera size restored. The active lot's serialized JSON matched before/after, and no Save was called.
+
+Unity compiled without new errors. An isolated runtime check passed five Garden IDs, source texture reuse, rectangular and circular border mesh presence, circular shader setting, and session JSON round trip. The new EditMode test source was updated but not run while the active editor remained in Play mode. Physical mouse placement/selection/Undo, disk save/reload, direct brick overlay overlap, and dense repeated-placement performance remain unverified. The prior forest 39/39 and regional 83/83 suites do not test this work.

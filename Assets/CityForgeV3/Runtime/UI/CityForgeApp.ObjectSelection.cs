@@ -5,6 +5,9 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
+        bool _districtSelectionDetailsExpanded;
+        bool _districtSelectionPanelDismissed;
+
         bool RotateSelectedDistrictObject(int direction)
         {
             if (_lotNudge != null || _placingBrickworks || IndustryPlacementActive || !string.IsNullOrEmpty(_pendingDistrictLotId) || _districtSelection.Count != 1) return false;
@@ -68,6 +71,8 @@ namespace CityForgeV3.UI
 
         void ClearSelectedObject()
         {
+            _districtSelectionDetailsExpanded = false;
+            _districtSelectionPanelDismissed = false;
             _selectedDistrictLotInstanceId = "";
             _districtSelection.Clear();
             _districtWorld?.ShowDistrictSelection(FindSelectedRegionTile(), _districtSelection);
@@ -79,6 +84,8 @@ namespace CityForgeV3.UI
             RemoveDocumentModal();
             _districtPaletteOpen = false; _districtPaletteCategoryOpen = false;
             SelectDistrictCategory("Select");
+            _districtSelectionDetailsExpanded = false;
+            _districtSelectionPanelDismissed = false;
             _districtSelection.Clear(); _districtSelection.Add(identity);
             _selectedDistrictLotInstanceId = identity.Kind == DistrictSelectionKind.Lot ? identity.Id : "";
             RefreshSelectedObjectPanel();
@@ -89,12 +96,26 @@ namespace CityForgeV3.UI
             var screen = _root?.Q<VisualElement>(className: "district-terraform-screen");
             if (screen == null) return;
             screen.Q<VisualElement>("selected-object-panel")?.RemoveFromHierarchy();
+            if (_districtSelectionPanelDismissed)
+            {
+                SetDistrictChromeVisibility(screen);
+                return;
+            }
             var panel = ComposeSelectedDistrictLotPanel(FindSelectedRegionTile());
             if (panel == null) { SetDistrictChromeVisibility(screen); return; }
             panel.style.display = _districtInterfaceVisible ? DisplayStyle.Flex : DisplayStyle.None;
             _districtInfoVisible = false;
             screen.Add(panel);
             SetDistrictChromeVisibility(screen);
+        }
+
+        void CloseSelectedObjectPanel()
+        {
+            _districtSelectionDetailsExpanded = false;
+            _districtSelectionPanelDismissed = true;
+            var screen = _root?.Q<VisualElement>(className: "district-terraform-screen");
+            screen?.Q<VisualElement>("selected-object-panel")?.RemoveFromHierarchy();
+            if (screen != null) SetDistrictChromeVisibility(screen);
         }
 
         VisualElement BuildSelectedObjectPanel(DistrictSelectionRef identity)
@@ -105,8 +126,9 @@ namespace CityForgeV3.UI
             var panel = new ScrollView(ScrollViewMode.Vertical) { name = "selected-object-panel", horizontalScrollerVisibility = ScrollerVisibility.Hidden };
             panel.AddToClassList("cf-map-chrome");
             panel.AddToClassList("district-selected-lot-panel");
-            var close = new Button(ClearSelectedObject) { text = "×", tooltip = "Clear selection", name = "quiet-selection-close" };
-            close.AddToClassList("cf-quiet-close"); panel.Add(close);
+            var close = new Button(CloseSelectedObjectPanel) { text = "CLOSE", tooltip = "Close details", name = "quiet-selection-close" };
+            close.AddToClassList("cf-quiet-close");
+            close.AddToClassList("cf-selection-close"); panel.Add(close);
             panel.Add(CfMapChrome.Title(target.Title, "district-lot-info-name"));
             var preview = CfMapChrome.Icon(identity.Kind == DistrictSelectionKind.Lot ? "Lots" : "Industry");
             if (identity.Kind == DistrictSelectionKind.Lot)
@@ -129,7 +151,7 @@ namespace CityForgeV3.UI
                 }
                 if (data?.Stats != null)
                 {
-                    Summary("POPULATION", data.Stats.Residents.ToString("N0"), "Residents supported by this lot");
+                    Summary("POPULATION", data.Stats.Residents.ToString("N0"), "Population added by this Lot");
                     // Only the selected content's authored benefits, never district objects.
                     if (data.Stats.Benefits != null) foreach (var benefit in data.Stats.Benefits)
                         if (benefit.ResourceId == "food" && benefit.Amount != 0)
@@ -143,7 +165,8 @@ namespace CityForgeV3.UI
                         net >= 0 ? new Color(.5f, .85f, .55f) : new Color(1f, .45f, .4f));
                 }
             }
-            var details = new Foldout { text = "Details & actions", value = false, name = "quiet-selection-details" };
+            var details = new Foldout { text = "Details & actions", value = _districtSelectionDetailsExpanded, name = "quiet-selection-details" };
+            details.RegisterValueChangedCallback(evt => _districtSelectionDetailsExpanded = evt.newValue);
             details.Add(StyledLabel(target.Description, "district-lot-info-meta"));
             if (target.StatusText != null)
             {

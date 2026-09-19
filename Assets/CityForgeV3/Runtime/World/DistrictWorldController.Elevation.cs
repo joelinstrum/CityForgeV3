@@ -9,7 +9,15 @@ namespace CityForgeV3.World
         private DistrictSurfaceCache.Changes _surfaceChanges=new(){Full=true};
         public int SurfaceCacheRevision => _surfaceCache.Revision;
         public int LastTerrainSamplesUpdated => _elevation?.LastUpdatedSampleCount??0;
-        public void CommitSurfaceChanges()=>RefreshElevation(preservePresentations:true);
+        public void CommitLocalSurfaceChanges()=>RefreshElevation(
+            preservePresentations:true, rebuildGrid:false);
+        // Road artwork already updates cell-locally. Terrain relief only needs
+        // the affected height samples; rebuilding the district-wide fine grid
+        // made a single delete visibly stall. Bulk terrain/rebuild boundaries
+        // still regenerate that derived grid.
+        public void CommitRoadSurfaceChanges()=>RefreshElevation(
+            preservePresentations:true, rebuildDecals:false,
+            rebuildGrid:false);
         private MeshCollider _terrainCollider;
         private RegionCityTile _terrainDistrict;
         private bool _buildingDistrict;
@@ -19,7 +27,8 @@ namespace CityForgeV3.World
             point=default;if(_terrainCollider==null||!_terrainCollider.Raycast(ray,out var hit,10000))return false;
             point=_content.InverseTransformPoint(hit.point);return true;
         }
-        private void RefreshElevation(bool preservePresentations = false, bool rebuildDecals = true)
+        private void RefreshElevation(bool preservePresentations = false,
+            bool rebuildDecals = true, bool rebuildGrid = true)
         {
             if(_buildingDistrict)return;
             if(_terrainDistrict==null)return;
@@ -46,7 +55,8 @@ namespace CityForgeV3.World
             }
             if (!preservePresentations && _surfaceChanges.Full)
             {
-                RefreshFlora(_terrainDistrict);
+                RebuildAllFloraPresentations(_terrainDistrict,
+                    DistrictBulkRebuildReason.DistrictWideTerrainReplacement);
                 RefreshNaturalResources(_terrainDistrict);
             }
             else if(heightChanged)
@@ -81,7 +91,7 @@ namespace CityForgeV3.World
                 finally { _floraBatches?.EndChanges(); }
             }
             if(rebuildDecals)_groundDecals?.Refresh(this,_terrainDistrict,_widthMeters,_depthMeters,_surfaceChanges.Full?null:_surfaceChanges.Areas);
-            if(heightChanged && _grid!=null){var oldGrid=_grid.gameObject;oldGrid.SetActive(false);if(Application.isPlaying)Destroy(oldGrid);else DestroyImmediate(oldGrid);BuildGrid();}
+            if(heightChanged && rebuildGrid && _grid!=null){var oldGrid=_grid.gameObject;oldGrid.SetActive(false);if(Application.isPlaying)Destroy(oldGrid);else DestroyImmediate(oldGrid);BuildGrid();}
         }
     }
 }

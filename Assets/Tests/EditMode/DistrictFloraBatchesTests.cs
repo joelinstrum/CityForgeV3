@@ -5,6 +5,149 @@ using UnityEngine;
 
 public class DistrictFloraBatchesTests
 {
+    [Test]
+    public void TimeOfDayChangesStageDenseFloraWithoutReplacingTrees()
+    {
+        var host = new GameObject("Staged flora lighting test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "staged-flora-light", Width = 2, Height = 2,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Morning
+            };
+            for (var i = 0; i < 64; i++)
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "staged-" + i,
+                    FloraId = i % 4 == 0 ? "forest-cluster-01" : "cilician-fir",
+                    NormalizedX = .08f + (i % 8) * .12f,
+                    NormalizedZ = .08f + (i / 8) * .12f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var before = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Where(renderer => renderer.name.StartsWith("District Flora —"))
+                .OrderBy(renderer => renderer.GetComponent<DistrictSelectable>()?
+                    .Identity.Id).ToArray();
+
+            world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+
+            Assert.That(world.TimeOfDayPresentationPending, Is.True);
+            var slices = 0;
+            while (world.TimeOfDayPresentationPending && slices++ < 100)
+                world.SyncTimeOfDayPresentation();
+            Assert.That(slices, Is.GreaterThan(1));
+            Assert.That(slices, Is.LessThan(100));
+            var after = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Where(renderer => renderer.name.StartsWith("District Flora —"))
+                .OrderBy(renderer => renderer.GetComponent<DistrictSelectable>()?
+                    .Identity.Id).ToArray();
+            CollectionAssert.AreEqual(before, after,
+                "Lighting changes must retain selectable flora presentations.");
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void IncrementalFloraInsertionKeepsExistingPresentations()
+    {
+        var root = new GameObject("Incremental flora test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "incremental-flora", Width = 1, Height = 1
+            };
+            for (var i = 0; i < 400; i++)
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "existing-" + i,
+                    FloraId = "cilician-fir",
+                    NormalizedX = .1f + (i % 20) * .04f,
+                    NormalizedZ = .1f + (i / 20) * .04f
+                });
+            var world = root.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var existing = root.GetComponentsInChildren<SpriteRenderer>(true)
+                .First(renderer => renderer.name ==
+                    "District Flora — cilician-fir");
+            var additions = Enumerable.Range(0, 12).Select(i =>
+                new PlacedDistrictFlora
+                {
+                    InstanceId = "added-" + i,
+                    FloraId = i % 5 == 0 ? "cilician-fir" : "american-elm",
+                    NormalizedX = .45f + i * .002f,
+                    NormalizedZ = .55f
+                }).ToList();
+            foreach (var tree in additions)
+            {
+                district.Flora.Add(tree);
+                DistrictHarvestIndex.Changed(district, tree);
+            }
+
+            world.AddDistrictFloraPresentations(additions,
+                additions[additions.Count - 1].InstanceId);
+
+            Assert.That(existing, Is.SameAs(root
+                .GetComponentsInChildren<SpriteRenderer>(true)
+                .First(renderer => renderer.name ==
+                    "District Flora — cilician-fir")),
+                "Adding a group must not rebuild existing flora objects.");
+            Assert.That(root.GetComponentsInChildren<SpriteRenderer>(true)
+                .Count(renderer => renderer.name.StartsWith(
+                    "District Flora —")), Is.EqualTo(412));
+        }
+        finally { Object.DestroyImmediate(root); }
+    }
+
+    [Test]
+    public void MovingFloraKeepsUnchangedPresentationsAndRejoinsItsBatch()
+    {
+        var host = new GameObject("Incremental flora move test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "incremental-flora-move", Width = 1, Height = 1
+            };
+            var moving = new PlacedDistrictFlora
+            {
+                InstanceId = "moving", FloraId = "cilician-fir",
+                NormalizedX = .25f, NormalizedZ = .25f
+            };
+            var unchanged = new PlacedDistrictFlora
+            {
+                InstanceId = "unchanged", FloraId = "american-elm",
+                NormalizedX = .75f, NormalizedZ = .75f
+            };
+            district.Flora.Add(moving); district.Flora.Add(unchanged);
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var renderers = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Where(renderer => renderer.name.StartsWith("District Flora —"))
+                .ToArray();
+            var movingRenderer = renderers.First(renderer =>
+                renderer.GetComponent<DistrictSelectable>()?.Identity.Id == "moving");
+            var unchangedRenderer = renderers.First(renderer =>
+                renderer.GetComponent<DistrictSelectable>()?.Identity.Id == "unchanged");
+
+            moving.NormalizedX = .35f;
+            moving.NormalizedZ = .4f;
+            world.MoveDistrictFloraPresentations(new[] { moving }, "moving");
+
+            Assert.That(host.GetComponentsInChildren<SpriteRenderer>(true)
+                .First(renderer => renderer.GetComponent<DistrictSelectable>()?
+                    .Identity.Id == "moving"), Is.SameAs(movingRenderer));
+            Assert.That(host.GetComponentsInChildren<SpriteRenderer>(true)
+                .First(renderer => renderer.GetComponent<DistrictSelectable>()?
+                    .Identity.Id == "unchanged"), Is.SameAs(unchangedRenderer));
+            Assert.That(movingRenderer.forceRenderingOff, Is.True,
+                "Moved flora must rejoin the spatial render batch.");
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     GameObject root; Texture2D texture; Sprite sprite; Material material;
     [SetUp] public void SetUp()
     {
@@ -203,6 +346,90 @@ public class DistrictFloraBatchesTests
         Assert.True(a.GetComponent<DistrictSelectable>().Hit(new Ray(new Vector3(11, 1, -10), Vector3.forward), out _));
         var properties = new MaterialPropertyBlock(); Batches()[0].GetPropertyBlock(properties);
         Assert.AreSame(texture, properties.GetTexture("_MainTex")); Assert.AreEqual(1f, properties.GetFloat("_FloraSaturation"));
+    }
+    [Test] public void HostedLotOrbitKeepsCachedDistrictTreesFacingCamera()
+    {
+        var view = new GameObject("Shared district camera");
+        view.transform.SetParent(root.transform);
+        var camera = view.AddComponent<Camera>();
+        camera.transform.rotation = Quaternion.Euler(35f, 45f, 0f);
+        var tree = Tree(10);
+        tree.transform.rotation = camera.transform.rotation;
+        var batches = root.AddComponent<DistrictFloraBatches>();
+        batches.Build(new[] { tree }, camera);
+        var renderer = Batches().Single();
+        var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+        var offsets = new System.Collections.Generic.List<Vector3>();
+        mesh.GetUVs(2, offsets);
+        Assert.AreEqual(mesh.vertexCount, offsets.Count);
+        Assert.True(offsets.Any(offset => offset.sqrMagnitude > 1f));
+        var block = new MaterialPropertyBlock();
+        renderer.GetPropertyBlock(block);
+        Assert.AreEqual(1f, block.GetFloat("_DistrictFloraBatch"));
+
+        camera.transform.rotation = Quaternion.Euler(35f, 135f, 0f);
+        Assert.AreSame(mesh, Batches().Single().GetComponent<MeshFilter>().sharedMesh,
+            "A camera orbit must not rebuild district forest cells");
+        var corners = offsets.Select(offset =>
+            camera.transform.InverseTransformDirection(camera.transform.rotation * offset)).ToArray();
+        Assert.Less(corners.Max(corner => Mathf.Abs(corner.z)), .0001f,
+            "The cached tree quad must remain flat to the new camera view");
+        Assert.Greater(corners.Max(corner => corner.y) - corners.Min(corner => corner.y), 3f,
+            "Orbiting must keep the billboard upright and full height");
+    }
+    [Test] public void CachedTreeStillRendersAfterNinetyDegreeCameraOrbit()
+    {
+        texture.SetPixels(Enumerable.Repeat(Color.white, 16).ToArray());
+        texture.Apply();
+        var tree = Tree(0);
+        var view = new GameObject("Shared camera");
+        view.transform.SetParent(root.transform);
+        var camera = view.AddComponent<Camera>();
+        camera.orthographic = true;
+        camera.orthographicSize = 4f;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Color.black;
+        camera.cullingMask = 1 << 28;
+        camera.enabled = false;
+        tree.transform.rotation = Quaternion.Euler(35f, 45f, 0f);
+        camera.transform.rotation = tree.transform.rotation;
+        var batches = root.AddComponent<DistrictFloraBatches>();
+        batches.Build(new[] { tree }, camera);
+        var renderer = Batches().Single();
+        renderer.gameObject.layer = 28;
+        var cachedMesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+        var target = new RenderTexture(128, 128, 16);
+        var image = new Texture2D(128, 128, TextureFormat.RGBA32, false);
+        var previousTarget = RenderTexture.active;
+        try
+        {
+            camera.targetTexture = target;
+            int VisiblePixels(float yaw)
+            {
+                camera.transform.rotation = Quaternion.Euler(35f, yaw, 0f);
+                var center = tree.transform.position + camera.transform.rotation *
+                    new Vector3(2f, 2f, 0f);
+                camera.transform.position = center - camera.transform.forward * 20f;
+                camera.Render();
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, 128, 128), 0, 0);
+                image.Apply();
+                return image.GetPixels32().Count(pixel => pixel.r > 30);
+            }
+            var before = VisiblePixels(45f);
+            var after = VisiblePixels(135f);
+            Assert.Greater(before, 2000, "Control view must show the test tree");
+            Assert.Greater(after, before * .8f,
+                "The cached billboard must not turn edge-on after a Lot orbit");
+            Assert.AreSame(cachedMesh, renderer.GetComponent<MeshFilter>().sharedMesh);
+        }
+        finally
+        {
+            camera.targetTexture = null;
+            RenderTexture.active = previousTarget;
+            Object.DestroyImmediate(target);
+            Object.DestroyImmediate(image);
+        }
     }
     [Test] public void HarvestOrMoveRebuildsOnlyTheAffectedCell()
     {

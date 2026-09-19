@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-18 15:16:07Z" end-time="2026-09-18 15:16:09Z" duration="1.773752">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="934" result="Passed" start-time="2026-09-18 15:16:07Z" end-time="2026-09-18 15:16:09Z" duration="1.773752" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2075" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge - V3/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="934" result="Passed" start-time="2026-09-18 15:16:07Z" end-time="2026-09-18 15:16:09Z" duration="1.650358" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33758" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2076" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="809" result="Passed" start-time="2026-09-18 15:16:07Z" end-time="2026-09-18 15:16:09Z" duration="1.478466" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2077" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="809" result="Passed" start-time="2026-09-18 15:16:07Z" end-time="2026-09-18 15:16:09Z" duration="1.379595" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1287" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="481" result="Passed" start-time="2026-09-18 15:16:08Z" end-time="2026-09-18 15:16:09Z" duration="1.178210" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1761" name="BaseSurfaceEndsAtLotLineWhileOverlaysCanContinueOutside" fullname="CityForgeV3.Tests.UiFoundationTests.BaseSurfaceEndsAtLotLineWhileOverlaysCanContinueOutside" methodname="BaseSurfaceEndsAtLotLineWhileOverlaysCanContinueOutside" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1096150480" result="Passed" start-time="2026-09-18 15:16:08Z" end-time="2026-09-18 15:16:08Z" duration="0.643052" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1756" name="LegacyGrassBasesAndUrbanOverlaysApplyAndPersist" fullname="CityForgeV3.Tests.UiFoundationTests.LegacyGrassBasesAndUrbanOverlaysApplyAndPersist" methodname="LegacyGrassBasesAndUrbanOverlaysApplyAndPersist" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2050232565" result="Passed" start-time="2026-09-18 15:16:08Z" end-time="2026-09-18 15:16:09Z" duration="0.429973" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /var/folders/y3/d9wwhmv57sqgmsfvr_rswy8w0000gn/T/cityforge-CityForge_-_V3-map-layers-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

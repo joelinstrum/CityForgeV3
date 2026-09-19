@@ -1,0 +1,1 @@
+PASS: supplied cobblestone loaded 1250x1250 for Base and Overlay; fountain mesh/albedo loaded, 3m footprint and grounded; isolated session round trip. Temporary scene objects destroyed; no Save.

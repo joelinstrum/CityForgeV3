@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 00:25:14Z" end-time="2026-09-19 00:25:15Z" duration="1.7837538">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="994" result="Passed" start-time="2026-09-19 00:25:14Z" end-time="2026-09-19 00:25:15Z" duration="1.783754" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2147" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge - V3/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="994" result="Passed" start-time="2026-09-19 00:25:14Z" end-time="2026-09-19 00:25:15Z" duration="1.566956" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33758" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1169" name="WhitePicketGardenStripTests" fullname="WhitePicketGardenStripTests" classname="WhitePicketGardenStripTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-19 00:25:14Z" end-time="2026-09-19 00:25:15Z" duration="1.385735" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1171" name="AllStripsHaveTwoMetreFenceAndPlantingOnBothSides" fullname="WhitePicketGardenStripTests.AllStripsHaveTwoMetreFenceAndPlantingOnBothSides" methodname="AllStripsHaveTwoMetreFenceAndPlantingOnBothSides" classname="WhitePicketGardenStripTests" runstate="Runnable" seed="1495827320" result="Passed" start-time="2026-09-19 00:25:14Z" end-time="2026-09-19 00:25:15Z" duration="0.398637" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1170" name="GardenLibraryScrollsItsCatalogAboveAFixedDoneBar" fullname="WhitePicketGardenStripTests.GardenLibraryScrollsItsCatalogAboveAFixedDoneBar" methodname="GardenLibraryScrollsItsCatalogAboveAFixedDoneBar" classname="WhitePicketGardenStripTests" runstate="Runnable" seed="496458569" result="Passed" start-time="2026-09-19 00:25:15Z" end-time="2026-09-19 00:25:15Z" duration="0.007836" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1173" name="PicketGardenIdsAndRotationSurviveSessionRoundTrip" fullname="WhitePicketGardenStripTests.PicketGardenIdsAndRotationSurviveSessionRoundTrip" methodname="PicketGardenIdsAndRotationSurviveSessionRoundTrip" classname="WhitePicketGardenStripTests" runstate="Runnable" seed="1572550884" result="Passed" start-time="2026-09-19 00:25:15Z" end-time="2026-09-19 00:25:15Z" duration="0.766455" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1172" name="WinterAndPreviewKeepFenceWhileHidingSummerFlowers" fullname="WhitePicketGardenStripTests.WinterAndPreviewKeepFenceWhileHidingSummerFlowers" methodname="WinterAndPreviewKeepFenceWhileHidingSummerFlowers" classname="WhitePicketGardenStripTests" runstate="Runnable" seed="2092083719" result="Passed" start-time="2026-09-19 00:25:15Z" end-time="2026-09-19 00:25:15Z" duration="0.001979" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: Documentation/Validation/white-picket-garden-v03/test-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

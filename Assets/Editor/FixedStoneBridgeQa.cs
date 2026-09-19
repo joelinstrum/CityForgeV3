@@ -18,7 +18,7 @@ public static class FixedStoneBridgeQa
         {
             var d=new RegionCityTile{Width=1,Height=1,TileId="fixed-bridge-qa"};
             d.Rivers.Add(new(){InstanceId="river",WidthMeters=width,Depth=DistrictRiverDepth.Deep,Points=new(){new(.5f,.1f),new(.5f,.9f)}});
-            var host=new GameObject("Fixed bridge QA");var world=host.AddComponent<DistrictWorldController>();world.Build(d);
+            var host=new GameObject("Fixed bridge QA");var world=host.AddComponent<DistrictWorldController>();world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
             if((world.WorldCamera.depthTextureMode&DepthTextureMode.Depth)==0)
                 throw new Exception("River depth transparency camera texture is disabled");
             if(!DistrictBridgePlanner.TryPlan(d,new(27,32),Vector2Int.right,world.SampleBridgeSurface,_=>false,out var proposal,out var reason))throw new Exception(reason);
@@ -88,9 +88,9 @@ public static class FixedStoneBridgeQa
                 if(d.Bridges.Count!=1||!d.Bridges[0].FixedModel)throw new Exception("Fixed model build transaction failed");
                 string saved=JsonUtility.ToJson(d);var undo=(DistrictUndoHistory)app.GetType().GetField("_districtUndo",flags).GetValue(app);
                 if(!undo.TryUndo(out var before))throw new Exception("Fixed model build was not undoable");
-                JsonUtility.FromJsonOverwrite(before,d);world.Build(d);
+                JsonUtility.FromJsonOverwrite(before,d);world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
                 if(d.Bridges.Count!=0)throw new Exception("Fixed model undo failed");
-                JsonUtility.FromJsonOverwrite(saved,d);world.Build(d);
+                JsonUtility.FromJsonOverwrite(saved,d);world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
                 if(!d.Bridges[0].FixedModel || host.GetComponentsInChildren<MeshFilter>().Count(f=>f.name=="Bridge span")!=1)throw new Exception("Fixed model reload failed");
                 report+="  Build, in-memory undo, and serialized reload passed.\n";
                 if(width==42)

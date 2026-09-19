@@ -569,3 +569,919 @@ User requested seeing the complete mixed beds at the game's exact angle. Read-on
 Added two complete Garden assemblies: `georgian-clipped-hedge-square-v01` (4 × 4 m) and `georgian-clipped-hedge-rectangle-v01` (6 × 3 m). Each uses a single textured, beveled clipped-hedge mesh with perimeter and interior islands over dark earth. The new versioned photographic leaf source/runtime copy is under `GeorgianClippedHedgesV01`. The existing mixed beds now have a lower charcoal-brown physical rim plus a thin colored overlay that covers white edging baked into their plan art. Already-instantiated beds in a running lot may retain their old white rim until their presentations are rebuilt. Source plans and save records were not modified.
 
 Unity refreshed and compiled. Temporary presentations were inspected with the actual enabled Lot Camera at Detail zoom, 30° elevation and 45° azimuth: square and rectangle, rectangle quarter turn, muted-edge flower bed and winter hedge tint. An isolated `LotEditorSession` JSON round trip retained both new prop IDs and quarter turn; the rotated rectangle footprint checked as 3 × 6 m. Active lot JSON was identical before/after; no Save was invoked. Temporary editor QA script was removed after capture. Evidence and limitations: `Documentation/GARDEN_HEDGES.md` and `Documentation/Validation/georgian-clipped-hedges-v01/`. Physical UI placement/selection/Undo and saved-file regression remain unverified. Forest 39/39 and regional 83/83 predate this Garden work and do not validate it. No commit or push; worker/labor code untouched.
+
+### September 18 — Natural Grass Garden patches
+
+Renamed the Lot base display label `Default Grass` to `Natural Grass` without changing the saved `default-grass` ID or source texture. Garden now offers four soft-edged grass props: 4 × 2 m, 6 × 3 m, 4 × 4 m and 6 × 6 m. They reuse the exact base grass texture at its five-metre density; a shadow-receiving material fades the outer 0.40 m with no raised border. New IDs use the existing `PlacedProp` rotation, selection, Undo and manual Save paths. Brick sidewalk overlays remain available separately for paths. Worker/labor code untouched.
+
+Unity compiled and a Play-mode isolated check passed all four IDs, source/material contracts, rotated footprints and session JSON round trip. Temporary presentations over a dark comparison plane were captured in the normal windowed Game view and removed; active lot JSON was unchanged, camera restored, no Save. This was not a physical-mouse placement/selection/Undo or saved-file regression pass, nor a direct brick-overlay interaction check. New EditMode tests are written but were not run while the active editor was in Play mode. Evidence and limits: `Documentation/GARDEN_GRASS_PATCHES.md` and `Documentation/Validation/natural-grass-patches-v01/`. The forest 39/39 and regional 83/83 runs are unrelated.
+
+### September 18 — muted grass borders and circular piece
+
+The four existing Natural Grass Garden IDs now build a flat 0.12 m charcoal-brown perimeter matching the mixed beds' muted edge family. New `natural-grass-circle-v01` is a 4 m diameter piece with a radial fade and cached ring mesh. The original grass texture, texture density, saved IDs, selection anchor, Undo route and manual Save behavior remain unchanged. No worker/labor changes. Existing live presentations made before the code refresh can remain borderless until presentation rebuild; saved pieces require no migration.
+
+Unity compiled. Isolated Play-mode checks passed all five IDs, border and circular material/mesh contracts, and a session JSON round trip. Temporary presentations were viewed in the normal windowed Game view on the current Lot base; the active lot JSON was identical before/after, previous presentations/preview restored, and no Save was called. Evidence: `Documentation/GARDEN_GRASS_PATCHES.md` and `Documentation/Validation/natural-grass-patches-v02/`. Physical placement/selection/Undo, disk save/reload, direct brick overlap and dense profiling remain open. The prior forest/regional test counts do not validate this Garden work.
+
+### September 18 — Natural Grass fills its muted border
+
+Joel flagged the visible pink strip between grass and border in the V02 view. Removed the 0.40 m perimeter alpha fade from bordered Natural Grass presentations. Rectangles are opaque to the quad edge; the circle is radially clipped only outside the rim, with a tiny antialias transition hidden beneath it. The grass texture, border geometry, saved IDs and manual Save route are unchanged. Unity refreshed/compiled. The active Lot Camera capture of square and circular pieces shows grass against the muted rims, with unchanged Lot session JSON and no Save. Evidence: `Documentation/Validation/natural-grass-patches-v03/`. The temporary Editor QA helper was removed. Physical UI and disk save/reload checks remain open; old forest/regional suites are unrelated.
+
+### September 18 — supplied brick paving in Base and Overlays
+
+Imported Joel's 1254 × 1254 `brick-texture-1.png` byte-for-byte into versioned `BrickPavingV01` Resources. Unity's initial non-power-of-two import reduced it to 1024, so the importer was set to preserve 1254. Added `brick-paving-v01` to both Lot Base and Overlays. A 10 m base repeat matches the existing 10 × 10 m overlay tile, while other bases remain at 5 m; Base UI now says surfaces rather than grass. The new overlay creates no pedestrian route. Source, saved IDs, Undo and manual-only Save remain intact. Unity compiled, an isolated base/overlay session JSON round trip passed, and a temporary tile was inspected in the active Lot Camera beside Natural Grass. The active Lot JSON was unchanged, no Save was called, and QA code was removed. Evidence and remaining physical UI/disk checks: `Documentation/BRICK_PAVING.md` and `Documentation/Validation/brick-paving-v01/`. Prior forest/regional runs do not cover this work.
+
+### September 18 — base ends at the lot boundary; overlays may continue outside
+
+Joel's Brick Paving screenshot showed the Base covering the two-metre terrain apron outside the yellow lot line. The visible heightfield mesh and collider now crop to exact lot bounds in standalone and district-hosted Lots; the stored terrain grid retains its apron and no save data migrates. Overlay painting now accepts one 10 m cell ring outside the lot so a driveway/path can continue from an edge cell toward a road; overlays and other props are not globally clipped. An isolated 30 × 30 m fixture captured the bounded base and a separate overlay beyond its east edge, with unchanged session JSON and no Save. Two focused EditMode tests passed (2/2), covering mesh bounds, outside-cell painting/round trip and previous base/overlay catalog persistence. Temporary QA code was removed. Evidence/remaining physical-pointer and live-reload checks: `Documentation/LOT_BASE_BOUNDARY.md` and `Documentation/Validation/lot-base-boundary-v01/`. Prior forest/regional suites remain unrelated.
+
+### September 18 — dark cobblestone in Base and Overlays
+
+Created a separate dark charcoal-slate texture using built-in imagegen with the approved gray road cobblestone as an edit reference. The existing road asset is unchanged. Source art and exact prompt are under `Documentation/ArtStudies/DarkCobblestoneV01`; the byte-identical runtime image is `LotTextures/DarkCobblestoneV01/dark-cobblestone.png`, imported at its full 1254 × 1254 resolution. Added `dark-cobblestone-v01` to both Base and Overlays, with a 10 m base repeat matching the 10 × 10 m tile. An isolated Lot fixture rendered both actual paths; the overlay's temporary selection highlight was cleared for review. Isolated session round trip passed, no Save, and fixture/Editor QA code removed. The focused EditMode test is written but not run because Unity returned to Play mode during this work; leave the user's session intact. Evidence and limits: `Documentation/DARK_COBBLESTONE.md` and `Documentation/Validation/dark-cobblestone-v01/`. Previous forest/regional suites are unrelated.
+
+### September 18 — Joel's cobblestone replaces rejected dark generation; stone fountain joins Garden
+
+Joel rejected the generated charcoal cobblestone and supplied a 1250 × 1250
+`cobblestone-texture.png`. The active Base and Overlay choice now displays
+**Cobblestone** and uses the supplied PNG unchanged. Retained saved ID
+`dark-cobblestone-v01` makes earlier placements resolve to the new art without
+schema migration; the generated source remains only as a rejected ArtStudy.
+Added his archived stone fountain FBX and five texture maps unchanged under
+versioned `Garden/StoneFountainV01/Source`. New Garden library prop
+`stone-garden-fountain-v01` is a grounded, rotatable, 3 m stone basin with a
+rendered card preview. It uses existing prop placement, selection, Undo and
+manual-only Save routes; no worker/labor changes. Unity compiled. An isolated
+capture and session JSON round trip passed, with no Save; temporary QA objects
+were removed. Two focused EditMode tests are written but could not run while
+the Editor remained in Play mode. Physical UI and disk reload still need review.
+See `Documentation/STONE_FOUNTAIN_AND_COBBLESTONE.md` and
+`Documentation/Validation/stone-fountain-and-cobblestone-v01/`. Prior
+forest/regional suites are unrelated.
+
+### September 18 — trees plant on the first click; seasons share lighting
+
+An armed Flora tool now prioritizes planting on the first click and on
+subsequent clicks even over existing tree canopies or a prior selection. Esc
+disarms planting for direct selection/movement. Tree ground anchors accept
+water, overlays, roads, props and other flora; only the lot bounds and building
+footprints block new placement. Hybrid building footprints use package size
+and rotation; 3D buildings use cached projected mesh contours with bounds
+fallback, invalidated on presentation rebuild. Existing saved tree positions
+are not migrated. Removed season-wide ground/flora/building lighting tints;
+time-of-day and environment lighting remain, along with authored seasonal
+artwork and weather. No save schema, manual Save or worker/labor changes.
+Unity compiled and an isolated Play-mode fixture passed repeated first-click,
+water, disarmed selection, hybrid/3D building and four-season tint checks.
+Fixture and global lighting were restored without Save. Focused EditMode tests
+were updated but not run while Joel's Editor remains in Play mode. Physical UI
+and disk save/reload remain open. See
+`Documentation/TREE_PLACEMENT_SEASON_LIGHTING.md` and
+`Documentation/Validation/tree-placement-season-light-v01/`.
+
+### September 18 — hedge-bordered Natural Grass Garden pieces
+
+Added five Garden variants alongside the original Natural Grass patches: short
+and long rectangles, 4 m and 6 m squares, and a 4 m circle. Each keeps the
+exact Natural Grass center and frames it with the existing clipped hedge leaf
+texture on a 0.54 m tall 3D perimeter; the circular variant has a continuous
+beveled ring. Existing Garden prop placement, rotation, selection, Undo and
+manual-only Save paths carry the new IDs. Worker/labor code is untouched.
+Unity compiled, and an isolated render verified all five presentations,
+source textures and mesh dimensions without altering the active Lot session
+or calling Save. The temporary review script was removed. Focused EditMode
+tests were written but not run while the Editor remains in Play mode.
+Physical pointer interaction, disk save/reload and dense profiling remain
+open. See `Documentation/GARDEN_HEDGED_GRASS.md` and
+`Documentation/Validation/hedged-grass-v01/`. Earlier forest/regional suites
+do not cover this work.
+
+### September 18 — darker hedge and gray wrought-iron fence base
+
+Joel's Garden Test screenshot showed that the new clipped-hedge perimeters
+looked light blue-green and that the wrought-iron fence had a bright white
+bottom. Regraded the shared hedge leaf tints to deep green for all seasons;
+this affects both hedge-bordered lawns and earlier Georgian clipped-hedge
+plots, without changing global season lighting or the source texture. The
+straight and corner wrought-iron fence runtime materials now use a neutral
+dark-gray tint, making the pale base unobtrusive while also subduing their
+stone/brick atlas. Source textures and saved IDs remain unchanged. An
+isolated 45° render was reviewed, Unity compiled, temporary QA code was
+removed, and the active Lot was not saved. See
+`Documentation/GARDEN_HEDGE_FENCE_COLOR.md` and
+`Documentation/Validation/garden-hedge-fence-color-v01/`. Physical UI and
+disk save/reload checks remain open.
+
+### September 18 — three-tier running water on the stone fountain
+
+Joel requested a first pass of running water on the existing stone garden
+fountain. Added three inset water surfaces, eight streams from top to middle,
+ten from middle to basin, subtle time-driven ripples and flow highlights, and
+two small splash systems. All are children of the existing saved prop and
+use shared geometry/materials with per-instance preview opacity. The live
+fountain reattaches water after a script reload without a full Lot rebuild.
+No source model, texture, saved ID, manual Save, or worker/labor logic changed.
+The active Lot Camera and isolated fountain captures were reviewed; the live
+fountain had one water assembly. The Editor was paused and left paused, so
+motion was checked through two forced shader phases rather than by resuming
+the Game. Unity compiled; temporary QA code was removed; no Save occurred.
+Focused EditMode assertions are written but unrun in Play mode. See
+`Documentation/STONE_FOUNTAIN_WATER.md` and
+`Documentation/Validation/stone-fountain-water-v01/`.
+
+### September 18 — fountain flow obeys gravity
+
+Joel caught that the first fountain-water shader scrolled stream highlights
+upward. The stream mesh UV runs from upper lip (0) to lower bowl (1); changed
+the sine phase from `+ time` to `- time`, so visual flow advances toward the
+lower bowl. Basin ripples already moved outward and were not changed. Unity
+refreshed with zero assembly errors, and a source/UV direction check passed.
+The Editor was left paused; no Save or Lot edit occurred. The earlier still
+phase captures predate this direction correction.
+
+### September 18 — low-poly Blender boxwood hedge visual study
+
+Joel proposed a textured 1 × 3 m hedge with a subtly uneven mesh rather than
+modeled leaf clusters. Built a separate 3 × 1 × 1 m Blender/FBX prototype and
+dark neutral-green foliage image, leaving all existing Garden hedges and saved
+IDs untouched. It has 616 triangles and one foliage material. An isolated
+Unity comparison exposed bevel UV streaks, which were corrected in the source
+generator; the final import is 422 vertices and 616 triangles with the intended
+dimensions. Unity compiled and rendered the final study beside a current-
+foliage control; the QA hook was removed. The active Lot stayed paused and was
+not saved. The prototype is not yet a Garden Library item. See
+`Documentation/LOW_POLY_BOXWOOD_HEDGE.md` and
+`Documentation/Validation/low-poly-boxwood-hedge-v01/`.
+
+### September 18 — approved Blender boxwood is placeable in Garden
+
+Joel approved the softer Blender hedge study and asked to see it in-game.
+Added **Boxwood Hedge** to the Garden Library with new saved ID
+`low-poly-boxwood-hedge-3x1-v01`, preserving all older hedge IDs and pieces.
+The 3 × 1 × 1 m FBX uses one dark neutral-green foliage material and 616
+triangles. Its runtime presentation is grounded, supports translucent placement
+preview, and uses the existing prop rotation, selection, Undo, and manual Save
+routes. An isolated Garden scene rendered three pieces, including one quarter
+turn, on Natural Grass beside Joel's cobblestone. ID recognition, 0°/90°
+footprints, ground anchors, mesh budget, preview opacity, shared opaque
+instancing material, and an isolated session JSON round trip passed. Unity
+compiled; the QA hooks were removed, and
+no active Lot data or disk save was touched. Physical pointer placement,
+disk save/reload and dense profiling remain open. See
+`Documentation/LOW_POLY_BOXWOOD_HEDGE.md` and
+`Documentation/Validation/low-poly-boxwood-hedge-v01/garden-placement.png`.
+
+### September 18 — refreshed parks branch from latest main
+
+Fetched `origin/main` at `120b263` (automata PR #24) and fast-forwarded
+`feature/parks-and-gardens` from `ceccaf6`. Reapplied the existing uncommitted
+Garden work; Git auto-merged the two overlapping files without conflicts.
+The branch is ahead of its remote by the two main commits; nothing was pushed.
+The four Automata Library entries now include 18th Century Ladies Chatting,
+Victorian Gentlemen Chatting, and Gentleman and Lady Strolling. All eight
+facings and thumbnails for each catalog entry are present, including stroll
+recolor masks. Unity refreshed with zero assembly errors, and `git diff
+--check` passed. The active Lot was not saved. A recovery stash named
+`parks-and-gardens-before-main-120b263` remains until the branch work is
+committed or otherwise secured.
+
+### September 18 — boxwood hedge forest-green correction
+
+Joel's in-Lot screenshot showed the new 3 × 1 m boxwood hedge reading bright
+lime beside darker Natural Grass pieces. Lowered its shared opaque and preview
+material grade from RGB `(0.34, 0.42, 0.31)` to `(0.18, 0.25, 0.13)` without
+changing the Blender mesh, foliage image, saved ID or older Garden hedges.
+OnEnable now rebinds already-placed hedges after a script reload so the new
+grade appears without a Lot rebuild or Save. An isolated Unity capture on
+grass/cobblestone was reviewed, and Unity compiled with zero assembly errors.
+The active Lot camera was unavailable, so the exact screenshot scene still
+needs Joel's in-game check. Temporary QA code was removed; no Lot was saved.
+See `Documentation/LOW_POLY_BOXWOOD_HEDGE.md` and
+`Documentation/Validation/low-poly-boxwood-hedge-v01/forest-green-isolated.png`.
+
+### September 18 — hosted Lot lighting and district tree orbit
+
+Joel's district screenshots showed boxwood reading too dark during gameplay
+and district tree billboards stretching after a hosted Lot camera rotation
+until the next zoom. Hosted Lot editing now uses the district's ambient fill
+and daylight intensity settings; the boxwood runtime tint is a brighter
+forest green, RGB `(0.245, 0.345, 0.18)`. District flora batches now keep each
+tree's ground anchor and camera-relative quad offset, and the existing sprite
+shader faces the batched quad toward the current shared camera. This avoids
+rebaking district forest cells on orbit. Both cached mesh identity and a 90°
+render test passed; the focused forest EditMode suite passed 41/41, including
+the two new orbit tests. Unity refreshed with zero assembly errors. The
+screenshots supplied by Joel are the before-state; the final hedge appearance
+still needs an in-game visual check in his district. No active Lot or save was
+modified. See `Documentation/LOW_POLY_BOXWOOD_HEDGE.md`.
+
+### September 18 — Civics / Parks lots and placed-Lot tree facing
+
+Joel reported that trees still slanted when rotating a placed district Lot.
+The prior district-flora batch fix addressed a different camera-orbit path:
+these trees are children of the hosted Lot, so rotating that parent turns the
+sprite planes. `DistrictWorldController` now asks only the affected hosted Lot
+to realign its tree and building billboards immediately after a quarter-turn,
+and after initial placement. Simple translation does not trigger this refresh;
+zoom still uses its existing path. An isolated hosted Lot with a tree reproduced
+the 90° misalignment, then passed the immediate-facing check without zoom.
+
+Added saved Lot type value `7` for **Civics / Parks**, leaving all earlier type
+values and existing Civics saves unchanged. It is offered in New Lot and Lot
+Settings, appears in saved-Lot and district placement labels, and uses a civic
+access contract. Garden Test can be reclassified through Lot Settings and an
+explicit Save; no existing save was edited automatically. The visible Lot
+Editor category and library now read **Garden/Parks**; internal Garden IDs and
+placement behavior are unchanged. Two focused EditMode tests passed, Unity
+compiled with zero assembly errors, and temporary QA wiring was removed. A
+third isolated integration test now covers the actual district placement and
+quarter-turn path, but it was not run because the Editor entered Play mode;
+the live session was left untouched.
+
+### September 18 — Lot construction thresholds and stockpiles
+
+The Lot Stats draft now saves minimum population and minimum education score
+(0–100), alongside the existing minimum era and construction materials. The
+construction section exposes all ten district stockpiles in tonnes. District
+placement checks these thresholds against current population and education,
+plus existing era, treasury, material and access rules. Rejection charges
+nothing; accepted placement deducts quoted materials once. Lumber keeps its
+existing labor wood balance. Older Lot saves default the new thresholds to
+zero, and existing placed Lots are not charged on load. The focused Lot Stats
+and district simulation EditMode suite passed 10/10. No player save was
+modified; Lot and district persistence still require explicit Save.
+
+### September 18 — saved Lots move into Build categories
+
+Removed the all-Lots district Build browser. Saved Lots now appear in their
+authored categories: Residential, Commercial, Industrial and Mixed under Zoning;
+Agricultural under a new Farms menu; Transportation under Transit; Civics under
+Civic; and Civics / Parks under Parks. The Lot Editor now offers **Farm** as the
+visible Agricultural type without changing its saved enum value `5`. Browsers
+filter cached summaries only when opened and continue through the same placement,
+requirement, Undo and manual Save path. No existing Lot was changed or saved.
+The focused EditMode run passed 10/10. See `Documentation/LOT_BUILD_CATEGORIES.md`.
+
+### September 18 — hierarchical Lot category and General requirements
+
+Joel found the flat Civics / Parks type awkward and could not see the new build
+requirements in General because they were placed in Stats. New Lot and Lot
+Settings now choose a parent category; Civics reveals General or Park as its
+subcategory, while Farms is its own parent. The saved `CivicsParks = 7` and
+`Agricultural = 5` values remain unchanged. Lot Settings now has a General
+popup beside Lot Behaviors. General contains identity, type, era, size, traffic,
+base cost, minimum build era, population, education, access and all ten material
+requirements. Stats retains people, seasonal finance, benefits and services.
+General Apply changes only the in-memory Lot; explicit Save still persists it.
+The focused category and requirement EditMode suite passed 30/30, and Unity
+compiled without assembly errors. No player Lot or district save was modified.
+
+### September 18 — refreshed parks branch with angled brick roads
+
+Fetched `origin/main` at `1eaf191` and fast-forwarded
+`feature/parks-and-gardens` from `120b263`. This includes the diagonal Antique
+Brick district roads and stair-step smoothing. Reapplied the full uncommitted
+Garden/Lot worktree from recovery stash `parks-and-gardens-before-main-1eaf191`;
+the three overlapping source files auto-merged without conflicts. The stash
+remains as a backup until the uncommitted work is secured. Unity's regional and
+road EditMode suite passed 94/94; focused Lot and Garden checks passed 35/35;
+forest checks passed 41/41. Unity compiled with zero assembly errors, temporary
+QA wiring was removed, and no player save was written. Nothing was pushed.
+
+### September 18 — numeric entry hotkeys and hedge catalog correction
+
+General requirements use UI Toolkit `IntegerField`, which the old input-focus
+guard did not recognize. Text and numeric fields now reserve their key events
+before Lot shortcuts run, and physical key polling also respects their focus.
+The screenshot's pale, protruding-leaf bush matched the older Props → 3D Hedge
+asset, not the approved dark low-poly Boxwood Hedge already along the Lot edge.
+The Props catalog now places the approved Boxwood Hedge with its matching preview;
+the old saved ID remains loadable. Garden Test's saved Lot contains no old 3D
+Hedge props. Two focused EditMode checks passed for text/numeric focus and the
+approved boxwood's material/preview alpha. No player save was edited.
+
+### September 18 — shallow house-front Garden beds
+
+Added two 2 × 1 m rotatable Garden/Parks pieces: **Foundation Hedge & Flowers**
+with a rear clipped hedge and front flowers, and **Framed Foundation Flowers**
+with two short hedge ends, low shrubs and front flowers. They reuse the approved
+Georgian plant cards, cropped canopy image and dark clipped hedge material. Each
+is one new saved prop ID on the existing selection, rotation, Undo and manual
+Save paths. An isolated Unity render and 2/2 focused EditMode tests checked the
+presentation, dimensions, winter state and in-memory JSON round trip. The
+temporary render script was removed; no player save or worker/labor code changed.
+See `Documentation/FOUNDATION_GARDEN_BEDS.md` and
+`Documentation/Validation/foundation-garden-v01/isolated-preview.png`.
+
+### September 18 — five cottage foundation plantings
+
+Added five more 2 × 1 m Garden/Parks foundation beds: unfenced Rose Bushes;
+Picket Rose & Shrubs; Picket Cottage Flowers; Picket Rose Pair; and Picket
+Rounded Shrubs. Four use a low, muted, weathered picket enclosure, while the
+rounded shrubs are low-poly textured 3D meshes. New transparent rose and purple
+phlox plant cards extend the earlier Georgian flowers; the original two beds
+retain their saved IDs and appearance. The same `PlacedProp` rotation, selection,
+Undo and manual Save routes apply. An isolated five-piece render was inspected,
+and focused EditMode tests passed 3/3 for all seven foundation IDs, materials,
+dimensions, winter state and in-memory JSON round trip. No active lot JSON or
+worker/labor code changed. Physical Lot Editor interaction and disk reload
+remain open. See `Documentation/FOUNDATION_GARDEN_BEDS.md` and
+`Documentation/Validation/foundation-garden-v02/`.
+
+### September 18 — straight white-picket flower and grass strips
+
+Added three Garden/Parks props with an exactly 2 m authored white picket fence,
+Natural Grass and planting both in front and behind: White Picket Roses, White
+Picket Cottage, and White Picket Mixed. Each is one 2.2 × 1.8 m rotatable prop;
+the existing independent fence and earlier garden IDs remain unchanged. The
+source fence FBX and material maps are reused at 2 m, with rose, purple and low
+Georgian flower cards on both sides. An isolated Unity render was inspected;
+focused EditMode tests passed 3/3 for fence geometry, grass, front/rear plant
+anchors, season/preview behavior, quarter-turn dimensions and in-memory JSON
+round trip. No active save or worker/labor code changed. Physical Lot Editor
+placement, selection/Undo and disk reload remain open. See
+`Documentation/WHITE_PICKET_GARDEN_STRIPS.md` and
+`Documentation/Validation/white-picket-garden-v01/`.
+
+### September 18 — aged organic white-picket revision
+
+Joel clarified that the three new strips should not reuse the pristine,
+blindingly white standalone picket fence. Replaced their fence presentation
+with a new cached 2 m mesh: eleven subtly uneven pickets, smaller end posts and
+a matte warm-ivory aged-wood texture with cracked paint, gray grain and restrained
+organic staining. Dense cottage planting now overlaps both sides and the rails,
+following Joel's clematis, coneflower, daisy, black-eyed Susan, delphinium,
+sedum, hosta, fern and groundcover reference. The existing standalone fence is
+unchanged, and the three Garden saved IDs remain stable. Revised isolated render
+inspected; focused tests passed 3/3. See
+`Documentation/Validation/white-picket-garden-v02/`.
+
+### September 18 — expanded aged-picket family and fixed Garden footer
+
+Kept Joel's approved White Picket Roses and added six more stable Garden IDs:
+Coneflowers, Daisies, Black-Eyed Susans, Hosta & Fern, Clematis, and Full
+Cottage. All reuse the aged 2 m mesh, Natural Grass and front/rear planting
+contract, with cropped regions of the dense cottage source providing distinct
+plant emphasis without new draw-time image work. Garden/Parks now has nine aged
+picket arrangements total. Its catalog grid is inside a vertical `ScrollView`;
+the modal title/copy and Done actions are fixed outside the scroll region. An
+isolated nine-piece render was inspected and focused EditMode checks passed 4/4
+for all IDs, fence/grass/anchor contracts, season/preview, rotation, in-memory
+round trip and fixed-footer source/style structure. No active save or worker/labor
+code changed. See `Documentation/Validation/white-picket-garden-v03/`.
+
+### September 19 — district heading and top-bar region navigation
+
+Moved the existing region-return button before the gold/resource counters in
+the top-left bar. The top-right district heading now uses a 21 px bold name,
+followed by Year and season. The existing cached season label and metric refresh
+keep the date current without adding scans or changing worker/labor behavior.
+Unfounded districts retain the existing Not founded date state. Region-map
+heading styles remain scoped separately. Source review and `git diff --check`
+passed; live layout and fresh Unity compilation remain unverified. No player
+Save, commit, push, or review-editor sync was performed: Joel explicitly asked
+to preserve the uncommitted work and not commit it.
+
+### September 19 — Not started dialog and hidden unstarted names
+
+Header status now says Not started and opens Start District / Start Town, with
+hover/focus captions beneath both choices. Start District initializes the
+existing Founded/calendar fields without a building, updates local HUD widgets,
+and records only in-memory Undo. The header remains clickable for starting a
+town later. Town placement preserves an existing calendar and content, sets
+Town designation after placing the founder, and adds only that Lot presentation.
+Fort uses fortress-lot; City Center retains city-charter-house but is visibly
+disabled because it has no assigned Lot (Joe was asked about this). Missing Fort
+content is disabled too. Region labels/markers, tooltips and inspector names
+hide unstarted placeholder names without changing stored names.
+
+Six focused tests passed in an isolated scratch Unity project, and current
+runtime code compiled. See Validation/district-start-v01 for results and limits.
+Live visuals, Fort placement, disk reload and dense performance remain unchecked.
+Existing composition-key/Undo whole-district work still runs once on explicit
+town placement; flagged to Joe, unprofiled. No worker/labor optimization changes,
+player saves, commits, pushes, or review sync. Existing uncommitted work retained.
+
+### September 19 — explicit naming confirmation
+
+Start District and Start Town now open a naming dialog prefilled with the
+current name. OK applies the trimmed, nonblank name and continues startup;
+Cancel leaves state unchanged. The District Info panel stages name/designation
+edits and uses OK instead of X. Confirmation updates the existing upper-right
+heading immediately without a district rebuild. Eight isolated Unity EditMode
+checks passed, including naming dialog callbacks, Cancel, blank-name validation,
+and heading identity/update; results in Validation/district-start-v01/naming-test-results.xml.
+Physical-pointer/layout review remains open. No player saves, commits, pushes,
+review sync, or worker/labor changes.
+
+### September 19 — separate development-only Lots testing action
+
+Added Lots beside Build/Terrain as an Editor/development-only dock action,
+showing all saved Lot categories. Its transient placement mode bypasses all
+construction requirements, zeroes cost/material charges, and bypasses authored
+boat/shoreline placement checks. Bounds/overlap still apply. Normal Build
+category placement retains all requirements. Cancellation, normal arming,
+placement completion and navigation clear the testing mode; saves gain no flag.
+Release player scripts omit the button and disable both UI/world bypasses.
+
+24 focused EditMode tests passed in isolated scratch Unity. Non-development
+macOS player scripts compiled, and compiled-assembly inspection confirmed the
+button is absent and the bypass returns false. Evidence and remaining live/UI/
+dense validation limits: Validation/testing-lots-v01. No player saves, commits,
+pushes, review sync, or worker/labor optimization changes.
+
+### September 19 — Tree Test click consumed by Select mode fixed
+
+The separate Lots action left Select active, whose pointer branch intercepted
+world clicks before pending-Lot placement. Armed Lots now take priority after
+UI exclusions and before object inspection, Select/Move, and palette closing.
+They also consume invalid ground clicks instead of starting selection. Existing
+Build requirements remain, and the redundant footprint check on click is gone.
+25 isolated tests passed; an unchanged copy of Joe's Tree Test placed at three
+positions through the in-memory model with no charges. No world rendering or
+physical mouse QA claimed. Evidence: Validation/testing-lots-v01/pointer-test-results.xml
+and tree-test-placement-check.txt. Tree Test save hash stayed identical. No
+player save, commit, push, review sync or worker/labor changes.
+
+### September 19 — meadow zoom detail shift and smooth distance filtering
+
+Interpreted zoom numbering as closest=1 (asked Joe asynchronously; no reply at
+implementation). Zoom 1 uses old zoom 2 grass world scale (13.333m); zoom 2 uses
+old zoom 3 scale (40m). Zoom 3+ (LOD2+) enables coarse isotropic mip filtering
+for base meadow, hill meadow and the formerly unfiltered flat straw-patch sample.
+Broad color fields remain; camera stops, mountain contract and source PNGs are
+unchanged. Existing ground material settings apply on the next zoom change.
+
+Isolated scratch Unity passed all six scale/filter assertions and shader checks;
+24 flat/hill before/after renders generated, zoom-3 flat pair and hilly after
+visually inspected. No added texture samples, mesh, render pass or per-frame scan.
+No live dense-district performance claim or player editor control. Evidence and
+limits: Validation/meadow-zoom-smoothing-v01. No player saves, commits, pushes,
+review sync or worker/labor changes.
+
+### September 19 — quarter-screen district edge panning and modal lock
+
+District hover panning uses outer 25% strips, excluding their four 25% x 25%
+corner intersections. Existing screen pointer events compute direction, with
+menu/button/text/inspector exclusions; removed the old edge buttons so placement
+clicks remain unobstructed. Existing speed/projection/clamping retained. Leaving
+the screen or losing focus clears direction. Document/choice modals stop pan
+polling and clear cached direction, including when text fields have focus.
+Region arrow panning also blocks while a modal is open. Fresh pointer movement
+after closing the dialog rearms hover panning.
+
+23 isolated EditMode checks passed for zones, corners, boundaries, modal lock,
+existing pan contracts and armed-Lot click ownership. Runtime compilation and
+diff whitespace checks passed. Live physical hovering remains for Joe's review.
+Evidence: Validation/quarter-edge-pan-v01. No player saves, commits, pushes,
+review sync, worker/labor edits, added district scans, or presentation rebuilds.
+
+### September 19 — direct district entry and Save diagnosis
+
+Region tile clicks now call SelectRegionTile directly; hover help remains, with
+its instruction updated to click-to-enter. No extra inspector click is needed.
+
+Investigated reported missing saved town names. Read-only inspection of the
+saved Test Region II found custom names (including Riverdale) persisted, but
+those tiles have Founded=false. Current map intentionally hides all unstarted
+names; renaming alone does not start a district, and Start Town naming precedes
+founder placement. Did not reinterpret that state, migrate saves, or reveal
+placeholder names. Asked Joe which name/location was missing; no reply yet.
+
+Five isolated Unity EditMode checks passed: actual Save button first-save and
+rename overwrite for both start states, both naming paths, and founding-state
+round trip. Fixture verifies no write before explicit Save. Player files were
+read only. Direct-click wiring reviewed in source; live interaction remains for
+review. No player saves, commits, pushes, review sync, or worker/labor changes.
+
+### September 19 — Fort click ownership and placement outline
+
+Fort placement now receives world clicks before Select/inspection, sharing the
+armed-Lot input gate. Pointer movement draws its footprint; final placement uses
+the same coordinates. Cache the founder Lot when armed to keep preview free of
+file reads and district scans. Overlap remains checked on click with feedback.
+City Center explicitly says its Lot has not been created yet and stays disabled.
+
+10 isolated tests passed, covering pointer ownership, preview/placement and town
+start state, naming and region labels. See Validation/fort-placement-v01 for
+results and limits. No live player saves/editor control, commits, pushes, review
+sync or worker/labor changes.
+
+### September 19 — slower close-view pan and clearer town labels
+
+Zoom levels 1–3 (LOD0–LOD2) now use 35% of the previous panning speed for both
+edge hover and arrow-key camera motion. Other zoom levels retain their speeds.
+Town dots move 6px closer to names (top 4 to -2), and town labels get a 1.5px
+black text outline. District label styling remains unchanged.
+
+Isolated Unity runtime compilation, stylesheet import and existing focused
+pan/modal/name-visibility checks passed; git diff --check passed. Perceived
+speed and label appearance remain for live review. No player saves, commits,
+pushes, review sync, or worker/labor changes.
+
+### September 19 — Fort next-step slideout
+
+Successful Fort placement now adds a right-side non-modal “Start with lumber”
+information panel suggesting lumberjacks near trees. A 300ms ease-out entrance
+slides it onscreen; X removes it immediately, with no exit animation. Hovering
+it clears edge-pan motion. No persistent onboarding flags, worker changes,
+automatic placement or saving. City Center and the future Lumberjack Camp Lot
+remain unimplemented. The transient panel is not recreated on load/navigation.
+
+Extended the isolated Fort placement test to verify the panel appears after
+founding and closes synchronously without undoing founding. Passed; runtime
+compilation, stylesheet import and diff whitespace checks passed. Entrance
+appearance/timing still need live visual review. No player saves, commits,
+pushes or review sync.
+
+### September 19 — lumberjack and forestry cart Lot authoring entries
+
+Added Lumberjack to Characters and Forestry Cart to horse-drawn vehicles.
+Reuse existing axeman FBX/body+axe maps, embedded clips and 1.85 district scale;
+reuse the existing forestry wagon ID and controller. No labor/worker edits.
+These are authoring assets, not automatic camp production/delivery wiring.
+See Migration/LUMBERJACK_LOT_LIBRARY.md for IDs, lineage and scope.
+
+Isolated scratch fixture successfully instantiated the real lumberjack and
+forestry cart, verified animation component/Chop clip, both original textures,
+cart controller and JSON round trip of both prop IDs. Runtime compilation and
+diff whitespace checks passed. No full Lot UI/district-render visual validation
+or harvesting/delivery test claimed. Evidence: Validation/lumberjack-lot-library-v01.
+No player saves, commits, pushes or review sync.
+
+### September 19 — Work Tent building intake
+
+Imported Joe's work-tent.zip into Buildings3D/WorkTentV01 with byte-identical
+source files and a separate thumbnail. Available through the direct building
+catalog under Industrial → Camps as work-tent-v01. Initial3.2m height including
+pole tips;2,218 triangles. Shared matte material preparation, native model path.
+Isolated Unity model/material/scale checks and visual render review passed;
+see Migration/WORK_TENT_V01.md and Validation/work-tent-v01 for evidence/limits.
+No player saves, commits, pushes, review sync or labor/worker changes.
+
+### September 19 — first-class Lot Connectors and Dirt Entry
+
+Added a Connector category to the Lot Editor. `dirt-entry-v01` is a 5 × 5 m
+dirt driveway centered on a cardinal Lot edge, extending 2.5 m inside and 2.5 m
+outside. It saves independently with stable ID, edge position, and explicit
+pedestrian/vehicle permissions. Edge clicks select rather than duplicate an
+existing piece; Delete removes it. Runtime and district-hosted Lot rebuilds
+render connectors without changing the Lot footprint. Future Lumberjack Camp
+logic can query inside/outside access points; no camp automation or labor
+changes are included.
+
+Isolated tests cover four-edge transforms, dimensions, permissions, click
+ownership, edge limits, JSON/object registry, and cross-boundary presentation.
+An isolated 40 × 30 m fixture render was inspected. See LOT_CONNECTORS.md and
+Validation/lot-connectors-v01. No player saves, commits, pushes, review sync,
+worker/labor changes, per-frame scans, or full district rebuilds.
+# September 19 — 4 × 4 camp overlay
+
+The Lot Editor Overlays modal now separates **1 × 1** and **4 × 4** surface
+categories. Added the user-supplied Camp Ground as one 40 × 40 meter overlay.
+Large overlays fit inside the lot, select from any covered cell, do not repeat
+while dragging, survive the existing save format, and are removed if a resized
+lot cuts through their footprint. Existing 1 × 1 overlays keep their one-tile
+outside-lot painting behavior. Source lineage and the footprint contract are in
+`Documentation/LOT_OVERLAYS.md`; focused validation is in
+`Documentation/Validation/camp-overlay-4x4-v01/`.
+
+Eight focused isolated EditMode tests passed, covering the new large-overlay
+contract and the existing overlay placement, boundary, rotation and pedestrian
+routes. Unity imported the new texture and compiled without errors. No player
+Lot/district save, worker/labor change, commit, push or review sync was made.
+
+### September 19 — Lot library scroll, stable resize view, and 2 × 2 camp ground
+
+The Buildings modal now pins its heading, category controls and Close button,
+with only its card grid inside a bounded vertical ScrollView. Lot dimension
+changes preserve the current orthographic camera framing and rebuild overlays
+and connectors against the resized base. Overlay anchors remap to keep their
+world center when the base expands or shrinks.
+
+The Overlays modal now supports 1 × 1, 2 × 2 and 4 × 4 categories, hiding sizes
+that cannot fit the current Lot. Camp Ground retains its existing ID for save
+compatibility but now occupies 2 × 2 cells (20 × 20 m). See LOT_OVERLAYS.md and
+Validation/lot-editor-layout-resize-v01. No automatic or player save behavior
+was added.
+
+Twelve focused isolated EditMode tests passed, including existing top-down,
+resize deletion, 1 × 1 boundary, rotation, sidewalk, and stair regressions.
+Unity compiled the runtime and imported the stylesheet without errors. No player
+save, commit, push, review sync, or worker/labor change was made.
+
+### September 19 — Lot-owned Lumberjack Camp script
+
+Added the built-in `cityforge-timber-camp-script-v1` behavior. Lot Behaviors →
+Add Behavior → Lumberjack Camp now discovers the Lot's authored Lumberjacks,
+Forestry Cart and vehicle Connector, creates an editable script with their
+stable IDs, and requires no pasted JSON. Each placed Lot binds idempotently to
+one saved district timber crew; authored actor prototypes are hidden in the
+district while existing moving worker/wagon presentations run. Removing the
+source Lot removes its crew and workers. The script owns actor bindings and the
+forestry recipe while delegating bounded tree queries, pedestrian/road routing,
+animations and resource transfer to existing shared services. Current route and
+search budgets remain unchanged; persistence remains manual-only.
+
+Isolated copy-on-write Unity validation passed 22/22 Lot script, 14/14 timber,
+and 9/9 labor tests. No player Lot/district was opened or saved by QA. The user's
+active Lumberjack Camp was manually saved from the live editor during the work;
+this change did not modify that save. A physical UI and live district visual
+cycle remain. See `Documentation/LOT_TIMBER_CAMP_BEHAVIOR.md` and
+`Documentation/Validation/timber-camp-lot-script-v01/`.
+
+### September 19 — district pan balance, Riverdale water, and town labels
+
+Zoom 3 again uses its original district pan rate; only Zoom 1 and Zoom 2 retain
+the requested close-view slowdown. Vertical pan distance compensates for the
+district camera's 20-degree elevation so up/down and left/right travel at the
+same screen-space speed. Region town labels explicitly retain the existing warm
+ivory fill while using the black outline.
+
+River water now has a stronger cool material grade, independent of the global
+terrain/building lighting. An isolated copy of the real Riverdale tile built at
+its saved Noon setting with one river, the expected river shader, and the new
+blue tint. Focused pan and water tests passed 3/3; the label style has a focused
+regression check. The original Riverdale save hash remained unchanged. No
+player save, commit, push, review sync, or worker/labor change was made.
+
+### September 19 — Lot exits, incremental tree groups, and road deletion
+
+Lumberjack Camp crews now enter district navigation through the Lot Connector's
+outside pedestrian access point. New crews start there; binding an existing crew
+repairs its camp and wagon-home and moves only workers still trapped inside that
+Lot. Workers already out in the district keep their position and route. This
+fixes the mismatch between authored actors inside the Lot and district navigation,
+which treats Lot interiors as blocked.
+
+Painted family groups now mix in a harvestable Cilician fir at a one-in-five rate
+in climates that allow it. Group painting inserts only the new presentations and
+rebuilds affected flora batch cells. The previous path called `RefreshFlora` on
+every pointer update, recreating every flora object and shadow in the district.
+A Fir and Mountain group now guarantees its first successfully placed member is
+the harvestable Cilician fir, while its remaining members retain the varied
+fir/spruce selection and one-in-five harvestable chance.
+A missing shadow-mesh color fallback was also added for mixed incremental batches.
+An isolated 1,600-tree fixture measured 77.554ms for adding a 12-tree group versus
+1,555.714ms for the former whole-district refresh (20.06x faster). This headless
+EditMode CPU measurement does not claim live frame time, draw calls, allocations,
+or long-duration stability; explicit coverage generation/load/Undo remain bulk
+refresh boundaries.
+
+Roads now includes **Delete Road**. Selecting it changes the world cursor to a
+red X and supports click-drag deletion through the existing spatial road edit
+session, refreshing only each removed cell and its neighbors. Escape returns to
+the normal selector and restores the standard cursor.
+
+Isolated focused validation passed 80/80 across Lot scripts, connectors, timber,
+Lot simulation, forest coverage, flora batching and road placement. The separate
+incremental/full-refresh profile passed. `git diff --check` passed. No player Lot
+or district was saved, and no commit, push, merge, or review sync was performed.
+
+### September 19 — Riverdale camp migration and town-name fill
+
+Read-only inspection found Riverdale's placed Lumberjack Camp had
+`BehaviorsInitialized=true` but an empty behavior list, so no crew or worker
+simulation existed. Its authored cart also uses the earlier
+`horse-lumber-wagon-v01` ID, while initial script discovery accepted only the
+newer Forestry Cart ID. Older placed `lumberjack-camp` records now receive a
+one-time built-in behavior migration, and both lumber-capable wagon IDs are
+valid. A persisted check flag prevents an intentionally removed behavior from
+being restored on later rebuilds.
+
+An isolated test loaded the actual Riverdale region and current player Lot
+read-only. It created one crew and two workers, verified the Connector outside
+point was walkable and harvestable firs were in range, then confirmed a worker
+left camp during simulation. The player region remained byte-identical. The
+focused Lot-script, timber and Lot-simulation suite passed 45/45.
+
+Region town labels retain their black outline and now set the warm ivory RGBA
+fill directly on each town label, above the stylesheet cascade. The focused
+runtime label check passed. No player save, commit, push, or review sync.
+
+The live region-map review then showed Unity's 1.5 px TextCore outline visually
+consuming the face of the 12 px town glyphs despite their opaque color value.
+Town names now use two aligned layers: a black outlined backing label and a
+separate solid warm-ivory foreground label. The face is therefore independent
+of outline shader coverage while preserving the approved stroke.
+
+### September 19 — Zoom 3 pan and district building-card scrolling
+
+Player-facing Zoom 3 (`LOD2`) pans 30% faster for both arrow keys and edge
+hovering. Zooms 1 and 2 retain their fine-control multiplier, and Zoom 4 onward
+retain their previous rate.
+
+Industry and saved-Lot cards no longer shrink to fit a modal viewport. Each card
+keeps its own content height and selectable controls while the bounded content
+area scrolls vertically; the modal Close bar remains outside the scroll area.
+The shared saved-Lot rule covers Residential, Commercial, Industrial, Mixed,
+Farm, Transit, Civic and Park Lot browsers.
+
+### September 19 — Saved Industrial Lots in the Industry list
+
+The saved `lumberjack-camp` Lot was already authored as `LotType.Industrial`;
+it does not need to be deleted or recreated. It was available through **Build →
+Zoning → Browse Industrial**, but the separate **Industry** window only listed
+mines and Brickworks. That window now lists every saved Industrial Lot first,
+with its preview, dimensions, cost, and a Place action. Opening either saved-Lot
+view refreshes the catalog once so a newly manually saved Lot is visible.
+Normal district placement requirements remain enforced, and the change does
+not write either the Lot or district save.
+
+### September 19 — blocked lumber carts and Riverdale mill placement
+
+A loaded Lumberjack Camp cart now exposes a blocked-destination state when its
+Lot-owned script cannot find a reachable Lumber Mill. The timber navigation
+cache contains a receiver matrix built once from the district's direct Lot
+collection and reuses the cached road graph. Lot placement and transform edits
+invalidate it alongside road-topology changes; no building or Lot scan was
+added to the per-frame simulation path.
+
+The first blocked event opens a right-side warning reading **Lumber cart has no
+mill to drive to** with a **Place Lumber Mill** button. The button arms the saved
+mill through normal district placement. Dismissal is immediate and suppresses
+the warning until the condition clears, preventing a repeated flyout every tick.
+
+Lumber Mill placement now resolves the barge against the nearest local river
+tangent after confirming the mill building is on dry land. The dock pose is
+stored on the district placement and applied only to the hosted runtime copy of
+the Lot. The canonical player Lot is not rewritten. Full barge depth/footprint
+and downstream-route validation remain enforced. An isolated read-only fixture
+using the actual Riverdale region accepted 20/20 sampled riverbank sides. No
+player Lot or district was saved, and no commit, push, or review sync was made.
+
+### September 19 — Zoom 2, mill moorings, and cart turnarounds
+
+Player-facing Zoom 2 (`LOD1`) now pans 50% faster than its previous close-view
+rate. Zoom 1 and the separately tuned Zoom 3 rate are unchanged.
+
+Lumber wagons now travel at twice the baseline horse-cart pace. The shared cart
+controller also detects when a new road route begins behind the team and plans a
+complete forward turning arc before joining it. This applies to timber and the
+other district road-delivery carts using the shared route setter, keeping the
+horse ahead of the articulated forecarriage and rear axle during return trips.
+
+The Lumber Mill barge no longer snaps to a wide river's centerline. Its district
+dock override now places the full boat just inside the procedural river's 0.3 m
+navigable-depth boundary and stores a separate dry worker endpoint immediately
+beyond the wet shoreline. Existing centerline overrides upgrade in memory via a
+versioned dock contract; the canonical Lot remains unchanged. Isolated Riverdale
+coverage accepted 20/20 sampled bank sides. The 16/16 timber suite, focused pan,
+runtime-copy, and turnaround checks passed. No player save, commit, push, or
+review sync was performed.
+
+### September 19 — Road delete tool and local surface commit
+
+The Roads menu's existing **Delete Road** action remains a click-drag tool with
+a red X cursor. Escape cancels it, restores the normal cursor, and returns to the
+quiet district selector. Removing a cell continues to repair only that cell and
+its eight immediate neighbors, so adjacent road textures update immediately.
+
+Road deletion now has a specialized surface commit. It restores the affected
+hill samples and terrain collider but skips unchanged ground decals and the
+district-wide fine-grid presentation; the derived grid regenerates at its
+existing district or terrain rebuild boundaries. In a read-only Riverdale
+fixture, road model deletion plus local artwork repair measured about 5 ms. The
+post-delete surface work fell from about 795 ms to about 281 ms, including 4,225
+terrain samples and Unity's roughly 136 ms collider recook. No player district
+or Lot was saved, and no commit, push, or review sync was performed.
+
+### September 19 — district rebuild audit and local invalidation
+
+An audit of normal-play district rebuild entry points found additional local
+operations that were invalidating broad presentation layers. Flora selection
+dragging now moves only selected renderers and their spatial render batches;
+group rerolls replace only that group's members. Coal mines, quarries, and
+Brickworks now refresh their own industry presentations instead of rebuilding
+the district. Lot placement/movement, ordinary road placement, bridge
+approaches, and mixed-selection deletion now use local surface commits that do
+not regenerate the district-wide fine grid.
+
+Complete district builds remain limited to initial load or district switching,
+full undo snapshot restoration, and district-wide terrain replacement. River
+geometry operations continue to rebuild the water layer because junction and
+edge-clipping output depends on connected paths. Explicit forest-coverage
+generation remains a bulk flora boundary. The complete inventory and remaining
+linear scans are recorded in `Documentation/DISTRICT_REBUILD_AUDIT.md`.
+
+Dense isolated profiling measured 5,265.29 ms for a complete flora refresh
+with 5,000 trees versus 14.74 ms to move ten trees through the new local
+path. Riverdale road deletion retained its bounded behavior at about 266 ms,
+including terrain restoration and collider cooking. Focused validation passed
+2/2 architectural policy tests, 60/60 combined flora batching,
+road/quarry/Brickworks tests, and 2/2 isolated performance profiles. A second
+dense fixture measured 127.36 ms to insert 12 trees among 1,600 existing trees
+versus 2,112.70 ms for the explicit bulk flora path. No player district or Lot
+was saved, and no commit, push, or review sync was performed.
+
+The performance rule is also enforced in the API. Ambiguous complete-paint
+methods were removed. Full district, flora-layer, and river-layer rebuild methods
+are named `RebuildEntireDistrict`, `RebuildAllFloraPresentations`, and
+`RebuildAllRiverPresentations`, and every call must supply a non-`None`
+`DistrictBulkRebuildReason`. Local edit code has only local surface and
+cell/ID-based presentation methods. Architectural tests reject restoration of
+the former unqualified methods.
+
+### September 19 — fixed Road actions and authored barge composition
+
+The Road Family modal now keeps **Bridges**, **Delete Road**, and **Cancel** in a
+fixed action row below the scrolling road-family cards. Delete Road no longer
+falls into the card scroll content or overlaps the Bridges label; it still arms
+the red-X click-drag tool and Escape restores the normal selector.
+
+District Lumber Mill placement no longer replaces the barge's Lot-local X/Z
+position with a separate computed mooring. The shoreline solver translates the
+complete Lot, retains the authored mill/barge relationship, and may rotate only
+the shallow-draft hull to follow the river. Script offsets attached to a prop now
+rotate with that prop, so the dockworker destination remains on the actual barge.
+Legacy placement position fields remain readable for save compatibility but are
+not applied. Nearby rivers and segments are found through bounded spatial-index
+queries with reused result sets. Focused validation passed 55/55 cargo-loading,
+Lot-script, Road-menu, spatial-index, and read-only Riverdale bank tests,
+including all 20 sampled sides. A separate read-only check of the already placed
+Riverdale mill found the runtime barge at its authored `(7.34, -4.16)` Lot-local
+position, in water 0.115 m deep, with the script endpoint 3.306 m from its center.
+No player Lot or district was saved.
+
+### September 19 — persistent placed-Lot Details panel
+
+The placed-Lot inspector now remembers whether **Details & actions** is open
+when either rotation action refreshes the panel. This keeps both rotation
+buttons available for repeated turns and updates the displayed facing after
+each turn without forcing the player through the Details control again.
+
+The inspector's former small × is now an explicit **CLOSE** button. Closing the
+panel leaves the Lot selected; clicking the Lot again reopens its inspector,
+while selecting a different Lot starts with Details collapsed. Focused isolated
+EditMode validation passed 6/6. No player Lot or district was saved, and no
+commit, push, or review sync was performed.
+
+### September 19 — saved Lot view becomes initial district orientation
+
+New district Lot placements now use the Lot Editor view saved with the Lot as
+their initial orientation. The diagonal views map exactly through the hosted
+district camera contract: NE remains unturned, while SE, SW, and NW become the
+corresponding grid-safe quarter turns. Waterfront Lots try the authored turn
+first and retain their existing fallback rotations when another bank alignment
+is required. Legacy Lots without a saved view and top-down saves retain the
+zero-turn default. Existing placed Lots and their saved rotations are unchanged.
+
+Focused isolated EditMode validation passed 10/10 across view mapping, legacy
+fallbacks, and district Lot-site behavior. No player Lot or district was saved,
+and no commit, push, or review sync was performed.
+
+### September 19 — automatic district day cycle with staged lighting work
+
+Founded districts now advance through the existing lighting presets while the
+simulation is running: Morning lasts 60 seconds, Noon 300 seconds, Afternoon
+60 seconds, Early Evening 10 seconds, and Night 30 seconds. Pause stops the
+clock. Manual choices in the Sun tools reset the selected period, and the
+current phase appears beside the district year and season. The elapsed period
+is part of the existing manual district serialization; the clock never invokes
+Save or otherwise writes progress automatically.
+
+Time counting is constant-time and uses the active district reference rather
+than searching region tiles per frame. At a phase boundary, terrain, sky,
+buildings, and Lots change immediately. Projected flora shadows update in
+bounded groups of eight and their existing spatial render batches are replaced
+one at a time, retaining selectable tree presentations. This replaces the old
+single-frame full flora shadow/batch refresh.
+
+In an isolated 1,000-tree district, the original boundary path measured about
+434–449 ms for daylight phases and 155 ms for Night. The staged path reduced
+the boundary itself to 0.27–1.27 ms; its largest measured shadow/batch slice was
+7.82 ms, and it completed across 305 editor update slices. Focused isolated
+EditMode validation passed 12/12 clock-duration, persistence/manual-save,
+lighting, and staging tests, plus the 1/1 dense performance fixture. No player
+Lot or district was saved, and no commit, push, or review sync was performed.
+
+### September 19 — universal Lot population contribution
+
+Lot Editor → Stats now exposes **Population added** for every Lot category,
+including Industrial, Commercial, Civic, Park, Farm, and Transportation Lots.
+The existing serialized `Residents` field remains unchanged, so saved Lots stay
+compatible. Placing a Lot adds its authored population to the district's cached
+demographic state exactly once; deleting it removes the same amount. Reload,
+undo/bulk restoration, and manual Lot definition updates continue through the
+existing incremental simulation boundaries without routine district scans.
+
+Focused isolated EditMode validation passed 19/19 across all eight Lot types,
+placement/removal/reload behavior, demographics, requirements, dense-cache
+behavior, Stats UI exposure, and JSON compatibility. No player Lot or district
+was saved, and no commit, push, or review sync was performed.
+
+### September 19 — founder food reserve with no founder population
+
+Founder Lots carry an explicit zero-population override: neither the Fort nor
+the future Town Center adds residents, even if its reusable Lot definition later
+receives an authored population. Placing a Fort establishes a minimum district
+food reserve of 250, while the Town Center establishes 500. Founding preserves a
+larger existing food stockpile and applies the reserve only in the successful
+placement path. Older founder placements adopt the zero-population override at
+their next district-simulation rebuild without receiving a retroactive food grant.
+
+Ordinary Lot population still updates the cached district total on add/remove,
+and those residents consume food only at season boundaries. Routine seasonal
+settlement does not rescan placed Lots. Focused isolated EditMode validation
+passed 22/22 across district simulation, founder placement, zero-population
+persistence through reload and definition edits, and Fort/Town Center food
+reserves. No player Lot or district was saved, and no commit, push, or review
+sync was performed.

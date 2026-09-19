@@ -1,0 +1,1 @@
+PASS: base mesh bounds equal lot bounds Center: (0.00, 0.00, 0.00), Extents: (15.00, 0.00, 15.00); independent brick overlay rendered immediately outside. Lot JSON unchanged; no Save.

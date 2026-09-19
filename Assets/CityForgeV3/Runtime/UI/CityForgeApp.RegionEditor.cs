@@ -114,6 +114,7 @@ namespace CityForgeV3.UI
       _districtSimulationPaused = false;
       _pendingFounderBuildingId = "";
       _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingDistrictLotName = "";
       _hoveredDistrictLotInstanceId = "";
       _selectedDistrictLotInstanceId = "";
@@ -447,11 +448,11 @@ namespace CityForgeV3.UI
       foreach (var tile in _openRegion.Tiles)
       {
         var captured = tile;
-        var button = new Button(() => PreviewRegionTile(captured.TileId))
+        var button = new Button(() => SelectRegionTile(captured.TileId))
         {
           name = $"region-tile-{tile.TileId}",
           text = "",
-          tooltip = $"{tile.Name} — select this {tile.Width} by {tile.Height} district; choose Enter District to open it."
+          tooltip = $"{(tile.Founded ? tile.Name : "Not started")} — click to enter this {tile.Width} by {tile.Height} district."
         };
         button.AddToClassList("region-city-tile");
         button.AddToClassList($"region-city-tone-{RegionTileTone(tile)}");
@@ -477,6 +478,7 @@ namespace CityForgeV3.UI
       plane.Add(districtLabels);
       foreach (var tile in _openRegion.Tiles)
       {
+        if (!tile.Founded) continue;
         var labelHost = new VisualElement { pickingMode = PickingMode.Ignore };
         labelHost.style.position = Position.Absolute;
         labelHost.style.left = tile.X * RegionMapUnitPixels;
@@ -522,7 +524,7 @@ namespace CityForgeV3.UI
     private static void AddRegionPlaceLabel(VisualElement tileElement,
         RegionCityTile tile, int regionWidth, int regionHeight)
     {
-      if (tileElement == null || tile == null ||
+      if (tileElement == null || tile == null || !tile.Founded ||
           string.IsNullOrWhiteSpace(tile.Name)) return;
       var marker = RegionMapProjection.CreateLabelAnchor(regionWidth, regionHeight, out var content);
       marker.name = $"region-place-marker-{tile.TileId}";
@@ -533,10 +535,29 @@ namespace CityForgeV3.UI
         name = $"region-place-name-{tile.TileId}",
         pickingMode = PickingMode.Ignore
       };
+      if (tile.Designation == RegionPlaceDesignation.Town)
+      {
+        // Keep the outline on a separate label. At map scale TextCore's thick
+        // outline can consume the small glyph face even when color is opaque.
+        // Drawing the ivory face afterward guarantees a solid readable fill.
+        var outline = new Label(tile.Name.Trim())
+        {
+          name = $"region-place-name-outline-{tile.TileId}",
+          pickingMode = PickingMode.Ignore
+        };
+        outline.AddToClassList("region-place-name");
+        outline.AddToClassList("region-town-name-outline");
+        outline.AddToClassList("region-horizontal-place-name");
+        outline.style.color = new StyleColor(Color.black);
+        content.Add(outline);
+      }
       name.AddToClassList("region-place-name");
       name.AddToClassList(tile.Designation == RegionPlaceDesignation.Town
           ? "region-town-name" : "region-district-name");
       name.AddToClassList("region-horizontal-place-name");
+      if (tile.Designation == RegionPlaceDesignation.Town)
+        name.style.color = new StyleColor(
+            new Color32(239, 236, 215, 255));
       content.Add(name);
       if (tile.Designation == RegionPlaceDesignation.Town)
       {
@@ -548,7 +569,7 @@ namespace CityForgeV3.UI
         dot.AddToClassList("region-town-dot");
         dot.style.position = Position.Absolute;
         dot.style.left = -3.5f;
-        dot.style.top = 4;
+        dot.style.top = -2;
         dot.style.marginTop = 0;
         content.Add(dot);
       }
@@ -584,6 +605,7 @@ namespace CityForgeV3.UI
         else PreviewRegionTile("");
         return;
       }
+      if (MapPanningBlocked) return;
       var delta = Vector2.zero;
       if (Input.GetKeyDown(KeyCode.LeftArrow)) delta.x = -140f;
       else if (Input.GetKeyDown(KeyCode.RightArrow)) delta.x = 140f;
@@ -625,6 +647,7 @@ namespace CityForgeV3.UI
       _districtSimulationPaused = false;
       _pendingFounderBuildingId = "";
       _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingDistrictLotName = "";
       _hoveredDistrictLotInstanceId = "";
       _selectedDistrictLotInstanceId = "";
@@ -653,6 +676,12 @@ namespace CityForgeV3.UI
 
       var screen = Screen("district-terraform-screen");
       screen.AddToClassList("cf-map-screen");
+      _districtEdgePanDirection = Vector2Int.zero;
+      screen.RegisterCallback<PointerMoveEvent>(evt => UpdateDistrictEdgePan(screen, evt), TrickleDown.TrickleDown);
+      screen.RegisterCallback<PointerLeaveEvent>(evt =>
+      {
+        if (evt.target == screen) _districtEdgePanDirection = Vector2Int.zero;
+      });
       var viewport = new VisualElement();
       viewport.AddToClassList("district-terraform-viewport");
       viewport.pickingMode = PickingMode.Ignore;
@@ -708,6 +737,7 @@ namespace CityForgeV3.UI
                       DistrictCameraPoint(evt.position),
                       out var normalized))
         {
+          SetDistrictRoadDeleteCursor(false);
           _districtWorld?.HideAxemanPlacement(); UnityEngine.Cursor.visible = true;
           FinishDistrictFloraPaint(district);
           _districtWorld?.HideLotPlacementGuide();
@@ -727,6 +757,16 @@ namespace CityForgeV3.UI
         {
           if ((evt.pressedButtons & 1) == 0) FinishDistrictFloraPaint(district);
           else ContinueDistrictFloraPaint(district, normalized);
+          return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_pendingFounderBuildingId))
+        {
+          _districtWorld.HideLotOutline();
+          if (TryFounderFootprint(district, normalized.x, normalized.y,
+              out var founderX, out var founderZ, out var founderWidth, out var founderDepth))
+            _districtWorld.ShowLotPlacementGuide(founderX, founderZ, founderWidth, founderDepth, true);
+          else _districtWorld.HideLotPlacementGuide();
           return;
         }
 
@@ -841,6 +881,27 @@ namespace CityForgeV3.UI
           return;
         }
 
+        if (IsDistrictRoadDeleteToolActive())
+        {
+          _districtWorld.HideLotOutline();
+          SetDistrictRoadDeleteCursor(true);
+          var roadCell = DistrictRoadCell(district,
+                    normalized.x, normalized.y);
+          _districtWorld.ShowLotPlacementGuide(roadCell.x, roadCell.y,
+                    1, 1, false);
+          if (_districtRoadPointerDown)
+          {
+            var route = RoadPlacementModel.BuildPlannedRoadRoute(
+                _lastDistrictRoadDragCell, roadCell);
+            foreach (var cell in route.Skip(1))
+              DeleteDistrictRoadAt(district, cell);
+            _lastDistrictRoadDragCell = roadCell;
+          }
+          return;
+        }
+
+        SetDistrictRoadDeleteCursor(false);
+
         _districtWorld.HideLotPlacementGuide();
         var hovered = FindDistrictLotAt(district, normalized.x,
                   normalized.y);
@@ -856,6 +917,7 @@ namespace CityForgeV3.UI
       });
       screen.RegisterCallback<PointerLeaveEvent>(_ =>
       {
+        SetDistrictRoadDeleteCursor(false);
         _districtWorld?.HideAxemanPlacement(); UnityEngine.Cursor.visible = true;
         // Captured rectangle drags may cross UI or viewport edges.
         // Leaving is not releasing the mouse.
@@ -873,7 +935,10 @@ namespace CityForgeV3.UI
         if (_districtRoadPointerDown)
         {
           _districtRoadPointerDown = false;
-          _districtWorld?.CommitSurfaceChanges();
+          if (IsDistrictRoadDeleteToolActive())
+            _districtWorld?.CommitRoadSurfaceChanges();
+          else
+            _districtWorld?.CommitLocalSurfaceChanges();
           _districtWorldCompositionKey = DistrictCompositionKey(district);
           SaveDistrictEdit();
         }
@@ -891,9 +956,11 @@ namespace CityForgeV3.UI
           if (element.name == "selected-object-panel" || element.ClassListContains("cf-map-chrome")) return;
         if (evt.button != 0 || target?.name == "district-resource-bar" || evt.target is Button ||
                   target?.GetFirstAncestorOfType<Button>() != null) return;
+        if (HandleArmedDistrictLotPointer(district, evt)) return;
         // Inspect existing objects before dispatching any active category's tool.
         // UI controls remain UI controls; only a click on the world surface picks.
         if (!IsDistrictRoadToolActive() &&
+            !IsDistrictRoadDeleteToolActive() &&
             (target == screen || target?.ClassListContains("district-terraform-viewport") == true) &&
             TryInspectDistrictObject(DistrictCameraPoint(evt.position)))
         {
@@ -955,13 +1022,6 @@ namespace CityForgeV3.UI
         {
           BeginDistrictMovePointer(district, normalized, evt.position);
         }
-        else if (!string.IsNullOrWhiteSpace(_pendingDistrictLotId))
-        {
-          if (!TryDistrictLotFootprint(district, normalized.x,
-                        normalized.y, out _, out _, out _, out _,
-                        out var placeable) || !placeable) return;
-          PlaceDistrictLot(district, normalized.x, normalized.y);
-        }
         else if (_districtEditorMode == DistrictEditorMode.Terraform &&
                        _terraformCategory == "Flora" &&
                        _terraformTool == "Trees")
@@ -1012,8 +1072,14 @@ namespace CityForgeV3.UI
                     _selectedDistrictRoadCell.x,
                     _selectedDistrictRoadCell.y);
         }
-        else if (!string.IsNullOrWhiteSpace(_pendingFounderBuildingId))
-          PlaceFounderBuilding(district, normalized.x, normalized.y);
+        else if (IsDistrictRoadDeleteToolActive())
+        {
+          _districtRoadPointerDown = true;
+          _lastDistrictRoadDragCell = DistrictRoadCell(district,
+              normalized.x, normalized.y);
+          DeleteDistrictRoadAt(district, _lastDistrictRoadDragCell);
+          SetDistrictRoadDeleteCursor(true);
+        }
         else
         {
           var selectedLot = FindDistrictLotAt(district,
@@ -1052,7 +1118,10 @@ namespace CityForgeV3.UI
         _districtRoadPointerDown = false;
         _districtRoadStrokePath.Clear();
         _districtRoadStrokeAdded.Clear();
-        _districtWorld?.CommitSurfaceChanges();
+        if (IsDistrictRoadDeleteToolActive())
+          _districtWorld?.CommitRoadSurfaceChanges();
+        else
+          _districtWorld?.CommitLocalSurfaceChanges();
         _districtWorldCompositionKey = DistrictCompositionKey(district);
         SaveDistrictEdit();
       }, TrickleDown.TrickleDown);
@@ -1070,6 +1139,7 @@ namespace CityForgeV3.UI
       });
       screen.RegisterCallback<DetachFromPanelEvent>(_ =>
       {
+        SetDistrictRoadDeleteCursor(false);
         if (_nudgeSurface == screen) EndLotNudge(true);
         if (_districtSelectionSurface == screen) CancelDistrictSelectionPointer();
       });
@@ -1091,16 +1161,12 @@ namespace CityForgeV3.UI
       var districtName = new TextField("NAME")
       {
         name = "terraform-district-name-field",
-        isDelayed = true,
+        isDelayed = false,
         value = district.Name ?? ""
       };
       districtName.AddToClassList("terraform-district-name-field");
-      districtName.RegisterValueChangedCallback(evt =>
-      {
-        district.Name = evt.newValue ?? "";
-        SaveDistrictEdit();
-      });
       hud.Add(districtName);
+      var draftDesignation = district.Designation;
       var designation = new VisualElement
       {
         name = "terraform-district-designation"
@@ -1115,9 +1181,10 @@ namespace CityForgeV3.UI
         var capturedDesignation = option;
         var designationButton = new Button(() =>
         {
-          district.Designation = capturedDesignation;
-          SaveDistrictEdit();
-          Show(AppScreen.DistrictTerraform);
+          draftDesignation = capturedDesignation;
+          foreach (var choice in designation.Children())
+            choice.EnableInClassList("terraform-district-designation-button--selected",
+                choice.name == "terraform-designation-" + capturedDesignation.ToString().ToLowerInvariant());
         })
         {
           name = "terraform-designation-" +
@@ -1150,15 +1217,21 @@ namespace CityForgeV3.UI
       }
       var hideInfo = new Button(() =>
       {
+        if (!ApplyDistrictName(district, districtName.value)) return;
+        district.Designation = draftDesignation;
+        SaveDistrictEdit();
         _districtInfoVisible = false;
         SetDistrictChromeVisibility(screen);
       })
       {
         name = "district-info-close",
-        text = "×",
-        tooltip = "Hide district information"
+        text = "OK",
+        tooltip = "Apply the name and designation"
       };
-      hideInfo.AddToClassList("district-info-close");
+      hideInfo.AddToClassList("terraform-district-designation-button");
+      hideInfo.SetEnabled(!string.IsNullOrWhiteSpace(districtName.value));
+      districtName.RegisterValueChangedCallback(evt =>
+          hideInfo.SetEnabled(!string.IsNullOrWhiteSpace(evt.newValue)));
       hud.Add(hideInfo);
       hud.style.display = _districtInterfaceVisible &&
                           _districtInfoVisible
@@ -1191,7 +1264,7 @@ namespace CityForgeV3.UI
       interfaceToggle.AddToClassList("district-interface-toggle");
       screen.Add(interfaceToggle);
 
-      if (!district.Founded)
+      if (!district.Founded || !string.IsNullOrWhiteSpace(_pendingFounderBuildingId))
       {
         statusPanel.style.display = _districtInterfaceVisible
             ? DisplayStyle.Flex : DisplayStyle.None;
@@ -1206,10 +1279,6 @@ namespace CityForgeV3.UI
       }
       SetDistrictChromeVisibility(screen);
 
-      AddDistrictEdgePanControl(screen, "left", "◀", 1, 0);
-      AddDistrictEdgePanControl(screen, "right", "▶", -1, 0);
-      AddDistrictEdgePanControl(screen, "top", "▲", 0, -1);
-      AddDistrictEdgePanControl(screen, "bottom", "▼", 0, 1);
       EventCallback<GeometryChangedEvent> centerViewport = null;
       centerViewport = _ =>
       {
@@ -1239,6 +1308,13 @@ namespace CityForgeV3.UI
         modeButton.EnableInClassList("district-mode-button--selected", _districtPaletteOpen && _districtEditorMode == mode);
         modeSwitch.Add(modeButton);
       }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+      modeSwitch.Add(CfMapChrome.Action("Lots (testing)", "Lots", () =>
+      {
+        ReturnToQuietDistrict();
+        ComposeDistrictLotBrowser(null, true);
+      }, "district-mode-lots"));
+#endif
       modeSwitch.AddToClassList("cf-map-chrome");
       modeSwitch.name = "map-mode-switch";
       screen.Add(modeSwitch);
@@ -1314,10 +1390,10 @@ namespace CityForgeV3.UI
           if (_districtEditorMode == DistrictEditorMode.Terraform && ActiveDistrictCategory == "Terrain" && captured.Name == "Hills")
           { ComposeDistrictHillsModal(); return; }
           if (_districtEditorMode == DistrictEditorMode.Builder &&
-                      ActiveDistrictCategory == "Lots" &&
-                      captured.Name == "Browse Lots")
+              TryBuilderLotBrowserType(ActiveDistrictCategory, captured.Name,
+                  out var lotType))
           {
-            ComposeDistrictLotBrowser();
+            ComposeDistrictLotBrowser(lotType);
             return;
           }
           if (_districtEditorMode == DistrictEditorMode.Terraform &&
@@ -1331,7 +1407,7 @@ namespace CityForgeV3.UI
           if (ActiveDistrictCategory == "Sun" &&
                       TryDistrictTimePreset(captured.Name, out var preset))
           {
-            district.TimeOfDay = preset;
+            DistrictDayCycle.Set(district, preset);
             _districtWorld?.SetTimeOfDay(preset);
             SaveDistrictEdit();
           }
@@ -1342,8 +1418,9 @@ namespace CityForgeV3.UI
           name = $"district-tool-{captured.Name.ToLowerInvariant().Replace(' ', '-')}",
           tooltip = ActiveDistrictCategory == "Sun"
                 ? $"Set district lighting to {captured.Name}"
-                : ActiveDistrictCategory == "Lots"
-                    ? "Browse Lots — open every lot saved in the Lot Editor and choose one to place in this district."
+                : TryBuilderLotBrowserType(ActiveDistrictCategory,
+                      captured.Name, out _)
+                    ? $"Browse saved Lots in {ActiveDistrictCategory} and choose one to place."
                 : waterMenu && captured.Name == "Repair River"
                     ? "Repair all rivers in this district now. Smooth their general course while retaining width, depth and entry/exit points. Undo restores the edit."
                 : waterMenu && captured.Name == "Shape River"
@@ -1413,25 +1490,21 @@ namespace CityForgeV3.UI
       SetDistrictChromeVisibility(screen);
     }
 
-    private void AddDistrictEdgePanControl(VisualElement screen,
-        string edge, string glyph, int horizontalWorldMotion,
-        int verticalWorldMotion)
+    private bool MapPanningBlocked => _root?.Q("document-modal") != null ||
+        _root?.Q("cf-choice-overlay") != null;
+
+    private void UpdateDistrictEdgePan(VisualElement screen, PointerMoveEvent evt)
     {
-      var control = new Button
-      {
-        name = $"district-edge-pan-{edge}",
-        text = glyph,
-        tooltip = $"Hover to pan {edge}"
-      };
-      control.AddToClassList("district-edge-pan");
-      control.AddToClassList($"district-edge-pan--{edge}");
-      control.RegisterCallback<PointerEnterEvent>(_ =>
-          _districtEdgePanDirection = new Vector2Int(
-              horizontalWorldMotion, verticalWorldMotion));
-      control.RegisterCallback<PointerLeaveEvent>(_ =>
-          _districtEdgePanDirection = Vector2Int.zero);
-      screen.Add(control);
-      control.BringToFront();
+      _districtEdgePanDirection = Vector2Int.zero;
+      if (MapPanningBlocked) return;
+      for (var target = evt.target as VisualElement; target != null && target != screen; target = target.parent)
+        if (target is Button || target is TextField || target.ClassListContains("cf-map-chrome") ||
+            target.name == "selected-object-panel") return;
+      var bounds = screen.worldBound;
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+      _districtEdgePanDirection = DistrictZoom.EdgePanWorldMotion(new Vector2(
+          (evt.position.x - bounds.xMin) / bounds.width,
+          (evt.position.y - bounds.yMin) / bounds.height));
     }
 
     private static void AttachLargeRegionHoverHelp(VisualElement screen)
@@ -1483,6 +1556,7 @@ namespace CityForgeV3.UI
     private void EnsureDistrictWorld(RegionCityTile district)
     {
       if (district == null) return;
+      _districtWorldTile = district;
       district.Climate = _openRegion?.Terrain?.Climate ?? RegionClimate.Temperate;
       var lotId = district.Founded ? district.LotId ?? "" : "";
       var compositionKey = DistrictCompositionKey(district);
@@ -1506,7 +1580,8 @@ namespace CityForgeV3.UI
         var world = new GameObject("V3 District World");
         _districtWorld = world.AddComponent<DistrictWorldController>();
       }
-      _districtWorld.Build(district);
+      _districtWorld.RebuildEntireDistrict(district,
+          DistrictBulkRebuildReason.LoadSwitchOrStateRestore);
       _districtWorld.SetPan(_terraformPanOffset);
       _districtWorld.SetZoom(_terraformZoomLevel);
       _districtWorldTileId = district.TileId;
@@ -1615,6 +1690,7 @@ namespace CityForgeV3.UI
         var cancelLotPlacement = CfButton.Create("CANCEL PLACEMENT", () =>
         {
           _pendingDistrictLotId = "";
+          _pendingDistrictLotIsTest = false;
           _pendingDistrictLotName = "";
           Show(AppScreen.DistrictTerraform);
         }, true, "quiet");
@@ -1622,7 +1698,7 @@ namespace CityForgeV3.UI
         panel.Add(cancelLotPlacement);
         return panel;
       }
-      if (!district.Founded)
+      if (!district.Founded || !string.IsNullOrWhiteSpace(_pendingFounderBuildingId))
       {
         if (!string.IsNullOrWhiteSpace(_pendingFounderBuildingId))
         {
@@ -1633,7 +1709,7 @@ namespace CityForgeV3.UI
           panel.Add(StyledLabel(founder.Name,
               "district-founder-placement-name"));
           panel.Add(StyledLabel(
-              "Move the house outline onto the land and click to found the district.",
+              "Move the building outline onto the land and click to start your town.",
               "district-founder-hint"));
           var cancelPlacement = CfButton.Create("CANCEL PLACEMENT", () =>
           {
@@ -1644,21 +1720,114 @@ namespace CityForgeV3.UI
           panel.Add(cancelPlacement);
           return panel;
         }
-        panel.Add(StyledLabel("THIS DISTRICT HAS NOT BEEN FOUNDED",
+        panel.Add(StyledLabel("NOT STARTED",
             "district-unfounded-label"));
-        var found = CfButton.Create("FOUND DISTRICT",
-            ComposeFounderBuildingModal, true, "primary");
+        var found = CfButton.Create("START DISTRICT OR TOWN",
+            ComposeDistrictStartModal, true, "primary");
         found.name = "found-district-button";
-        found.tooltip = "Choose a founder building and begin this district";
+        found.tooltip = "Start building a district or establish a town";
         panel.Add(found);
         panel.Add(StyledLabel(
-            "Choose its first purpose, then place the founder building.",
+            "Start a district now, or place a Fort or City Center to begin a town.",
             "district-founder-hint"));
         return panel;
       }
 
       // Founded metrics and time controls are composed by the shared map chrome.
       return panel;
+    }
+
+    private static void InitializeDistrictStart(RegionCityTile district, int year)
+    {
+      if (district.Founded) return;
+      district.Founded = true;
+      district.FoundingYear = year;
+      district.Population ??= new DistrictPopulationState();
+      district.Population.FoundedSeason = DistrictLabor.State(district).SeasonIndex;
+      district.Population.FoundingClockInitialized = true;
+    }
+
+    private void ComposeDistrictStartModal()
+    {
+      var district = FindSelectedRegionTile();
+      if (district == null) return;
+      var panel = CreateDocumentModal("START DISTRICT OR TOWN",
+          "Choose how you want to begin here.");
+      const string districtCopy = "Start a district now to begin building and linking resources. You can always start a town here later.";
+      const string townCopy = "Place a Fort or City Center to begin your town.";
+      var caption = StyledLabel(district.Founded ? townCopy : districtCopy, "document-modal-copy");
+      caption.name = "district-start-caption";
+      var choices = DocumentModalActions();
+      var startDistrict = CfButton.Create("Start District", () => ComposeDistrictNamingModal(false),
+          !district.Founded, "primary");
+      startDistrict.name = "start-district-button";
+      var startTown = CfButton.Create("Start Town", () => ComposeDistrictNamingModal(true),
+          !(district.Founded && district.Designation == RegionPlaceDesignation.Town), "primary");
+      startTown.name = "start-town-button";
+      void Explain(Button button, string copy)
+      {
+        button.tooltip = copy;
+        button.RegisterCallback<PointerEnterEvent>(_ => caption.text = copy);
+        button.RegisterCallback<FocusInEvent>(_ => caption.text = copy);
+      }
+      Explain(startDistrict, districtCopy);
+      Explain(startTown, townCopy);
+      choices.Add(startDistrict);
+      choices.Add(startTown);
+      panel.Add(choices);
+      panel.Add(caption);
+      panel.Add(CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet"));
+    }
+
+    private bool ApplyDistrictName(RegionCityTile district, string name)
+    {
+      if (district == null || string.IsNullOrWhiteSpace(name)) return false;
+      district.Name = name.Trim();
+      var heading = _root?.Q("map-header")?.Q<Label>(className: "cf-map-location");
+      if (heading != null) heading.text = district.Name;
+      _root?.Q<TextField>("terraform-district-name-field")?.SetValueWithoutNotify(district.Name);
+      return true;
+    }
+
+    private void ComposeDistrictNamingModal(bool town)
+    {
+      var district = FindSelectedRegionTile();
+      if (district == null) return;
+      var panel = CreateDocumentModal(town ? "NAME YOUR TOWN" : "NAME YOUR DISTRICT",
+          town ? "Confirm the name, then choose a Fort or City Center." : "Confirm the name to start your district.");
+      var name = new TextField("NAME")
+      {
+        name = "district-start-name",
+        value = district.Name ?? ""
+      };
+      name.AddToClassList("document-field");
+      panel.Add(name);
+      var actions = DocumentModalActions();
+      var ok = CfButton.Create("OK", () =>
+      {
+        if (!ApplyDistrictName(district, name.value)) return;
+        if (!town)
+        {
+          InitializeDistrictStart(district, UnityEngine.Random.Range(1740, 1761));
+          district.Designation = RegionPlaceDesignation.District;
+        }
+        SaveDistrictEdit();
+        RemoveDocumentModal();
+        if (town) ComposeFounderBuildingModal();
+        else
+        {
+          RefreshMapMetrics(_root, district);
+          _root?.Q<Button>("district-simulation-pause")?.SetEnabled(true);
+          _root?.Q<Button>("district-simulation-go")?.SetEnabled(true);
+          _root?.Q<Button>("found-district-button")?.parent.RemoveFromHierarchy();
+        }
+      }, !string.IsNullOrWhiteSpace(name.value), "primary");
+      ok.name = "district-start-name-ok";
+      name.RegisterValueChangedCallback(evt => ok.SetEnabled(!string.IsNullOrWhiteSpace(evt.newValue)));
+      actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet"));
+      actions.Add(ok);
+      panel.Add(actions);
+      name.schedule.Execute(() => { name.Focus(); name.SelectAll(); });
     }
 
     private void ComposeFounderBuildingModal()
@@ -1668,26 +1837,33 @@ namespace CityForgeV3.UI
       overlay.AddToClassList("document-modal");
       var panel = new VisualElement();
       panel.AddToClassList("founder-modal");
-      panel.Add(StyledLabel("FOUND YOUR DISTRICT", "founder-modal-title"));
+      panel.Add(StyledLabel("START TOWN", "founder-modal-title"));
       panel.Add(StyledLabel(
-          "Choose the first institution. This establishes the district's identity; detailed specialization rules will be added later.",
+          "Place a Fort or City Center to begin your town.",
           "founder-modal-intro"));
       var scroll = new ScrollView(ScrollViewMode.Vertical);
       scroll.AddToClassList("founder-building-list");
       foreach (var founder in FounderBuildings())
       {
+        if (founder.Id != "fortress" && founder.Id != "city-charter-house") continue;
         var captured = founder;
         var card = new Button(() => ArmFounderPlacement(captured.Id));
+        bool available = !string.IsNullOrWhiteSpace(captured.LotId) &&
+            LotContentCatalog.Read(captured.LotId) != null;
+        card.SetEnabled(available);
         card.AddToClassList("founder-building-card");
+        card.name = $"founder-{captured.Id}";
         card.tooltip = string.IsNullOrWhiteSpace(captured.LotId)
-            ? $"Select {captured.Name} as this district's founder building"
+            ? "Coming later — the City Center Lot has not been created yet."
             : $"Place the saved {captured.Name} in this district";
         card.Add(StyledLabel(string.IsNullOrWhiteSpace(captured.LotId)
             ? "HOUSE" : "LOT", "founder-building-icon"));
         var copy = new VisualElement();
         copy.AddToClassList("founder-building-copy");
         copy.Add(StyledLabel(captured.Name, "founder-building-name"));
-        copy.Add(StyledLabel(captured.Description,
+        copy.Add(StyledLabel(available ? captured.Description : captured.Id == "city-charter-house"
+            ? "Coming later — the City Center Lot has not been created yet."
+            : "Not available yet — a saved building Lot is required.",
             "founder-building-description"));
         card.Add(copy);
         scroll.Add(card);
@@ -1700,21 +1876,38 @@ namespace CityForgeV3.UI
       _root.Add(overlay);
     }
 
+    private LotSaveData _pendingFounderLot;
+
     private void ArmFounderPlacement(string founderId)
     {
+      var founder = Array.Find(FounderBuildings(), item => item.Id == founderId);
+      _pendingFounderLot = string.IsNullOrEmpty(founder.LotId) ? null : LotContentCatalog.Read(founder.LotId);
+      if (_pendingFounderLot == null) return;
+      ReturnToQuietDistrict();
+      _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingFounderBuildingId = founderId ?? "";
       RemoveDocumentModal();
       Show(AppScreen.DistrictTerraform);
     }
 
-    private void ComposeDistrictLotBrowser()
+    private void ComposeDistrictLotBrowser(LotType? lotType, bool testing = false)
     {
-      var saves = LotContentCatalog.All;
+      testing = testing && TestLotToolsAvailable;
+      if (!testing && !lotType.HasValue) return;
+      // Catalogs are opened explicitly and infrequently. Refresh once here so
+      // a Lot manually saved since the previous browse appears immediately.
+      LotContentCatalog.InvalidateCache();
+      var saves = LotContentCatalog.All.Where(summary =>
+          testing || summary.LotType == lotType).ToList();
+      var category = testing ? "Test" : lotType == LotType.CivicsParks
+          ? "Park" : LotTypeLabel(lotType.Value);
       var panel = CreateDocumentModal(
-          "PLACE A SAVED LOT",
+          testing ? "LOTS" : $"PLACE SAVED {category.ToUpperInvariant()} LOT",
           saves.Count == 0
-              ? "No saved lots exist yet. Create and save a lot in the Lot Editor first."
-              : "Choose any lot saved by the Lot Editor. Era, category, cost, and zoning restrictions are currently disabled.");
+              ? "No saved Lots yet. Create and save one in the Lot Editor first."
+              : testing ? "Place any saved Lot for testing. No construction requirements or costs apply."
+              : $"Choose a saved {category.ToLowerInvariant()} Lot. Placement checks its era, population, education, treasury, stockpile, and access requirements.");
       panel.AddToClassList("load-lot-modal-panel");
       panel.AddToClassList("district-lot-browser");
 
@@ -1732,12 +1925,12 @@ namespace CityForgeV3.UI
         {
           var captured = summary;
           var entry = new Button(() => ArmDistrictLotPlacement(
-              captured.LotId, captured.Name));
+              captured.LotId, captured.Name, testing));
           entry.AddToClassList("district-lot-entry");
           entry.tooltip = $"Place {captured.Name} — a " +
               $"{LotTypeLabel(captured.LotType).ToLowerInvariant()} lot measuring " +
               $"{captured.LotWidthCells} by {captured.LotDepthCells} grid cells. " +
-              $"Plop cost: ${captured.PlopCost:N0}.";
+              (testing ? "Free test placement." : $"Plop cost: ${captured.PlopCost:N0}.");
 
           var thumbnail = new VisualElement();
           thumbnail.AddToClassList("lot-save-thumbnail");
@@ -1759,7 +1952,7 @@ namespace CityForgeV3.UI
               $"{LotTypeLabel(summary.LotType).ToUpperInvariant()}  •  " +
               $"{summary.LotWidthCells} × {summary.LotDepthCells} CELLS  •  " +
               $"{summary.LotWidthCells * 10} × {summary.LotDepthCells * 10} M  •  " +
-              $"${summary.PlopCost:N0}",
+              (testing ? "FREE TEST PLACEMENT" : $"${summary.PlopCost:N0}"),
               "lot-save-entry-meta"));
           details.Add(StyledLabel("CLICK TO PLACE",
               "district-lot-place-label"));
@@ -1779,9 +1972,11 @@ namespace CityForgeV3.UI
       AttachLargeRegionHoverHelp(overlay);
     }
 
-    private void ArmDistrictLotPlacement(string lotId, string lotName)
+    private void ArmDistrictLotPlacement(string lotId, string lotName, bool testing = false)
     {
+      _pendingDistrictLotIsTest = false;
       if (LotContentCatalog.Read(lotId) == null) return;
+      _pendingDistrictLotIsTest = testing && TestLotToolsAvailable;
       _pendingDistrictLotId = lotId ?? "";
       _pendingDistrictLotName = lotName ?? "Saved Lot";
       RemoveDocumentModal();
@@ -1974,8 +2169,54 @@ namespace CityForgeV3.UI
       return true;
     }
     private Vector2 _pendingDistrictLotShoreOffset;
+    private bool _pendingDistrictLotHasBoatDockOverride;
+    private Vector2 _pendingDistrictLotBoatDockLocal;
+    private Vector2 _pendingDistrictLotBoatMooringLocal;
+    private int _pendingDistrictLotBoatDockTurns;
     private int _pendingDistrictLotRotation;
     private string _districtLotWaterHint = "";
+    private bool _pendingDistrictLotIsTest;
+    private static bool TestLotToolsAvailable
+    {
+      get
+      {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return true;
+#else
+        return false;
+#endif
+      }
+    }
+    private bool IsTestLotPlacement => TestLotToolsAvailable &&
+        _pendingDistrictLotIsTest && !string.IsNullOrWhiteSpace(_pendingDistrictLotId);
+
+    public static int DistrictLotRotationFromSavedView(LotSaveData lot)
+    {
+      var view = lot?.EditorView;
+      if (view == null || !view.Valid || view.TopDown) return 0;
+      var octant = ((view.OrbitOctant % 8) + 8) % 8;
+      // The district camera looks across the Lot from the opposite diagonal,
+      // and hosted Lots already carry the matching 180-degree camera offset.
+      // Saved diagonal views therefore map to quarter turns in reverse order:
+      // NE=0, SE=3, SW=2, NW=1. Cardinal authoring views sit between grid-safe
+      // orientations and choose the next clockwise diagonal.
+      var clockwiseDiagonal = (octant + 1) / 2;
+      return (4 - clockwiseDiagonal) & 3;
+    }
+
+    private bool QuotePendingDistrictLot(RegionCityTile district, LotSaveData lot,
+        int x, int z, int width, int depth, out int cost, out long[] resources, out string reason)
+    {
+      cost = 0; resources = null; reason = "";
+      if (district == null || lot == null) { reason = "Lot unavailable."; return false; }
+      if (IsTestLotPlacement) return true;
+      cost = LotEconomy.CalculatePlopCost(lot);
+      return DistrictLotRequirements.Quote(district, lot, _openRegion.EraId,
+          x, z, width, depth,
+          (cx, cz) => _districtWorld != null && _districtWorld.HasRoadAtCell(cx, cz),
+          n => _districtWorld != null && _districtWorld.IsUnderRiverWater(n),
+          _pendingDistrictLotShoreOffset, out resources, out reason);
+    }
     private bool TryDistrictLotFootprint(RegionCityTile district,
         float normalizedX, float normalizedY, out int gridX,
         out int gridZ, out int spanX, out int spanZ, out bool placeable)
@@ -1989,20 +2230,32 @@ namespace CityForgeV3.UI
       var rows = DistrictScale.Columns(district.Height);
       var width = DistrictScale.GridSpanForMeters(lot.LotWidthCells * LotMetricScale.MajorGridMeters);
       var depth = DistrictScale.GridSpanForMeters(lot.LotDepthCells * LotMetricScale.MajorGridMeters);
-      _districtLotWaterHint = ""; _pendingDistrictLotRotation = 0; _pendingDistrictLotShoreOffset = Vector2.zero;
-      for (var turns = 0; turns < (lot.HasWaterOrientation ? 4 : 1); turns++)
+      var authoredRotation = DistrictLotRotationFromSavedView(lot);
+      _districtLotWaterHint = ""; _pendingDistrictLotRotation = authoredRotation; _pendingDistrictLotShoreOffset = Vector2.zero;
+      _pendingDistrictLotHasBoatDockOverride = false;
+      _pendingDistrictLotBoatDockLocal = Vector2.zero;
+      _pendingDistrictLotBoatMooringLocal = Vector2.zero;
+      _pendingDistrictLotBoatDockTurns = 0;
+      var nearRiver = !lot.HasWaterOrientation ||
+          DistrictRiverEditing.FindAt(district,
+              new Vector2(normalizedX, normalizedY)) != null;
+      var alignsCompleteLotToRiver = lot.HasWaterOrientation &&
+          lot.Buildings3D?.Any(building =>
+              building.AssetId == "lumber-mill-v01") == true;
+      var rotationAttempts = lot.HasWaterOrientation ? 4 : 1;
+      for (var attempt = 0; attempt < rotationAttempts; attempt++)
       {
+        var turns = (authoredRotation + attempt) & 3;
         var sx = (turns & 1) == 0 ? width : depth; var sz = (turns & 1) == 0 ? depth : width;
         if (sx > columns || sz > rows) continue;
         var x = Mathf.Clamp(Mathf.RoundToInt(normalizedX * columns - sx * .5f), 0, columns - sx);
         var z = Mathf.Clamp(Mathf.RoundToInt(normalizedY * rows - sz * .5f), 0, rows - sz);
-        if (turns == 0) { gridX = x; gridZ = z; spanX = sx; spanZ = sz; }
+        if (attempt == 0) { gridX = x; gridZ = z; spanX = sx; spanZ = sz; }
         if (!IsDistrictFootprintClear(district, x, z, sx, sz)) continue;
-        var offsets = lot.HasWaterOrientation
-            ? (from dx in new[] { 0, -2, 2, -4, 4 }
-               from dz in new[] { 0, -2, 2, -4, 4 }
-               orderby dx * dx + dz * dz
-               select new Vector2(dx, dz))
+        var offsets = alignsCompleteLotToRiver
+            ? new[] { Vector2.zero }.AsEnumerable()
+            : lot.HasWaterOrientation && nearRiver
+            ? DistrictLotShoreOffsets(lot, turns)
             : new[] { Vector2.zero }.AsEnumerable();
         foreach (var offset in offsets)
         {
@@ -2016,12 +2269,60 @@ namespace CityForgeV3.UI
             ShoreOffsetX = offset.x,
             ShoreOffsetZ = offset.y
           };
-          if (_districtWorld != null && !_districtWorld.ValidateLotBoatPlacement(district, candidate, lot, out _districtLotWaterHint)) continue;
-          gridX = x; gridZ = z; spanX = sx; spanZ = sz; _pendingDistrictLotRotation = turns; _pendingDistrictLotShoreOffset = offset; placeable = true;
-          _districtLotWaterHint = lot.HasWaterOrientation ? "Shoreline fits — lot aligned with the river bank." : "";
+          if (!IsTestLotPlacement && _districtWorld != null && !_districtWorld.ValidateLotBoatPlacement(district, candidate, lot, out _districtLotWaterHint)) continue;
+          var alignedOffset = new Vector2(candidate.ShoreOffsetX,
+              candidate.ShoreOffsetZ);
+          if (!IsOffsetDistrictFootprintClear(district, x, z, sx, sz,
+                  alignedOffset)) continue;
+          gridX = x; gridZ = z; spanX = sx; spanZ = sz; _pendingDistrictLotRotation = turns; _pendingDistrictLotShoreOffset = alignedOffset;
+          _pendingDistrictLotHasBoatDockOverride = candidate.HasBoatDockOverride;
+          _pendingDistrictLotBoatDockLocal = new Vector2(candidate.BoatDockLocalX,
+              candidate.BoatDockLocalZ);
+          _pendingDistrictLotBoatMooringLocal = new Vector2(
+              candidate.BoatMooringLocalX, candidate.BoatMooringLocalZ);
+          _pendingDistrictLotBoatDockTurns = candidate.BoatDockRotationQuarterTurns;
+          placeable = true;
+          _districtLotWaterHint = IsTestLotPlacement ? "Free test placement — construction requirements bypassed." : lot.HasWaterOrientation ? "Shoreline fits — lot aligned with the river bank." : "";
           return true;
         }
       }
+      return true;
+    }
+
+    private static IEnumerable<Vector2> DistrictLotShoreOffsets(
+        LotSaveData lot, int quarterTurns)
+    {
+      var local = lot.WaterOrientationWater - lot.WaterOrientationLand;
+      var facing = new Vector2(local.x, local.z);
+      if (facing.sqrMagnitude < .0001f) facing = Vector2.right;
+      var rotated = Quaternion.Euler(0, quarterTurns * 90f, 0) *
+          new Vector3(facing.x, 0, facing.y);
+      facing = new Vector2(rotated.x, rotated.z).normalized;
+      var tangent = new Vector2(-facing.y, facing.x);
+      foreach (var tangentDistance in new[] { 0f })
+      {
+        yield return tangent * tangentDistance;
+        for (var distance = 2; distance <= 20; distance += 2)
+        {
+          yield return facing * distance + tangent * tangentDistance;
+          yield return -facing * distance + tangent * tangentDistance;
+        }
+      }
+    }
+
+    private bool HandleArmedDistrictLotPointer(RegionCityTile district, PointerDownEvent evt)
+    {
+      bool founder = !string.IsNullOrWhiteSpace(_pendingFounderBuildingId);
+      if (!founder && string.IsNullOrWhiteSpace(_pendingDistrictLotId)) return false;
+      // An armed Lot owns the world click, including invalid ground positions.
+      // Selection/inspection must not consume it or start a drag underneath it.
+      if (_districtWorld != null && _districtWorld.TryGroundPoint(
+          DistrictCameraPoint(evt.position), out var normalized))
+      {
+        if (founder) PlaceFounderBuilding(district, normalized.x, normalized.y);
+        else PlaceDistrictLot(district, normalized.x, normalized.y);
+      }
+      evt.StopImmediatePropagation();
       return true;
     }
 
@@ -2029,16 +2330,11 @@ namespace CityForgeV3.UI
     {
       var lot = LotContentCatalog.Read(_pendingDistrictLotId);
       if (district == null || lot == null) return;
-      var plopCost = LotEconomy.CalculatePlopCost(lot);
-      if (plopCost > district.Treasury) { ShowDistrictNotice($"Requires ${plopCost:N0} to place."); return; }
       if (!TryDistrictLotFootprint(district, x, y, out var gridX,
               out var gridZ, out var footprintWidth, out var footprintDepth, out var placeable) ||
           !placeable) return;
-      if (!DistrictLotRequirements.Quote(district, lot, _openRegion.EraId,
-          gridX, gridZ, footprintWidth, footprintDepth,
-          (cx, cz) => _districtWorld != null && _districtWorld.HasRoadAtCell(cx, cz),
-          n => _districtWorld != null && _districtWorld.IsUnderRiverWater(n),
-          _pendingDistrictLotShoreOffset, out var constructionResources, out var reason))
+      if (!QuotePendingDistrictLot(district, lot, gridX, gridZ, footprintWidth, footprintDepth,
+          out var plopCost, out var constructionResources, out var reason))
       { ShowDistrictNotice(reason); return; }
       DistrictLotSimulation.For(district);
       district.Lots ??= new List<PlacedDistrictLot>();
@@ -2051,11 +2347,18 @@ namespace CityForgeV3.UI
         GridZ = gridZ,
         RotationQuarterTurns = _pendingDistrictLotRotation,
         ShoreOffsetX = _pendingDistrictLotShoreOffset.x,
-        ShoreOffsetZ = _pendingDistrictLotShoreOffset.y
+        ShoreOffsetZ = _pendingDistrictLotShoreOffset.y,
+        HasBoatDockOverride = _pendingDistrictLotHasBoatDockOverride,
+        BoatDockLocalX = _pendingDistrictLotBoatDockLocal.x,
+        BoatDockLocalZ = _pendingDistrictLotBoatDockLocal.y,
+        BoatDockRotationQuarterTurns = _pendingDistrictLotBoatDockTurns,
+        BoatMooringLocalX = _pendingDistrictLotBoatMooringLocal.x,
+        BoatMooringLocalZ = _pendingDistrictLotBoatMooringLocal.y,
+        BoatDockContractVersion = _pendingDistrictLotHasBoatDockOverride ? 2 : 0
       };
       district.Lots.Add(placement);
       if (_districtWorld != null &&
-          !_districtWorld.AddPlacedLot(district, placement))
+          !_districtWorld.AddPlacedLot(district, placement, IsTestLotPlacement))
       {
         district.Lots.Remove(placement);
         return;
@@ -2065,6 +2368,7 @@ namespace CityForgeV3.UI
       DistrictLotSimulation.For(district).Add(instanceId, lot);
       _districtWorld?.HideLotPlacementGuide();
       _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingDistrictLotName = "";
       _selectedDistrictLotInstanceId = instanceId;
       SaveDistrictEdit();
@@ -2078,58 +2382,200 @@ namespace CityForgeV3.UI
     {
       var founder = Array.Find(FounderBuildings(),
           item => item.Id == _pendingFounderBuildingId);
-      if (string.IsNullOrWhiteSpace(founder.Id)) return;
-      district.Founded = true;
-      district.Population ??= new DistrictPopulationState();
-      district.Population.FoundedSeason = DistrictLabor.State(district).SeasonIndex;
-      district.Population.FoundingClockInitialized = true;
+      if (district == null || string.IsNullOrWhiteSpace(founder.Id)) return;
+      var lot = _pendingFounderLot;
+      if (lot == null) return;
+      var snapped = SnapFounderPlacement(district, x, y);
+      if (!TryFounderFootprint(district, x, y, out var gridX, out var gridZ,
+          out var spanX, out var spanZ)) return;
+      var placement = new PlacedDistrictLot
+      {
+        InstanceId = Guid.NewGuid().ToString("N"),
+        LotId = founder.LotId,
+        HasPopulationOverride = true,
+        PopulationOverride = 0,
+        GridX = gridX,
+        GridZ = gridZ
+      };
+      if (!IsDistrictFootprintClear(district, placement.GridX, placement.GridZ, spanX, spanZ))
+      { ShowDistrictNotice("Choose an open area for the Fort."); return; }
+      DistrictLotSimulation.For(district);
+      district.Lots ??= new List<PlacedDistrictLot>();
+      district.Lots.Add(placement);
+      if (_districtWorld != null && !_districtWorld.AddPlacedLot(district, placement))
+      {
+        district.Lots.Remove(placement);
+        return;
+      }
+      InitializeDistrictStart(district, UnityEngine.Random.Range(1740, 1761));
+      district.Designation = RegionPlaceDesignation.Town;
       district.FounderBuildingId = founder.Id;
       district.FounderBuildingName = founder.Name;
       district.LotId = founder.LotId;
-      district.FoundingYear = UnityEngine.Random.Range(1740, 1761);
-      var snapped = SnapFounderPlacement(district, x, y);
       district.FounderNormalizedX = snapped.x;
       district.FounderNormalizedY = snapped.y;
-      if (!string.IsNullOrWhiteSpace(founder.LotId))
-      {
-        var lot = LotContentCatalog.Read(founder.LotId);
-        if (lot != null)
-        {
-          var columns = DistrictScale.Columns(district.Width);
-          var rows = DistrictScale.Columns(district.Height);
-          var spanX = DistrictScale.GridSpanForMeters(
-              lot.LotWidthCells * LotMetricScale.MajorGridMeters);
-          var spanZ = DistrictScale.GridSpanForMeters(
-              lot.LotDepthCells * LotMetricScale.MajorGridMeters);
-          district.Lots ??= new List<PlacedDistrictLot>();
-          district.Lots.Add(new PlacedDistrictLot
-          {
-            InstanceId = Guid.NewGuid().ToString("N"),
-            LotId = founder.LotId,
-            GridX = Mathf.Clamp(
-                  Mathf.RoundToInt(snapped.x * columns - spanX * 0.5f),
-                  0, columns - spanX),
-            GridZ = Mathf.Clamp(
-                  Mathf.RoundToInt(snapped.y * rows - spanZ * 0.5f),
-                  0, rows - spanZ)
-          });
-        }
-      }
+      ApplyFounderStartingFood(district, founder.Id);
+      DistrictLotSimulation.For(district).Add(placement.InstanceId, lot,
+          placement.HasPopulationOverride, placement.PopulationOverride);
       _pendingFounderBuildingId = "";
       _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingDistrictLotName = "";
       _districtYear = district.FoundingYear;
       SaveDistrictEdit();
-      Show(AppScreen.DistrictTerraform);
+      if (_districtWorld != null)
+      {
+        _districtWorldLotId = district.LotId;
+        _districtWorldCompositionKey = DistrictCompositionKey(district);
+        _districtWorld.HideLotPlacementGuide();
+      }
+      RefreshMapMetrics(_root, district);
+      _root?.Q<Button>("district-simulation-pause")?.SetEnabled(true);
+      _root?.Q<Button>("district-simulation-go")?.SetEnabled(true);
+      _root?.Q(className: "district-simulation-panel")?.RemoveFromHierarchy();
+      if (founder.Id == "fortress") ShowFortNextSteps();
+    }
+
+    private static int FounderStartingFood(string founderBuildingId) =>
+      founderBuildingId switch
+      {
+        "fortress" => 250,
+        "city-charter-house" => 500,
+        _ => 0
+      };
+
+    private static void ApplyFounderStartingFood(RegionCityTile district,
+        string founderBuildingId)
+    {
+      if (district == null) return;
+      var startingFood = FounderStartingFood(founderBuildingId);
+      if (startingFood <= 0) return;
+      district.ResourceInventory ??= new DistrictResourceInventory();
+      district.ResourceInventory.Food = Math.Max(
+          district.ResourceInventory.Food, startingFood);
+    }
+
+    private void ShowFortNextSteps()
+    {
+      if (_root == null) return;
+      _root.Q("fort-next-steps")?.RemoveFromHierarchy();
+      var panel = new VisualElement { name = "fort-next-steps" };
+      panel.AddToClassList("cf-map-chrome");
+      panel.AddToClassList("fort-next-steps");
+      var close = CfButton.Create("X", () => panel.RemoveFromHierarchy(), true, "quiet");
+      close.name = "fort-next-steps-close";
+      close.tooltip = "Close next steps";
+      close.AddToClassList("fort-next-steps-close");
+      panel.Add(close);
+      panel.Add(StyledLabel("YOUR TOWN HAS BEGUN", "fort-next-steps-kicker"));
+      panel.Add(StyledLabel("Start with lumber", "fort-next-steps-title"));
+      panel.Add(StyledLabel(
+          "Place a few lumberjacks near trees to begin gathering wood. A steady supply of lumber will help you build your new town.",
+          "fort-next-steps-copy"));
+      panel.RegisterCallback<PointerEnterEvent>(_ => _districtEdgePanDirection = Vector2Int.zero);
+      _root.Add(panel);
+      // Wait for initial layout so only entry animates. Closing removes the panel immediately.
+      EventCallback<GeometryChangedEvent> reveal = null;
+      reveal = _ =>
+      {
+        panel.UnregisterCallback(reveal);
+        panel.schedule.Execute(() => panel.AddToClassList("fort-next-steps--visible")).ExecuteLater(16);
+      };
+      panel.RegisterCallback(reveal);
+    }
+
+    private string _timberMillWarningDistrictId = "";
+    private bool _timberMillWarningShown;
+
+    private void UpdateTimberMillWarning(RegionCityTile district, bool waiting)
+    {
+      var districtId = district?.TileId ?? "";
+      if (_timberMillWarningDistrictId != districtId)
+      {
+        _timberMillWarningDistrictId = districtId;
+        _timberMillWarningShown = false;
+        _root?.Q("timber-mill-warning")?.RemoveFromHierarchy();
+      }
+      if (!waiting)
+      {
+        _timberMillWarningShown = false;
+        _root?.Q("timber-mill-warning")?.RemoveFromHierarchy();
+        return;
+      }
+      if (_timberMillWarningShown) return;
+      _timberMillWarningShown = true;
+      ShowTimberMillWarning();
+    }
+
+    private void ShowTimberMillWarning(Action placeAction = null)
+    {
+      if (_root == null) return;
+      _root.Q("fort-next-steps")?.RemoveFromHierarchy();
+      _root.Q("timber-mill-warning")?.RemoveFromHierarchy();
+      var panel = new VisualElement { name = "timber-mill-warning" };
+      panel.AddToClassList("cf-map-chrome");
+      panel.AddToClassList("fort-next-steps");
+      panel.AddToClassList("timber-mill-warning");
+      var close = CfButton.Create("X", () => panel.RemoveFromHierarchy(),
+          true, "quiet");
+      close.name = "timber-mill-warning-close";
+      close.tooltip = "Dismiss lumber delivery warning";
+      close.AddToClassList("fort-next-steps-close");
+      panel.Add(close);
+      panel.Add(StyledLabel("LUMBER DELIVERY BLOCKED",
+          "fort-next-steps-kicker"));
+      panel.Add(StyledLabel("Lumber cart has no mill to drive to",
+          "fort-next-steps-title"));
+      panel.Add(StyledLabel(
+          "Place a Lumber Mill beside a river and connect it to the camp by road so the cart can deliver its load.",
+          "fort-next-steps-copy"));
+      var mill = LotContentCatalog.Read("lumber-mill-dock-operations-v01");
+      var place = CfButton.Create("Place Lumber Mill", () =>
+      {
+        panel.RemoveFromHierarchy();
+        if (placeAction != null) placeAction();
+        else ArmDistrictLotPlacement("lumber-mill-dock-operations-v01",
+            mill?.Name ?? "Lumber Mill Dock Operations v01");
+      }, placeAction != null || mill != null, "primary");
+      place.name = "timber-mill-warning-place";
+      place.tooltip = mill != null || placeAction != null
+          ? "Arm the Lumber Mill Lot for normal district placement."
+          : "The saved Lumber Mill Lot is unavailable.";
+      panel.Add(place);
+      panel.RegisterCallback<PointerEnterEvent>(_ =>
+          _districtEdgePanDirection = Vector2Int.zero);
+      _root.Add(panel);
+      EventCallback<GeometryChangedEvent> reveal = null;
+      reveal = _ =>
+      {
+        panel.UnregisterCallback(reveal);
+        panel.schedule.Execute(() =>
+            panel.AddToClassList("fort-next-steps--visible")).ExecuteLater(16);
+      };
+      panel.RegisterCallback(reveal);
+    }
+
+    private bool TryFounderFootprint(RegionCityTile district, float x, float y,
+        out int gridX, out int gridZ, out int width, out int depth)
+    {
+      gridX = gridZ = width = depth = 0;
+      var lot = _pendingFounderLot;
+      if (district == null || lot == null) return false;
+      var columns = DistrictScale.Columns(district.Width);
+      var rows = DistrictScale.Columns(district.Height);
+      width = DistrictScale.GridSpanForMeters(lot.LotWidthCells * LotMetricScale.MajorGridMeters);
+      depth = DistrictScale.GridSpanForMeters(lot.LotDepthCells * LotMetricScale.MajorGridMeters);
+      if (width > columns || depth > rows) return false;
+      var snapped = SnapFounderPlacement(district, x, y);
+      gridX = Mathf.Clamp(Mathf.RoundToInt(snapped.x * columns - width * .5f), 0, columns - width);
+      gridZ = Mathf.Clamp(Mathf.RoundToInt(snapped.y * rows - depth * .5f), 0, rows - depth);
+      return true;
     }
 
     private Vector2 SnapFounderPlacement(RegionCityTile district,
         float normalizedX, float normalizedY)
     {
-      var founder = Array.Find(FounderBuildings(),
-          item => item.Id == _pendingFounderBuildingId);
-      var lot = string.IsNullOrWhiteSpace(founder.LotId)
-          ? null : LotContentCatalog.Read(founder.LotId);
+      var lot = _pendingFounderLot;
       var widthMeters = lot != null
           ? lot.LotWidthCells * 10f : DistrictScale.CellSizeMeters;
       var depthMeters = lot != null
@@ -2144,14 +2590,14 @@ namespace CityForgeV3.UI
     private static (string Id, string Name, string Description, string LotId)[]
         FounderBuildings() => new[]
         {
-                ("fortress", "Fortress", "Establish a defended frontier stronghold using your saved Fortress Lot.", "fortress-lot"),
+                ("fortress", "Fort", "Establish a defended frontier town using your saved Fortress Lot.", "fortress-lot"),
                 ("ranger-station", "Ranger Station", "Establish a protected landscape centered on stewardship, trails, and conservation.", ""),
                 ("pioneer-farmstead", "1785 Farm", "Found an agricultural district with a New England farmhouse, red barn, crop fields, fences, and mature trees.", "1785-farm"),
                 ("prospectors-office", "Prospector's Office", "Survey mineral deposits and establish a resource-focused settlement.", ""),
                 ("trading-post", "Frontier Trading Post", "Create a crossroads for commerce, supplies, travelers, and regional exchange.", ""),
                 ("village-hall", "Village Hall", "Found a compact small town organized around local civic life.", ""),
                 ("river-landing", "River Landing", "Build around waterways, shipping, fishing, and future waterfront industry.", ""),
-                ("city-charter-house", "Charter House", "Lay the civic foundation for a district intended to grow into a major city.", "")
+                ("city-charter-house", "City Center", "Establish the civic center of your new town.", "")
         };
 
     private void SetDistrictSimulationPaused(bool paused)
@@ -2176,21 +2622,47 @@ namespace CityForgeV3.UI
             : "SIMULATION RUNNING";
     }
 
+    private void TickDistrictTimeOfDay()
+    {
+      if (_root == null || _currentScreen != AppScreen.DistrictTerraform ||
+          _districtWorld == null || _districtSimulationPaused) return;
+      var district = _districtWorldTile;
+      if (district == null || !district.Founded) return;
+      if (!DistrictDayCycle.Advance(district,
+              Mathf.Min(Time.deltaTime, .1f))) return;
+      _districtWorld.SetTimeOfDay(district.TimeOfDay);
+      RefreshMapMetrics(_root, district);
+    }
+
     private void LeaveDistrictEditor()
     {
+      SetDistrictRoadDeleteCursor(false);
       CancelLaborPlacement();
       SaveDistrictEdit();
       SetDistrictSimulationPaused(false);
       _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
       _pendingDistrictLotName = "";
       _hoveredDistrictLotInstanceId = "";
       _selectedDistrictLotInstanceId = "";
       _hasSelectedDistrictRoad = false;
+      _districtWorldTile = null;
       Show(AppScreen.RegionEditor);
     }
 
     private void PollTerraformViewKeys()
     {
+      if (MapPanningBlocked)
+      {
+        _districtEdgePanDirection = Vector2Int.zero;
+        if (Input.GetKeyDown(KeyCode.Escape)) RemoveDocumentModal();
+        return;
+      }
+      if (!Application.isFocused)
+      {
+        _districtEdgePanDirection = Vector2Int.zero;
+        return;
+      }
       // Physical polling owns H, including when the world viewport has focus.
       // The caller already excludes text fields; leave modal dialogs visible.
       if (Input.GetKeyDown(KeyCode.H) &&
@@ -2219,6 +2691,7 @@ namespace CityForgeV3.UI
       }
       if (Input.GetKeyDown(KeyCode.Escape))
       {
+        SetDistrictRoadDeleteCursor(false);
         if (_root.Q("document-modal") != null) RemoveDocumentModal();
         else ReturnToQuietDistrict();
         return;
@@ -2237,7 +2710,10 @@ namespace CityForgeV3.UI
 
       var changed = false;
       var panStep = DistrictZoom.PanStepMeters(_terraformZoomLevel) *
-          (_terraformZoomLevel == DistrictZoomLevel.LOD0 ? 3f : 2f);
+          (_terraformZoomLevel == DistrictZoomLevel.LOD0 ? 3f : 2f) *
+          DistrictZoom.PanSpeedScale(_terraformZoomLevel);
+      // The two closest views retain fine movement. Player-facing Zoom 3 uses
+      // its requested 30% increase for both edge hovering and arrow keys.
       var horizontalWorldMotion = 0;
       var verticalWorldMotion = 0;
       if (Input.GetKeyDown(KeyCode.LeftArrow))
@@ -2432,7 +2908,7 @@ namespace CityForgeV3.UI
           "Water" => new[] { ("Select Water", "↖"), ("Repair River", "✓"), ("Shape River", "↔"), ("Soften River", "~"), ("Erase River", "⌫") },
           "Flora" => new[] { ("Trees", "♣"), ("Forest", "♠"), ("Clear Flora", "⌫") },
           "Environment" => new[] { ("Rain", "☂"), ("Snow", "❄"), ("Clear Skies", "○") },
-          "Sun" => new[] { ("Morning", "◔"), ("Noon", "☀"), ("Afternoon", "◕"), ("Night", "●") },
+          "Sun" => new[] { ("Morning", "◔"), ("Noon", "☀"), ("Afternoon", "◕"), ("Early Evening", "◒"), ("Night", "●") },
           _ => new[] { ("Hills", "Hills"), ("Raise", "▲"), ("Lower", "▼"), ("Level", "▬"), ("Smooth", "~"), ("Erode", "⌁") }
         };
 
@@ -2442,10 +2918,10 @@ namespace CityForgeV3.UI
             ? new[]
             {
                     ("Select", "↖", "Select — draw a rectangle, release to select; use Move to drag the group"),
-                    ("Lots", "▦", "Lots — browse and place any complete lot saved in the Lot Editor"),
                     ("Roads", "=", "Roads - streets, avenues, highways, and intersections"),
                     ("Zoning", "#", "Zoning - designate residential, commercial, industrial, and mixed-use land"),
                     ("Parks", "^", "Parks - plazas, playgrounds, gardens, and recreation"),
+                    ("Farms", "♧", "Farms - browse and place saved agricultural lots"),
                     ("Transit", "~", "Transit - rail, stations, stops, and district connections"),
                     ("Civic", "+", "Civic - public safety, education, health, and government"),
                     ("Utilities", "*", "Utilities - power, water, waste, and district services")
@@ -2457,7 +2933,7 @@ namespace CityForgeV3.UI
                     ("Water", "≈", "Water — lakes, rivers, and shorelines"),
                     ("Flora", "♣", "Flora — trees and natural ground cover"),
                     ("Environment", "☁", "Environment — atmosphere and weather"),
-                    ("Sun", "☀", "Sun — choose morning, noon, afternoon, or night lighting")
+                    ("Sun", "☀", "Sun — choose morning, noon, afternoon, early evening, or night lighting")
             };
 
     private static bool TryDistrictTimePreset(string tool,
@@ -2468,10 +2944,11 @@ namespace CityForgeV3.UI
         "Morning" => TimeOfDayPreset.Morning,
         "Noon" => TimeOfDayPreset.Noon,
         "Afternoon" => TimeOfDayPreset.Afternoon,
+        "Early Evening" => TimeOfDayPreset.Evening,
         "Night" => TimeOfDayPreset.Night,
         _ => TimeOfDayPreset.Noon
       };
-      return tool is "Morning" or "Noon" or "Afternoon" or "Night";
+      return tool is "Morning" or "Noon" or "Afternoon" or "Early Evening" or "Night";
     }
 
     private static string DistrictTimeToolName(TimeOfDayPreset preset) =>
@@ -2480,6 +2957,7 @@ namespace CityForgeV3.UI
           TimeOfDayPreset.Morning => "Morning",
           TimeOfDayPreset.Noon => "Noon",
           TimeOfDayPreset.Afternoon => "Afternoon",
+          TimeOfDayPreset.Evening => "Early Evening",
           TimeOfDayPreset.Night => "Night",
           _ => "Afternoon"
         };
@@ -2488,14 +2966,34 @@ namespace CityForgeV3.UI
         category switch
         {
           "Select" => new[] { ("Select", "↖"), ("Move", "✥") },
-          "Lots" => new[] { ("Browse Lots", "▦") },
-          "Zoning" => new[] { ("Residential", "R"), ("Commercial", "C"), ("Industrial", "I"), ("Mixed Use", "M"), ("Dezone", "X") },
-          "Parks" => new[] { ("Pocket Park", "P"), ("Plaza", "Q"), ("Playground", "G"), ("Sports", "O") },
-          "Transit" => new[] { ("Rail", "R"), ("Station", "S"), ("Bus Stop", "B"), ("Connector", "C") },
-          "Civic" => new[] { ("Government", "G"), ("Education", "E"), ("Health", "+"), ("Safety", "S") },
+          "Zoning" => new[] { ("Residential", "R"), ("Commercial", "C"), ("Industrial", "I"), ("Mixed Use", "M"), ("Dezone", "X"),
+              ("Browse Residential", "▦"), ("Browse Commercial", "▦"), ("Browse Industrial", "▦"), ("Browse Mixed Use", "▦") },
+          "Parks" => new[] { ("Browse Parks", "▦"), ("Pocket Park", "P"), ("Plaza", "Q"), ("Playground", "G"), ("Sports", "O") },
+          "Farms" => new[] { ("Browse Farms", "▦") },
+          "Transit" => new[] { ("Browse Transit Lots", "▦"), ("Rail", "R"), ("Station", "S"), ("Bus Stop", "B"), ("Connector", "C") },
+          "Civic" => new[] { ("Browse Civic Lots", "▦"), ("Government", "G"), ("Education", "E"), ("Health", "+"), ("Safety", "S") },
           "Utilities" => new[] { ("Power", "P"), ("Water", "W"), ("Waste", "X"), ("Service Lines", "L") },
-          _ => new[] { (DistrictRoadPlacementModel.DirtFamily, "=") }
+          _ => new[] { (DistrictRoadPlacementModel.DirtFamily, "="),
+              ("Delete Road", "X") }
         };
+
+    private static bool TryBuilderLotBrowserType(string category, string tool,
+        out LotType lotType)
+    {
+      lotType = (category, tool) switch
+      {
+        ("Zoning", "Browse Residential") => LotType.Residential,
+        ("Zoning", "Browse Commercial") => LotType.Commercial,
+        ("Zoning", "Browse Industrial") => LotType.Industrial,
+        ("Zoning", "Browse Mixed Use") => LotType.Mixed,
+        ("Parks", "Browse Parks") => LotType.CivicsParks,
+        ("Farms", "Browse Farms") => LotType.Agricultural,
+        ("Transit", "Browse Transit Lots") => LotType.Transportation,
+        ("Civic", "Browse Civic Lots") => LotType.Civics,
+        _ => (LotType)(-1)
+      };
+      return (int)lotType >= 0;
+    }
 
     private string ActiveDistrictCategory =>
         _districtEditorMode == DistrictEditorMode.Builder
@@ -2514,6 +3012,7 @@ namespace CityForgeV3.UI
 
     private void SelectDistrictCategory(string category)
     {
+      SetDistrictRoadDeleteCursor(false);
       CancelLaborPlacement();
       if (category == "Select")
       {
@@ -2529,6 +3028,7 @@ namespace CityForgeV3.UI
         _districtWorld?.HideLotOutline();
         _pendingFounderBuildingId = "";
         _pendingDistrictLotId = "";
+        _pendingDistrictLotIsTest = false;
         _pendingDistrictLotName = "";
         _pendingDistrictFloraId = "";
         _pendingDistrictFloraMode = 0;
@@ -2572,6 +3072,10 @@ namespace CityForgeV3.UI
         (_builderTool == DistrictRoadPlacementModel.DirtFamily ||
          _builderTool == DistrictRoadPlacementModel.AntiqueBrickFamily ||
          _builderTool == DistrictRoadPlacementModel.PikeDirtFamily);
+
+    private bool IsDistrictRoadDeleteToolActive() =>
+        _districtEditorMode == DistrictEditorMode.Builder &&
+        _builderCategory == "Roads" && _builderTool == "Delete Road";
 
     private static readonly (string Id, string Name)[] DistrictTrees =
     {
@@ -2727,11 +3231,16 @@ namespace CityForgeV3.UI
       var count = _pendingDistrictFloraMode == 2
           ? UnityEngine.Random.Range(9, 15) : 1;
       var familyRotation = UnityEngine.Random.Range(0, 8) * 45f;
+      var groupHasHarvestableTree = false;
       PlacedDistrictFlora last = null;
       for (var i = 0; i < count; i++)
       {
         var id = string.IsNullOrWhiteSpace(_pendingDistrictFloraId)
-            ? RandomDistrictTreeId(_pendingDistrictTreeFamily, "")
+            ? (_pendingDistrictFloraMode == 2
+                ? RandomDistrictForestTreeId(
+                    _pendingDistrictTreeFamily,
+                    groupHasHarvestableTree)
+                : RandomDistrictTreeId(_pendingDistrictTreeFamily, ""))
             : _pendingDistrictFloraId;
         if (!StoneFloraCatalog.IsStone(id) && !RegionClimateRules.AllowsTree(CurrentRegionClimate, id)) continue;
         var candidate = normalized;
@@ -2772,7 +3281,10 @@ namespace CityForgeV3.UI
           RotationEighthTurns = UnityEngine.Random.Range(0, 8)
         };
         district.Flora.Add(last);
+        if (last.FloraId == "cilician-fir")
+          groupHasHarvestableTree = true;
         DistrictHarvestIndex.Changed(district,last);
+        _pendingDistrictFloraPresentations.Add(last);
       }
       if (last == null)
       {
@@ -2822,9 +3334,16 @@ namespace CityForgeV3.UI
     }
     private void FlushDistrictFloraPaint(RegionCityTile district, bool save)
     {
-      _districtWorld.RefreshFlora(district, _selectedDistrictFloraInstanceId);
+      if (_pendingDistrictFloraPresentations.Count > 0)
+      {
+        _districtWorld.AddDistrictFloraPresentations(
+            _pendingDistrictFloraPresentations,
+            _selectedDistrictFloraInstanceId);
+        _pendingDistrictFloraPresentations.Clear();
+      }
+      if (!save) return;
       _districtWorldCompositionKey = DistrictCompositionKey(district);
-      if (save) SaveDistrictEdit();
+      SaveDistrictEdit();
     }
 
     private bool RerollDistrictRandomFlora()
@@ -2832,7 +3351,7 @@ namespace CityForgeV3.UI
       var district = FindSelectedRegionTile();
       if (district == null || string.IsNullOrWhiteSpace(
               _activeDistrictRandomFloraGroupId)) return false;
-      var changed = false;
+      var changed = new List<PlacedDistrictFlora>();
       foreach (var tree in district.Flora ??
                new List<PlacedDistrictFlora>())
       {
@@ -2841,10 +3360,12 @@ namespace CityForgeV3.UI
         DistrictHarvestIndex.Changed(district,tree);
         tree.Scale = UnityEngine.Random.Range(.86f, 1.16f);
         tree.RotationEighthTurns = UnityEngine.Random.Range(0, 8);
-        changed = true;
+        changed.Add(tree);
       }
-      if (!changed) return false;
-      _districtWorld?.RefreshFlora(district,
+      if (changed.Count == 0) return false;
+      _districtWorld?.RemoveFloraPresentations(
+          changed.Select(tree => tree.InstanceId));
+      _districtWorld?.AddDistrictFloraPresentations(changed,
           _selectedDistrictFloraInstanceId);
       _districtWorldCompositionKey = DistrictCompositionKey(district);
       SaveDistrictEdit();
@@ -2857,6 +3378,23 @@ namespace CityForgeV3.UI
       if (choices.Length == 0) return DistrictTrees.First(tree => RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).Id;
       return choices[UnityEngine.Random.Range(0, choices.Length)].Id;
     }
+
+    private string RandomDistrictForestTreeId(string family,
+        bool groupHasHarvestableTree)
+    {
+      var harvestable = DistrictForestHarvestableTree(
+          CurrentRegionClimate, family, groupHasHarvestableTree,
+          UnityEngine.Random.Range(0, 5));
+      if (!string.IsNullOrEmpty(harvestable)) return harvestable;
+      return RandomDistrictTreeId(family, "cilician-fir");
+    }
+
+    public static string DistrictForestHarvestableTree(
+        RegionClimate climate, string family,
+        bool groupHasHarvestableTree, int roll) =>
+      RegionClimateRules.AllowsTree(climate, "cilician-fir") &&
+      ((family == FloraFamilies.Mountain && !groupHasHarvestableTree) ||
+       Mathf.Abs(roll) % 5 == 0) ? "cilician-fir" : "";
 
     private static PlacedDistrictFlora FindDistrictFlora(
         RegionCityTile district, string instanceId) =>
@@ -2935,7 +3473,8 @@ namespace CityForgeV3.UI
           -verticalWorldMotion / (float)DistrictScale.Columns(district.Height));
       if (!DistrictRiverEditing.Move(river, delta)) return true;
       SaveDistrictEdit();
-      _districtWorld?.RefreshRivers(district);
+      _districtWorld?.RebuildAllRiverPresentations(district,
+          DistrictBulkRebuildReason.RiverGeometryReplacement);
       _districtWorldCompositionKey = DistrictCompositionKey(district);
       _districtWorld?.ShowDistrictSelection(district,
           _districtSelection);
@@ -2986,6 +3525,8 @@ namespace CityForgeV3.UI
       _districtSelectionStart = _districtSelectionLast = normalized;
       _districtSelectionGridRemainder = Vector2.zero;
       _districtSelectionMovedRiver = false;
+      _districtSelectionMovedRoad = false;
+      _districtSelectionMovedLot = false;
       _districtSelectionDragActive = true;
     }
 
@@ -3051,10 +3592,20 @@ namespace CityForgeV3.UI
       }
       if (_districtSelectionDragActive)
       {
-        if (_districtSelectionMovedRiver) _districtWorld?.RefreshRivers(district);
+        if (_districtSelectionMovedRiver)
+          _districtWorld?.RebuildAllRiverPresentations(district,
+              DistrictBulkRebuildReason.RiverGeometryReplacement);
+        if (_districtSelectionMovedRoad)
+        {
+          DistrictRoadPlacementModel.Repair(district.Roads);
+          _districtWorld?.RefreshRoads(district, deferSurfaceRefresh: true);
+        }
+        if (!_districtSelectionMovedRiver &&
+            (_districtSelectionMovedRoad || _districtSelectionMovedLot))
+          _districtWorld?.CommitLocalSurfaceChanges();
         _districtSelectionMovedRiver = false;
-        DistrictRoadPlacementModel.Repair(district.Roads);
-        _districtWorld?.RefreshRoads(district);
+        _districtSelectionMovedRoad = false;
+        _districtSelectionMovedLot = false;
         _districtWorldCompositionKey = DistrictCompositionKey(district);
         SaveDistrictEdit();
         _districtWorld?.ShowDistrictSelection(district, _districtSelection);
@@ -3070,7 +3621,7 @@ namespace CityForgeV3.UI
       _districtSelectionLast = normalized;
       var columns = DistrictScale.Columns(district.Width);
       var rows = DistrictScale.Columns(district.Height);
-      var floraChanged = false;
+      var movedFlora = new List<PlacedDistrictFlora>();
       foreach (var selection in _districtSelection)
       {
         if (selection.Kind == DistrictSelectionKind.Flora)
@@ -3080,7 +3631,7 @@ namespace CityForgeV3.UI
           flora.NormalizedX = Mathf.Clamp01(flora.NormalizedX + delta.x);
           flora.NormalizedZ = Mathf.Clamp01(flora.NormalizedZ + delta.y);
           DistrictHarvestIndex.Changed(district,flora);
-          floraChanged = true;
+          movedFlora.Add(flora);
         }
         else if (selection.Kind == DistrictSelectionKind.River)
         {
@@ -3120,6 +3671,7 @@ namespace CityForgeV3.UI
                 }, LotContentCatalog.Read(lot.LotId), out _)) continue;
             lot.GridX = targetX; lot.GridZ = targetZ;
             _districtWorld?.UpdatePlacedLotTransform(district, lot, deferSurfaceRefresh: true);
+            _districtSelectionMovedLot = true;
           }
           else if (selection.Kind == DistrictSelectionKind.Road)
           {
@@ -3130,14 +3682,17 @@ namespace CityForgeV3.UI
                 0, columns - 1);
             road.GridZ = Mathf.Clamp(road.GridZ + gridDelta.y,
                 0, rows - 1);
+            _districtSelectionMovedRoad = true;
           }
         }
         _districtRoadEditSession = null;
         InvalidateDistrictRoadLotCells();
-        _districtWorld?.RefreshRoads(district, deferSurfaceRefresh: true);
+        if (_districtSelectionMovedRoad)
+          _districtWorld?.RefreshRoads(district, deferSurfaceRefresh: true);
       }
-      if (floraChanged)
-        _districtWorld?.RefreshFlora(district);
+      if (movedFlora.Count > 0)
+        _districtWorld?.MoveDistrictFloraPresentations(movedFlora,
+            _selectedDistrictFloraInstanceId);
       _districtWorld?.ShowDistrictSelection(district,
           _districtSelection);
     }
@@ -3193,6 +3748,7 @@ namespace CityForgeV3.UI
             break;
           case DistrictSelectionKind.Lot:
             DistrictLotSimulation.For(district).Remove(selection.Id);
+            DistrictTimber.RemoveLotCrews(district, selection.Id);
             district.Lots?.RemoveAll(item => item != null &&
                 item.InstanceId == selection.Id);
             break;
@@ -3217,8 +3773,11 @@ namespace CityForgeV3.UI
       foreach (var target in deletedBuildings) _districtWorld.RemoveBuildingPresentation(target);
       _districtWorld.RemoveFloraPresentations(deletedFlora);
       _districtWorld.RefreshRoadCellsAndNeighbors(district, deletedRoadCells);
-      if (removedRiver) _districtWorld.RefreshRivers(district, preservePresentations: true);
-      else if (deletedRoadCells.Count>0 || deletedBuildings.Count>0) _districtWorld.CommitSurfaceChanges();
+      if (removedRiver) _districtWorld.RebuildAllRiverPresentations(district,
+          DistrictBulkRebuildReason.RiverGeometryReplacement,
+          preservePresentations: true);
+      else if (deletedBuildings.Count>0) _districtWorld.CommitLocalSurfaceChanges();
+      else if (deletedRoadCells.Count>0) _districtWorld.CommitRoadSurfaceChanges();
       _selectedDistrictFloraInstanceId = "";
       _hasSelectedDistrictRoad = false;
       _laborNavigation = null;
@@ -3253,10 +3812,22 @@ namespace CityForgeV3.UI
           DistrictRoadPlacementModel.PikeDirtFamily,
           "FREE PER TILE",
           "CityForgeV3/Roads/NationalPikeDirtV1/straight");
-      list.Add(CfButton.Create("BRIDGES", () => ComposeDistrictBridgeModal()));
+      var delete = CfButton.Create("DELETE ROAD", () =>
+      {
+        _builderTool = "Delete Road";
+        RemoveDocumentModal();
+        Show(AppScreen.DistrictTerraform);
+      }, true, _builderTool == "Delete Road" ? "primary" : "quiet");
+      delete.name = "district-road-delete";
+      delete.tooltip = "Delete road tiles under the X cursor. Press Escape to return to the normal selector.";
       panel.Add(list);
       var actions = new VisualElement();
       actions.AddToClassList("district-road-family-actions");
+      var bridges = CfButton.Create("BRIDGES", () =>
+          ComposeDistrictBridgeModal(), true, "quiet");
+      bridges.name = "district-road-bridges";
+      actions.Add(bridges);
+      actions.Add(delete);
       var cancel = CfButton.Create("CANCEL", RemoveDocumentModal,
           true, "quiet");
       cancel.tooltip = "Close the Road Family catalog without changing the selected road.";
@@ -3393,6 +3964,48 @@ namespace CityForgeV3.UI
       return true;
     }
 
+    private bool DeleteDistrictRoadAt(RegionCityTile district,
+        Vector2Int cell)
+    {
+      if (district?.Roads == null) return false;
+      var session = DistrictRoadSession(district);
+      if (!session.TryDelete(cell.x, cell.y)) return false;
+      _districtWorld?.RefreshRoadCellsAndNeighbors(district,
+          new[] { cell }, session.At);
+      _hasSelectedDistrictRoad = false;
+      return true;
+    }
+
+    private void SetDistrictRoadDeleteCursor(bool visible)
+    {
+      if (!visible || !IsDistrictRoadDeleteToolActive())
+      {
+        UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        return;
+      }
+      if (_districtRoadDeleteCursorTexture == null)
+      {
+        const int size = 24;
+        var pixels = new Color32[size * size];
+        for (var y = 0; y < size; y++)
+          for (var x = 0; x < size; x++)
+          {
+            var stroke = Mathf.Abs(x - y) <= 2 ||
+                         Mathf.Abs(x + y - (size - 1)) <= 2;
+            pixels[y * size + x] = stroke
+                ? new Color32(220, 55, 45, 255)
+                : new Color32(0, 0, 0, 0);
+          }
+        _districtRoadDeleteCursorTexture = new Texture2D(size, size,
+            TextureFormat.RGBA32, false)
+        { name = "City Forge Delete Road Cursor" };
+        _districtRoadDeleteCursorTexture.SetPixels32(pixels);
+        _districtRoadDeleteCursorTexture.Apply(false, true);
+      }
+      UnityEngine.Cursor.SetCursor(_districtRoadDeleteCursorTexture,
+          new Vector2(12f, 12f), CursorMode.Auto);
+    }
+
     private bool TryDeleteSelectedDistrictRoad()
     {
       if (!_hasSelectedDistrictRoad ||
@@ -3413,7 +4026,7 @@ namespace CityForgeV3.UI
       _districtWorld?.HideLotPlacementGuide();
       _hasSelectedDistrictRoad = false;
       _districtWorldCompositionKey = DistrictCompositionKey(district);
-      _districtWorld?.CommitSurfaceChanges();
+      _districtWorld?.CommitRoadSurfaceChanges();
       SaveDistrictEdit();
       return true;
     }

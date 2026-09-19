@@ -1,0 +1,1 @@
+Garden ID, 0/90-degree footprints, isolated session JSON round trip, authored mesh, ground anchors, and preview opacity passed. Three presentations rendered on temporary Natural Grass and supplied cobblestone. Active Lot data untouched; no Save.

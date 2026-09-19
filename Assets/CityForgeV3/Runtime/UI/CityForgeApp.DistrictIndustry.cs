@@ -25,7 +25,9 @@ namespace CityForgeV3.UI
             EnsureDistrictUndo(d);
             if(built){if(Resources.Load<GameObject>(DistrictCoalMine.ResourcePath)==null||!DistrictCoalMine.Build(d,deposit))return;}
             else{if(!deposit.MineBuilt)return;deposit.MineBuilt=false;}
-            SaveDistrictEdit();_districtWorldCompositionKey="";EnsureDistrictWorld(d);Show(AppScreen.DistrictTerraform);FocusDistrictMine(deposit);
+            SaveDistrictEdit();_districtWorld.RefreshCoalBuildings();
+            _districtWorldCompositionKey=DistrictCompositionKey(d);
+            _laborNavigation=null;Show(AppScreen.DistrictTerraform);FocusDistrictMine(deposit);
         }
         private VisualElement ComposeIndustryCard(string resource, string title, string thumbnail,
             string summary, string addLabel, Action add, bool canAdd, Action manage, bool canManage)
@@ -35,7 +37,7 @@ namespace CityForgeV3.UI
             var image = new Image { image = Resources.Load<Texture2D>(thumbnail),
                 scaleMode = ScaleMode.ScaleToFit, pickingMode = PickingMode.Ignore };
             image.AddToClassList("industry-resource-thumbnail"); card.Add(image);
-            var details = new VisualElement(); details.style.flexGrow = 1; card.Add(details);
+            var details = new VisualElement(); details.AddToClassList("industry-resource-details"); card.Add(details);
             details.Add(StyledLabel(title, "inspector-title"));
             details.Add(StyledLabel(summary, "document-modal-copy"));
             var actions = DocumentModalActions();
@@ -53,9 +55,17 @@ namespace CityForgeV3.UI
         private void ComposeDistrictIndustryModal()
         {
             var d=FindSelectedRegionTile();if(d==null)return;CancelBrickworksPlacement();CancelDistrictSelectionPointer();
-            var panel=CreateDocumentModal("INDUSTRY","Choose an industry. Resource industries need deposits; Brickworks needs a Stone Quarry first.");
+            var panel=CreateDocumentModal("INDUSTRY","Place a saved industrial Lot or choose a district resource industry. Lot requirements are checked when you place it.");
+            panel.AddToClassList("district-industry-panel");
             panel.style.width=980;panel.style.maxWidth=Length.Percent(94);
-            var scroll=new ScrollView();scroll.style.maxHeight=540;panel.Add(scroll);
+            var scroll=new ScrollView(ScrollViewMode.Vertical)
+            {
+                name="district-industry-scroll",
+                verticalScrollerVisibility=ScrollerVisibility.AlwaysVisible,
+                horizontalScrollerVisibility=ScrollerVisibility.Hidden
+            };
+            scroll.AddToClassList("district-industry-scroll");panel.Add(scroll);
+            AddSavedIndustrialLots(scroll);
             AddStoneIndustry(scroll,d);
             AddBrickworksIndustry(scroll,d);
             var coal=d.ResourceDeposits?.Where(p=>p.Kind=="coal").ToArray()??new DistrictResourceDeposit[0];
@@ -66,6 +76,42 @@ namespace CityForgeV3.UI
                 Resources.Load<GameObject>(DistrictCoalMine.ResourcePath) != null && coal.Any(p => DistrictCoalMine.CanBuild(d,p,out _)),
                 ComposeCoalManagement, coal.Any(p => p.MineBuilt)));
             var close=DocumentModalActions();close.Add(CfButton.Create("CLOSE",RemoveDocumentModal,true,"quiet"));panel.Add(close);
+        }
+        private static bool IsSavedIndustrialLot(LotSaveSummary summary) =>
+            summary != null && summary.LotType == LotType.Industrial;
+
+        private void AddSavedIndustrialLots(VisualElement scroll)
+        {
+            // Refresh at this user-opened catalog boundary. This avoids disk
+            // polling during play while making a newly saved Lot visible.
+            LotContentCatalog.InvalidateCache();
+            var lots=LotContentCatalog.All.Where(IsSavedIndustrialLot).ToArray();
+            if(lots.Length==0)
+            {
+                var empty=new VisualElement { name="industry-saved-lots-empty" };
+                empty.AddToClassList("industry-resource-card");
+                var details=new VisualElement();details.AddToClassList("industry-resource-details");empty.Add(details);
+                details.Add(StyledLabel("SAVED INDUSTRIAL LOTS","inspector-title"));
+                details.Add(StyledLabel("No saved Industrial Lots yet. Create and manually save one in the Lot Editor.","document-modal-copy"));
+                scroll.Add(empty);return;
+            }
+            foreach(var summary in lots)
+            {
+                var captured=summary;
+                var card=new VisualElement { name="industry-saved-lot-"+captured.LotId };
+                card.AddToClassList("industry-resource-card");
+                var image=new Image { image=LoadSavedLotPreview(captured.LotId),
+                    scaleMode=ScaleMode.ScaleToFit,pickingMode=PickingMode.Ignore };
+                image.AddToClassList("industry-resource-thumbnail");card.Add(image);
+                var details=new VisualElement();details.AddToClassList("industry-resource-details");card.Add(details);
+                details.Add(StyledLabel(captured.Name.ToUpperInvariant(),"inspector-title"));
+                details.Add(StyledLabel($"Saved Industrial Lot · {captured.LotWidthCells} × {captured.LotDepthCells} cells · ${captured.PlopCost:N0}","document-modal-copy"));
+                var actions=DocumentModalActions();
+                var place=CfButton.Create("PLACE",()=>ArmDistrictLotPlacement(captured.LotId,captured.Name),true,"primary");
+                place.name="industry-place-lot-"+captured.LotId;
+                place.tooltip=$"Place {captured.Name}. Era, population, education, access, cost, and resource requirements are checked on the district.";
+                actions.Add(place);details.Add(actions);scroll.Add(card);
+            }
         }
         private void ComposeCoalManagement()
         {

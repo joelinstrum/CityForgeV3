@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.2894232">
+  <test-suite type="TestSuite" id="1000" name="DistrictStartScratch" fullname="DistrictStartScratch" runstate="Runnable" testcasecount="1022" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.289423" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2179" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-start-qa.3Vdynt/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1022" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.276196" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="11929" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2180" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="884" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.265583" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2181" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="884" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.258961" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1314" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="516" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.249545" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1324" name="DistrictStartControlsRegionNameVisibility" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartControlsRegionNameVisibility" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.049168" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1320" name="DistrictStartControlsRegionNameVisibility(False,District)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartControlsRegionNameVisibility(False,District)" methodname="DistrictStartControlsRegionNameVisibility" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="90465635" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.031409" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1321" name="DistrictStartControlsRegionNameVisibility(False,Town)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartControlsRegionNameVisibility(False,Town)" methodname="DistrictStartControlsRegionNameVisibility" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1357483395" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.000141" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1322" name="DistrictStartControlsRegionNameVisibility(True,District)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartControlsRegionNameVisibility(True,District)" methodname="DistrictStartControlsRegionNameVisibility" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2089195115" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.013517" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1323" name="DistrictStartControlsRegionNameVisibility(True,Town)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartControlsRegionNameVisibility(True,Town)" methodname="DistrictStartControlsRegionNameVisibility" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="289161680" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.000457" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1318" name="DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" methodname="DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="315873027" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.018043" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1317" name="DistrictStartNamingRequiresOkAndUpdatesExistingHeading" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartNamingRequiresOkAndUpdatesExistingHeading" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.148609" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1315" name="DistrictStartNamingRequiresOkAndUpdatesExistingHeading(False)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartNamingRequiresOkAndUpdatesExistingHeading(False)" methodname="DistrictStartNamingRequiresOkAndUpdatesExistingHeading" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1219549063" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.124875" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1316" name="DistrictStartNamingRequiresOkAndUpdatesExistingHeading(True)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartNamingRequiresOkAndUpdatesExistingHeading(True)" methodname="DistrictStartNamingRequiresOkAndUpdatesExistingHeading" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="581607226" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.022986" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1319" name="DistrictStartPreservesContentsAndDoesNotResetAnExistingCalendar" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartPreservesContentsAndDoesNotResetAnExistingCalendar" methodname="DistrictStartPreservesContentsAndDoesNotResetAnExistingCalendar" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1379702891" result="Passed" start-time="2026-09-19 17:08:47Z" end-time="2026-09-19 17:08:47Z" duration="0.001632" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-start-qa.3Vdynt/naming-results.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

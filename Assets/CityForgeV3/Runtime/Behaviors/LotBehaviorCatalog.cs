@@ -15,6 +15,11 @@ namespace CityForgeV3.Behaviors
         [NonSerialized] public bool WaitingForTimber;
         public bool HasScript;
         public LotScript Script;
+        public bool HasTimberCampScript;
+        public TimberCampLotScript TimberCampScript;
+        // The district owns progress; this stable binding prevents duplicate
+        // crews when the district presentation is rebuilt.
+        public string DistrictCrewId = "";
         public List<LotActorHome> WorkerHomes = new();
         public Vector3 CargoOffset;
         public Vector3 Pickup;

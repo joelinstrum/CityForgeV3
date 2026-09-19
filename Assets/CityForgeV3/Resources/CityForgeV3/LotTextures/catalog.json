@@ -1,8 +1,10 @@
 {
   "schema": "cityforge-v3-lot-texture-catalog-v2",
-  "sourceProject": "City Forge - Foundations Next",
+  "sourceProject": "mixed: City Forge - Foundations Next and user-provided sources",
   "baseTextures": [
-    { "id": "default-grass", "name": "Default Grass", "resource": "CityForgeV3/Art/Regions/default-grass-texture" },
+    { "id": "default-grass", "name": "Natural Grass", "resource": "CityForgeV3/Art/Regions/default-grass-texture" },
+    { "id": "brick-paving-v01", "name": "Brick Paving", "resource": "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1", "repeatMeters": 10, "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/brick-texture-1.png" },
+    { "id": "dark-cobblestone-v01", "name": "Cobblestone", "resource": "CityForgeV3/LotTextures/CobblestoneSuppliedV01/cobblestone-texture", "repeatMeters": 10, "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/cobblestone-texture.png" },
     { "id": "grass-poor", "name": "Natural Grass — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2" },
     { "id": "grass-middle", "name": "Natural Grass — Middle", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-middle-2" },
     {
@@ -21,6 +23,22 @@
     { "id": "lawn-wealthy", "name": "Mowed Lawn — Wealthy", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-wealthy" }
   ],
   "overlayTextures": [
+    {
+      "id": "brick-paving-v01",
+      "name": "Brick Paving",
+      "resource": "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1",
+      "footprintMeters": [10, 10],
+      "transparent": false,
+      "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/brick-texture-1.png"
+    },
+    {
+      "id": "dark-cobblestone-v01",
+      "name": "Cobblestone",
+      "resource": "CityForgeV3/LotTextures/CobblestoneSuppliedV01/cobblestone-texture",
+      "footprintMeters": [10, 10],
+      "transparent": false,
+      "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/cobblestone-texture.png"
+    },
     {
       "id": "wild-grass-lawn",
       "name": "Wild Grass Lawn",
@@ -106,6 +124,15 @@
       ],
       "transparent": true,
       "sourceDirectory": "/Users/joelinstrum/Downloads/overlays/dirt-path"
+    },
+    {
+      "id": "camp-overlay-4x4",
+      "name": "Camp Ground",
+      "resource": "CityForgeV3/LotTextures/CampOverlayV01/camp-overlay-4x4",
+      "footprintMeters": [20, 20],
+      "transparent": false,
+      "sourceFile": "/Users/joelinstrum/Downloads/buildings/tents/4x4 camp overlay.png",
+      "sourceSha256": "b821c7752d99f1784796d964ef7a1eb3a9649347df6495c30d6e1632ad62d37e"
     }
   ]
 }

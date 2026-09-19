@@ -26,7 +26,9 @@ namespace CityForgeV3.World
         public bool IsStopping { get; private set; }
         float distanceToEnd;
         public bool Fast { get; set; }
-        public float SpeedMetersPerSecond => HorseGaitController.WalkMetersPerSecond * (Fast ? 2f : 1f);
+        public float MotionSpeedMultiplier { get; set; } = 1f;
+        public float SpeedMetersPerSecond => HorseGaitController.WalkMetersPerSecond *
+            (Fast ? 2f : 1f) * Mathf.Max(.1f, MotionSpeedMultiplier);
         public bool IsMoving => path != null && cursor < path.Count;
         public float ArticulationDegrees => Quaternion.Angle(Horse.rotation,Carriage.rotation);
         public float HitchError => Mathf.Max(Mathf.Abs(Vector3.Distance(Flat(transform.position),Flat(Forecarriage.position))-Definition.ShaftLength),Mathf.Abs(Vector3.Distance(Flat(Forecarriage.position),Flat(Carriage.TransformPoint(Vector3.back*Definition.RearAxleOffset)))-Definition.Wheelbase));
@@ -132,6 +134,43 @@ namespace CityForgeV3.World
             foreach(var candidate in candidates)if(RouteClear(candidate.points,clear))return candidate.points;
             return null;
         }
+        public List<Vector3> PlanRouteWithTurnaround(
+            IReadOnlyList<Vector3> waypoints,
+            Func<Vector3,Vector3,bool> clear)
+        {
+            if (waypoints == null || waypoints.Count == 0) return null;
+            var route = new List<Vector3>();
+            var start = Flat(transform.position);
+            foreach (var point in waypoints)
+                if (route.Count > 0 || Vector3.Distance(start, Flat(point)) > .05f)
+                    route.Add(Flat(point));
+            if (route.Count == 0) return route;
+            var firstDirection = route[0] - start;
+            if (firstDirection.sqrMagnitude < .0001f ||
+                Vector3.Dot(transform.forward, firstDirection.normalized) >= 0f)
+                return route;
+
+            // A horse cannot reverse a cart. Join the new route far enough
+            // ahead for the complete team to turn, then follow its remaining
+            // road centerline in the opposite direction.
+            var joinDistance = Mathf.Max(Definition.TeamLength,
+                Definition.TurningRadius * 2f);
+            var join = route.Count - 1;
+            for (var index = 0; index < route.Count; index++)
+                if (Vector3.Distance(start, route[index]) >= joinDistance)
+                { join = index; break; }
+            var arrival = join + 1 < route.Count
+                ? route[join + 1] - route[join]
+                : route[join] - (join > 0 ? route[join - 1] : start);
+            if (arrival.sqrMagnitude < .0001f)
+                arrival = -transform.forward;
+            var turn = Plan(new[] { route[join] }, clear,
+                arrival.normalized);
+            if (turn == null) return null;
+            for (var index = join + 1; index < route.Count; index++)
+                turn.Add(route[index]);
+            return turn;
+        }
         static Vector3 Follow(Vector3 lead,Vector3 follower,float length)
         { return lead-(lead-follower).normalized*length; }
         bool LeadSegmentClear(Vector3 from,Vector3 to,Vector3 previousForward,Func<Vector3,Vector3,bool> clear)
@@ -194,7 +233,8 @@ namespace CityForgeV3.World
             }
             var oldSpeed=CurrentSpeed;
             CurrentSpeed=Mathf.MoveTowards(CurrentSpeed,target,
-                (target>CurrentSpeed?Acceleration:Deceleration)*dt);
+                (target>CurrentSpeed?Acceleration:Deceleration)*
+                Mathf.Max(.1f, MotionSpeedMultiplier)*dt);
             var remaining=(oldSpeed+CurrentSpeed)*.5f*dt;
             var brakingFinished=IsStopping&&CurrentSpeed<=.001f;
             var lead=Flat(transform.position);var oldLead=lead;var leadForward=transform.forward;

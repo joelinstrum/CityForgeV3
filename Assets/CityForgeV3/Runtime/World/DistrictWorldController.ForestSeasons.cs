@@ -13,7 +13,59 @@ namespace CityForgeV3.World
         int _pendingForestIndex;
         public bool ForestSeasonPending => _pendingForestSeason != null;
         public const int ForestSeasonFrameBudget = 16;
-        void Update() => SyncForestSeason(ForestSeasonFrameBudget);
+        SpriteRenderer[] _pendingTimeOfDayShadows;
+        int _pendingTimeOfDayShadowIndex;
+        public bool TimeOfDayPresentationPending =>
+            _pendingTimeOfDayShadows != null ||
+            (_floraBatches != null && _floraBatches.RebuildPending);
+        public const int TimeOfDayShadowFrameBudget = 8;
+        void Update()
+        {
+            SyncTimeOfDayPresentation(TimeOfDayShadowFrameBudget);
+            SyncForestSeason(ForestSeasonFrameBudget);
+        }
+
+        void PrepareTimeOfDayPresentation()
+        {
+            _floraBatches?.CancelScheduledRebuild();
+            _pendingTimeOfDayShadowIndex = 0;
+            if (_districtFloraPresentations.Count == 0)
+            {
+                _pendingTimeOfDayShadows = null;
+                return;
+            }
+            _pendingTimeOfDayShadows = new SpriteRenderer[
+                _districtFloraPresentations.Count];
+            _districtFloraPresentations.Values.CopyTo(
+                _pendingTimeOfDayShadows, 0);
+        }
+
+        // Time changes affect the entire district, but projected tree shadows
+        // are updated in bounded slices and their spatial batches are replaced
+        // one at a time. Dense forests therefore never cause a single-frame
+        // full flora rebuild at a clock boundary.
+        public void SyncTimeOfDayPresentation(
+            int budget = TimeOfDayShadowFrameBudget)
+        {
+            if (_pendingTimeOfDayShadows != null)
+            {
+                var end = Mathf.Min(_pendingTimeOfDayShadows.Length,
+                    _pendingTimeOfDayShadowIndex + Mathf.Max(1, budget));
+                UpdateDistrictFloraShadowsFor(new System.ArraySegment<SpriteRenderer>(
+                    _pendingTimeOfDayShadows, _pendingTimeOfDayShadowIndex,
+                    end - _pendingTimeOfDayShadowIndex));
+                _pendingTimeOfDayShadowIndex = end;
+                if (_pendingTimeOfDayShadowIndex >=
+                    _pendingTimeOfDayShadows.Length)
+                {
+                    _pendingTimeOfDayShadows = null;
+                    _pendingTimeOfDayShadowIndex = 0;
+                    _floraBatches?.ScheduleRebuild();
+                }
+                return;
+            }
+            _floraBatches?.RebuildScheduled();
+        }
 
         static void ApplyForestSeasonCutoff(SpriteRenderer renderer)
         {

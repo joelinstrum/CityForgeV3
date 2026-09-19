@@ -1,0 +1,25 @@
+PASS: six zoom contracts; flat/hill shader renders; shader has no errors. Single shared terrain mesh per fixture; no extra shader texture samples.
+flat-zoom-1-before mean-adjacent-luminance-difference=0.023423
+flat-zoom-1-after mean-adjacent-luminance-difference=0.026925
+flat-zoom-2-before mean-adjacent-luminance-difference=0.013869
+flat-zoom-2-after mean-adjacent-luminance-difference=0.021638
+flat-zoom-3-before mean-adjacent-luminance-difference=0.013261
+flat-zoom-3-after mean-adjacent-luminance-difference=0.000421
+flat-zoom-4-before mean-adjacent-luminance-difference=0.011010
+flat-zoom-4-after mean-adjacent-luminance-difference=0.000622
+flat-zoom-5-before mean-adjacent-luminance-difference=0.008711
+flat-zoom-5-after mean-adjacent-luminance-difference=0.001089
+flat-zoom-6-before mean-adjacent-luminance-difference=0.005878
+flat-zoom-6-after mean-adjacent-luminance-difference=0.001555
+hills-zoom-1-before mean-adjacent-luminance-difference=0.016104
+hills-zoom-1-after mean-adjacent-luminance-difference=0.018645
+hills-zoom-2-before mean-adjacent-luminance-difference=0.011971
+hills-zoom-2-after mean-adjacent-luminance-difference=0.016869
+hills-zoom-3-before mean-adjacent-luminance-difference=0.012645
+hills-zoom-3-after mean-adjacent-luminance-difference=0.000475
+hills-zoom-4-before mean-adjacent-luminance-difference=0.012277
+hills-zoom-4-after mean-adjacent-luminance-difference=0.000759
+hills-zoom-5-before mean-adjacent-luminance-difference=0.011134
+hills-zoom-5-after mean-adjacent-luminance-difference=0.001274
+hills-zoom-6-before mean-adjacent-luminance-difference=0.006351
+hills-zoom-6-after mean-adjacent-luminance-difference=0.001837

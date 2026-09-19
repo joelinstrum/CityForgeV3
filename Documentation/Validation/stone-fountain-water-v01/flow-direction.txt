@@ -1,0 +1,6 @@
+Corrected September 18 after Joel saw upward water motion.
+Stream vertices assign UV.y = t, with t=0 at the upper lip and t=1 at the lower bowl.
+The flow shader now uses sin(38*uv.y - 13*time), so a highlight moves toward larger UV.y as time increases.
+Expected displacement: +0.034 UV in 0.1 seconds, +0.068 UV in 0.2 seconds.
+Unity refreshed with LogAssemblyErrors (0ms). Editor remained paused; no Save or Lot edit.
+The earlier two phase PNGs were captured before this correction and are visual evidence of the initial effect only.

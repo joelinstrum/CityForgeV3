@@ -13,16 +13,22 @@ namespace CityForgeV3.World
         private readonly Dictionary<SpriteRenderer, (Vector2Int, Sprite)> membership = new();
         private readonly Dictionary<(Vector2Int, Sprite), List<GameObject>> outputs = new();
         private readonly Dictionary<Sprite, Geometry> geometry = new();
+        private readonly Dictionary<SpriteRenderer, Quaternion> cameraRelativeRotations = new();
+        private List<(Vector2Int, Sprite)> scheduledRebuilds;
+        private int scheduledRebuildIndex;
+        private Camera camera;
         private sealed class Geometry
         {
             public Vector2[] Vertices, UV;
             public ushort[] Triangles;
         }
-        public void Build(IEnumerable<SpriteRenderer> trees)
+        public void Build(IEnumerable<SpriteRenderer> trees, Camera sourceCamera = null)
         {
+            camera = sourceCamera;
             foreach (var tree in trees)
             {
                 if (tree == null || tree.sprite == null) continue;
+                RememberCameraRelativeRotation(tree);
                 var p = transform.InverseTransformPoint(tree.transform.position);
                 var cell = (new Vector2Int(Mathf.FloorToInt(p.x / CellSize), Mathf.FloorToInt(p.z / CellSize)), tree.sprite);
                 if (!cells.TryGetValue(cell, out var list)) cells[cell] = list = new();
@@ -32,7 +38,30 @@ namespace CityForgeV3.World
         }
         public void Rebuild()
         {
+            CancelScheduledRebuild();
             foreach (var cell in cells.Keys) RebuildCell(cell);
+        }
+        public bool RebuildPending => scheduledRebuilds != null;
+        public void ScheduleRebuild()
+        {
+            scheduledRebuilds = new List<(Vector2Int, Sprite)>(cells.Keys);
+            scheduledRebuildIndex = 0;
+            if (scheduledRebuilds.Count == 0) scheduledRebuilds = null;
+        }
+        public void CancelScheduledRebuild()
+        {
+            scheduledRebuilds = null;
+            scheduledRebuildIndex = 0;
+        }
+        public void RebuildScheduled(int budget = 1)
+        {
+            if (scheduledRebuilds == null) return;
+            var end = Mathf.Min(scheduledRebuilds.Count,
+                scheduledRebuildIndex + Mathf.Max(1, budget));
+            for (; scheduledRebuildIndex < end; scheduledRebuildIndex++)
+                RebuildCell(scheduledRebuilds[scheduledRebuildIndex]);
+            if (scheduledRebuildIndex >= scheduledRebuilds.Count)
+                CancelScheduledRebuild();
         }
         readonly HashSet<(Vector2Int, Sprite)> dirtyCells = new();
         int changeDepth;
@@ -51,6 +80,7 @@ namespace CityForgeV3.World
         public void Add(SpriteRenderer tree)
         {
             if (tree == null || tree.sprite == null || membership.ContainsKey(tree)) return;
+            RememberCameraRelativeRotation(tree);
             var p = transform.InverseTransformPoint(tree.transform.position);
             var cell = (new Vector2Int(Mathf.FloorToInt(p.x / CellSize), Mathf.FloorToInt(p.z / CellSize)), tree.sprite);
             if (!cells.TryGetValue(cell, out var list)) cells[cell] = list = new();
@@ -60,6 +90,7 @@ namespace CityForgeV3.World
         public void Remove(SpriteRenderer tree)
         {
             if (tree == null || !membership.Remove(tree, out var cell)) return;
+            cameraRelativeRotations.Remove(tree);
             cells[cell].Remove(tree);
             tree.forceRenderingOff = false;
             var shadow = Shadow(tree);
@@ -68,6 +99,13 @@ namespace CityForgeV3.World
         }
         private static MeshRenderer Shadow(SpriteRenderer tree) =>
             tree.transform.Find("District Flora Shadow")?.GetComponent<MeshRenderer>();
+        private void RememberCameraRelativeRotation(SpriteRenderer tree)
+        {
+            var viewRotation = camera != null
+                ? camera.transform.rotation : Quaternion.identity;
+            cameraRelativeRotations[tree] =
+                Quaternion.Inverse(viewRotation) * tree.transform.rotation;
+        }
         private void RebuildCell((Vector2Int, Sprite) cell)
         {
             if (outputs.TryGetValue(cell, out var old))
@@ -89,15 +127,28 @@ namespace CityForgeV3.World
                 // resolves overlaps with other species, lots, and water.
                 pair.Value.Sort((a, b) => a.sortingOrder.CompareTo(b.sortingOrder));
                 var vertices = new List<Vector3>(); var uv = new List<Vector2>();
+                var billboardOffsets = new List<Vector3>();
                 var colors = new List<Color>(); var triangles = new List<int>();
+                var billboardRadius = 0f;
                 var shadowVertices = new List<Vector3>(); var shadowUV = new List<Vector2>();
                 var shadowColors = new List<Color>(); var shadowTriangles = new List<int>();
                 MeshRenderer firstShadow = null;
                 foreach (var tree in pair.Value)
                 {
                     int offset = vertices.Count;
-                    var matrix = transform.worldToLocalMatrix * tree.transform.localToWorldMatrix;
-                    foreach (var v in source.Vertices) { vertices.Add(matrix.MultiplyPoint3x4(v)); colors.Add(tree.color); }
+                    var center = transform.InverseTransformPoint(tree.transform.position);
+                    var relativeRotation = cameraRelativeRotations[tree];
+                    var scale = tree.transform.lossyScale;
+                    foreach (var v in source.Vertices)
+                    {
+                        var billboardOffset = relativeRotation *
+                            new Vector3(v.x * scale.x, v.y * scale.y, 0f);
+                        vertices.Add(center);
+                        billboardOffsets.Add(billboardOffset);
+                        billboardRadius = Mathf.Max(billboardRadius,
+                            billboardOffset.magnitude);
+                        colors.Add(tree.color);
+                    }
                     uv.AddRange(source.UV);
                     foreach (var i in source.Triangles) triangles.Add(offset + i);
                     tree.forceRenderingOff = true;
@@ -108,29 +159,49 @@ namespace CityForgeV3.World
                     firstShadow ??= shadow;
                     var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
                     offset = shadowVertices.Count;
-                    matrix = transform.worldToLocalMatrix * shadow.transform.localToWorldMatrix;
+                    var matrix = transform.worldToLocalMatrix * shadow.transform.localToWorldMatrix;
                     foreach (var v in mesh.vertices) shadowVertices.Add(matrix.MultiplyPoint3x4(v));
-                    shadowUV.AddRange(mesh.uv); shadowColors.AddRange(mesh.colors);
+                    shadowUV.AddRange(mesh.uv);
+                    var sourceColors = mesh.colors;
+                    if (sourceColors != null &&
+                        sourceColors.Length == mesh.vertexCount)
+                        shadowColors.AddRange(sourceColors);
+                    else
+                        for (var i = 0; i < mesh.vertexCount; i++)
+                            shadowColors.Add(Color.white);
                     foreach (var i in mesh.triangles) shadowTriangles.Add(offset + i);
                 }
                 var properties = new MaterialPropertyBlock();
                 pair.Value[0].GetPropertyBlock(properties); properties.SetTexture("_MainTex", sprite.texture);
-                Create(cell, "Flora batch", pair.Value[0].sharedMaterial, properties, vertices, uv, colors, triangles);
+                properties.SetFloat("_DistrictFloraBatch", 1f);
+                Create(cell, "Flora batch", pair.Value[0].sharedMaterial,
+                    properties, vertices, uv, colors, triangles,
+                    billboardOffsets, billboardRadius);
                 if (firstShadow != null)
                 {
                     firstShadow.GetPropertyBlock(properties);
+                    properties.SetFloat("_DistrictFloraBatch", 0f);
                     Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
                         shadowVertices, shadowUV, shadowColors, shadowTriangles);
                 }
             }
         }
         private void Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
-            List<Vector3> vertices, List<Vector2> uv, List<Color> colors, List<int> triangles)
+            List<Vector3> vertices, List<Vector2> uv, List<Color> colors, List<int> triangles,
+            List<Vector3> billboardOffsets = null, float billboardRadius = 0f)
         {
             var item = new GameObject(label); item.transform.SetParent(transform, false);
             var mesh = new Mesh { name = label, indexFormat = vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
-            mesh.SetVertices(vertices); mesh.SetUVs(0, uv); mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
+            mesh.SetVertices(vertices); mesh.SetUVs(0, uv);
+            if (billboardOffsets != null) mesh.SetUVs(2, billboardOffsets);
+            mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
+            if (billboardRadius > 0f)
+            {
+                var bounds = mesh.bounds;
+                bounds.Expand(billboardRadius * 2f);
+                mesh.bounds = bounds;
+            }
             item.AddComponent<MeshFilter>().sharedMesh = mesh;
             item.AddComponent<DistrictFloraShadowMesh>(); // Own and release the generated mesh.
             var renderer = item.AddComponent<MeshRenderer>(); renderer.sharedMaterial = material;

@@ -330,7 +330,7 @@ namespace CityForgeV3.UI
                     .Where(f => f.name.StartsWith("River")).ToDictionary(f => f.name,
                         f => JsonUtility.ToJson(new MeshReview { Vertices = f.sharedMesh.vertices,
                             UV = f.sharedMesh.uv, Triangles = f.sharedMesh.triangles }));
-                _districtWorld.RefreshRivers(district, preservePresentations: true);
+                _districtWorld.RebuildAllRiverPresentations(district,DistrictBulkRebuildReason.TestFixture, preservePresentations: true);
                 if (JsonUtility.ToJson(district) != before || revision != _districtWorld.SurfaceCacheRevision)
                     throw new Exception("Material refresh changed saved data or invalidated surface cache");
                 int banks = 0; float minBend = 0, maxBend = 0;

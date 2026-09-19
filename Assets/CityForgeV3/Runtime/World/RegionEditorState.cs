@@ -31,14 +31,33 @@ namespace CityForgeV3.World
     public sealed class PlacedDistrictLot
     {
         public bool BehaviorsInitialized;
+        // One-time compatibility boundary for camps placed before the built-in
+        // Lot-owned timber behavior existed. Once checked, removing the
+        // behavior remains an intentional player edit instead of re-adding it.
+        public bool BuiltInTimberCampChecked;
         public int TimberBundles;
         public List<CityForgeV3.Behaviors.LotBehaviorInstance> Behaviors = new();
         public string InstanceId = "";
         public string LotId = "";
+        // Founder Lots carry a fixed initial settlement independently of the
+        // reusable Lot definition. The explicit flag preserves zero as a valid
+        // override and keeps older placed Lots compatible.
+        public bool HasPopulationOverride;
+        public int PopulationOverride;
         public int GridX;
         public int GridZ;
         public float ShoreOffsetX;
         public float ShoreOffsetZ;
+        // Waterfront Lots may align a boat to the local river tangent without
+        // changing the canonical Lot document. These values are local to the
+        // hosted Lot and persist with the district placement.
+        public bool HasBoatDockOverride;
+        public float BoatDockLocalX;
+        public float BoatDockLocalZ;
+        public int BoatDockRotationQuarterTurns;
+        public float BoatMooringLocalX;
+        public float BoatMooringLocalZ;
+        public int BoatDockContractVersion;
         public int RotationQuarterTurns;
     }
 
@@ -186,6 +205,7 @@ namespace CityForgeV3.World
         public string FounderBuildingName = "";
         public int FoundingYear;
         public TimeOfDayPreset TimeOfDay = TimeOfDayPreset.Noon;
+        public float TimeOfDaySeconds;
         public float FounderNormalizedX = 0.5f;
         public float FounderNormalizedY = 0.5f;
         public List<PlacedDistrictLot> Lots = new();

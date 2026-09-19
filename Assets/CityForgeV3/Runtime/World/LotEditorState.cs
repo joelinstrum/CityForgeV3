@@ -160,6 +160,26 @@ namespace CityForgeV3.World
         public int RotationQuarterTurns;
     }
 
+    public enum LotConnectorEdge
+    {
+        North,
+        East,
+        South,
+        West
+    }
+
+    [Serializable]
+    public sealed class PlacedLotConnector
+    {
+        public string InstanceId = "";
+        public string ConnectorId = "dirt-entry-v01";
+        public LotConnectorEdge Edge;
+        // Metres along the selected lot edge, measured from its negative end.
+        public float OffsetMeters;
+        public bool AllowsPedestrians = true;
+        public bool AllowsVehicles = true;
+    }
+
     [Serializable]
     public sealed class PlacedDecal
     {
@@ -293,6 +313,7 @@ namespace CityForgeV3.World
         public string DefaultPolicemanBehaviorScript = "business-as-usual";
         public string BaseTextureId = "";
         public List<PlacedOverlayTexture> OverlayTextures = new();
+        public List<PlacedLotConnector> Connectors = new();
         public CirculationNetwork PedestrianNetwork = new() { Mode = CirculationMode.Pedestrian };
         public CirculationNetwork VehicleNetwork = new() { Mode = CirculationMode.Vehicle };
         public List<PlacedRoadPiece> RoadPieces = new();
@@ -346,6 +367,7 @@ namespace CityForgeV3.World
                 DefaultPolicemanBehaviorScript = DefaultPolicemanBehaviorScript,
                 BaseTextureId = BaseTextureId,
                 OverlayTextures = OverlayTextures,
+                Connectors = Connectors,
                 PedestrianNetwork = PedestrianNetwork,
                 VehicleNetwork = VehicleNetwork,
                 RoadPieces = RoadPieces,
@@ -622,6 +644,7 @@ namespace CityForgeV3.World
             Data.OutsideRoadConnectors ??= new List<OutsideRoadConnector>();
             Data.RequiredPackageIds ??= new List<string>();
             Data.OverlayTextures ??= new List<PlacedOverlayTexture>();
+            Data.Connectors ??= new List<PlacedLotConnector>();
             Data.WaterAreas ??= new List<PlacedWaterArea>();
             Data.Decals ??= new List<PlacedDecal>();
             Data.TerrainHeights ??= new List<float>();

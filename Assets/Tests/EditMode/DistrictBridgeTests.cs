@@ -114,6 +114,8 @@ namespace CityForgeV3.Tests.EditMode
             index.Add(bounds,"a",true);index.Add(bounds,"a",true);index.Add(bounds,"b");
             Assert.That(index.Query(new(12,12)),Has.Count.EqualTo(2));index.Remove(bounds,"a");
             Assert.That(index.Query(new(12,12)),Is.EquivalentTo(new[]{"b"}));
+            var nearby=new HashSet<string>();index.QueryBounds(new Rect(-5,-5,40,40),nearby);
+            Assert.That(nearby,Is.EquivalentTo(new[]{"b"}),"Bounded placement queries must deduplicate objects spanning several buckets.");
         }
         [Test]
         public void BothStylesHaveReadableMeshesAndTextures()

@@ -18,7 +18,7 @@ public static class DistrictBridgeQa
         var d=new RegionCityTile{Width=1,Height=1};
         d.Rivers.Add(new(){InstanceId="bridge-review-river",WidthMeters=30,Depth=DistrictRiverDepth.Deep,
             Points=new(){new(.5f,.1f),new(.5f,.9f)}});
-        var go=new GameObject("Bridge review world");var world=go.AddComponent<DistrictWorldController>();world.Build(d);
+        var go=new GameObject("Bridge review world");var world=go.AddComponent<DistrictWorldController>();world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
         var bank=new Vector2Int(29,32);
         if(!DistrictBridgePlanner.TryPlan(d,bank,Vector2Int.right,world.SampleBridgeSurface,_=>false,out var b,out var reason))throw new Exception(reason);
         var roads=new DistrictRoadPlacementModel.EditSession(d.Roads);int money=10000;
@@ -93,9 +93,9 @@ public static class DistrictBridgeQa
         string built=JsonUtility.ToJson(d);
         var undo=(DistrictUndoHistory)appType.GetField("_districtUndo",flags).GetValue(app);
         if(!undo.TryUndo(out var snapshot))throw new Exception("Build was not undoable");
-        JsonUtility.FromJsonOverwrite(snapshot,d);world.Build(d);
+        JsonUtility.FromJsonOverwrite(snapshot,d);world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
         if(d.Bridges.Count!=0 || world.BridgeAt(center)!=null || d.Treasury!=originalMoney)throw new Exception("Undo failed");
-        JsonUtility.FromJsonOverwrite(built,d);world.Build(d);
+        JsonUtility.FromJsonOverwrite(built,d);world.RebuildEntireDistrict(d,DistrictBulkRebuildReason.TestFixture);
         if(world.BridgeAt(center)==null)throw new Exception("Reload failed");
         report+="UI transaction: cancel leaves state unchanged and removes preview; build charges once; in-memory undo restores treasury and removes bridge; reload rebuilds bridge index. PASS\n";
         Object.DestroyImmediate(appHost);

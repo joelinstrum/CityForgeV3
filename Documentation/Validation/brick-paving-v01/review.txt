@@ -1,0 +1,1 @@
+PASS: source loaded 1254x1254; shared base/overlay resource; 10 m base repeat matches 10 m overlay; no pedestrian route; base/overlay IDs and rotation survive session round trip. Active Lot JSON unchanged; no Save.

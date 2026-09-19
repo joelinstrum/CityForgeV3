@@ -171,6 +171,8 @@ namespace CityForgeV3.UI
             if(running)DistrictBrickworks.Tick(d,Mathf.Min(Time.deltaTime,.1f));
             paid=s.PaidSlots>=s.AssignedAxemen;
             _districtWorld.TickTimber(d,_lotWorld,running&&paid,Mathf.Min(Time.deltaTime,.05f));
+            UpdateTimberMillWarning(d,
+                _districtWorld.HasTimberCrewWaitingForMill);
             _districtWorld.PresentLabor(d,running&&paid);
             _laborUiTimer+=Time.unscaledDeltaTime;
             if(_laborUiTimer<.5f)return;_laborUiTimer=0;

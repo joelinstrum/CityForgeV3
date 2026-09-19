@@ -78,6 +78,20 @@ namespace CityForgeV3.World
         public static bool UsesBuildingBillboards(DistrictZoomLevel level) =>
             level == DistrictZoomLevel.LOD5Billboard;
 
+        // Normalized screen coordinates, with Y increasing downwards.
+        // Intersections of the outer quarter strips are reserved for corner menus.
+        public static Vector2Int EdgePanWorldMotion(Vector2 position)
+        {
+            if (!float.IsFinite(position.x) || !float.IsFinite(position.y) ||
+                position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1)
+                return Vector2Int.zero;
+            bool horizontal = position.x <= .25f || position.x >= .75f;
+            bool vertical = position.y <= .25f || position.y >= .75f;
+            if (horizontal == vertical) return Vector2Int.zero;
+            if (horizontal) return new Vector2Int(position.x <= .25f ? 1 : -1, 0);
+            return new Vector2Int(0, position.y <= .25f ? -1 : 1);
+        }
+
         public static int GridInterval(DistrictZoomLevel level) => level switch
         {
             DistrictZoomLevel.LOD0 => 1,
@@ -100,6 +114,16 @@ namespace CityForgeV3.World
             _ => 180f
         };
 
+        public static float PanSpeedScale(DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD0 => 0.35f,
+            // Player-facing Zoom 2: 50% faster than its previous fine-control rate.
+            DistrictZoomLevel.LOD1 => 0.525f,
+            // Player-facing Zoom 3 retains its previously approved rate.
+            DistrictZoomLevel.LOD2 => 1.3f,
+            _ => 1f
+        };
+
         /// <summary>
         /// Converts the requested on-screen movement of the world into the
         /// isometric camera-target movement that produces it. A positive
@@ -110,8 +134,15 @@ namespace CityForgeV3.World
             int vertical, float stepMeters)
         {
             const float diagonal = 0.70710678f;
+            const float cameraElevationDegrees = 20f;
             var cameraRight = new Vector2(diagonal, -diagonal);
-            var cameraScreenUp = new Vector2(diagonal, diagonal);
+            // Ground motion along the camera's forward axis is foreshortened
+            // by the 20-degree camera elevation. Compensate here so equal
+            // input produces equal horizontal and vertical screen travel.
+            var verticalCompensation = 1f / Mathf.Sin(
+                cameraElevationDegrees * Mathf.Deg2Rad);
+            var cameraScreenUp = new Vector2(diagonal, diagonal) *
+                                 verticalCompensation;
             return (-horizontal * cameraRight - vertical * cameraScreenUp) *
                    stepMeters;
         }

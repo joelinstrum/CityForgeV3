@@ -43,7 +43,7 @@ namespace CityForgeV3.UI
         void EndRoadStrokeForBridge()
         {
             _districtRoadPointerDown=false;_districtRoadStrokePath.Clear();_districtRoadStrokeAdded.Clear();
-            _districtWorld?.HideLotPlacementGuide();_districtWorld?.CommitSurfaceChanges();
+            _districtWorld?.HideLotPlacementGuide();_districtWorld?.CommitLocalSurfaceChanges();
             var d=FindSelectedRegionTile();if(d!=null)_districtWorldCompositionKey=DistrictCompositionKey(d);
             SaveDistrictEdit();
         }
@@ -162,7 +162,7 @@ namespace CityForgeV3.UI
             d.Treasury=treasury;b.Cost=price;d.Bridges??=new List<PlacedDistrictBridge>();d.Bridges.Add(b);d.BridgeRevision++;
             _districtWorld.AddDistrictBridge(d,b);
             _districtWorld.RefreshRoadCellsAndNeighbors(d,new[]{b.Start,b.End},session.At);
-            _districtWorld.CommitSurfaceChanges();_districtWorldCompositionKey=DistrictCompositionKey(d);SaveDistrictEdit();
+            _districtWorld.CommitLocalSurfaceChanges();_districtWorldCompositionKey=DistrictCompositionKey(d);SaveDistrictEdit();
             RemoveDocumentModal();
             var money=_root?.Q<Label>("district-simulation-money");if(money!=null)money.text=$"${d.Treasury:N0}";
         }

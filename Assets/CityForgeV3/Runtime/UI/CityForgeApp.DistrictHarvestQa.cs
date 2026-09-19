@@ -34,7 +34,7 @@ namespace CityForgeV3.UI
    if(_harvestQaId==null || _districtUndoQaSaveRoot==null)return;
    var d=FindSelectedRegionTile();
    d.Flora.RemoveAll(t=>t.InstanceId!=_harvestQaId);
-   ClearDistrictUndo();_districtWorld.RefreshFlora(d);_districtWorldCompositionKey=DistrictCompositionKey(d);
+   ClearDistrictUndo();_districtWorld.RebuildAllFloraPresentations(d,DistrictBulkRebuildReason.TestFixture);_districtWorldCompositionKey=DistrictCompositionKey(d);
    Show(AppScreen.DistrictTerraform);_districtWorld.WorldCamera.orthographicSize=12f;
    Debug.Log("HARVEST QA isolated existing saved tree in temporary copy only");
   }
@@ -50,7 +50,7 @@ namespace CityForgeV3.UI
    if(TakeDistrictTreeWood(_harvestQaId,int.MaxValue)!=DistrictTreeHarvest.PrototypeWoodYield)throw new Exception("Incorrect wood pickup");
    var loaded=RegionSaveStore.Load(_openRegion.RegionId,_districtUndoQaSaveRoot).Tiles.Find(t=>t.TileId==district.TileId);
    if(loaded.Flora.Find(t=>t.InstanceId==_harvestQaId).HarvestState!=DistrictTreeHarvestState.Stump)throw new Exception("Stump did not survive save/load");
-   _districtWorld.Build(loaded); // Exercise actual saved-state presentation, not just JSON.
+   _districtWorld.RebuildEntireDistrict(loaded,DistrictBulkRebuildReason.TestFixture); // Exercise actual saved-state presentation, not just JSON.
    if(!UndoDistrictEdit() || FindDistrictFlora(district,_harvestQaId).HarvestState!=DistrictTreeHarvestState.Fallen)throw new Exception("Undo stump failed");
    if(!UndoDistrictEdit() || JsonUtility.ToJson(district)!=before)throw new Exception("Undo fall failed");
    _districtSelection.Add(new(DistrictSelectionKind.Flora,_harvestQaId));_districtWorld.ShowDistrictSelection(district,_districtSelection);

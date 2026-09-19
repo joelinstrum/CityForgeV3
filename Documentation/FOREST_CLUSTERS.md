@@ -1,5 +1,29 @@
 # Mixed forest placements
 
+## September 19 — interactive groups and bounded presentation updates
+
+The interactive **Paint Family Groups** tool now includes a harvestable
+Cilician fir at a one-in-five rate when the district climate allows that tree.
+This affects newly painted groups only and does not rewrite existing flora.
+For the **Fir and Mountain** family, the first successfully placed member is
+always that harvestable Cilician fir, so a completed group cannot miss the
+lumber tree through random selection. Remaining members keep the varied
+fir/spruce mix and the existing one-in-five harvestable chance.
+
+Interactive group painting now adds only the new flora presentations and
+rebuilds their affected spatial batch cells. It no longer destroys and recreates
+every district tree, recalculates every tree shadow, or rebuilds all flora
+batches after each pointer update. Whole-coverage generation, load, Undo, and
+explicit bulk refresh retain the full-refresh path because those operations
+replace or restore the complete flora set.
+
+An isolated dense fixture with 1,600 existing flora records and a 12-tree group
+measured 77.554ms for incremental insertion versus 1,555.714ms for the former
+full refresh on the same 1,612-record state (20.06x faster). This synchronous
+EditMode CPU comparison on one machine does not establish live frame time, draw
+calls, allocations, or long-duration stability. A presentation-identity test
+confirms unrelated trees survive insertion.
+
 ## Current runtime — realistic seasonal clusters (September 17)
 
 Supersedes the artwork and summer-only rendering described below. Runtime uses
@@ -68,8 +92,9 @@ Each cluster uses one existing PlacedDistrictFlora record, selection handle, and
 shared cached sprite. All five variants participate in the existing spatial
 render batches; no new per-frame work or district scans were added. Generation
 uses bounded occupancy-cell footprint checks at 16m times scale. Retained
-clusters reserve the same larger footprint. Generation/RefreshFlora remain
-explicit bulk operations; they can still stall for hundreds of milliseconds.
+clusters reserve the same larger footprint. Generation and
+`RebuildAllFloraPresentations` remain explicit bulk operations; they can still
+stall for hundreds of milliseconds.
 
 ## Artwork and rendering
 
@@ -88,8 +113,9 @@ under ArtStudies but are not connected to a season controller; the shared
 resource resolver deliberately returns ready summer art for every season until
 the seasonal cutouts are production-ready. No winter snow layer added here.
 
-RefreshFlora no longer nulls the unrelated cloud-layer reference. This preserves
-cloud zoom controls after regenerating forest; clouds themselves are not rebuilt.
+`RebuildAllFloraPresentations` does not null the unrelated cloud-layer reference.
+This preserves cloud zoom controls after regenerating forest; clouds themselves
+are not rebuilt.
 
 ## Validation
 
