@@ -108,10 +108,12 @@ namespace CityForgeV3.World
                 {firstWater=Mathf.Min(firstWater,along);lastWater=Mathf.Max(lastWater,along);}
             }
             if(float.IsPositiveInfinity(firstWater))return false;
+            reason=$"The fixed {bodyLength:N0} m model cannot reach both banks here (about {lastWater-firstWater+2:N0} m of water).";
             var center=a+axis*((firstWater+lastWater)*.5f);
             var near=center-axis*bodyLength*.5f;var far=center+axis*bodyLength*.5f;
             for(int lane=-2;lane<=2;lane++)
                 if(sample(near+side*(lane*HalfWidth*.5f)).Water || sample(far+side*(lane*HalfWidth*.5f)).Water)return false;
+            reason="There is not enough clear, dry ground for graded approaches to this model.";
             var direction=new Vector2Int(Math.Sign(crossing.End.x-crossing.Start.x),Math.Sign(crossing.End.y-crossing.Start.y));
             var start=crossing.Start;var end=crossing.End;
             bool Inside(Vector2Int cell)=>cell.x>=1&&cell.y>=1&&cell.x<DistrictScale.Columns(d.Width)-1&&cell.y<DistrictScale.Columns(d.Height)-1;

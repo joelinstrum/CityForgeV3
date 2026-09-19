@@ -63,6 +63,10 @@ public static class FixedStoneBridgeQa
             app.GetType().GetMethod("ComposeDistrictBridgeModal",flags).Invoke(app,new object[]{proposal});
             var labels=UnityEngine.UIElements.UQueryExtensions.Query<UnityEngine.UIElements.Label>(root).ToList();
             if(labels.Any(l=>l.text=="STONE ARCH BRIDGE")!=shortFits || labels.Any(l=>l.text=="LONG STONE ARCH BRIDGE")!=longFits)throw new Exception("Chooser offers a model that does not fit");
+            if(!shortFits && !labels.Any(l=>l.name=="bridge-unavailable-reasons" && l.text.Contains("Stone Arch Bridge") && l.text.Contains("fixed 34")))
+                throw new Exception("Hidden original model has no fit explanation");
+            if(!longFits && !labels.Any(l=>l.name=="bridge-unavailable-reasons" && l.text.Contains("Long Stone Arch Bridge") && l.text.Contains("fixed 50")))
+                throw new Exception("Hidden long model has no fit explanation");
             if(shortFits||longFits)
             {
                 Field("_currentScreen",Enum.Parse(app.GetType().GetField("_currentScreen",flags).FieldType,"DistrictTerraform"));

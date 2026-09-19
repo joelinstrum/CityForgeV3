@@ -51,11 +51,13 @@ namespace CityForgeV3.UI
         {
             var d=FindSelectedRegionTile();if(d==null)return;
             var options=new Dictionary<string,PlacedDistrictBridge>();
+            var unavailable=new List<string>();
             if(proposal!=null)
             {
                 foreach(var candidate in DistrictBridgeCatalog.Styles)
-                    if(_districtWorld.TryFitBridgeStyle(d,proposal,candidate.Id,p=>DistrictBridgeOccupied(d,p),out var fit,out _))
+                    if(_districtWorld.TryFitBridgeStyle(d,proposal,candidate.Id,p=>DistrictBridgeOccupied(d,p),out var fit,out var why))
                         options[candidate.Id]=fit;
+                    else unavailable.Add(candidate.Name+": "+why);
                 if(!options.ContainsKey(proposal.StyleId))
                     foreach(var candidate in DistrictBridgeCatalog.Styles)
                         if(options.ContainsKey(candidate.Id)){proposal.StyleId=candidate.Id;break;}
@@ -90,6 +92,13 @@ namespace CityForgeV3.UI
                 var detail=StyledLabel(style.Description,"document-modal-copy");detail.style.whiteSpace=WhiteSpace.Normal;copy.Add(detail);card.Add(copy);list.Add(card);
             }
             panel.Add(list);
+            if(unavailable.Count>0)
+            {
+                var explanation=StyledLabel("Unavailable at this crossing:\n"+string.Join("\n",unavailable),"document-modal-copy");
+                explanation.name="bridge-unavailable-reasons";
+                explanation.style.whiteSpace=WhiteSpace.Normal;
+                panel.Add(explanation);
+            }
             if(proposal!=null)
             {
                 panel.style.width=480;panel.style.marginRight=18;
