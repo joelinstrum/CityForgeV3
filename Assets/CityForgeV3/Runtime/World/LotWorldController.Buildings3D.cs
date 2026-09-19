@@ -1346,6 +1346,8 @@ namespace CityForgeV3.World
 
         private static void DisableClonedPackageLodControl(GameObject clone, GameObject visibleRoot)
         {
+            foreach (var interior in clone.GetComponentsInChildren<BuildingInteriorAutomata>(true))
+                interior.DisableForShadowCopy();
             // Shadow copies must not duplicate lamps and must follow the visible door.
             foreach (var lighting in clone.GetComponentsInChildren<BuildingNightLighting>(true))
             { lighting.SetNightAmount(0); lighting.enabled = false; }

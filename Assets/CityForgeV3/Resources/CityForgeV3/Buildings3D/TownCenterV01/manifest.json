@@ -1,0 +1,218 @@
+{
+  "height": 10.539,
+  "footprint": [
+    14.2,
+    11.64
+  ],
+  "windows": [
+    {
+      "name": "Front upper 0",
+      "center": [
+        3.36,
+        5.7,
+        2.25
+      ],
+      "width": 1.04,
+      "height": 1.45,
+      "side": false
+    },
+    {
+      "name": "Front upper 1",
+      "center": [
+        0.51,
+        5.7,
+        2.25
+      ],
+      "width": 1.04,
+      "height": 1.45,
+      "side": false
+    },
+    {
+      "name": "Front upper 2",
+      "center": [
+        -2.42,
+        5.7,
+        2.25
+      ],
+      "width": 1.04,
+      "height": 1.45,
+      "side": false
+    },
+    {
+      "name": "Front lower 0",
+      "center": [
+        3.68,
+        2.69,
+        2.25
+      ],
+      "width": 1.02,
+      "height": 1.7,
+      "side": false
+    },
+    {
+      "name": "Front lower 1",
+      "center": [
+        -2.44,
+        2.69,
+        2.25
+      ],
+      "width": 1.02,
+      "height": 1.7,
+      "side": false
+    },
+    {
+      "name": "Right upper 0",
+      "center": [
+        -4.75,
+        5.7,
+        0.55
+      ],
+      "width": 0.91,
+      "height": 1.43,
+      "side": true
+    },
+    {
+      "name": "Right lower 0",
+      "center": [
+        -4.75,
+        2.69,
+        0.55
+      ],
+      "width": 0.92,
+      "height": 1.69,
+      "side": true
+    },
+    {
+      "name": "Right upper 1",
+      "center": [
+        -4.75,
+        5.7,
+        -1.98
+      ],
+      "width": 0.91,
+      "height": 1.43,
+      "side": true
+    },
+    {
+      "name": "Right lower 1",
+      "center": [
+        -4.75,
+        2.69,
+        -1.98
+      ],
+      "width": 0.92,
+      "height": 1.69,
+      "side": true
+    },
+    {
+      "name": "Left upper 0",
+      "center": [
+        5.48,
+        5.7,
+        0.55
+      ],
+      "width": 0.91,
+      "height": 1.43,
+      "side": true
+    },
+    {
+      "name": "Left lower 0",
+      "center": [
+        5.48,
+        2.69,
+        0.55
+      ],
+      "width": 0.92,
+      "height": 1.69,
+      "side": true
+    },
+    {
+      "name": "Left upper 1",
+      "center": [
+        5.48,
+        5.7,
+        -1.98
+      ],
+      "width": 0.91,
+      "height": 1.43,
+      "side": true
+    },
+    {
+      "name": "Left lower 1",
+      "center": [
+        5.48,
+        2.69,
+        -1.98
+      ],
+      "width": 0.92,
+      "height": 1.69,
+      "side": true
+    },
+    {
+      "name": "Attic front",
+      "center": [
+        0.64,
+        7.85,
+        2.73
+      ],
+      "width": 0.72,
+      "height": 1.02,
+      "side": false
+    },
+    {
+      "name": "Attic right",
+      "center": [
+        -4.94,
+        7.85,
+        -1.1
+      ],
+      "width": 0.65,
+      "height": 1.03,
+      "side": true
+    },
+    {
+      "name": "Attic left",
+      "center": [
+        5.69,
+        7.85,
+        -1.1
+      ],
+      "width": 0.65,
+      "height": 1.03,
+      "side": true
+    }
+  ],
+  "lamps": [
+    [
+      0.14,
+      3.52,
+      4.32
+    ],
+    [
+      -6.84,
+      6.02,
+      -2.67
+    ],
+    [
+      -5.08,
+      3.1,
+      -2.86
+    ],
+    [
+      5.3,
+      3.3,
+      4.12
+    ],
+    [
+      -4.5,
+      3.3,
+      4.12
+    ]
+  ],
+  "sourceScale": 14.5,
+  "interiorAnchor": [
+    0.45,
+    4.9,
+    0.7
+  ]
+}

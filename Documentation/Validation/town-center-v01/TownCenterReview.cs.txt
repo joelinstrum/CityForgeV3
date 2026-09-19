@@ -1,0 +1,104 @@
+#if UNITY_EDITOR
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Rendering;
+using CityForgeV3.Buildings3D;
+using CityForgeV3.World;
+
+public static class TownCenterReview
+{
+    const string Out="/tmp/cityforge-town-center-fGIMMc";
+    public static void LotViews()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+        var owner=new GameObject("Unsaved Town Center Lot fixture");var world=owner.AddComponent<LotWorldController>();
+        world.Build();world.NewEmptyLot("Town Center review",LotType.Civics,4,4);world.AddExperimentalBuilding3D("town-center-v01",0,0,0);
+        world.DeselectBuilding3D();
+        var camera=(Camera)typeof(LotWorldController).GetField("_camera",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(world);
+        world.SetQaOrthographicSize(10);camera.transform.position=new Vector3(0,4.5f,0)-camera.transform.forward*50;
+        var life=owner.GetComponentsInChildren<BuildingInteriorAutomata>(true).Single(l=>l.enabled);
+        world.SetTimeOfDay(TimeOfDayPreset.Noon);life.Advance(1,camera);Capture(camera,"lot-day");
+        world.SetTimeOfDay(TimeOfDayPreset.Night);life.Advance(0,camera);Capture(camera,"lot-night");
+        life.Advance(4,camera);Capture(camera,"lot-night-moving");
+        File.WriteAllText(Out+"/lot-review.txt","Actual LotWorldController.Build/NewEmptyLot/AddExperimentalBuilding3D; active Lot camera; Noon and Night; in-memory fixture only, no Save. Native camera angle retained, framing centred for review.");
+        UnityEngine.Object.DestroyImmediate(owner);
+    }
+    public static void Run()
+    {
+        TownCenterBuilder.Build();
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+        var root=UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(TownCenterBuilder.Root+"/Prefabs/TownCenter.prefab"));
+        var package=root.GetComponent<Building3DPackageInstance>();
+        var life=root.GetComponentInChildren<BuildingInteriorAutomata>();
+        var camera=new GameObject("Review camera").AddComponent<Camera>();camera.tag="MainCamera";
+        camera.orthographic=true;camera.orthographicSize=9;camera.nearClipPlane=.1f;camera.farClipPlane=200;
+        camera.backgroundColor=new Color(.07f,.09f,.11f);camera.clearFlags=CameraClearFlags.SolidColor;
+        camera.transform.position=new Vector3(-20,16,24);camera.transform.LookAt(new Vector3(0,4.5f,0));
+        var sun=new GameObject("Sun").AddComponent<Light>();sun.type=LightType.Directional;sun.transform.rotation=Quaternion.Euler(45,-30,0);sun.intensity=1.0f;sun.shadows=LightShadows.Soft;
+        QualitySettings.shadows=ShadowQuality.All;QualitySettings.shadowDistance=80;QualitySettings.pixelLightCount=8;
+        RenderSettings.ambientMode=AmbientMode.Flat;RenderSettings.ambientLight=new Color(.55f,.55f,.55f);
+        var ground=GameObject.CreatePrimitive(PrimitiveType.Plane);ground.transform.localScale=Vector3.one*5;
+        var gm=new Material(Shader.Find("Standard"));gm.color=new Color(.16f,.18f,.12f);ground.GetComponent<Renderer>().sharedMaterial=gm;
+        package.SetNightAmount(0);life.Advance(1,camera);Capture(camera,"unity-day");
+        var notes=new List<string>();
+        foreach(var r in root.GetComponentsInChildren<Renderer>())notes.Add(r.name+" bounds="+r.bounds);
+        notes.Add("Initial frame="+life.CurrentFrame+" visible="+life.IsPresenting);
+        package.SetNightAmount(1);sun.intensity=.08f;RenderSettings.ambientLight=new Color(.15f,.17f,.24f);
+        life.Advance(0,camera);Capture(camera,"unity-night");
+        life.Advance(4,camera);Capture(camera,"unity-night-moving");
+        for(var i=0;i<5;i++) { life.Advance(3,camera);Capture(camera,"unity-interior-"+i); }
+        camera.transform.position=new Vector3(-20,14,-24);camera.transform.LookAt(new Vector3(0,4.5f,0));life.Advance(0,camera);Capture(camera,"unity-rear-night");
+        package.SetNightAmount(0);sun.intensity=1;RenderSettings.ambientLight=new Color(.55f,.55f,.55f);life.Advance(0,camera);Capture(camera,"unity-rear-day");
+        notes.Add("triangles="+root.GetComponentsInChildren<MeshFilter>().Sum(m=>m.sharedMesh.triangles.Length/3));
+        notes.Add("lights="+root.GetComponentsInChildren<Light>().Length);
+        File.WriteAllLines(Out+"/unity-review.txt",notes);
+        Performance(root,camera);
+    }
+    static void Performance(GameObject original,Camera camera)
+    {
+        var roots=new List<GameObject>();var lives=new List<BuildingInteriorAutomata>();
+        for(var i=0;i<100;i++)
+        {
+            var copy=UnityEngine.Object.Instantiate(original);copy.transform.position=new Vector3((i%10-5)*18,0,(i/10-5)*16);roots.Add(copy);
+            copy.GetComponent<Building3DPackageInstance>().SetNightAmount(1);
+            lives.Add(copy.GetComponentInChildren<BuildingInteriorAutomata>());
+        }
+        original.SetActive(false);
+        camera.orthographicSize=110;camera.transform.position=new Vector3(-130,130,160);camera.transform.LookAt(Vector3.zero);
+        foreach(var life in lives)life.Advance(0,camera);
+        var timing=new System.Diagnostics.Stopwatch();var values=new List<double>();
+        var allocationStart=GC.GetAllocatedBytesForCurrentThread();
+        timing.Start();for(var i=0;i<1000;i++)foreach(var life in lives)life.Advance(1f/60,camera);timing.Stop();
+        var allocated=GC.GetAllocatedBytesForCurrentThread()-allocationStart;
+        var report=new List<string> {"100 Town Centers, 1000 updates each; far culling CPU total ms="+timing.Elapsed.TotalMilliseconds+" allocations="+allocated};
+        report.Add("Active people="+lives.Count(l=>l.IsPresenting)+" active lights="+roots.Sum(r=>r.GetComponentsInChildren<Light>().Count(l=>l.enabled)));
+        var rt=new RenderTexture(1400,1200,24);camera.targetTexture=rt;
+        foreach(var force in new[]{0,1})
+        {
+            foreach(var r in roots)r.GetComponent<LODGroup>().ForceLOD(force);
+            for(var i=0;i<5;i++)camera.Render();values.Clear();
+            for(var i=0;i<60;i++){timing.Restart();camera.Render();timing.Stop();values.Add(timing.Elapsed.TotalMilliseconds);}
+            values.Sort();report.Add("Forced LOD="+force+" render CPU ms median="+values[30]+" p95="+values[57]+" max="+values[59]+" batches="+UnityStats.batches+" triangles="+UnityStats.triangles);
+        }
+        camera.targetTexture=null;UnityEngine.Object.DestroyImmediate(rt);
+        foreach(var r in roots)UnityEngine.Object.DestroyImmediate(r);
+        original.SetActive(true);camera.orthographicSize=9;camera.transform.position=new Vector3(-20,16,24);camera.transform.LookAt(new Vector3(0,4.5f,0));
+        var one=original.GetComponentInChildren<BuildingInteriorAutomata>();one.Advance(0,camera);
+        timing.Restart();allocationStart=GC.GetAllocatedBytesForCurrentThread();for(var i=0;i<10000;i++)one.Advance(1f/60,camera);allocated=GC.GetAllocatedBytesForCurrentThread()-allocationStart;timing.Stop();
+        report.Add("One visible interior, 10000 updates CPU ms="+timing.Elapsed.TotalMilliseconds+" allocations="+allocated);
+        var before=GC.GetAllocatedBytesForCurrentThread();var positiveControl=new byte[4096];GC.KeepAlive(positiveControl);report.Add("Allocation positive control="+(GC.GetAllocatedBytesForCurrentThread()-before));
+        File.WriteAllLines(Out+"/performance.txt",report);
+    }
+    static void Capture(Camera camera,string name)
+    {
+        var rt=new RenderTexture(1400,1200,24);camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;
+        var tex=new Texture2D(rt.width,rt.height,TextureFormat.RGB24,false);tex.ReadPixels(new Rect(0,0,rt.width,rt.height),0,0);tex.Apply();File.WriteAllBytes(Out+"/"+name+".png",tex.EncodeToPNG());
+        camera.targetTexture=null;RenderTexture.active=null;UnityEngine.Object.DestroyImmediate(tex);UnityEngine.Object.DestroyImmediate(rt);
+    }
+}
+#endif

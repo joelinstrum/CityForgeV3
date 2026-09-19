@@ -1,0 +1,6 @@
+100 Town Centers, 1000 updates each; far culling CPU total ms=44.283 allocations=0
+Active people=0 active lights=0
+Forced LOD=0 render CPU ms median=0.4943 p95=0.6548 max=0.7402 batches=0 triangles=0
+Forced LOD=1 render CPU ms median=0.4678 p95=0.5917 max=0.6856 batches=0 triangles=0
+One visible interior, 10000 updates CPU ms=14.4094 allocations=0
+Allocation positive control=0

@@ -1,0 +1,62 @@
+#if UNITY_EDITOR
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Unity.Profiling;
+using UnityEditor;
+using CityForgeV3.Buildings3D;
+
+public class TownCenterProfileDriver : MonoBehaviour
+{
+    public static void Run()
+    {
+        UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,UnityEditor.SceneManagement.NewSceneMode.Single);
+        new GameObject("Isolated frame profile").AddComponent<TownCenterProfileDriver>();
+        EditorApplication.isPlaying=true;
+    }
+    IEnumerator Start()
+    {
+        var camera=new GameObject("Profile camera").AddComponent<Camera>();camera.tag="MainCamera";
+        camera.orthographic=true;camera.orthographicSize=110;camera.farClipPlane=500;
+        camera.transform.position=new Vector3(-130,130,160);camera.transform.LookAt(Vector3.zero);
+        camera.targetTexture=new RenderTexture(1400,1200,24);
+        var sun=new GameObject("Profile sun").AddComponent<Light>();sun.type=LightType.Directional;sun.intensity=.15f;
+        RenderSettings.ambientMode=AmbientMode.Flat;RenderSettings.ambientLight=new Color(.2f,.2f,.25f);
+        QualitySettings.vSyncCount=0;Application.targetFrameRate=-1;
+        var prefab=Resources.Load<GameObject>("CityForgeV3/Buildings3D/TownCenterV01/Prefabs/TownCenter");
+        var groups=new List<LODGroup>();var roots=new List<GameObject>();
+        for(var i=0;i<100;i++)
+        {
+            var root=Instantiate(prefab);root.transform.position=new Vector3((i%10-5)*18,0,(i/10-5)*16);roots.Add(root);
+            root.GetComponent<Building3DPackageInstance>().SetNightAmount(1);groups.Add(root.GetComponent<LODGroup>());
+        }
+        var draws=ProfilerRecorder.StartNew(ProfilerCategory.Render,"Draw Calls Count",1);
+        var triangles=ProfilerRecorder.StartNew(ProfilerCategory.Render,"Triangles Count",1);
+        var allocation=ProfilerRecorder.StartNew(ProfilerCategory.Memory,"GC Allocated In Frame",1);
+        var main=ProfilerRecorder.StartNew(ProfilerCategory.Internal,"Main Thread",1);
+        var report=new List<string>{"100 isolated Town Centers; 1400x1200 automatic camera RenderTexture; Editor Play mode; no player saves.","Counters valid: draws="+draws.Valid+" triangles="+triangles.Valid+" gc="+allocation.Valid+" main="+main.Valid};
+        foreach(var level in new[]{0,1,-1})
+        {
+            if(level<0) { camera.orthographicSize=9;camera.transform.position=new Vector3(-20,16,24);camera.transform.LookAt(new Vector3(0,4.5f,0)); }
+            foreach(var group in groups)group.ForceLOD(level);
+            for(var i=0;i<30;i++)yield return null;
+            var times=new List<double>();var cpu=new List<double>();var d=new List<long>();var tris=new List<long>();var bytes=new List<long>();
+            for(var i=0;i<120;i++)
+            {
+                yield return null;
+                times.Add(Time.unscaledDeltaTime*1000);cpu.Add(main.LastValue/1000000d);d.Add(draws.LastValue);tris.Add(triangles.LastValue);bytes.Add(allocation.LastValue);
+            }
+            times.Sort();cpu.Sort();d.Sort();tris.Sort();bytes.Sort();
+            report.Add("LOD="+level+" frame ms median="+times[60]+" p95="+times[114]+" max="+times[119]+" main-thread ms median="+cpu[60]+" p95="+cpu[114]+" draws median="+d[60]+" triangles median="+tris[60]+" GC bytes/frame median="+bytes[60]+" max="+bytes[119]);
+        }
+        report.Add("Active people="+roots.Sum(r=>r.GetComponentsInChildren<BuildingInteriorAutomata>().Count(l=>l.IsPresenting))+" lights="+roots.Sum(r=>r.GetComponentsInChildren<Light>().Count(l=>l.enabled)));
+        File.WriteAllLines("/tmp/cityforge-town-center-fGIMMc/frame-profile.txt",report);
+        draws.Dispose();triangles.Dispose();allocation.Dispose();main.Dispose();
+        EditorApplication.Exit(0);
+    }
+}
+#endif

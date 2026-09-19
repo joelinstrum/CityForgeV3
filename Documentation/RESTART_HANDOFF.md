@@ -1485,3 +1485,31 @@ passed 22/22 across district simulation, founder placement, zero-population
 persistence through reload and definition edits, and Fort/Town Center food
 reserves. No player Lot or district was saved, and no commit, push, or review
 sync was performed.
+
+### September 19 — Town Center building, repaired rear and interior activity
+
+Imported Joe's hollow-window Town Center as Buildings → Civics → Town Center.
+The original six source files remain unchanged. A reproducible Blender script
+rebuilds the missing rear elevation, adds interior floors and lining, window
+sashes/glass and five lanterns, and exports full and reduced visual meshes.
+The default facing presents the entrance in the Lot Editor. Day, evening and
+night use the existing lighting presets and per-instance emission controls.
+
+An existing strolling-couple Automata clip supplies decorative upper-floor
+activity behind the windows. It retains the room anchor, uses depth and room
+clipping, and stops advancing when distant/offscreen. Nearby night lights are
+also culled locally; distant prefabs and shadow copies have no active people.
+This does not change population, labor, worker optimization or navigation.
+No district scan/rebuild or automatic persistence was added. No player Lot,
+district or region was saved; creating/assigning a founder Lot remains manual.
+
+Focused isolated EditMode validation passed 11/11 (Town Center, existing door
+controls and outdoor couple animation). Graphics-enabled isolated Unity checks
+covered day/night, rear closure, moving occupants and actual Lot placement.
+A 100-building asset-density fixture measured 27,618 versus 9,419 triangles per
+full/distant building and 11 distant draw calls. Close views with five active
+couples and 25 lamps measured 224 draws; this is not a full-city or long-duration
+benchmark. Details, timings, captures and reproducible helpers are recorded in
+`Documentation/Validation/town-center-v01/`; source lineage is recorded in
+`Documentation/Migration/TOWN_CENTER_V01.md`. This change uses the automatic
+committed Regions Review handoff, without pushing or merging.
