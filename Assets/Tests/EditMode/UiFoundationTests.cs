@@ -1767,7 +1767,7 @@ namespace CityForgeV3.Tests
         public void DistrictDefaultGrassUsesBroadWorldSpaceTextureDensity()
         {
             Assert.That(DistrictWorldController.DistrictGrassResource,
-                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV03/colonial-countryside-grass-v03"));
+                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV04/colonial-countryside-grass-v04"));
             Assert.That(DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
                 Is.EqualTo(75f));
             var texture = Resources.Load<Texture2D>(
@@ -1813,6 +1813,7 @@ namespace CityForgeV3.Tests
             {
                 var decals = root.AddComponent<DistrictGroundDecals>();
                 var overlay = root.AddComponent<DistrictHillGroundOverlay>();
+                Assert.That(decals.PresentationEnabled, Is.False);
                 typeof(DistrictGroundDecals).GetField("_hillOverlay",
                     BindingFlags.Instance | BindingFlags.NonPublic).SetValue(decals, overlay);
 

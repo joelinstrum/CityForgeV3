@@ -24,15 +24,17 @@ namespace CityForgeV3.World
         bool _presentationDirty=true,_lastEnabled;
         Color _lastTint;
         public int PatchCount { get; private set; }
-        bool _presentationEnabled = true;
+        // Keep optional leaf litter and hill dressing out of the base terrain
+        // presentation unless they are deliberately enabled for comparison.
+        bool _presentationEnabled;
         public bool PresentationEnabled
         {
             get => _presentationEnabled;
             set
             {
-                if (_presentationEnabled == value) return;
+                bool changed = _presentationEnabled != value;
                 _presentationEnabled = value;
-                _presentationDirty = true;
+                if (changed) _presentationDirty = true;
                 // The broad dry-grass hill treatment is part of the same
                 // presentation-only dressing. The QA toggle must hide it too
                 // so the authored base albedo can be reviewed in isolation.
