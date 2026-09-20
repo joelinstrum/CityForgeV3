@@ -1,5 +1,19 @@
 # Mixed forest placements
 
+## September 20 — stronger summer inter-tree depth preview
+
+The isolated review build routes all six family/footprint summer compositions
+to versioned `ForestClustersFamilyMixV03` art. V03 bakes stronger shade only
+between trees inside each billboard: rear tiers are darker/cooler, overlapping
+crowns cast soft shade on one another, and canopy/trunk occlusion is deeper.
+There is still no baked ground shadow. Runtime scale, shaders, renderer counts,
+batching, saved IDs, placement and projected ground shadows are unchanged.
+Spring shares summer; tropical remains season-neutral. Deciduous and mountain
+autumn/winter still use V01 until matching derivatives are produced from an
+accepted V03 silhouette. V01 and V02 remain intact. Exact prompts and lineage
+are in `ArtStudies/ForestClustersFamilyMixV03/prompts-and-lineage.md`; validation
+is in `Validation/forest-family-depth-v03/`.
+
 ## September 19 — weighted families and terrain-sized clumps
 
 Follow-up: multi-tree artwork is now limited to terrain where its shared root

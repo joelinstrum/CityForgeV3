@@ -46,12 +46,12 @@ namespace CityForgeV3.World
                 string familySuffix = id.StartsWith("forest-tropical-") ? "summer" :
                     season == SeasonPreset.Autumn ? "autumn" :
                     season == SeasonPreset.Winter ? "winter" : "summer";
-                // Preview the depth-shaded deciduous compositions in summer
-                // (and spring, which intentionally shares summer artwork).
-                // Autumn/winter and the other families remain on approved V01.
-                string collection = id.StartsWith("forest-deciduous-") &&
-                    familySuffix == "summer"
-                    ? "ForestClustersFamilyMixV02"
+                // Preview the stronger depth-shaded family compositions in
+                // summer (and spring, which shares summer artwork). Autumn and
+                // winter remain on approved V01 until matching derivatives of
+                // the accepted V03 silhouettes are ready.
+                string collection = familySuffix == "summer"
+                    ? "ForestClustersFamilyMixV03"
                     : "ForestClustersFamilyMixV01";
                 return "CityForgeV3/Flora/" + collection + "/" + id + "-" + familySuffix;
             }
