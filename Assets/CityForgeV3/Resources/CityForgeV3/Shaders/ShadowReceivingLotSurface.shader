@@ -4,6 +4,8 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
     {
         _Color ("Color", Color) = (1, 1, 1, 1)
         _MainTex ("Surface Texture", 2D) = "white" {}
+        [Toggle] _UseWorldSpaceUV ("Use World Space UV", Float) = 0
+        _TextureWorldSize ("Texture World Size (m)", Float) = 5
         _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
         _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
         _TerrainReliefStrength ("Terrain Relief Strength", Range(0, 2)) = 1.8
@@ -46,11 +48,14 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
                 float3 worldNormal : TEXCOORD0;
                 SHADOW_COORDS(1)
                 float2 uv : TEXCOORD2;
+                float3 worldPosition : TEXCOORD3;
             };
 
             fixed4 _Color;
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            float _UseWorldSpaceUV;
+            float _TextureWorldSize;
             float _AmbientFloor;
             float4 _TerrainSunDirection;
             float _TerrainReliefStrength;
@@ -61,6 +66,7 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 TRANSFER_SHADOW(output);
                 return output;
             }
@@ -90,7 +96,11 @@ Shader "CityForgeV3/ShadowReceivingLotSurface"
                 fixed relief = clamp(reliefFacing * _TerrainReliefStrength,
                     -0.42h, 0.28h);
                 illumination = saturate(illumination * (1.0h + relief));
-                fixed4 surface = tex2D(_MainTex, input.uv);
+                float2 worldUv = input.worldPosition.xz /
+                    max(0.01, _TextureWorldSize);
+                float2 surfaceUv = lerp(input.uv, worldUv,
+                    step(0.5, _UseWorldSpaceUV));
+                fixed4 surface = tex2D(_MainTex, surfaceUv);
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);
             }

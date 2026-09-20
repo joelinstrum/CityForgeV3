@@ -5,6 +5,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _Color ("Color", Color) = (1, 1, 1, 1)
         _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
+        _TextureWorldSize ("Texture World Size (m)", Float) = 75
         _HillTex ("Thin crest meadow", 2D) = "white" {}
         _HillHeight ("Hill height metres", Float) = 45
         _MeadowPatchStrength ("Meadow patch strength", Range(0,1)) = 0
@@ -65,6 +66,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _GrassHueShift;
+            float _TextureWorldSize;
             float4 _MainTex_ST;
             float _AmbientFloor;
             float4 _TerrainSunDirection;
@@ -80,7 +82,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 output.elevation = input.vertex.y;
                 output.hillVariation=0;
-                output.meadowMetres=input.vertex.xz;
+                output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
                 #if defined(HILL_MEADOW) || defined(MEADOW_PATCHES)
                 // Broad hill colour stays anchored when near-zoom grass detail changes.
                 float2 metres=input.vertex.xz;
@@ -112,8 +114,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
 
             fixed4 Meadow(sampler2D meadowSampler, float2 uv)
             {
-                // The source covers 40m. Neighbouring compositions receive
-                // stable offsets and overlap smoothly, independent of lots.
+                // Neighbouring compositions receive stable offsets and overlap
+                // smoothly. This remains useful for the separate hill artwork.
                 float2 cell = floor(uv);
                 float2 weight = smoothstep(.15, .85, frac(uv));
                 float2 dx, dy;
@@ -189,9 +191,14 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 fixed relief = clamp(reliefFacing * _TerrainReliefStrength,
                     -0.42h, 0.28h);
                 illumination = saturate(illumination * (1.0h + relief));
-                fixed4 surface = Meadow(_MainTex,input.uv);
+                // The authored macro grass is anchored directly in world space,
+                // matching hosted lot receivers instead of restarting per lot.
+                float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
+                float2 surfaceDx, surfaceDy;
+                MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
+                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,surfaceDx,surfaceDy);
                 #if defined(HILL_MEADOW)
-                fixed3 thin=Meadow(_HillTex,input.uv*.8).rgb;
+                fixed3 thin=Meadow(_HillTex,input.meadowMetres/40.0).rgb;
                 surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation,thin);
                 #elif defined(MEADOW_PATCHES)
                 // One extra sample on flat ground. Broad masking hides repetition;

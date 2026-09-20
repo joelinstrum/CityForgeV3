@@ -4,6 +4,8 @@ Shader "CityForgeV3/Experimental3DGroundReceiver"
     {
         _Color ("Color", Color) = (1, 1, 1, 1)
         _MainTex ("Surface Texture", 2D) = "white" {}
+        [Toggle] _UseWorldSpaceUV ("Use World Space UV", Float) = 0
+        _TextureWorldSize ("Texture World Size (m)", Float) = 5
         _DisplayMatch ("Chooser Display Match", Color) = (0.75, 0.80, 0.75, 1)
         _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
         _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
@@ -27,6 +29,8 @@ Shader "CityForgeV3/Experimental3DGroundReceiver"
             #include "AutoLight.cginc"
             sampler2D _MainTex;
             float4 _MainTex_ST;
+            float _UseWorldSpaceUV;
+            float _TextureWorldSize;
             fixed4 _Color;
             fixed4 _DisplayMatch;
             float _AmbientFloor;
@@ -44,6 +48,7 @@ Shader "CityForgeV3/Experimental3DGroundReceiver"
                 float3 worldNormal : TEXCOORD0;
                 SHADOW_COORDS(1)
                 float2 uv : TEXCOORD2;
+                float3 worldPosition : TEXCOORD3;
             };
             v2f vert(appdata input)
             {
@@ -51,12 +56,17 @@ Shader "CityForgeV3/Experimental3DGroundReceiver"
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 TRANSFER_SHADOW(output);
                 return output;
             }
             fixed4 frag(v2f input) : SV_Target
             {
-                fixed4 artwork = tex2D(_MainTex, input.uv) * _Color;
+                float2 worldUv = input.worldPosition.xz /
+                    max(0.01, _TextureWorldSize);
+                float2 surfaceUv = lerp(input.uv, worldUv,
+                    step(0.5, _UseWorldSpaceUV));
+                fixed4 artwork = tex2D(_MainTex, surfaceUv) * _Color;
                 fixed shadow = SHADOW_ATTENUATION(input);
                 fixed3 normal = normalize(input.worldNormal);
                 fixed3 lightDirection = normalize(_TerrainSunDirection.xyz);

@@ -24,7 +24,24 @@ namespace CityForgeV3.World
         bool _presentationDirty=true,_lastEnabled;
         Color _lastTint;
         public int PatchCount { get; private set; }
-        public bool PresentationEnabled { get; set; } = true;
+        // Keep optional leaf litter and hill dressing out of the base terrain
+        // presentation unless they are deliberately enabled for comparison.
+        bool _presentationEnabled;
+        public bool PresentationEnabled
+        {
+            get => _presentationEnabled;
+            set
+            {
+                bool changed = _presentationEnabled != value;
+                _presentationEnabled = value;
+                if (changed) _presentationDirty = true;
+                // The broad dry-grass hill treatment is part of the same
+                // presentation-only dressing. The QA toggle must hide it too
+                // so the authored base albedo can be reviewed in isolation.
+                if (_hillOverlay != null)
+                    _hillOverlay.PresentationEnabled = value;
+            }
+        }
 
         public void Rebuild(DistrictWorldController world, RegionCityTile district,float width,float depth)
             => Refresh(world,district,width,depth,null);
@@ -59,6 +76,7 @@ namespace CityForgeV3.World
             if(district.Hills!=null && district.Hills.HeightMeters>0)
             {
                 if(_hillOverlay==null){var hills=new GameObject("Hill Surface Detail");hills.transform.SetParent(transform,false);_hillOverlay=hills.AddComponent<DistrictHillGroundOverlay>();}
+                _hillOverlay.PresentationEnabled = _presentationEnabled;
                 _hillOverlay.Refresh(world,district,width,depth,initialize?null:changed);
             }
             else if(_hillOverlay!=null){Dispose(_hillOverlay.gameObject);_hillOverlay=null;}
@@ -134,7 +152,7 @@ namespace CityForgeV3.World
             var alpha = 1f - Mathf.InverseLerp(80f, 180f, _world.WorldCamera.orthographicSize);
             var tint = LotWorldController.TextureTintForTimeOfDay(_world.TimeOfDay);
             tint.a = alpha;
-            bool enabled=PresentationEnabled && alpha>.001f;
+            bool enabled=_presentationEnabled && alpha>.001f;
             if(!_presentationDirty && tint==_lastTint && enabled==_lastEnabled)return;
             _presentationDirty=false;_lastTint=tint;_lastEnabled=enabled;
             foreach (var material in _materials) material.color = tint;

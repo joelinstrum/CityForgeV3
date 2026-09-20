@@ -3,16 +3,10 @@ namespace CityForgeV3.World
 {
     public sealed partial class DistrictWorldController
     {
-        // User-facing stops count from one: first inherits the old second
-        // stop's texture density; second inherits the old third stop's density.
+        // Terrain artwork is physically anchored to the district. Camera zoom
+        // must not resize it or reveal a different texture coordinate system.
         public static float DistrictGrassWorldSizeForZoom(DistrictZoomLevel level)
-        {
-            if (level != DistrictZoomLevel.LOD0)
-                return DistrictGrassTextureWorldSizeMeters;
-            return DistrictGrassTextureWorldSizeMeters *
-                OrthographicSize(DistrictZoomLevel.LOD1, 1, 1, 1) /
-                OrthographicSize(DistrictZoomLevel.LOD2, 1, 1, 1);
-        }
+            => DistrictGrassTextureWorldSizeMeters;
 
         public static bool DistrictGrassUsesSmoothFiltering(DistrictZoomLevel level) =>
             level >= DistrictZoomLevel.LOD2;
@@ -46,13 +40,16 @@ namespace CityForgeV3.World
             material.mainTextureScale = new Vector2(_widthMeters / grassMetres, _depthMeters / grassMetres);
             if (!mountains)
             {
-                material.SetFloat("_GrassHueShift", .035f); // Reversible forest-green colour study; original artwork unchanged.
+                material.SetFloat("_TextureWorldSize",
+                    DistrictGrassTextureWorldSizeMeters);
+                // The macro texture now owns broad color variation. Preserve
+                // its authored palette and avoid a second dry-patch system.
+                material.SetFloat("_GrassHueShift", 0f);
                 var hillGrass=Resources.Load<Texture2D>("CityForgeV3/Terrain/HillsV01/crest-meadow-4x4");
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0 && hillGrass!=null;
                 material.SetTexture("_HillTex",hillGrass);
-                material.SetFloat("_MeadowPatchStrength", 1f);
-                if (hillGrass != null) material.EnableKeyword("MEADOW_PATCHES");
-                else material.DisableKeyword("MEADOW_PATCHES");
+                material.SetFloat("_MeadowPatchStrength", 0f);
+                material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
                 if(hills) material.EnableKeyword("HILL_MEADOW"); else material.DisableKeyword("HILL_MEADOW");
                 ApplyDistrictGrassZoomScale();
