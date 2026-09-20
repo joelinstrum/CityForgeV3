@@ -72,7 +72,7 @@ namespace CityForgeV3.World
         { "food", "lumber", "stone", "bricks", "coal", "iron ore",
           "gold", "oil", "jewels", "cloth" };
 
-        private static int ResourceIndex(string id) => id?.ToLowerInvariant() switch
+        public static int ResourceIndex(string id) => id?.ToLowerInvariant() switch
         {
             "food" => 0, "wood" or "lumber" => 1, "stone" => 2,
             "brick" or "bricks" => 3, "coal" => 4,
@@ -81,7 +81,7 @@ namespace CityForgeV3.World
             "cloth" => 9, _ => -1
         };
 
-        private static int ResourceAmount(RegionCityTile district, int index)
+        public static int ResourceAmount(RegionCityTile district, int index)
         {
             if (index < 4) return DistrictLotSimulation.ResourceAmount(district, index);
             var stock = district.ResourceInventory ??= new DistrictResourceInventory();
@@ -93,7 +93,7 @@ namespace CityForgeV3.World
             };
         }
 
-        private static void AddResource(RegionCityTile district, int index,
+        public static void AddResource(RegionCityTile district, int index,
             long delta)
         {
             if (index < 4)

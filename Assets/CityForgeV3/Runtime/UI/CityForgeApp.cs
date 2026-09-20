@@ -2611,6 +2611,7 @@ namespace CityForgeV3.UI
       toolRailScroll.AddToClassList("tool-rail-scroll");
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Main, "main", "Main"));
       toolRailScroll.Add(CreateLotStatsButton());
+      toolRailScroll.Add(CreateLotBonusButton());
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Buildings3D,
           "buildings", "Buildings"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Roads, "roads-car-v74", "Roads"));

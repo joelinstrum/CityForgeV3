@@ -163,6 +163,46 @@ public class DistrictLotSimulationTests
         sim.AdvanceSeason(1);Assert.That(d.ResourceInventory.Food,Is.Zero);sim.DeliveryCompleted("mill","lumber");Assert.That(d.ResourceInventory.Food,Is.EqualTo(3));Assert.That(d.Labor.Wood,Is.Zero);
         sim.Remove("mill");sim.DeliveryCompleted("mill");Assert.That(d.ResourceInventory.Food,Is.EqualTo(3));
     }
+    [Test] public void PlacementBonusesGrantEveryResourceOncePerPlacedInstance()
+    {
+        var d = new RegionCityTile { Treasury = 123 };
+        var lot = House(0); lot.LotId = "bonus-lot";
+        for (int i = 0; i < LotPlacementBonusCatalog.ResourceIds.Count; i++)
+            lot.Stats.PlacementBonuses.Add(new LotResourceBonus
+            {
+                ResourceId = LotPlacementBonusCatalog.ResourceIds[i],
+                Amount = i + 1
+            });
+        var sim = DistrictLotSimulation.For(d, _ => lot);
+        d.Lots.Add(new PlacedDistrictLot
+            { InstanceId = "one", LotId = lot.LotId });
+        sim.Add("one", lot);
+        Assert.That(d.Treasury, Is.EqualTo(123),
+            "Gold Bonus is a resource and must not change Treasury cash");
+        for (int i = 0; i < LotPlacementBonusCatalog.ResourceIds.Count; i++)
+            Assert.That(DistrictLotRequirements.ResourceAmount(d,
+                DistrictLotRequirements.ResourceIndex(
+                    LotPlacementBonusCatalog.ResourceIds[i])),
+                Is.EqualTo(i + 1));
+        sim.Add("one", lot);
+        Assert.That(d.ResourceInventory.Gold, Is.EqualTo(5),
+            "Retrying the same placement must not duplicate its Bonus");
+        var restored = JsonUtility.FromJson<RegionCityTile>(
+            JsonUtility.ToJson(d));
+        DistrictLotSimulation.Rebuild(restored, _ => lot);
+        Assert.That(restored.ResourceInventory.Gold, Is.EqualTo(5),
+            "Loading a placed Lot must not grant its Bonus again");
+        DistrictLotSimulation.SavedDefinitionChanged(restored, lot);
+        Assert.That(restored.ResourceInventory.Gold, Is.EqualTo(5),
+            "Editing a Lot definition must not grant its Bonus again");
+        DistrictLotSimulation.For(restored).Remove("one");
+        restored.Lots.Clear();
+        Assert.That(restored.ResourceInventory.Gold, Is.EqualTo(5),
+            "Removing the Lot does not claw back its one-time Bonus");
+        DistrictLotSimulation.For(restored).Add("two", lot);
+        Assert.That(restored.ResourceInventory.Gold, Is.EqualTo(10),
+            "A second newly placed instance receives its own Bonus");
+    }
     [Test] public void SavingLotStatsUpdatesOnlyItsPlacedInstances()
     {
         var d=new RegionCityTile();var sim=DistrictLotSimulation.For(d,_=>null);var lot=House(4);lot.LotId="house";

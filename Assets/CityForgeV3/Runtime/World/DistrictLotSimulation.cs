@@ -130,6 +130,9 @@ namespace CityForgeV3.World
             if (profiles.ContainsKey(instanceId)) return;
             var p = Profile.From(lot, hasPopulationOverride,
                 populationOverride); profiles.Add(instanceId, p); Index(instanceId, p.DefinitionId); Accumulate(p, 1); ChangePopulation(p.Residents);
+            // Add is the placement boundary. Rebuild and definition edits do not
+            // call this grant, so persisted stock is never duplicated on load.
+            LotPlacementBonusCatalog.Apply(district, lot);
         }
         public void Remove(string instanceId)
         {

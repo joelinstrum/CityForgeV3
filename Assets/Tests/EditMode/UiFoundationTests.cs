@@ -206,6 +206,12 @@ namespace CityForgeV3.Tests
                         {
                             new() { ResourceId = "food", Amount = 9,
                                 Timing = "Per season" }
+                        },
+                        PlacementBonuses = new List<LotResourceBonus>
+                        {
+                            new() { ResourceId = "food", Amount = 5 },
+                            new() { ResourceId = "lumber", Amount = 6 },
+                            new() { ResourceId = "gold", Amount = 7 }
                         }
                     },
                     BusinessRates = new BusinessRates
@@ -237,8 +243,43 @@ namespace CityForgeV3.Tests
                 Assert.That(simulation.Cost, Is.EqualTo(30));
                 Assert.That(simulation.CultureCapacity, Is.EqualTo(90));
                 Assert.That(simulation.SeasonalOutput(0), Is.EqualTo(9));
-                Assert.That(district.ResourceInventory.Food, Is.EqualTo(7),
-                    "Authored Town Centers receive no hard-coded food grant");
+                Assert.That(district.ResourceInventory.Food, Is.EqualTo(12),
+                    "Only the authored one-time food Bonus is granted");
+                Assert.That(district.Labor.Wood, Is.EqualTo(6));
+                Assert.That(district.ResourceInventory.Gold, Is.EqualTo(7));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void LotBonusEditorOffersEveryDistrictResource()
+        {
+            var go = new GameObject("Isolated Lot Bonus editor");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var world = go.AddComponent<LotWorldController>();
+                world.Session.NewLot("Bonus fixture", LotType.Civics, 20);
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags)
+                    .SetValue(app, root);
+                typeof(CityForgeApp).GetField("_lotWorld", flags)
+                    .SetValue(app, world);
+                typeof(CityForgeApp).GetField("_hasOpenLot", flags)
+                    .SetValue(app, true);
+                typeof(CityForgeApp).GetMethod("OpenLotBonus", flags)
+                    .Invoke(app, null);
+
+                Assert.That(root.Q<ScrollView>("lot-bonus-scroll"), Is.Not.Null);
+                foreach (var id in LotPlacementBonusCatalog.ResourceIds)
+                    Assert.That(root.Q<IntegerField>("lot-bonus-" + id),
+                        Is.Not.Null, id);
+                Assert.That(root.Query<IntegerField>().ToList().Count,
+                    Is.EqualTo(10));
+                Assert.That(world.Session.Data.Stats, Is.Null,
+                    "Opening the editor alone must not alter or save the Lot");
             }
             finally { Object.DestroyImmediate(go); }
         }

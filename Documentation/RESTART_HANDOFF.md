@@ -1557,3 +1557,19 @@ Town browser opens. Placement updates one simulation profile and performs no
 routine district scan or presentation rebuild. Existing player Lots are not
 recategorized or saved automatically; assign Civics → District Town Center and
 use the ordinary Save action when an authored Lot should become eligible.
+
+### September 19 — one-time Lot resource Bonuses
+
+Added **Bonus** beside Stats in the Lot Editor. It authors a one-time placement
+grant for each of the ten existing district resources: lumber, coal, stone,
+iron ore, gold, oil, food, jewels, cloth, and bricks. Values are part of the Lot
+definition and require the ordinary explicit Lot Save; merely opening or
+applying the modal does not write a player file.
+
+The grant runs only after a new Lot instance is accepted into a district. The
+existing per-instance simulation lookup rejects duplicate placement callbacks,
+while load/rebuild, Lot-definition edits, and removal never invoke the grant.
+This makes Bonuses durable without a district scan or per-frame work. They do
+not replace recurring Benefits or delivery production: lumber mills still
+produce their normal lumber only from dynamically delivered tree trunks. Gold
+is the district Gold stockpile and does not alter Treasury cash.
