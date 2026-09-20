@@ -1514,6 +1514,13 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(8));
             Assert.That(DistrictZoom.GridInterval(DistrictZoomLevel.LOD4),
                 Is.EqualTo(16));
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD0), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD1), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD2), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD3), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD4), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD5Billboard),
+                Is.False);
         }
 
         [Test]
@@ -1773,6 +1780,14 @@ namespace CityForgeV3.Tests
             foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
                 Assert.That(DistrictWorldController.DistrictGrassWorldSizeForZoom(level),
                     Is.EqualTo(75f));
+            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
+                DistrictZoomLevel.LOD0), Is.EqualTo(.14f));
+            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
+                DistrictZoomLevel.LOD1), Is.EqualTo(.09f));
+            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
+                DistrictZoomLevel.LOD2), Is.Zero);
+            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
+                DistrictZoomLevel.LOD5Billboard), Is.Zero);
 
             var naturalGrass = LotWorldController.ResolveBaseTexture("default-grass");
             Assert.That(naturalGrass.ResourcePath,
@@ -1796,6 +1811,11 @@ namespace CityForgeV3.Tests
                     Is.True, shaderName);
                 Object.DestroyImmediate(material);
             }
+
+            var meadowMaterial = new Material(Shader.Find(
+                "CityForgeV3/MeadowGroundSurface"));
+            Assert.That(meadowMaterial.HasProperty("_NearDetailStrength"), Is.True);
+            Object.DestroyImmediate(meadowMaterial);
         }
 
         [Test]

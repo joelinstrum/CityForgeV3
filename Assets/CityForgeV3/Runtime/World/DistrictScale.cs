@@ -103,6 +103,12 @@ namespace CityForgeV3.World
             _ => 16
         };
 
+        // Player-facing Zoom 3 is LOD2. Keep close inspection uncluttered and
+        // retain the existing billboard-level suppression at the farthest stop.
+        public static bool ShowsGrid(DistrictZoomLevel level) =>
+            level >= DistrictZoomLevel.LOD2 &&
+            level != DistrictZoomLevel.LOD5Billboard;
+
         public static float PanStepMeters(DistrictZoomLevel level) => level switch
         {
             DistrictZoomLevel.LOD0 => LotMetricScale.MinorGridMeters * 2f,

@@ -2867,6 +2867,7 @@ namespace CityForgeV3.UI
       }
 
       if (plane.userData is not Vector2Int dimensions) return;
+      if (!DistrictZoom.ShowsGrid(level)) return;
       var interval = DistrictZoom.GridInterval(level);
       var inverseZoom = 1f / Mathf.Max(0.01f, DistrictZoom.Scale(level));
       AddTerraformGrid(plane, dimensions.x, dimensions.y, interval,

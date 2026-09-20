@@ -11,6 +11,16 @@ namespace CityForgeV3.World
         public static bool DistrictGrassUsesSmoothFiltering(DistrictZoomLevel level) =>
             level >= DistrictZoomLevel.LOD2;
 
+        // The 75 m artwork supplies the approved broad variation. Close zooms
+        // add only neutral, world-anchored grain so the palette stays intact.
+        public static float DistrictGrassDetailStrengthForZoom(
+            DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD0 => .14f,
+            DistrictZoomLevel.LOD1 => .09f,
+            _ => 0f
+        };
+
         private void ApplyDistrictGrassZoomScale()
         {
             if (_terrainDistrict?.Hills?.Mountains == true) return;
@@ -22,6 +32,10 @@ namespace CityForgeV3.World
             float distant = DistrictGrassUsesSmoothFiltering(_zoomLevel) ? 1f : 0f;
             if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
                 material.SetFloat("_DistantMeadow", distant);
+            float detail = DistrictGrassDetailStrengthForZoom(_zoomLevel);
+            if (material.HasProperty("_NearDetailStrength") &&
+                material.GetFloat("_NearDetailStrength") != detail)
+                material.SetFloat("_NearDetailStrength", detail);
         }
 
         private void ConfigureMountainGroundMaterial()

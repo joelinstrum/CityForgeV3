@@ -2375,9 +2375,10 @@ namespace CityForgeV3.World
         {
             if (_grid != null)
                 _grid.gameObject.SetActive(_districtGridVisible &&
-                    _zoomLevel != DistrictZoomLevel.LOD5Billboard);
+                    DistrictZoom.ShowsGrid(_zoomLevel));
             if (_minorGrid != null)
                 _minorGrid.SetActive(_districtGridVisible &&
+                    DistrictZoom.ShowsGrid(_zoomLevel) &&
                     _zoomLevel <= DistrictZoomLevel.LOD2);
         }
 
