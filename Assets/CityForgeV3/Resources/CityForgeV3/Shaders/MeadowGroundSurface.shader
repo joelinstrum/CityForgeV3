@@ -10,7 +10,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _HillHeight ("Hill height metres", Float) = 45
         _MeadowPatchStrength ("Meadow patch strength", Range(0,1)) = 0
         _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
-        _NearDetailStrength ("Near grass detail strength", Range(0,.2)) = 0
         _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
         _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
         _TerrainReliefStrength ("Terrain Relief Strength", Range(0, 2)) = 1.8
@@ -66,7 +65,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _HillHeight;
             float _MeadowPatchStrength;
             float _DistantMeadow;
-            float _NearDetailStrength;
             float _GrassHueShift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
@@ -223,15 +221,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // Apply after the hue study so straw retains its warm colour.
                 surface.rgb=lerp(surface.rgb,thin*fixed3(1.045,1.0,.94),dry);
                 #endif
-                // Add only short-scale grain here. Meter-scale value noise read
-                // as smooth liquid patches over the already broad 75 m artwork.
-                // Two decorrelated fine bands give close views a dry, irregular
-                // surface without changing hue or the Zoom 3+ presentation.
-                float mediumGrain=MeadowNoise(input.meadowMetres/.42+41.3);
-                float fineGrain=MeadowNoise(input.meadowMetres/.19+73.1);
-                float nearGrain=(mediumGrain-.5)*.58+
-                    (fineGrain-.5)*.42;
-                surface.rgb*=1+nearGrain*_NearDetailStrength;
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);
             }

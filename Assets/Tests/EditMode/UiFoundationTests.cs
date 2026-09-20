@@ -1767,7 +1767,7 @@ namespace CityForgeV3.Tests
         public void DistrictDefaultGrassUsesBroadWorldSpaceTextureDensity()
         {
             Assert.That(DistrictWorldController.DistrictGrassResource,
-                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV02/colonial-countryside-grass-v02"));
+                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV03/colonial-countryside-grass-v03"));
             Assert.That(DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
                 Is.EqualTo(75f));
             var texture = Resources.Load<Texture2D>(
@@ -1780,14 +1780,6 @@ namespace CityForgeV3.Tests
             foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
                 Assert.That(DistrictWorldController.DistrictGrassWorldSizeForZoom(level),
                     Is.EqualTo(75f));
-            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
-                DistrictZoomLevel.LOD0), Is.EqualTo(.14f));
-            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
-                DistrictZoomLevel.LOD1), Is.EqualTo(.09f));
-            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
-                DistrictZoomLevel.LOD2), Is.Zero);
-            Assert.That(DistrictWorldController.DistrictGrassDetailStrengthForZoom(
-                DistrictZoomLevel.LOD5Billboard), Is.Zero);
 
             var naturalGrass = LotWorldController.ResolveBaseTexture("default-grass");
             Assert.That(naturalGrass.ResourcePath,
@@ -1811,11 +1803,6 @@ namespace CityForgeV3.Tests
                     Is.True, shaderName);
                 Object.DestroyImmediate(material);
             }
-
-            var meadowMaterial = new Material(Shader.Find(
-                "CityForgeV3/MeadowGroundSurface"));
-            Assert.That(meadowMaterial.HasProperty("_NearDetailStrength"), Is.True);
-            Object.DestroyImmediate(meadowMaterial);
         }
 
         [Test]
