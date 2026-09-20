@@ -1757,12 +1757,45 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void DistrictDefaultGrassRetainsFixedWorldTextureDensity()
+        public void DistrictDefaultGrassUsesBroadWorldSpaceTextureDensity()
         {
-            Assert.That(DistrictWorldController.DefaultGrassResource,
-                Is.EqualTo("CityForgeV3/Art/Regions/default-grass-texture"));
-            Assert.That(DistrictWorldController.GrassTextureWorldSizeMeters,
-                Is.EqualTo(5f));
+            Assert.That(DistrictWorldController.DistrictGrassResource,
+                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV01/colonial-countryside-grass-v01"));
+            Assert.That(DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
+                Is.EqualTo(75f));
+            var texture = Resources.Load<Texture2D>(
+                DistrictWorldController.DistrictGrassResource);
+            Assert.That(texture, Is.Not.Null);
+            Assert.That(texture.width, Is.EqualTo(4096));
+            Assert.That(texture.height, Is.EqualTo(4096));
+            Assert.That(texture.mipmapCount, Is.GreaterThan(1));
+            Assert.That(texture.wrapMode, Is.EqualTo(TextureWrapMode.Repeat));
+            foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
+                Assert.That(DistrictWorldController.DistrictGrassWorldSizeForZoom(level),
+                    Is.EqualTo(75f));
+
+            var naturalGrass = LotWorldController.ResolveBaseTexture("default-grass");
+            Assert.That(naturalGrass.ResourcePath,
+                Is.EqualTo(DistrictWorldController.DistrictGrassResource));
+            Assert.That(naturalGrass.BaseRepeatMeters, Is.EqualTo(75f));
+            Assert.That(naturalGrass.UseWorldSpaceUv, Is.True);
+
+            foreach (var shaderName in new[]
+                     {
+                         "CityForgeV3/MeadowGroundSurface",
+                         "CityForgeV3/ShadowReceivingLotSurface",
+                         "CityForgeV3/Experimental3DGroundReceiver"
+                     })
+            {
+                var shader = Shader.Find(shaderName);
+                Assert.That(shader, Is.Not.Null, shaderName);
+                Assert.That(UnityEditor.ShaderUtil.ShaderHasError(shader),
+                    Is.False, shaderName);
+                var material = new Material(shader);
+                Assert.That(material.HasProperty("_TextureWorldSize"),
+                    Is.True, shaderName);
+                Object.DestroyImmediate(material);
+            }
         }
 
         [Test]
