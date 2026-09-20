@@ -125,7 +125,8 @@ namespace CityForgeV3.World
             // their apparent motion deliberately slower than close inspection.
             DistrictZoomLevel.LOD3 => 0.18f,
             DistrictZoomLevel.LOD4 => 0.07f,
-            DistrictZoomLevel.LOD5Billboard => 0.035f,
+            // Farthest player zoom: 35% faster than the former 0.035 rate.
+            DistrictZoomLevel.LOD5Billboard => 0.04725f,
             _ => 0.07f
         };
 

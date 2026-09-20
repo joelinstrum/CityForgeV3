@@ -2242,24 +2242,38 @@ namespace CityForgeV3.UI
     {
       var view = lot?.EditorView;
       if (view == null || !view.Valid || view.TopDown) return 0;
-      var octant = SavedCameraOrbitOctant(view);
+      var octant = ((view.OrbitOctant % 8) + 8) % 8;
+      var clockwiseDiagonal = (octant + 1) / 2;
+      var authoredTurns = (4 - clockwiseDiagonal) & 3;
+      if (TrySavedCameraOrbitOctant(view, out var cameraOctant))
+      {
+        // Preserve the established octant-label mapping, then apply only the
+        // signed difference carried by the real camera. This keeps consistent
+        // saves unchanged while correcting stale labels in the same direction
+        // the author actually turned the Lot Editor camera.
+        var deltaOctants = ((cameraOctant - octant + 4) & 7) - 4;
+        var correction = deltaOctants >= 0
+            ? (deltaOctants + 1) / 2
+            : (deltaOctants - 1) / 2;
+        return (authoredTurns + correction) & 3;
+      }
       // The district camera looks across the Lot from the opposite diagonal,
       // and hosted Lots already carry the matching 180-degree camera offset.
       // Saved diagonal views therefore map to quarter turns in reverse order:
       // NE=0, SE=3, SW=2, NW=1. Cardinal authoring views sit between grid-safe
       // orientations and choose the next clockwise diagonal.
-      var clockwiseDiagonal = (octant + 1) / 2;
-      return (4 - clockwiseDiagonal) & 3;
+      return authoredTurns;
     }
 
-    private static int SavedCameraOrbitOctant(LotEditorViewState view)
+    private static bool TrySavedCameraOrbitOctant(
+        LotEditorViewState view, out int octant)
     {
-      var fallback = ((view.OrbitOctant % 8) + 8) % 8;
-      if (view.OrthographicSize <= 0f) return fallback;
+      octant = 0;
+      if (view.OrthographicSize <= 0f) return false;
       var rotation = view.Rotation;
       var magnitude = rotation.x * rotation.x + rotation.y * rotation.y +
           rotation.z * rotation.z + rotation.w * rotation.w;
-      if (magnitude < 0.5f) return fallback;
+      if (magnitude < 0.5f) return false;
 
       // The rendered camera transform is the authoritative saved view. A few
       // real Lots carry an old OrbitOctant label that disagrees with that
@@ -2268,10 +2282,12 @@ namespace CityForgeV3.UI
       // from its look rotation and snap it to the same eight-octant contract.
       var awayFromTarget = -(rotation * Vector3.forward);
       awayFromTarget.y = 0f;
-      if (awayFromTarget.sqrMagnitude < 0.01f) return fallback;
+      if (awayFromTarget.sqrMagnitude < 0.01f) return false;
       var degrees = Mathf.Repeat(Mathf.Atan2(
           awayFromTarget.z, awayFromTarget.x) * Mathf.Rad2Deg, 360f);
-      return Mathf.RoundToInt(Mathf.Repeat(degrees - 45f, 360f) / 45f) & 7;
+      octant = Mathf.RoundToInt(
+          Mathf.Repeat(degrees - 45f, 360f) / 45f) & 7;
+      return true;
     }
 
     private bool QuotePendingDistrictLot(RegionCityTile district, LotSaveData lot,

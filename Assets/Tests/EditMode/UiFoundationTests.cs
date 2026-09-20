@@ -724,7 +724,32 @@ namespace CityForgeV3.Tests
             };
 
             Assert.That(CityForgeApp.DistrictLotRotationFromSavedView(lot),
-                Is.EqualTo(1));
+                Is.EqualTo(3),
+                "The saved camera requires one counter-clockwise district turn.");
+        }
+
+        [TestCase(0, 0)]
+        [TestCase(2, 3)]
+        [TestCase(4, 2)]
+        [TestCase(6, 1)]
+        public void ConsistentSavedCameraKeepsEstablishedDiagonalMapping(
+            int orbitOctant, int expectedTurns)
+        {
+            var angle = (45f + orbitOctant * 45f) * Mathf.Deg2Rad;
+            var away = new Vector3(Mathf.Cos(angle), .5f, Mathf.Sin(angle));
+            var lot = new LotSaveData
+            {
+                EditorView = new LotEditorViewState
+                {
+                    Valid = true,
+                    OrbitOctant = orbitOctant,
+                    OrthographicSize = 10f,
+                    Rotation = Quaternion.LookRotation(-away, Vector3.up)
+                }
+            };
+
+            Assert.That(CityForgeApp.DistrictLotRotationFromSavedView(lot),
+                Is.EqualTo(expectedTurns));
         }
 
         [TestCase(TimeOfDayPreset.Morning, 60f, TimeOfDayPreset.Noon)]
@@ -1851,7 +1876,8 @@ namespace CityForgeV3.Tests
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD4),
                 Is.EqualTo(0.07f));
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD5Billboard),
-                Is.EqualTo(0.035f));
+                Is.EqualTo(0.04725f),
+                "The farthest zoom is 35% faster than its former 0.035 rate.");
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD4),
                 Is.LessThan(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD1)),
                 "Player-facing Zoom 5 must pan much more slowly than Zoom 2.");

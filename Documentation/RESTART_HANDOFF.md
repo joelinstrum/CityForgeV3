@@ -1654,3 +1654,23 @@ real Lot controller confirmed the noon façade/shadow direction and material
 separation. No district scan, redraw, presentation rebuild, player save, or
 change to the active Unity play session was performed. Evidence:
 `Documentation/Validation/town-center-placement-lighting-v01/`.
+
+### September 20 — corrected Town Center host handedness and farthest pan
+
+The first saved-camera placement correction converted the Town Center camera
+octant through the legacy label mapping and chose the wrong rotation direction.
+Saved camera transforms now contribute only their signed difference from the
+established octant-label mapping, while old Lots without a usable camera
+transform retain the label fallback unchanged. Joe's exact `town-center.json` now
+resolves to turn 3 rather than turn 1. A graphics-enabled isolated render of the
+complete player-authored Lot confirms the entrance/sign face the district
+camera, the fence lies along the near-left edge, and the two trees sit behind
+and to the right. Existing placed Lots are not mutated or saved.
+
+The farthest district zoom (`LOD5Billboard`) pan multiplier is 0.04725, exactly
+35% above its former 0.035 value. Zooms 0–4, pan direction, pan steps, camera
+framing, and all presentation thresholds are unchanged. The focused isolated
+suite passed 11/11 and Unity completed the full-Lot graphics capture without
+compiler or shader errors. No district scan, redraw, rebuild, persistence, or
+worker/labor change was added. Evidence:
+`Documentation/Validation/town-center-facing-pan-v02/`.
