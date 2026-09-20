@@ -2,7 +2,7 @@
   "schema": "cityforge-v3-lot-texture-catalog-v2",
   "sourceProject": "mixed: City Forge - Foundations Next and user-provided sources",
   "baseTextures": [
-    { "id": "default-grass", "name": "Natural Grass", "resource": "CityForgeV3/Terrain/MacroGrassV04/colonial-countryside-grass-v04", "repeatMeters": 75, "worldSpaceUv": true },
+    { "id": "default-grass", "name": "Natural Grass", "resource": "CityForgeV3/Terrain/MacroGrassV05/colonial-countryside-grass-v05", "repeatMeters": 75, "worldSpaceUv": true },
     { "id": "brick-paving-v01", "name": "Brick Paving", "resource": "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1", "repeatMeters": 10, "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/brick-texture-1.png" },
     { "id": "dark-cobblestone-v01", "name": "Cobblestone", "resource": "CityForgeV3/LotTextures/CobblestoneSuppliedV01/cobblestone-texture", "repeatMeters": 10, "sourceFile": "/Users/joelinstrum/Downloads/textures/brick/cobblestone-texture.png" },
     { "id": "grass-poor", "name": "Natural Grass — Poor", "resource": "CityForgeV3/LotTextures/LegacyGrassV01/lawn-poor-2" },
