@@ -1477,6 +1477,48 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void LotSettingsCatalogIsLargeAndShowsEveryMajorCategory()
+        {
+            var go = new GameObject("Isolated Lot Settings catalog");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var screen = new VisualElement();
+                typeof(CityForgeApp).GetMethod("ComposeLotSettingsCatalog",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(app, new object[] { screen });
+
+                var panel = screen.Q<VisualElement>("main-category-panel");
+                Assert.That(panel, Is.Not.Null);
+                Assert.That(panel.ClassListContains("lot-settings-catalog"),
+                    Is.True);
+                foreach (var id in new[]
+                {
+                    "open-lot-general", "open-lot-stats", "open-lot-bonus",
+                    "open-lot-behaviors"
+                })
+                {
+                    var card = panel.Q<Button>(id);
+                    Assert.That(card, Is.Not.Null, id);
+                    Assert.That(card.ClassListContains(
+                        "lot-settings-category-card"), Is.True, id);
+                }
+                Assert.That(panel.Q<Button>("close-lot-settings"), Is.Not.Null);
+                var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                    "CityForgeV3/Runtime/UI/CityForgeApp.cs"));
+                StringAssert.Contains(
+                    "toolRailScroll.Add(CreateLotBonusButton())", source);
+                var styles = File.ReadAllText(Path.Combine(Application.dataPath,
+                    "CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss"));
+                StringAssert.Contains(".lot-settings-catalog", styles);
+                StringAssert.Contains("width: 600px", styles);
+                StringAssert.Contains("min-height: 430px", styles);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
         public void DeleteAndBackspaceAreRoadDeletionShortcuts()
         {
             var source = File.ReadAllText(Path.Combine(

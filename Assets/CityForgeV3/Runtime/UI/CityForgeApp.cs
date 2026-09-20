@@ -2644,18 +2644,7 @@ namespace CityForgeV3.UI
 
       if (_hasOpenLot && _lotEditorCategoryExpanded &&
           _lotEditorCategory == LotEditorCategory.Main)
-      {
-        var main = new VisualElement { name = "main-category-panel" };
-        main.AddToClassList("context-panel");
-        main.Add(StyledLabel("LOT SETTINGS", "section-label"));
-        var general = CfButton.Create("GENERAL…", OpenLotGeneralModal, true, "primary");
-        general.name = "open-lot-general";
-        main.Add(general);
-        var behaviors = CfButton.Create("LOT BEHAVIORS…", OpenLotBehaviorsModal, true, "primary");
-        behaviors.name = "open-lot-behaviors";
-        main.Add(behaviors);
-        screen.Add(main);
-      }
+        ComposeLotSettingsCatalog(screen);
 
       if (_lotEditorCategoryExpanded &&
           _lotEditorCategory == LotEditorCategory.Buildings3D)
@@ -4576,6 +4565,56 @@ namespace CityForgeV3.UI
       screen.schedule.Execute(screen.Focus);
       // Camera framing belongs to the player once the lot is open.
       // Rebuilding editor chrome must never recenter or refit the lot.
+    }
+
+    private void ComposeLotSettingsCatalog(VisualElement screen)
+    {
+      if (screen == null) return;
+      var panel = new VisualElement { name = "main-category-panel" };
+      panel.AddToClassList("context-panel");
+      panel.AddToClassList("lot-settings-catalog");
+      panel.Add(StyledLabel("LOT", "section-label"));
+      panel.Add(StyledLabel("LOT SETTINGS", "catalog-title"));
+      panel.Add(StyledLabel(
+          "AUTHORING CATEGORIES FOR THIS LOT",
+          "catalog-meta"));
+      var close = CfButton.Create("CLOSE", () =>
+      {
+        _lotEditorCategoryExpanded = false;
+        Show(AppScreen.LotEditor);
+      }, true, "quiet");
+      close.name = "close-lot-settings";
+      close.AddToClassList("lot-settings-close");
+      panel.Add(close);
+
+      var grid = new VisualElement { name = "lot-settings-category-grid" };
+      grid.AddToClassList("lot-settings-category-grid");
+      void AddCategory(string id, string title, string description,
+          Action open)
+      {
+        var card = CfButton.Create("", open, true, "quiet");
+        card.name = id;
+        card.tooltip = description;
+        card.AddToClassList("lot-settings-category-card");
+        card.Add(StyledLabel(title, "lot-settings-category-title"));
+        card.Add(StyledLabel(description,
+            "lot-settings-category-description"));
+        grid.Add(card);
+      }
+      AddCategory("open-lot-general", "GENERAL",
+          "Identity, category, dimensions, cost, access, and construction requirements.",
+          OpenLotGeneralModal);
+      AddCategory("open-lot-stats", "STATS",
+          "Population, jobs, services, recurring production, and seasonal finances.",
+          OpenLotStats);
+      AddCategory("open-lot-bonus", "BONUS",
+          "One-time district resource additions granted when this Lot is placed.",
+          OpenLotBonus);
+      AddCategory("open-lot-behaviors", "LOT BEHAVIORS",
+          "Scripts and authored logic that control activity on this Lot.",
+          OpenLotBehaviorsModal);
+      panel.Add(grid);
+      screen.Add(panel);
     }
 
     private void SelectCharacterScript(string scriptId)

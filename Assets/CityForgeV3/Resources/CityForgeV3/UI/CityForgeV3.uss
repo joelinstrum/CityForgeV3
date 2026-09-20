@@ -1766,6 +1766,67 @@
     -unity-text-align: upper-left;
 }
 
+.lot-settings-catalog {
+    width: 600px;
+    min-height: 430px;
+    padding: 24px;
+}
+
+.lot-settings-catalog > .section-label,
+.lot-settings-catalog > .catalog-title,
+.lot-settings-catalog > .catalog-meta {
+    flex-shrink: 0;
+}
+
+.lot-settings-close {
+    position: absolute;
+    right: 20px;
+    top: 18px;
+    width: 92px;
+    height: 34px;
+}
+
+.lot-settings-category-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    margin-top: 8px;
+}
+
+.lot-settings-category-card {
+    width: 47%;
+    min-height: 132px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    padding: 18px;
+    align-items: flex-start;
+    justify-content: center;
+    background-color: rgb(25, 43, 51);
+    border-width: 1px;
+    border-color: rgba(193, 155, 72, 0.45);
+}
+
+.lot-settings-category-card:hover {
+    background-color: rgb(55, 88, 73);
+    border-color: var(--cf-brass-300);
+}
+
+.lot-settings-category-title {
+    margin-bottom: 10px;
+    color: rgb(244, 239, 218);
+    font-size: 17px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
+
+.lot-settings-category-description {
+    color: var(--cf-paper-300);
+    font-size: 10px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+}
+
 .lighting-current {
     margin-bottom: 10px;
     color: var(--cf-paper-100);

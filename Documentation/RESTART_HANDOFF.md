@@ -1573,3 +1573,17 @@ This makes Bonuses durable without a district scan or per-frame work. They do
 not replace recurring Benefits or delivery production: lumber mills still
 produce their normal lumber only from dynamically delivered tree trunks. Gold
 is the district Gold stockpile and does not alter Treasury cash.
+
+### September 19 — expanded Lot Settings catalog
+
+The Lot Editor's gear now opens a large catalog-style **Lot Settings** panel
+rather than the small two-button flyout. Its authored width is 600 px versus the
+previous shared 390 px context width, with a 430 px minimum height and a two-by-
+two card layout matching the visual hierarchy of the Buildings catalog.
+
+The catalog exposes all four Lot-settings categories together: **General**,
+**Stats**, **Bonus**, and **Lot Behaviors**, each with a short description.
+Stats and Bonus remain top-level tools on the left rail for direct access. This
+is presentation-only and does not add a Lot scan, rebuild, or save. Per Joe's
+latest testing direction, validation stays in CityForge - V3 plus isolated
+fixtures; CityForge-Regions-Review is no longer part of the handoff workflow.

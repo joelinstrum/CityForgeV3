@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.3603827">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1133" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.360383" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2305" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-town-center-fGIMMc/UnityQa/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1133" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.343666" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="7271" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2306" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="992" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.316085" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2307" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="992" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.305523" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2308" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="292" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.061674" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2118" name="DistrictLotSimulationTests" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.028580" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2136" name="PlacementBonusesGrantEveryResourceOncePerPlacedInstance" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.PlacementBonusesGrantEveryResourceOncePerPlacedInstance" methodname="PlacementBonusesGrantEveryResourceOncePerPlacedInstance" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1425468245" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.016702" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2251" name="LotStatsTests" fullname="CityForgeV3.Tests.EditMode.LotStatsTests" classname="CityForgeV3.Tests.EditMode.LotStatsTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.009785" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2254" name="LegacyLotsDoNotGainRequirementsRatesOrBonuses" fullname="CityForgeV3.Tests.EditMode.LotStatsTests.LegacyLotsDoNotGainRequirementsRatesOrBonuses" methodname="LegacyLotsDoNotGainRequirementsRatesOrBonuses" classname="CityForgeV3.Tests.EditMode.LotStatsTests" runstate="Runnable" seed="515684230" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.002537" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2252" name="PopulationFieldIsAvailableToEveryLotCategory" fullname="CityForgeV3.Tests.EditMode.LotStatsTests.PopulationFieldIsAvailableToEveryLotCategory" methodname="PopulationFieldIsAvailableToEveryLotCategory" classname="CityForgeV3.Tests.EditMode.LotStatsTests" runstate="Runnable" seed="1355958990" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.003407" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2253" name="StatsRoundTripAndCopyRemainIndependent" fullname="CityForgeV3.Tests.EditMode.LotStatsTests.StatsRoundTripAndCopyRemainIndependent" methodname="StatsRoundTripAndCopyRemainIndependent" classname="CityForgeV3.Tests.EditMode.LotStatsTests" runstate="Runnable" seed="1105731838" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:03Z" duration="0.002707" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1334" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="583" result="Passed" start-time="2026-09-20 00:58:03Z" end-time="2026-09-20 00:58:04Z" duration="0.211897" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1365" name="LotBonusEditorOffersEveryDistrictResource" fullname="CityForgeV3.Tests.UiFoundationTests.LotBonusEditorOffersEveryDistrictResource" methodname="LotBonusEditorOffersEveryDistrictResource" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1102343988" result="Passed" start-time="2026-09-20 00:58:04Z" end-time="2026-09-20 00:58:04Z" duration="0.077322" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1499" name="LotSettingsCatalogIsLargeAndShowsEveryMajorCategory" fullname="CityForgeV3.Tests.UiFoundationTests.LotSettingsCatalogIsLargeAndShowsEveryMajorCategory" methodname="LotSettingsCatalogIsLargeAndShowsEveryMajorCategory" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2075182547" result="Passed" start-time="2026-09-20 00:58:04Z" end-time="2026-09-20 00:58:04Z" duration="0.007230" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-town-center-fGIMMc/lot-settings-catalog-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
