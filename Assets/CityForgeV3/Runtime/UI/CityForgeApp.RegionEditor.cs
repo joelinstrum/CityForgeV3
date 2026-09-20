@@ -2242,7 +2242,7 @@ namespace CityForgeV3.UI
     {
       var view = lot?.EditorView;
       if (view == null || !view.Valid || view.TopDown) return 0;
-      var octant = ((view.OrbitOctant % 8) + 8) % 8;
+      var octant = SavedCameraOrbitOctant(view);
       // The district camera looks across the Lot from the opposite diagonal,
       // and hosted Lots already carry the matching 180-degree camera offset.
       // Saved diagonal views therefore map to quarter turns in reverse order:
@@ -2250,6 +2250,28 @@ namespace CityForgeV3.UI
       // orientations and choose the next clockwise diagonal.
       var clockwiseDiagonal = (octant + 1) / 2;
       return (4 - clockwiseDiagonal) & 3;
+    }
+
+    private static int SavedCameraOrbitOctant(LotEditorViewState view)
+    {
+      var fallback = ((view.OrbitOctant % 8) + 8) % 8;
+      if (view.OrthographicSize <= 0f) return fallback;
+      var rotation = view.Rotation;
+      var magnitude = rotation.x * rotation.x + rotation.y * rotation.y +
+          rotation.z * rotation.z + rotation.w * rotation.w;
+      if (magnitude < 0.5f) return fallback;
+
+      // The rendered camera transform is the authoritative saved view. A few
+      // real Lots carry an old OrbitOctant label that disagrees with that
+      // transform, so trusting the label rotates their district placement by
+      // one quarter turn. Recover the camera's horizontal position direction
+      // from its look rotation and snap it to the same eight-octant contract.
+      var awayFromTarget = -(rotation * Vector3.forward);
+      awayFromTarget.y = 0f;
+      if (awayFromTarget.sqrMagnitude < 0.01f) return fallback;
+      var degrees = Mathf.Repeat(Mathf.Atan2(
+          awayFromTarget.z, awayFromTarget.x) * Mathf.Rad2Deg, 360f);
+      return Mathf.RoundToInt(Mathf.Repeat(degrees - 45f, 360f) / 45f) & 7;
     }
 
     private bool QuotePendingDistrictLot(RegionCityTile district, LotSaveData lot,

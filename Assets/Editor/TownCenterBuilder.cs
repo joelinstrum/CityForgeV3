@@ -35,15 +35,15 @@ public static class TownCenterBuilder
             else ti.sRGBTexture = path.EndsWith("_0.jpg");
             ti.SaveAndReimport();
         }
-        var wood = Mat("Wood", new Color(.34f,.26f,.17f));
-        var iron = Mat("Iron", new Color(.045f,.05f,.045f));
+        var wood = ExteriorMat("Wood", new Color(.34f,.26f,.17f));
+        var iron = ExteriorMat("Iron", new Color(.045f,.05f,.045f));
         var room = Mat("Interior", new Color(.32f,.24f,.15f), true);
         var attic = Mat("AtticGlow", new Color(.035f,.04f,.035f), true);
         var lamp = Mat("LanternGlass", new Color(.28f,.3f,.26f), true);
-        var shell = Mat("Shell", Color.white);
-        var siding = Mat("RearSiding", Color.white);
+        var shell = ExteriorMat("Shell", Color.white);
+        var siding = ExteriorMat("RearSiding", Color.white);
         siding.mainTexture=AssetDatabase.LoadAssetAtPath<Texture2D>(Root+"/Derived/RearSiding.png");
-        var stone = Mat("RearStone", Color.white);
+        var stone = ExteriorMat("RearStone", Color.white);
         stone.mainTexture=AssetDatabase.LoadAssetAtPath<Texture2D>(Root+"/Derived/RearStone.png");
         shell.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(source + "tripo_image_bd63034a_0.jpg");
         shell.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>(source + "tripo_image_bd63034a_2.png"));
@@ -161,6 +161,18 @@ public static class TownCenterBuilder
         m.enableInstancing=true;
         if(emission) { m.EnableKeyword("_EMISSION");m.SetColor("_EmissionColor",new Color(.001f,.001f,.001f));m.globalIlluminationFlags=MaterialGlobalIlluminationFlags.RealtimeEmissive; }
         return m;
+    }
+
+    static Material ExteriorMat(string name, Color color)
+    {
+        var material = Mat(name, color);
+        material.shader = Shader.Find("CityForgeV3/Experimental3DBuildingPBR");
+        material.SetFloat("_GlossMapScale", .1f);
+        material.SetFloat("_DirectionalFloorOverride", .72f);
+        material.SetFloat("_AlbedoBoost", 1.08f);
+        material.SetFloat("_Contrast", 1.18f);
+        material.SetFloat("_Saturation", 1.08f);
+        return material;
     }
 }
 #endif

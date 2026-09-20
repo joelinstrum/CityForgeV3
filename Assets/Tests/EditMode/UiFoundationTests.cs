@@ -705,6 +705,28 @@ namespace CityForgeV3.Tests
                 }), Is.Zero);
         }
 
+        [Test]
+        public void DistrictLotPlacementUsesSavedCameraWhenOctantLabelIsStale()
+        {
+            // This is the camera rotation stored by the user-authored Town
+            // Center. Its legacy label says NE (0), but the rendered camera
+            // view is the adjacent district-facing diagonal.
+            var lot = new LotSaveData
+            {
+                EditorView = new LotEditorViewState
+                {
+                    Valid = true,
+                    OrbitOctant = 0,
+                    OrthographicSize = 11.4375f,
+                    Rotation = new Quaternion(
+                        .247177f, -.286437f, .076751f, .922478f)
+                }
+            };
+
+            Assert.That(CityForgeApp.DistrictLotRotationFromSavedView(lot),
+                Is.EqualTo(1));
+        }
+
         [TestCase(TimeOfDayPreset.Morning, 60f, TimeOfDayPreset.Noon)]
         [TestCase(TimeOfDayPreset.Noon, 300f, TimeOfDayPreset.Afternoon)]
         [TestCase(TimeOfDayPreset.Afternoon, 60f, TimeOfDayPreset.Evening)]

@@ -37,6 +37,15 @@ night 1. Shared materials remain unchanged; `BuildingNightLighting` uses per-ins
 property blocks for interior/attic/lantern emission. Five bounded, shadowless
 porch/sign lights supply nearby spill. There is no per-window realtime light.
 
+The opaque shell, wood, iron, repaired siding, and repaired stone use the shared
+City Forge experimental-building directional shader. That shader evaluates the
+building's geometric faces against the same sun direction that supplies its cast
+shadow, instead of allowing the imported Tripo tangent normals to establish a
+conflicting whole-façade light direction. A Town Center-only ambient floor keeps
+the deeply recessed porch readable at noon. Glass, interior emission, attic
+glow, and lantern glass retain their separate Standard materials and day/night
+controls.
+
 The upper room reuses the existing Gentleman and Lady Strolling Automata clip:
 two people, a 20-second walk/pause/return loop, eight facings, authored at 2 fps.
 It is a pre-rendered decorative pair, not district population, labor, or indoor

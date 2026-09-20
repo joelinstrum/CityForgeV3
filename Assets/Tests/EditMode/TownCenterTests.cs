@@ -80,6 +80,31 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(BuildingContentCatalog.Find("town-center-v01"),Is.Not.Null);
         }
 
+        [Test] public void OpaqueExteriorUsesDistrictDirectionalLightingWithoutChangingWindows()
+        {
+            const string exteriorShader="CityForgeV3/Experimental3DBuildingPBR";
+            var renderers=root.GetComponentsInChildren<Renderer>(true);
+            var shader=Shader.Find(exteriorShader);
+            var defaults=new Material(shader);
+            Assert.That(defaults.GetFloat("_DirectionalFloorOverride"),Is.Zero,
+                "Other buildings must keep the shader's former directional floor.");
+            Object.DestroyImmediate(defaults);
+            foreach(var name in new[]{"TC_Shell","TC_Wood","TC_Iron","TC_RearSiding","TC_RearStone"})
+            {
+                var material=renderers.First(r=>r.name==name).sharedMaterial;
+                Assert.That(material.shader.name,Is.EqualTo(exteriorShader),name);
+                Assert.That(material.GetFloat("_DirectionalFloorOverride"),
+                    Is.EqualTo(.72f).Within(.001f),name);
+            }
+
+            Assert.That(renderers.First(r=>r.name=="TC_Interior").sharedMaterial.shader.name,
+                Is.Not.EqualTo(exteriorShader));
+            Assert.That(renderers.First(r=>r.name=="TC_Glass").sharedMaterial.shader.name,
+                Is.Not.EqualTo(exteriorShader));
+            Assert.That(renderers.First(r=>r.name=="TC_LanternGlass").sharedMaterial.shader.name,
+                Is.Not.EqualTo(exteriorShader));
+        }
+
         [Test] public void RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants()
         {
             var owner=new GameObject("Transient Town Center Lot");

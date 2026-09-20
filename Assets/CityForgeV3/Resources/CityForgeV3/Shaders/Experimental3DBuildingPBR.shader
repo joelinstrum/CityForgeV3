@@ -15,6 +15,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         _Saturation ("Tripo Saturation", Range(0,4)) = 1.34
         _Vibrance ("Sunlit Vibrance", Range(0,1)) = 0
         _AmbientFill ("Local Ambient Fill", Range(0,1)) = 0
+        _DirectionalFloorOverride ("Directional Floor Override", Range(0,1)) = 0
         _AlbedoBoost ("Local Albedo Lift", Range(0.5,3)) = 1
         _EnvironmentDim ("Time Of Day Brightness", Range(0,1)) = 1
         _DirectionalContrast ("Directional Light Contrast", Range(0,1)) = 0
@@ -48,6 +49,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _Saturation;
         half _Vibrance;
         half _AmbientFill;
+        half _DirectionalFloorOverride;
         half _AlbedoBoost;
         half _EnvironmentDim;
         half _DirectionalContrast;
@@ -124,7 +126,9 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
             // Shade by scaling the complete RGB triplet uniformly. This
             // lowers value without blending toward gray or reducing the
             // authored timber saturation.
-            half shadowFloor = lerp(0.62h, 0.16h, _DirectionalContrast);
+            half shadowFloor = max(
+                lerp(0.62h, 0.16h, _DirectionalContrast),
+                _DirectionalFloorOverride);
             // Let the lighting-lab sun control lift the directly illuminated
             // face without raising the shaded face or the environment.
             half directSunBoost = 1.0h +

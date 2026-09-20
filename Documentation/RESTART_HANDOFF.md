@@ -1629,3 +1629,28 @@ Parks, and **District Town Center**, matching the organization used while
 authoring and placing saved Lots. The selected category is filtered only when
 the user opens or changes this explicit browser; no district scan, rebuild, or
 automatic save was added.
+
+### September 20 — saved Town Center facing and coherent exterior light
+
+New district Lot placement now treats the saved Lot camera transform as the
+authoritative authored view and uses the persisted orbit-octant label only as a
+legacy fallback. Joe's `town-center.json` said NE/octant 0 while its actual saved
+camera resolved to octant 6, which caused exactly one unwanted placement turn.
+The correction applies to future placements; it does not rotate existing Lots,
+rewrite the player Lot, or save the active district.
+
+The Town Center's opaque shell, wood, iron, rear siding, and rear stone now use
+the shared City Forge experimental-building directional shader. Geometric face
+normals therefore follow the same district sun direction as the building's cast
+shadow instead of inheriting a contradictory façade direction from imported
+Tripo tangent normals. A material-local ambient floor keeps the recessed porch
+readable. Window glass, interior/attic emission, lantern materials, and night
+controls remain separate and unchanged.
+
+Focused isolated EditMode validation passed 12/12, including the exact camera
+quaternion from the user-authored Town Center, all prior diagonal mappings, and
+the complete Town Center suite. A graphics-enabled isolated render through the
+real Lot controller confirmed the noon façade/shadow direction and material
+separation. No district scan, redraw, presentation rebuild, player save, or
+change to the active Unity play session was performed. Evidence:
+`Documentation/Validation/town-center-placement-lighting-v01/`.
