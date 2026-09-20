@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="14" result="Passed" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.5151488">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1151" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.515149" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2325" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1151" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.498435" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="32394" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1123" name="RegionFloraGeneratorTests" fullname="RegionFloraGeneratorTests" classname="RegionFloraGeneratorTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.485621" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1124" name="ClearTreesRemovesManualClustersAndHarvestedRemnantsButKeepsStonesAndSupportsUndo" fullname="RegionFloraGeneratorTests.ClearTreesRemovesManualClustersAndHarvestedRemnantsButKeepsStonesAndSupportsUndo" methodname="ClearTreesRemovesManualClustersAndHarvestedRemnantsButKeepsStonesAndSupportsUndo" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="513071700" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.030906" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1131" name="DesertRejectsForestAndWarmClimatesNeverUseSnowyArtwork" fullname="RegionFloraGeneratorTests.DesertRejectsForestAndWarmClimatesNeverUseSnowyArtwork" methodname="DesertRejectsForestAndWarmClimatesNeverUseSnowyArtwork" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1100213972" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.002451" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1136" name="FamilyWeightsAreRelativeAndSteepSlopesUseGroundedSingleTrees" fullname="RegionFloraGeneratorTests.FamilyWeightsAreRelativeAndSteepSlopesUseGroundedSingleTrees" methodname="FamilyWeightsAreRelativeAndSteepSlopesUseGroundedSingleTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="965637345" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.170954" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1134" name="GenerationAvoidsRoadWaterLotsAndIndustrialBuildings" fullname="RegionFloraGeneratorTests.GenerationAvoidsRoadWaterLotsAndIndustrialBuildings" methodname="GenerationAvoidsRoadWaterLotsAndIndustrialBuildings" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1040393746" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.006026" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1130" name="HeavyTriplesMediumDensityAndPreservesSavedCoverageValues" fullname="RegionFloraGeneratorTests.HeavyTriplesMediumDensityAndPreservesSavedCoverageValues" methodname="HeavyTriplesMediumDensityAndPreservesSavedCoverageValues" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1141779348" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.123226" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1137" name="IncompleteAndFailedGenerationLeaveRegionAndHarvestIndexIntact" fullname="RegionFloraGeneratorTests.IncompleteAndFailedGenerationLeaveRegionAndHarvestIndexIntact" methodname="IncompleteAndFailedGenerationLeaveRegionAndHarvestIndexIntact" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="375074862" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.003832" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1125" name="OldSavesDefaultToTemperateWithoutGeneratingTrees" fullname="RegionFloraGeneratorTests.OldSavesDefaultToTemperateWithoutGeneratingTrees" methodname="OldSavesDefaultToTemperateWithoutGeneratingTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="2054039298" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.001495" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1133" name="RegenerationRetainsPlantedAndHarvestedTreesAndDoesNotDuplicateIds" fullname="RegionFloraGeneratorTests.RegenerationRetainsPlantedAndHarvestedTreesAndDoesNotDuplicateIds" methodname="RegenerationRetainsPlantedAndHarvestedTreesAndDoesNotDuplicateIds" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1184435737" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.001994" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1132" name="RetiredTreePlacementsKeepTheirIdsAndLoadCurrentArtwork" fullname="RegionFloraGeneratorTests.RetiredTreePlacementsKeepTheirIdsAndLoadCurrentArtwork" methodname="RetiredTreePlacementsKeepTheirIdsAndLoadCurrentArtwork" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1628764436" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.078058" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1138" name="SavedClimateCoverageAndTreesRoundTripAndAtomicSaveReplacesExistingFile" fullname="RegionFloraGeneratorTests.SavedClimateCoverageAndTreesRoundTripAndAtomicSaveReplacesExistingFile" methodname="SavedClimateCoverageAndTreesRoundTripAndAtomicSaveReplacesExistingFile" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1063578482" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.013201" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1129" name="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees" fullname="RegionFloraGeneratorTests.SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.010761" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1126" name="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Temperate)" fullname="RegionFloraGeneratorTests.SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Temperate)" methodname="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1928842451" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.004554" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1127" name="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Mediterranean)" fullname="RegionFloraGeneratorTests.SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Mediterranean)" methodname="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="966902423" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.002227" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1128" name="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Tropical)" fullname="RegionFloraGeneratorTests.SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees(Tropical)" methodname="SeededCoverageIsRepeatableDenserWhenWoodedAndUsesClimateTrees" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="585212175" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.002115" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1135" name="WeightedForestUsesAllDominantFamiliesAndSeparateHarvestableFirsWithFewerRecords" fullname="RegionFloraGeneratorTests.WeightedForestUsesAllDominantFamiliesAndSeparateHarvestableFirsWithFewerRecords" methodname="WeightedForestUsesAllDominantFamiliesAndSeparateHarvestableFirsWithFewerRecords" classname="RegionFloraGeneratorTests" runstate="Runnable" seed="1151868831" result="Passed" start-time="2026-09-20 21:27:20Z" end-time="2026-09-20 21:27:20Z" duration="0.033856" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-texture-region-flora.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

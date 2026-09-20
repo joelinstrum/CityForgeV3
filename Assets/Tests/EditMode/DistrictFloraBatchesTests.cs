@@ -242,6 +242,20 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Summer),
             ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Winter));
     }
+    [Test] public void DeciduousSummerUsesDepthShadedV02PreviewOnly()
+    {
+        foreach (var id in new[] { "forest-deciduous-compact", "forest-deciduous-large" })
+        {
+            StringAssert.Contains("/ForestClustersFamilyMixV02/",
+                ForestClusterCatalog.ResourcePath(id, SeasonPreset.Summer));
+            Assert.AreEqual(ForestClusterCatalog.ResourcePath(id, SeasonPreset.Summer),
+                ForestClusterCatalog.ResourcePath(id, SeasonPreset.Spring));
+            StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                ForestClusterCatalog.ResourcePath(id, SeasonPreset.Autumn));
+            StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                ForestClusterCatalog.ResourcePath(id, SeasonPreset.Winter));
+        }
+    }
     [Test] public void LargeFamilyClusterShadowsUseNineGroundContacts()
     {
         texture.name = "forest-deciduous-large-winter";
