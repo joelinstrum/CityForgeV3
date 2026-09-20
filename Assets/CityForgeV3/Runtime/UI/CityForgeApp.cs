@@ -5022,7 +5022,8 @@ namespace CityForgeV3.UI
         _lotInspectorVisible = true;
       _lotStatus = $"{category} tools opened";
       if (category == LotEditorCategory.Buildings3D &&
-          _lotWorld.LotType is LotType.Civics or LotType.CivicsParks)
+          _lotWorld.LotType is LotType.Civics or LotType.CivicsParks or
+              LotType.DistrictTownCenter)
         _buildingUseCategory = BuildingUseCategory.Civics;
       if (category == LotEditorCategory.Buildings3D)
         _buildingSubcategory = string.Empty;
@@ -6892,7 +6893,7 @@ namespace CityForgeV3.UI
       panel.Add(parentField);
       var subcategoryField = new CityForgeChoiceField(
           _root, "CIVICS SUBCATEGORY",
-          new List<string> { "General", "Park" }, 0);
+          CivicsSubcategoryChoices(), 0);
       subcategoryField.style.display = DisplayStyle.None;
       parentField.changed += _ => subcategoryField.style.display =
           parentField.value == "Civics" ? DisplayStyle.Flex : DisplayStyle.None;
@@ -7498,6 +7499,7 @@ namespace CityForgeV3.UI
       LotType.Agricultural => "Farm",
       LotType.Civics => "Civics",
       LotType.CivicsParks => "Civics / Parks",
+      LotType.DistrictTownCenter => "District Town Center",
       _ => "Transportation"
     };
 
@@ -7512,6 +7514,7 @@ namespace CityForgeV3.UI
       LotType.Mixed => "Mixed Use",
       LotType.Agricultural => "Farms",
       LotType.CivicsParks => "Civics",
+      LotType.DistrictTownCenter => "Civics",
       _ => LotTypeLabel(type)
     };
 
@@ -7524,8 +7527,22 @@ namespace CityForgeV3.UI
       "Farms" => LotType.Agricultural,
       "Transportation" => LotType.Transportation,
       "Civics" when subcategory == "Park" => LotType.CivicsParks,
+      "Civics" when subcategory == "District Town Center" =>
+          LotType.DistrictTownCenter,
       "Civics" => LotType.Civics,
       _ => LotType.Residential
+    };
+
+    private static List<string> CivicsSubcategoryChoices() => new()
+    {
+      "General", "Park", "District Town Center"
+    };
+
+    private static int CivicsSubcategoryIndex(LotType type) => type switch
+    {
+      LotType.CivicsParks => 1,
+      LotType.DistrictTownCenter => 2,
+      _ => 0
     };
 
     private sealed class CityForgeChoiceField : VisualElement

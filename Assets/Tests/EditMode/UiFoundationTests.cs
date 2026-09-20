@@ -171,11 +171,82 @@ namespace CityForgeV3.Tests
             finally { Object.DestroyImmediate(go); }
         }
 
+        [Test]
+        public void DistrictTownCenterFounderUsesAuthoredLotSettings()
+        {
+            var go = new GameObject("Isolated authored Town Center placement");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                var district = new RegionCityTile
+                {
+                    TileId = "authored-town-center",
+                    Name = "Authored town",
+                    Width = 4,
+                    Height = 4
+                };
+                district.ResourceInventory.Food = 7;
+                var lot = new LotSaveData
+                {
+                    LotId = "custom-town-hall",
+                    Name = "Custom Town Hall",
+                    LotType = LotType.DistrictTownCenter,
+                    LotWidthCells = 2,
+                    LotDepthCells = 2,
+                    Stats = new LotStats
+                    {
+                        Residents = 23,
+                        Service = "Culture",
+                        ServiceCapacity = 90,
+                        Benefits = new List<LotBenefit>
+                        {
+                            new() { ResourceId = "food", Amount = 9,
+                                Timing = "Per season" }
+                        }
+                    },
+                    BusinessRates = new BusinessRates
+                    {
+                        Configured = true,
+                        Employees = 4,
+                        SeasonalRevenue = 80,
+                        SeasonalCost = 30
+                    }
+                };
+                typeof(CityForgeApp).GetField("_pendingFounderLot", flags)
+                    .SetValue(app, lot);
+                typeof(CityForgeApp).GetField("_pendingFounderBuildingId", flags)
+                    .SetValue(app, "district-town-center");
+                typeof(CityForgeApp).GetMethod("PlaceFounderBuilding", flags)
+                    .Invoke(app, new object[] { district, .5f, .5f });
+                Assert.That(district.Founded, Is.True);
+                Assert.That(district.FounderBuildingId,
+                    Is.EqualTo("district-town-center"));
+                Assert.That(district.FounderBuildingName,
+                    Is.EqualTo("Custom Town Hall"));
+                Assert.That(district.LotId, Is.EqualTo(lot.LotId));
+                Assert.That(district.Lots.Single().HasPopulationOverride,
+                    Is.False);
+                var simulation = DistrictLotSimulation.For(district);
+                Assert.That(simulation.Population.Population, Is.EqualTo(23));
+                Assert.That(simulation.Jobs, Is.EqualTo(4));
+                Assert.That(simulation.Revenue, Is.EqualTo(80));
+                Assert.That(simulation.Cost, Is.EqualTo(30));
+                Assert.That(simulation.CultureCapacity, Is.EqualTo(90));
+                Assert.That(simulation.SeasonalOutput(0), Is.EqualTo(9));
+                Assert.That(district.ResourceInventory.Food, Is.EqualTo(7),
+                    "Authored Town Centers receive no hard-coded food grant");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
         [TestCase("fortress", 7, 250)]
         [TestCase("fortress", 300, 300)]
-        [TestCase("city-charter-house", 7, 500)]
-        [TestCase("city-charter-house", 700, 700)]
-        public void FounderBuildingEstablishesMinimumFoodReserve(
+        [TestCase("district-town-center", 7, 7)]
+        public void OnlyFortEstablishesABuiltInFoodReserve(
             string founderId, int existingFood, int expectedFood)
         {
             var district = new RegionCityTile();
@@ -353,7 +424,8 @@ namespace CityForgeV3.Tests
                 Assert.That(start.enabledSelf, Is.True);
                 Assert.That(town.enabledSelf, Is.True);
                 Assert.That(start.tooltip, Does.Contain("later"));
-                Assert.That(town.tooltip, Does.Contain("Fort or Town Center"));
+                Assert.That(town.tooltip,
+                    Does.Contain("Fort or District Town Center"));
                 Assert.That(JsonUtility.ToJson(district), Is.EqualTo(before));
                 district.Founded = true;
                 typeof(CityForgeApp).GetMethod("ComposeDistrictStartModal", flags).Invoke(app, null);
@@ -378,7 +450,8 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeFounderBuildingModal", flags)
                     .Invoke(app, null);
-                var card = root.Q<Button>("founder-city-charter-house");
+                var card = root.Q<Button>(
+                    "founder-lot-town-center-civic-v01");
                 Assert.That(card, Is.Not.Null);
                 Assert.That(card.enabledSelf, Is.True);
                 Assert.That(card.Query<Label>().ToList().Any(label =>
@@ -401,13 +474,12 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeDistrictLotBrowser", flags)
                     .Invoke(app, new object[] { LotType.Civics, false });
-                var card = root.Query<Button>().ToList().FirstOrDefault(button =>
-                    button.ClassListContains("district-lot-entry") &&
-                    button.Query<Label>().ToList().Any(label =>
-                        label.text == "Town Center"));
+                var card = root.Q<Button>(
+                    "district-lot-town-center-civic-v01");
                 Assert.That(card, Is.Not.Null);
                 Assert.That(card.enabledSelf, Is.True);
-                Assert.That(card.tooltip, Does.Contain("civics lot"));
+                Assert.That(card.tooltip,
+                    Does.Contain("district town center lot"));
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -6552,6 +6624,47 @@ namespace CityForgeV3.Tests
             Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
                 .Invoke(null, new object[] { "Civics", "General" }),
                 Is.EqualTo(LotType.Civics));
+        }
+
+        [Test]
+        public void DistrictTownCenterIsANewStableCivicsSubcategory()
+        {
+            Assert.That((int)LotType.DistrictTownCenter, Is.EqualTo(8));
+            var contract = LotTypeCatalog.For(LotType.DistrictTownCenter);
+            Assert.That(contract.DisplayName,
+                Is.EqualTo("DISTRICT TOWN CENTER LOT"));
+            Assert.That(contract.IsValid, Is.True);
+            var session = new LotEditorSession();
+            session.NewLot("Authored Town Hall",
+                LotType.DistrictTownCenter, 30);
+            var restored = new LotEditorSession();
+            restored.Restore(session.Serialize());
+            Assert.That(restored.Data.LotType,
+                Is.EqualTo(LotType.DistrictTownCenter));
+            var app = typeof(CityForgeApp);
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            Assert.That(app.GetMethod("LotTypeParentLabel", flags)
+                .Invoke(null, new object[] { LotType.DistrictTownCenter }),
+                Is.EqualTo("Civics"));
+            Assert.That(app.GetMethod("LotTypeFromCategorySelection", flags)
+                .Invoke(null, new object[]
+                    { "Civics", "District Town Center" }),
+                Is.EqualTo(LotType.DistrictTownCenter));
+            var choices = (List<string>)app.GetMethod(
+                "CivicsSubcategoryChoices", flags).Invoke(null, null);
+            Assert.That(choices, Does.Contain("District Town Center"));
+            var eligible = app.GetMethod("IsDistrictTownCenterLot",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(eligible.Invoke(null, new object[]
+            {
+                new LotSaveSummary { LotId = "any-authored-center",
+                    LotType = LotType.DistrictTownCenter }
+            }), Is.EqualTo(true));
+            Assert.That(eligible.Invoke(null, new object[]
+            {
+                new LotSaveSummary { LotId = "ordinary-civic",
+                    LotType = LotType.Civics }
+            }), Is.EqualTo(false));
         }
 
         [TestCase("Residential", "General", LotType.Residential)]

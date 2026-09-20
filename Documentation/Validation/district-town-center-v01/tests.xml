@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="40" result="Passed" total="40" passed="40" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="2.2278817">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1130" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="2.227882" total="40" passed="40" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2302" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-town-center-fGIMMc/UnityQa/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1130" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="2.221282" total="40" passed="40" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="3249" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2303" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="989" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="2.193183" total="40" passed="40" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2304" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="989" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="2.192150" total="40" passed="40" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2305" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="291" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:45Z" duration="1.697835" total="31" passed="31" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2028" name="ContentCatalogArchitectureTests" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:44Z" duration="0.532733" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2033" name="BuildingEconomyContractIsOptionalAndDataOnly" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.BuildingEconomyContractIsOptionalAndDataOnly" methodname="BuildingEconomyContractIsOptionalAndDataOnly" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="1549646315" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:43Z" duration="0.010370" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2032" name="BuildingModManifestContractIsDataOnly" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.BuildingModManifestContractIsDataOnly" methodname="BuildingModManifestContractIsDataOnly" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="633358690" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:43Z" duration="0.000279" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2029" name="BuiltInBuildingManifestHasUniqueStableIdsAndResolvableAssets" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.BuiltInBuildingManifestHasUniqueStableIdsAndResolvableAssets" methodname="BuiltInBuildingManifestHasUniqueStableIdsAndResolvableAssets" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="2135781297" result="Passed" start-time="2026-09-20 00:38:43Z" end-time="2026-09-20 00:38:44Z" duration="0.485481" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2036" name="BundledTownCenterIsAReadOnlyCivicLotWithPreview" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.BundledTownCenterIsAReadOnlyCivicLotWithPreview" methodname="BundledTownCenterIsAReadOnlyCivicLotWithPreview" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="1337544778" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.021993" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2030" name="EveryPlayerFacingBuildingIsPublishedToBothConsumers" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.EveryPlayerFacingBuildingIsPublishedToBothConsumers" methodname="EveryPlayerFacingBuildingIsPublishedToBothConsumers" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="1749334282" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.002862" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2035" name="LotModManifestReferencesComposedLotFilesByStableId" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.LotModManifestReferencesComposedLotFilesByStableId" methodname="LotModManifestReferencesComposedLotFilesByStableId" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="2081774540" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000373" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2034" name="LotPlopCostAggregatesBaseAndPlacedBuildingCosts" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.LotPlopCostAggregatesBaseAndPlacedBuildingCosts" methodname="LotPlopCostAggregatesBaseAndPlacedBuildingCosts" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="1057558051" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000636" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2031" name="OldChurchUsesOneManifestContractInBothEditors" fullname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests.OldChurchUsesOneManifestContractInBothEditors" methodname="OldChurchUsesOneManifestContractInBothEditors" classname="CityForgeV3.Tests.EditMode.ContentCatalogArchitectureTests" runstate="Runnable" seed="1420330811" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000924" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2116" name="DistrictLotSimulationTests" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.060909" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2129" name="CachedFinancesAndProductionAdvanceOnlyOncePerSeason" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.CachedFinancesAndProductionAdvanceOnlyOncePerSeason" methodname="CachedFinancesAndProductionAdvanceOnlyOncePerSeason" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="623364507" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.005317" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2133" name="DeliveryBenefitsExcludeExistingYieldAndStopAfterRemoval" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.DeliveryBenefitsExcludeExistingYieldAndStopAfterRemoval" methodname="DeliveryBenefitsExcludeExistingYieldAndStopAfterRemoval" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1569006422" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000664" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2135" name="DenseDistrictOnlyReadsDefinitionsAtLoadBoundary" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.DenseDistrictOnlyReadsDefinitionsAtLoadBoundary" methodname="DenseDistrictOnlyReadsDefinitionsAtLoadBoundary" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1273979868" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.022950" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[STATS PERF 10,000 lots; 1,000 incremental add/remove pairs: 2.7197ms; zero definition reads after warmup
+STATS ALLOC 10,000 cached same-season checks: 0 bytes
+]]></output>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="2126" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.017464" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="2117" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Residential)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Residential)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="2007517190" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000453" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2118" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Business)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Business)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="989991373" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000146" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2119" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Industrial)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Industrial)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1474731260" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000197" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2120" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Mixed)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Mixed)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="969905366" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000108" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2121" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Civics)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Civics)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="574708456" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000153" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2122" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Agricultural)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Agricultural)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1897292244" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000208" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2123" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Transportation)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(Transportation)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1556766475" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000393" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2124" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(CivicsParks)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(CivicsParks)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="166724826" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000166" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2125" name="EveryLotTypeAddsAndRemovesItsAuthoredPopulation(DistrictTownCenter)" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.EveryLotTypeAddsAndRemovesItsAuthoredPopulation(DistrictTownCenter)" methodname="EveryLotTypeAddsAndRemovesItsAuthoredPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="303660492" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000106" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="2127" name="FounderLotSuppressesReusableDefinitionPopulation" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.FounderLotSuppressesReusableDefinitionPopulation" methodname="FounderLotSuppressesReusableDefinitionPopulation" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="911513436" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000780" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2128" name="PlacementRemovalAndReloadDoNotDuplicateResidents" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.PlacementRemovalAndReloadDoNotDuplicateResidents" methodname="PlacementRemovalAndReloadDoNotDuplicateResidents" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1235802021" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000423" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2131" name="PlacementRequirementsRejectWithoutChargingAndConsumeExactlyOnce" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.PlacementRequirementsRejectWithoutChargingAndConsumeExactlyOnce" methodname="PlacementRequirementsRejectWithoutChargingAndConsumeExactlyOnce" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="432953566" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.004130" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2132" name="PopulationEducationAndMultipleStockpilesGateConstruction" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.PopulationEducationAndMultipleStockpilesGateConstruction" methodname="PopulationEducationAndMultipleStockpilesGateConstruction" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="258181104" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.001911" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2134" name="SavingLotStatsUpdatesOnlyItsPlacedInstances" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.SavingLotStatsUpdatesOnlyItsPlacedInstances" methodname="SavingLotStatsUpdatesOnlyItsPlacedInstances" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="1640056822" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.000247" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2130" name="ServicesFoodJobsAndAgingDriveDemographicScores" fullname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests.ServicesFoodJobsAndAgingDriveDemographicScores" methodname="ServicesFoodJobsAndAgingDriveDemographicScores" classname="CityForgeV3.Tests.EditMode.DistrictLotSimulationTests" runstate="Runnable" seed="11177858" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:44Z" duration="0.002334" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2292" name="TownCenterTests" fullname="CityForgeV3.Tests.EditMode.TownCenterTests" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:45Z" duration="1.059165" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2297" name="BundledCivicLotBuildsThroughRuntimeLotComposition" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.BundledCivicLotBuildsThroughRuntimeLotComposition" methodname="BundledCivicLotBuildsThroughRuntimeLotComposition" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="805546834" result="Passed" start-time="2026-09-20 00:38:44Z" end-time="2026-09-20 00:38:45Z" duration="0.642166" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2294" name="InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" methodname="InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="985799057" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.021048" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2293" name="NightAndEveningArePerInstanceAndDayDisablesEveryLamp" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.NightAndEveningArePerInstanceAndDayDisablesEveryLamp" methodname="NightAndEveningArePerInstanceAndDayDisablesEveryLamp" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="1800402034" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.001899" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2296" name="RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" methodname="RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="1356069572" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.391000" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2295" name="RearWallClosesTheOpeningAndDistantShellReducesGeometry" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.RearWallClosesTheOpeningAndDistantShellReducesGeometry" methodname="RearWallClosesTheOpeningAndDistantShellReducesGeometry" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="1123306671" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.001604" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1334" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="581" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.435143" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1382" name="DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" methodname="DistrictStartDialogDoesNotChangeDataAndOffersBothChoices" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="414661340" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.044245" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1364" name="DistrictTownCenterFounderUsesAuthoredLotSettings" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictTownCenterFounderUsesAuthoredLotSettings" methodname="DistrictTownCenterFounderUsesAuthoredLotSettings" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1694993624" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.002862" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1727" name="DistrictTownCenterIsANewStableCivicsSubcategory" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictTownCenterIsANewStableCivicsSubcategory" methodname="DistrictTownCenterIsANewStableCivicsSubcategory" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1282137208" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.002963" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1363" name="FortPlacementStartsTownAtPreviewFootprint" fullname="CityForgeV3.Tests.UiFoundationTests.FortPlacementStartsTownAtPreviewFootprint" methodname="FortPlacementStartsTownAtPreviewFootprint" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1927123031" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.003179" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1368" name="OnlyFortEstablishesABuiltInFoodReserve" fullname="CityForgeV3.Tests.UiFoundationTests.OnlyFortEstablishesABuiltInFoodReserve" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.017754" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1365" name="OnlyFortEstablishesABuiltInFoodReserve(&quot;fortress&quot;,7,250)" fullname="CityForgeV3.Tests.UiFoundationTests.OnlyFortEstablishesABuiltInFoodReserve(&quot;fortress&quot;,7,250)" methodname="OnlyFortEstablishesABuiltInFoodReserve" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1483404761" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.000483" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1366" name="OnlyFortEstablishesABuiltInFoodReserve(&quot;fortress&quot;,300,300)" fullname="CityForgeV3.Tests.UiFoundationTests.OnlyFortEstablishesABuiltInFoodReserve(&quot;fortress&quot;,300,300)" methodname="OnlyFortEstablishesABuiltInFoodReserve" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1047646917" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.000139" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1367" name="OnlyFortEstablishesABuiltInFoodReserve(&quot;district-town-center&quot;,7,7)" fullname="CityForgeV3.Tests.UiFoundationTests.OnlyFortEstablishesABuiltInFoodReserve(&quot;district-town-center&quot;,7,7)" methodname="OnlyFortEstablishesABuiltInFoodReserve" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1706796582" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.000095" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1384" name="TownCenterAppearsInTheNormalCivicBuildBrowser" fullname="CityForgeV3.Tests.UiFoundationTests.TownCenterAppearsInTheNormalCivicBuildBrowser" methodname="TownCenterAppearsInTheNormalCivicBuildBrowser" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="2025948775" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.052042" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1383" name="TownCenterFounderCardUsesTheBundledCivicLot" fullname="CityForgeV3.Tests.UiFoundationTests.TownCenterFounderCardUsesTheBundledCivicLot" methodname="TownCenterFounderCardUsesTheBundledCivicLot" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1376851652" result="Passed" start-time="2026-09-20 00:38:45Z" end-time="2026-09-20 00:38:45Z" duration="0.020285" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-town-center-fGIMMc/district-town-center-tests-final-2.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

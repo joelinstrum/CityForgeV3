@@ -1536,3 +1536,24 @@ The previously disabled City Center founder card is now the enabled **Town
 Center** choice backed by this same Lot. Founder placement retains its existing
 zero-population override and 500-food reserve. The bundled definition is not a
 player Lot save, and no player Lot, district, or region was written during QA.
+
+### September 19 — authored District Town Center founder Lots
+
+Added the persisted Civics subcategory **District Town Center** as `LotType` 8,
+preserving every earlier numeric value. New Lot and Lot General expose it under
+the Civics parent. District Town Centers remain visible in **Build → Civic →
+Browse Civic Lots**, and every saved, bundled, or mod Lot in the new category
+appears as an independent choice in the Start Town founder browser.
+
+The selected founder Lot retains its authored population, jobs, wages, seasonal
+revenue/cost, services, and resource benefits. The Town Center-specific
+zero-population override and 500-food grant were removed; zero population on the
+bundled example is now simply its own authored setting. The Fort alone retains
+its legacy zero-population override and 250-food reserve. Older placements using
+the legacy `city-charter-house` identity keep their load compatibility.
+
+Founder discovery refreshes the existing cached Lot catalog only when the Start
+Town browser opens. Placement updates one simulation profile and performs no
+routine district scan or presentation rebuild. Existing player Lots are not
+recategorized or saved automatically; assign Civics → District Town Center and
+use the ordinary Save action when an authored Lot should become eligible.

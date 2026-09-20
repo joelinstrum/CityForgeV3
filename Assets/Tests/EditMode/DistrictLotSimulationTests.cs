@@ -15,6 +15,7 @@ public class DistrictLotSimulationTests
     [TestCase(LotType.Agricultural)]
     [TestCase(LotType.Transportation)]
     [TestCase(LotType.CivicsParks)]
+    [TestCase(LotType.DistrictTownCenter)]
     public void EveryLotTypeAddsAndRemovesItsAuthoredPopulation(LotType type)
     {
         var district = new RegionCityTile();

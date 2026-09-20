@@ -22,7 +22,7 @@
   "LotSizeMeters": 20,
   "LotWidthCells": 2,
   "LotDepthCells": 2,
-  "LotType": 6,
+  "LotType": 8,
   "EraId": "founders",
   "AvailableEraIds": ["founders", "industrial", "discovery", "modern"],
   "TrafficType": 0,

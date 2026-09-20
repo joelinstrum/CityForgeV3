@@ -132,7 +132,8 @@ namespace CityForgeV3.Tests.EditMode
             var summary = LotContentCatalog.All.Single(entry =>
                 entry.LotId == "town-center-civic-v01");
             var lot = LotContentCatalog.Read(summary.LotId);
-            Assert.That(summary.LotType, Is.EqualTo(LotType.Civics));
+            Assert.That(summary.LotType,
+                Is.EqualTo(LotType.DistrictTownCenter));
             Assert.That(summary.Name, Is.EqualTo("Town Center"));
             Assert.That(summary.BuildingId, Is.EqualTo("town-center-v01"));
             Assert.That(summary.PlopCost, Is.EqualTo(2500));

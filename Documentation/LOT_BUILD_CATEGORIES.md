@@ -15,6 +15,7 @@ rewritten or recategorized.
 | Transportation | Transit → Browse Transit Lots |
 | Civics | Civic → Browse Civic Lots |
 | Civics / Parks | Parks → Browse Parks |
+| District Town Center | Civic → Browse Civic Lots; Start Town founder chooser |
 
 The Lot Editor displays the existing Agricultural save type as **Farm** and
 offers **Farms** as its parent category in New Lot and General. Its persisted enum value remains `5`;
@@ -33,9 +34,11 @@ routes, the Farms menu, Farm choice and Agricultural save round trip, plus the
 existing Civics / Parks category test. Unity compiled with zero assembly errors.
 
 The subsequent Lot Editor revision makes category selection hierarchical. In
-New Lot and General, choose parent **Civics**, then subcategory **General** or
-**Park**. **Farms** is a separate parent category. Existing saved type values
-remain unchanged. Lot Settings now opens a General modal containing name, type,
+New Lot and General, choose parent **Civics**, then subcategory **General**,
+**Park**, or **District Town Center**. Every manually saved District Town Center
+becomes eligible in the Start Town founder chooser. **Farms** is a separate
+parent category. Existing saved type values remain unchanged. Lot Settings now
+opens a General modal containing name, type,
 dimensions, traffic, build cost, minimum era, population, education, access and
 material requirements. Stats retains people, seasonal finances and benefits.
 The focused category and requirement EditMode suite passed 30/30, including
@@ -43,7 +46,7 @@ legacy resource-name aliases in General.
 
 Bundled, read-only Lots use the same category browsers and placement contract
 without being copied into the player's manual-save folder. The Town Center is
-published this way as a 2 × 2 Civics Lot under **Civic → Browse Civic Lots**.
+published this way as a 2 × 2 District Town Center Lot under **Civic → Browse Civic Lots**.
 Its catalog entry is loaded once with the other cached Lot summaries; opening
 the browser does not scan district objects or write a Lot, district, or region.
 

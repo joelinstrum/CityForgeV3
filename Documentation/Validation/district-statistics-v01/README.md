@@ -80,3 +80,9 @@ existing stockpile is preserved. Ordinary residents continue to consume food at
 season boundaries from the cached population total. Focused isolated validation
 passed 22/22 across district simulation, founder placement, zero-population
 persistence, and both starting-food reserves. No player save was written.
+
+Later on September 19, the Town Center half of that special case was superseded.
+Only the Fort retains a built-in zero-population override and 250-food reserve.
+Lots authored as **District Town Center** retain their own population, jobs,
+seasonal finances, services, and resource benefits when used to start a town.
+Older `city-charter-house` placements keep their compatibility behavior.
