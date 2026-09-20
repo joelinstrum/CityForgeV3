@@ -1514,11 +1514,11 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(8));
             Assert.That(DistrictZoom.GridInterval(DistrictZoomLevel.LOD4),
                 Is.EqualTo(16));
-            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD0), Is.False);
-            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD1), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD0), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD1), Is.True);
             Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD2), Is.True);
-            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD3), Is.True);
-            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD4), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD3), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD4), Is.False);
             Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD5Billboard),
                 Is.False);
         }

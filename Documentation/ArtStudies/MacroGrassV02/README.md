@@ -12,6 +12,6 @@ Second edit prompt:
 
 > Use case: precise-object-edit. Asset type: Unity terrain albedo/base-color texture representing approximately 75m × 75m. Input image: edit target. Primary request: retain the broad muted green color variation, but remove the remaining curly, scribbled, worm-like, leafy, and blade-like micro-detail. Make the surface visually smoother and quieter at close inspection. Style/medium: natural painted terrain albedo viewed from far above, not a close-up grass photograph. Composition/framing: perfectly top-down orthographic square; uniform continuous coverage. Materials/textures: restrained soft granular noise only; broad low-frequency green variation; extremely sparse and faint dry discoloration. Lighting: flat neutral albedo; no directional lighting, shadows, highlights, or vignette. Constraints: substantially lower high-frequency contrast; no recognizable blades, leaves, plants, curls, clumps, cellular islands, pale blotches, rings, paths, rocks, objects, text, watermark, mirrored symmetry, or obvious repetition. Keep the average muted olive-green color close to the input. Edges should be visually compatible for seamless tiling.
 
-Player-facing Zooms 1 and 2 add restrained, grayscale procedural grain in
+Player-facing Zooms 1 and 2 add restrained, short-scale grayscale grain in
 `MeadowGroundSurface.shader`. It is anchored in world metres and does not alter
 the source texture, its hue, or the approved Zoom 3-and-farther presentation.
