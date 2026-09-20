@@ -4235,7 +4235,7 @@ namespace CityForgeV3.Tests
             Assert.That(noon.ScreenTint.a, Is.EqualTo(0.008f));
             Assert.That(
                 HybridBuildingPresentation.DirectionalShadeOpacityFor(
-                    TimeOfDayPreset.Noon), Is.EqualTo(0.42f));
+                    TimeOfDayPreset.Noon), Is.EqualTo(0.24f));
         }
 
         [Test]

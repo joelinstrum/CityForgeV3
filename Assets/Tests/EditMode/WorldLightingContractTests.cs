@@ -27,6 +27,75 @@ namespace CityForgeV3.Tests.EditMode
                 Is.GreaterThan(nightAmbient.maxColorComponent));
             Assert.That(noonSun.maxColorComponent,
                 Is.GreaterThan(nightSun.maxColorComponent * 10f));
+            Assert.That(Shader.GetGlobalFloat("_CFWorldWhitePoint"),
+                Is.EqualTo(DistrictWorldController.WorldWhitePoint).Within(.001f));
+        }
+
+        [Test]
+        public void EveryPresetKeepsArtworkWithinTheSharedWhitePoint()
+        {
+            foreach (TimeOfDayPreset preset in
+                     System.Enum.GetValues(typeof(TimeOfDayPreset)))
+            {
+                var illumination =
+                    DistrictWorldController.RegionArtworkIllumination(preset);
+                Assert.That(illumination.maxColorComponent,
+                    Is.LessThanOrEqualTo(
+                        DistrictWorldController.WorldWhitePoint + .001f),
+                    preset.ToString());
+            }
+
+            var morning = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Morning).grayscale;
+            var noon = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Noon).grayscale;
+            var afternoon = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Afternoon).grayscale;
+            var evening = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Evening).grayscale;
+            var night = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Night).grayscale;
+
+            Assert.That(noon, Is.GreaterThan(morning));
+            Assert.That(noon, Is.GreaterThan(afternoon));
+            Assert.That(Mathf.Abs(morning - afternoon), Is.GreaterThan(.005f));
+            Assert.That(afternoon, Is.GreaterThan(evening));
+            Assert.That(evening, Is.GreaterThan(night));
+        }
+
+        [Test]
+        public void HybridArtworkUsesOneDaylightExposureAndGentlerNoonShade()
+        {
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Morning), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Noon), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Afternoon), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f));
+            Assert.That(HybridBuildingPresentation.DirectionalShadeOpacityFor(
+                TimeOfDayPreset.Noon), Is.EqualTo(.24f));
+
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "AlwaysVisibleBuildingSprite.shader"));
+            StringAssert.Contains("_HybridBaseLayer", source);
+            StringAssert.Contains("CalibrateHybridBase", source);
+            StringAssert.Contains("shoulderStart", source);
+        }
+
+        [Test]
+        public void SharedArtworkLightingUsesHuePreservingWhitePointBound()
+        {
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "CityForgeWorldLighting.cginc"));
+            StringAssert.Contains("CityForgeBoundWorldIllumination", source);
+            StringAssert.Contains("_CFWorldWhitePoint", source);
+            StringAssert.DoesNotContain("saturate(illumination)", source);
         }
 
         [Test]

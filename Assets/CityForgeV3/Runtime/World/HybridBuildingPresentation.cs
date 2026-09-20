@@ -351,6 +351,9 @@ namespace CityForgeV3.World
             _alwaysVisibleMaterial.SetFloat("_BuildingHostStencilRef",
                 _hostBuildingStencilReference);
             _renderer.sharedMaterial = _alwaysVisibleMaterial;
+            var baseLayerProperties = new MaterialPropertyBlock();
+            baseLayerProperties.SetFloat("_HybridBaseLayer", 1f);
+            _renderer.SetPropertyBlock(baseLayerProperties);
             var reflectionObject = new GameObject("Wet Street Reflection");
             reflectionObject.transform.SetParent(transform, false);
             _wetReflectionFilter = reflectionObject.AddComponent<MeshFilter>();
@@ -769,7 +772,7 @@ namespace CityForgeV3.World
             // Noon is a high, hard sun—not an exposure boost. Keep enough of
             // the registered pass to describe short directional shadows while
             // avoiding the bleached, giant-spotlight appearance on pale trim.
-            TimeOfDayPreset.Noon => 0.42f,
+            TimeOfDayPreset.Noon => 0.24f,
             // A due-west afternoon sun leaves the east/right facade in shade.
             // The hybrid artwork cannot receive directional light per face,
             // so this shared shade pass restores that contrast.

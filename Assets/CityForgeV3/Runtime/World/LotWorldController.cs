@@ -6308,7 +6308,9 @@ namespace CityForgeV3.World
 
                 DistrictWorldController.ApplyWorldShaderLighting(
                     RenderSettings.ambientLight, _sun.color, _sun.intensity,
-                    _sun.transform.rotation);
+                    _sun.transform.rotation,
+                    DistrictWorldController.HybridArtworkExposureFor(
+                        TimeOfDay));
             }
 
             UpdateFloraShadowSun();

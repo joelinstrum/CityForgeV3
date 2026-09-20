@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="1.16403">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1153" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="1.164030" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2327" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-lighting-refinement-QaMs54/project/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1153" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="1.146690" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26471" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2328" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1008" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="1.112916" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2329" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1008" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="1.102063" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2330" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="301" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.111627" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2308" name="TownCenterTests" fullname="CityForgeV3.Tests.EditMode.TownCenterTests" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.059756" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2312" name="OpaqueExteriorUsesStandardWorldLightingAndOnlyWindowsEmit" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.OpaqueExteriorUsesStandardWorldLightingAndOnlyWindowsEmit" methodname="OpaqueExteriorUsesStandardWorldLightingAndOnlyWindowsEmit" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="881496288" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.048905" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1338" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="590" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="0.925851" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1702" name="BuildingArtworkDrawsBetweenProxyDepthAndFlora" fullname="CityForgeV3.Tests.UiFoundationTests.BuildingArtworkDrawsBetweenProxyDepthAndFlora" methodname="BuildingArtworkDrawsBetweenProxyDepthAndFlora" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1210568444" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.002668" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1640" name="EveningDirectionalOverlayRetainsDuskBaseExposure" fullname="CityForgeV3.Tests.UiFoundationTests.EveningDirectionalOverlayRetainsDuskBaseExposure" methodname="EveningDirectionalOverlayRetainsDuskBaseExposure" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1853514500" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.002783" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1638" name="EveningIsDarkerAndMoreStronglyGradedThanNoon" fullname="CityForgeV3.Tests.UiFoundationTests.EveningIsDarkerAndMoreStronglyGradedThanNoon" methodname="EveningIsDarkerAndMoreStronglyGradedThanNoon" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1953274301" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:19Z" duration="0.000680" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1688" name="FloraAndRoadsUseSharedWorldLightingWithoutLocalNightTint" fullname="CityForgeV3.Tests.UiFoundationTests.FloraAndRoadsUseSharedWorldLightingWithoutLocalNightTint" methodname="FloraAndRoadsUseSharedWorldLightingWithoutLocalNightTint" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1744070836" result="Passed" start-time="2026-09-20 21:11:19Z" end-time="2026-09-20 21:11:20Z" duration="0.671187" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1641" name="HybridNightBaseRemainsReadableBehindWindowOverlays" fullname="CityForgeV3.Tests.UiFoundationTests.HybridNightBaseRemainsReadableBehindWindowOverlays" methodname="HybridNightBaseRemainsReadableBehindWindowOverlays" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="378377407" result="Passed" start-time="2026-09-20 21:11:20Z" end-time="2026-09-20 21:11:20Z" duration="0.000163" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1637" name="LowSunLightingIsSoftAndAfternoonAvoidsTheWrongBakedSpotlight" fullname="CityForgeV3.Tests.UiFoundationTests.LowSunLightingIsSoftAndAfternoonAvoidsTheWrongBakedSpotlight" methodname="LowSunLightingIsSoftAndAfternoonAvoidsTheWrongBakedSpotlight" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="299815882" result="Passed" start-time="2026-09-20 21:11:20Z" end-time="2026-09-20 21:11:20Z" duration="0.000188" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1639" name="NoonUsesHighHardSunWithoutWashoutExposure" fullname="CityForgeV3.Tests.UiFoundationTests.NoonUsesHighHardSunWithoutWashoutExposure" methodname="NoonUsesHighHardSunWithoutWashoutExposure" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="699439199" result="Passed" start-time="2026-09-20 21:11:20Z" end-time="2026-09-20 21:11:20Z" duration="0.000175" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-lighting-refinement-QaMs54/focused-lighting.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

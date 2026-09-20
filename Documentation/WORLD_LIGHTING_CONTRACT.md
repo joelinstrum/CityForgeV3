@@ -12,6 +12,12 @@ City Forge has one environment-lighting owner per rendered world.
   routed through emission to compensate for scene lighting.
 - Custom artwork shaders read `_CFWorldAmbientColor`, `_CFWorldSunColor`, and
   `_CFWorldLightDirection`, published once when the world time changes.
+- Custom artwork illumination is hue-preservingly scaled only when its brightest
+  channel would exceed the shared 0.98 display-white point. The calibrated sun
+  budget keeps native 3D lighting in the same range; it does not add emission.
+- Hybrid directional building bases use one shared daylight exposure with a
+  highlight shoulder. Their registered shade and genuine night-light overlays
+  remain separate, and dusk/full-night artwork is not daylight-lifted.
 - Roads, rivers, Lot ground, decals, flora, and garden artwork do not have local
   night tints, light floors, sun directions, or time-of-day brightness controls.
 - Emission and local lights are opt-in effects for actual emitters: windows,

@@ -5,6 +5,8 @@ Shader "CityForgeV3/AlwaysVisibleBuildingSprite"
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _Cutoff ("Alpha Cutoff", Range(0,1)) = 0.02
+        [PerRendererData] _HybridBaseLayer
+            ("Hybrid Base Layer", Float) = 0
         [IntRange] _BuildingHostStencilRef
             ("Host Building Stencil Ref", Range(0,252)) = 0
     }
@@ -21,11 +23,33 @@ Shader "CityForgeV3/AlwaysVisibleBuildingSprite"
         #include "UnitySprites.cginc"
         half _Cutoff;
         half _BuildingHostStencilRef;
+        half _HybridBaseLayer;
+        half _CFHybridArtworkExposure;
+
+        fixed3 CalibrateHybridBase(fixed3 source)
+        {
+            fixed3 exposed = max(0, source * _CFHybridArtworkExposure);
+            half peak = max(exposed.r, max(exposed.g, exposed.b));
+            // Leave the baked shadow structure linear below the shoulder. The
+            // rational shoulder retains hue instead of clipping bright siding
+            // and trim channel by channel.
+            const half shoulderStart = 0.82h;
+            const half shoulderRange = 0.16h;
+            half over = max(0, peak - shoulderStart);
+            half compressedPeak = shoulderStart +
+                over / (1.0h + over / shoulderRange);
+            half scale = peak > shoulderStart
+                ? compressedPeak / max(peak, 0.0001h)
+                : 1.0h;
+            return exposed * scale;
+        }
 
         fixed4 BuildingSpriteFrag(v2f input) : SV_Target
         {
             fixed4 color = SampleSpriteTexture(input.texcoord) * input.color;
             clip(color.a - _Cutoff);
+            color.rgb = lerp(color.rgb,
+                CalibrateHybridBase(color.rgb), _HybridBaseLayer);
             color.rgb *= color.a;
             return color;
         }

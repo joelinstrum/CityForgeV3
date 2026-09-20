@@ -1707,3 +1707,25 @@ suite passed 11/11 and Unity completed the full-Lot graphics capture without
 compiler or shader errors. No district scan, redraw, rebuild, persistence, or
 worker/labor change was added. Evidence:
 `Documentation/Validation/town-center-facing-pan-v02/`.
+
+### September 20 — coherent global exposure and color
+
+Custom-lit terrain, flora, roads, water and props now share a hue-preserving
+0.98 display-white bound instead of allowing raw ambient-plus-sun values to
+clip. The district sun intensities are calibrated to the same range used by
+native Standard-lit buildings. Hybrid directional building bases use one
+shared 1.5 daylight exposure with a soft highlight shoulder, and the global
+noon registered-shade opacity is 0.24 instead of 0.42. There are no per-Lot or
+per-building exceptions. Dusk/night base treatment, full-night images, window
+overlays, lamps and other genuine emitters are unchanged.
+
+The change adds two global uniform writes at the existing environment-change
+boundary and no per-frame scan, material walk, draw, rebuild or persistence
+work. An isolated Unity fixture passed 7/7 contract tests, 8/8 focused
+hybrid/native/terrain tests, and 10/10 river/environment regressions. It
+captured real meadow, road, river-water, flora, hybrid artwork and the native
+Town Center across all five presets without loading or saving player content.
+Evidence and measurements:
+`Documentation/Validation/lighting-refinement-v01/`. The open City Forge V3
+editor imported the code without a new compile or shader error;
+CityForge-Regions-Review was not touched.

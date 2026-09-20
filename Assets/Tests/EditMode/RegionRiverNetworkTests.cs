@@ -55,7 +55,7 @@ public class RegionRiverNetworkTests
         {
             RenderSettings.ambientSkyColor=Color.red;
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Noon,light);
-            Assert.That(light.intensity,Is.EqualTo(1.05f));Assert.That(RenderSettings.ambientSkyColor.r,Is.EqualTo(.42f).Within(.001f));
+            Assert.That(light.intensity,Is.EqualTo(.68f));Assert.That(RenderSettings.ambientSkyColor.r,Is.EqualTo(.42f).Within(.001f));
             var expected=RenderSettings.ambientSkyColor;
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Night,light);
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Noon,light);

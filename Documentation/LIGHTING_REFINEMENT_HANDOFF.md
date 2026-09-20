@@ -70,3 +70,20 @@ Likely starting points are
 `HybridBuildingPresentation.cs`,
 `AlwaysVisibleBuildingSprite.shader`, and the existing
 `WorldLightingContractTests.cs`.
+
+## Completed refinement — September 20, 2026
+
+The global calibration is implemented without per-Lot exceptions. Custom-lit
+artwork now uses a hue-preserving 0.98 display-white bound, and the physical sun
+budget was reduced so native Standard-lit geometry targets the same range.
+Hybrid directional bases receive one shared 1.5 daylight exposure with a soft
+highlight shoulder; their noon registered shade opacity is 0.24. Dusk/night
+base treatment, full-night images, windows, lamps, and other real emitters are
+unchanged.
+
+The contract is published through shared uniforms at the existing environment
+transition boundary. No per-frame scan, material walk, draw call, rebuild, or
+persistence path was added. Isolated Unity validation passed 7/7 contract tests,
+8/8 focused regressions, and 10/10 river/environment regressions. Before/after
+and five-preset captures plus numeric measurements are in
+`Documentation/Validation/lighting-refinement-v01/`.
