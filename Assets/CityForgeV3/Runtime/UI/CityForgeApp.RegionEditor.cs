@@ -1728,7 +1728,7 @@ namespace CityForgeV3.UI
         found.tooltip = "Start building a district or establish a town";
         panel.Add(found);
         panel.Add(StyledLabel(
-            "Start a district now, or place a Fort or City Center to begin a town.",
+            "Start a district now, or place a Fort or Town Center to begin a town.",
             "district-founder-hint"));
         return panel;
       }
@@ -1754,7 +1754,7 @@ namespace CityForgeV3.UI
       var panel = CreateDocumentModal("START DISTRICT OR TOWN",
           "Choose how you want to begin here.");
       const string districtCopy = "Start a district now to begin building and linking resources. You can always start a town here later.";
-      const string townCopy = "Place a Fort or City Center to begin your town.";
+      const string townCopy = "Place a Fort or Town Center to begin your town.";
       var caption = StyledLabel(district.Founded ? townCopy : districtCopy, "document-modal-copy");
       caption.name = "district-start-caption";
       var choices = DocumentModalActions();
@@ -1794,7 +1794,7 @@ namespace CityForgeV3.UI
       var district = FindSelectedRegionTile();
       if (district == null) return;
       var panel = CreateDocumentModal(town ? "NAME YOUR TOWN" : "NAME YOUR DISTRICT",
-          town ? "Confirm the name, then choose a Fort or City Center." : "Confirm the name to start your district.");
+          town ? "Confirm the name, then choose a Fort or Town Center." : "Confirm the name to start your district.");
       var name = new TextField("NAME")
       {
         name = "district-start-name",
@@ -1839,7 +1839,7 @@ namespace CityForgeV3.UI
       panel.AddToClassList("founder-modal");
       panel.Add(StyledLabel("START TOWN", "founder-modal-title"));
       panel.Add(StyledLabel(
-          "Place a Fort or City Center to begin your town.",
+          "Place a Fort or Town Center to begin your town.",
           "founder-modal-intro"));
       var scroll = new ScrollView(ScrollViewMode.Vertical);
       scroll.AddToClassList("founder-building-list");
@@ -1854,15 +1854,15 @@ namespace CityForgeV3.UI
         card.AddToClassList("founder-building-card");
         card.name = $"founder-{captured.Id}";
         card.tooltip = string.IsNullOrWhiteSpace(captured.LotId)
-            ? "Coming later — the City Center Lot has not been created yet."
-            : $"Place the saved {captured.Name} in this district";
+            ? "Coming later — this founder Lot has not been created yet."
+            : $"Place {captured.Name} in this district";
         card.Add(StyledLabel(string.IsNullOrWhiteSpace(captured.LotId)
             ? "HOUSE" : "LOT", "founder-building-icon"));
         var copy = new VisualElement();
         copy.AddToClassList("founder-building-copy");
         copy.Add(StyledLabel(captured.Name, "founder-building-name"));
         copy.Add(StyledLabel(available ? captured.Description : captured.Id == "city-charter-house"
-            ? "Coming later — the City Center Lot has not been created yet."
+            ? "Coming later — this founder Lot has not been created yet."
             : "Not available yet — a saved building Lot is required.",
             "founder-building-description"));
         card.Add(copy);
@@ -1985,6 +1985,8 @@ namespace CityForgeV3.UI
 
     private Texture2D LoadSavedLotPreview(string lotId)
     {
+      var bundled = LotContentCatalog.PreviewTexture(lotId);
+      if (bundled != null) return bundled;
       var previewPath = LotContentCatalog.PreviewPath(lotId);
       if (!File.Exists(previewPath)) return null;
       if (_districtLotPreviewTextures.TryGetValue(previewPath,
@@ -2597,7 +2599,7 @@ namespace CityForgeV3.UI
                 ("trading-post", "Frontier Trading Post", "Create a crossroads for commerce, supplies, travelers, and regional exchange.", ""),
                 ("village-hall", "Village Hall", "Found a compact small town organized around local civic life.", ""),
                 ("river-landing", "River Landing", "Build around waterways, shipping, fishing, and future waterfront industry.", ""),
-                ("city-charter-house", "City Center", "Establish the civic center of your new town.", "")
+                ("city-charter-house", "Town Center", "Establish the civic center of your new town.", "town-center-civic-v01")
         };
 
     private void SetDistrictSimulationPaused(bool paused)

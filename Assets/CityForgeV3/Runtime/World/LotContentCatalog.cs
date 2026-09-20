@@ -20,8 +20,23 @@ namespace CityForgeV3.World
         public string previewFile;
     }
 
+    [Serializable]
+    public sealed class BundledLotManifest
+    {
+        public string schema;
+        public BundledLotEntry[] lots;
+    }
+
+    [Serializable]
+    public sealed class BundledLotEntry
+    {
+        public string id;
+        public string lotResourcePath;
+        public string previewResourcePath;
+    }
+
     /// <summary>
-    /// One discovery boundary for user-authored lots and future mod packages.
+    /// One discovery boundary for bundled, user-authored, and mod Lots.
     /// District code asks by stable lot ID and never needs to know where the
     /// package came from.
     /// </summary>
@@ -33,6 +48,8 @@ namespace CityForgeV3.World
             public LotSaveSummary Summary;
             public string JsonPath;
             public string PreviewPath;
+            public string JsonResourcePath;
+            public string PreviewResourcePath;
             public bool UseSaveStore;
         }
 
@@ -53,6 +70,9 @@ namespace CityForgeV3.World
             {
                 return source.UseSaveStore
                     ? LotSaveStore.Read(lotId)
+                    : !string.IsNullOrWhiteSpace(source.JsonResourcePath)
+                        ? JsonUtility.FromJson<LotSaveData>(
+                            Resources.Load<TextAsset>(source.JsonResourcePath)?.text)
                     : JsonUtility.FromJson<LotSaveData>(File.ReadAllText(source.JsonPath));
             }
             catch (Exception exception)
@@ -70,6 +90,15 @@ namespace CityForgeV3.World
                 ? source.PreviewPath : null;
         }
 
+        public static Texture2D PreviewTexture(string lotId)
+        {
+            EnsureLoaded();
+            return !string.IsNullOrWhiteSpace(lotId) &&
+                   _byId.TryGetValue(lotId, out var source) &&
+                   !string.IsNullOrWhiteSpace(source.PreviewResourcePath)
+                ? Resources.Load<Texture2D>(source.PreviewResourcePath) : null;
+        }
+
         public static void InvalidateCache()
         {
             _byId = null;
@@ -81,6 +110,7 @@ namespace CityForgeV3.World
             if (_byId != null) return;
             _byId = new Dictionary<string, Source>(StringComparer.Ordinal);
             _all = new List<LotSaveSummary>();
+            LoadBundledManifest();
             foreach (var summary in LotSaveStore.List())
                 Add(summary, summary.Path, LotSaveStore.PreviewPath(summary.LotId),
                     "saved lot", false, true);
@@ -92,6 +122,42 @@ namespace CityForgeV3.World
                     LoadModManifest(manifestPath);
             _all.Sort((left, right) =>
                 string.CompareOrdinal(right.ModifiedUtc, left.ModifiedUtc));
+        }
+
+        private static void LoadBundledManifest()
+        {
+            const string manifestPath = "CityForgeV3/Lots/catalog";
+            var asset = Resources.Load<TextAsset>(manifestPath);
+            if (asset == null) return;
+            try
+            {
+                var manifest = JsonUtility.FromJson<BundledLotManifest>(asset.text);
+                if (manifest?.schema != "cityforge-bundled-lots-v1" ||
+                    manifest.lots == null)
+                    throw new InvalidOperationException("Unsupported bundled Lot manifest.");
+                foreach (var entry in manifest.lots)
+                {
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.id) ||
+                        string.IsNullOrWhiteSpace(entry.lotResourcePath))
+                        throw new InvalidOperationException(
+                            "Each bundled Lot requires id and lotResourcePath.");
+                    var lotAsset = Resources.Load<TextAsset>(entry.lotResourcePath);
+                    if (lotAsset == null)
+                        throw new InvalidOperationException(
+                            $"Bundled Lot '{entry.id}' is missing its JSON resource.");
+                    var data = JsonUtility.FromJson<LotSaveData>(lotAsset.text);
+                    if (data == null || data.LotId != entry.id)
+                        throw new InvalidOperationException(
+                            $"Bundled Lot '{entry.id}' does not match its payload ID.");
+                    var summary = Summary(data, $"resource:{entry.lotResourcePath}");
+                    Add(summary, null, null, manifestPath, false, false,
+                        entry.lotResourcePath, entry.previewResourcePath);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Skipping invalid bundled Lot manifest: {exception.Message}");
+            }
         }
 
         private static void LoadModManifest(string manifestPath)
@@ -129,7 +195,8 @@ namespace CityForgeV3.World
         }
 
         private static void Add(LotSaveSummary summary, string jsonPath,
-            string previewPath, string sourceName, bool mod, bool useSaveStore)
+            string previewPath, string sourceName, bool mod, bool useSaveStore,
+            string jsonResourcePath = null, string previewResourcePath = null)
         {
             if (summary == null || string.IsNullOrWhiteSpace(summary.LotId)) return;
             if (_byId.ContainsKey(summary.LotId))
@@ -143,6 +210,8 @@ namespace CityForgeV3.World
                 Summary = summary,
                 JsonPath = jsonPath,
                 PreviewPath = previewPath,
+                JsonResourcePath = jsonResourcePath,
+                PreviewResourcePath = previewResourcePath,
                 UseSaveStore = useSaveStore
             });
             _all.Add(summary);
@@ -158,8 +227,10 @@ namespace CityForgeV3.World
             LotDepthCells = data.LotDepthCells,
             ModifiedUtc = data.ModifiedUtc,
             Path = path,
-            BuildingId = data.Buildings != null && data.Buildings.Count > 0
-                ? data.Buildings[0].BuildingId : data.BuildingId,
+            BuildingId = data.Buildings3D != null && data.Buildings3D.Count > 0
+                ? data.Buildings3D[0].AssetId
+                : data.Buildings != null && data.Buildings.Count > 0
+                    ? data.Buildings[0].BuildingId : data.BuildingId,
             PlopCost = LotEconomy.CalculatePlopCost(data),
             RequiredPackageIds = data.RequiredPackageIds ?? new List<string>()
         };

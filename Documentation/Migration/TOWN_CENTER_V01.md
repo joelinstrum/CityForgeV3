@@ -56,7 +56,10 @@ and sprite caches are reused with the existing outdoor player, without changing
 outdoor animation behavior. No district scan, redraw, navigation change, worker
 optimization change or progress save was added.
 
-This imports a building for Lot authoring; it does not create or save Joe's Town
-Center Lot or assign a founder Lot automatically. Player persistence stays manual.
+The read-only bundled Lot `town-center-civic-v01` composes this building on a
+2 × 2 Civics Lot. It appears under **Civic → Browse Civic Lots**, requires a
+road, costs $2,500, contributes no population, and also supplies the Town Center
+founder choice. It is a project resource rather than a player save; placement
+still uses the normal explicit district action and manual persistence contract.
 
 Validation and measured limits: `Documentation/Validation/town-center-v01/README.md`.

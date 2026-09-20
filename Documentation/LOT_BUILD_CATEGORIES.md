@@ -41,6 +41,12 @@ material requirements. Stats retains people, seasonal finances and benefits.
 The focused category and requirement EditMode suite passed 30/30, including
 legacy resource-name aliases in General.
 
+Bundled, read-only Lots use the same category browsers and placement contract
+without being copied into the player's manual-save folder. The Town Center is
+published this way as a 2 × 2 Civics Lot under **Civic → Browse Civic Lots**.
+Its catalog entry is loaded once with the other cached Lot summaries; opening
+the browser does not scan district objects or write a Lot, district, or region.
+
 ## Development-only Lots browser
 
 The all-Lots testing browser is now a separate district dock action beside

@@ -1522,3 +1522,17 @@ Day remains unlit; lanterns, people, light counts and culling are unchanged.
 Updated the focused lighting assertions for both interior and attic emission.
 The original geometry repair used Blender's background Python interface; its
 editable master remains under `Authoring/Buildings/TownCenterV01/`.
+
+### September 19 — bundled Town Center Civics Lot
+
+The Town Center is now available during normal play under **Build → Civic →
+Browse Civic Lots** as the read-only bundled Lot `town-center-civic-v01`.
+It occupies 2 × 2 district cells, costs $2,500, requires road access, is
+available from the Founders Era, and contributes zero population. The catalog
+uses the existing Town Center thumbnail and loads this resource once into the
+cached Lot summaries; it adds no routine district scan or rebuild.
+
+The previously disabled City Center founder card is now the enabled **Town
+Center** choice backed by this same Lot. Founder placement retains its existing
+zero-population override and 500-food reserve. The bundled definition is not a
+player Lot save, and no player Lot, district, or region was written during QA.

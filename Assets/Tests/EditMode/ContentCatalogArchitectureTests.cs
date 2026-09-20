@@ -125,5 +125,24 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(manifest.lots.Single().lotFile,
                 Is.EqualTo("lots/farm.json"));
         }
+
+        [Test]
+        public void BundledTownCenterIsAReadOnlyCivicLotWithPreview()
+        {
+            var summary = LotContentCatalog.All.Single(entry =>
+                entry.LotId == "town-center-civic-v01");
+            var lot = LotContentCatalog.Read(summary.LotId);
+            Assert.That(summary.LotType, Is.EqualTo(LotType.Civics));
+            Assert.That(summary.Name, Is.EqualTo("Town Center"));
+            Assert.That(summary.BuildingId, Is.EqualTo("town-center-v01"));
+            Assert.That(summary.PlopCost, Is.EqualTo(2500));
+            Assert.That(summary.Path, Does.StartWith("resource:"));
+            Assert.That(LotContentCatalog.PreviewTexture(summary.LotId), Is.Not.Null);
+            Assert.That(LotContentCatalog.PreviewPath(summary.LotId), Is.Null);
+            Assert.That(lot.Buildings3D, Has.Count.EqualTo(1));
+            Assert.That(lot.Buildings3D[0].AssetId, Is.EqualTo("town-center-v01"));
+            Assert.That(lot.Stats.RequiresRoad, Is.True);
+            Assert.That(lot.Stats.Residents, Is.Zero);
+        }
     }
 }

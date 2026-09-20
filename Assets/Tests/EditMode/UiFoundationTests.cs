@@ -353,13 +353,61 @@ namespace CityForgeV3.Tests
                 Assert.That(start.enabledSelf, Is.True);
                 Assert.That(town.enabledSelf, Is.True);
                 Assert.That(start.tooltip, Does.Contain("later"));
-                Assert.That(town.tooltip, Does.Contain("Fort or City Center"));
+                Assert.That(town.tooltip, Does.Contain("Fort or Town Center"));
                 Assert.That(JsonUtility.ToJson(district), Is.EqualTo(before));
                 district.Founded = true;
                 typeof(CityForgeApp).GetMethod("ComposeDistrictStartModal", flags).Invoke(app, null);
                 buttons = root.Query<UnityEngine.UIElements.Button>().ToList();
                 Assert.That(buttons.Find(b => b.name == "start-district-button").enabledSelf, Is.False);
                 Assert.That(buttons.Find(b => b.name == "start-town-button").enabledSelf, Is.True);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void TownCenterFounderCardUsesTheBundledCivicLot()
+        {
+            var go = new GameObject("Isolated Town Center founder card");
+            go.SetActive(false);
+            try
+            {
+                LotContentCatalog.InvalidateCache();
+                var app = go.AddComponent<CityForgeApp>();
+                var root = new VisualElement();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetMethod("ComposeFounderBuildingModal", flags)
+                    .Invoke(app, null);
+                var card = root.Q<Button>("founder-city-charter-house");
+                Assert.That(card, Is.Not.Null);
+                Assert.That(card.enabledSelf, Is.True);
+                Assert.That(card.Query<Label>().ToList().Any(label =>
+                    label.text == "Town Center"), Is.True);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void TownCenterAppearsInTheNormalCivicBuildBrowser()
+        {
+            var go = new GameObject("Isolated Civic Lot browser");
+            go.SetActive(false);
+            try
+            {
+                LotContentCatalog.InvalidateCache();
+                var app = go.AddComponent<CityForgeApp>();
+                var root = new VisualElement();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetMethod("ComposeDistrictLotBrowser", flags)
+                    .Invoke(app, new object[] { LotType.Civics, false });
+                var card = root.Query<Button>().ToList().FirstOrDefault(button =>
+                    button.ClassListContains("district-lot-entry") &&
+                    button.Query<Label>().ToList().Any(label =>
+                        label.text == "Town Center"));
+                Assert.That(card, Is.Not.Null);
+                Assert.That(card.enabledSelf, Is.True);
+                Assert.That(card.tooltip, Does.Contain("civics lot"));
             }
             finally { Object.DestroyImmediate(go); }
         }

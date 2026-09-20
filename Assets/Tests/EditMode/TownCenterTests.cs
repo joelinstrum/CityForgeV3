@@ -101,5 +101,23 @@ namespace CityForgeV3.Tests.EditMode
             }
             finally { Object.DestroyImmediate(owner); }
         }
+
+        [Test] public void BundledCivicLotBuildsThroughRuntimeLotComposition()
+        {
+            var host=new GameObject("Transient bundled Town Center Lot");
+            try
+            {
+                var lot=LotContentCatalog.Read("town-center-civic-v01");
+                Assert.That(lot,Is.Not.Null);
+                Assert.That(lot.LotType,Is.EqualTo(LotType.Civics));
+                Object.DestroyImmediate(camera.gameObject);camera=null;
+                var world=host.AddComponent<LotWorldController>();world.Build();
+                world.LoadRuntimeLot(lot);
+                Assert.That(world.Session.Data.Buildings3D,Has.Count.EqualTo(1));
+                Assert.That(host.GetComponentsInChildren<BuildingInteriorAutomata>(true)
+                    .Count(life=>life.enabled),Is.EqualTo(1));
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
     }
 }
