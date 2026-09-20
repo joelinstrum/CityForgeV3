@@ -21,7 +21,9 @@ namespace CityForgeV3.Tests.EditMode
    try {var district=root.AddComponent<DistrictWorldController>();district.SetTimeOfDay(preset);Assert.IsFalse(sceneSun.enabled);district.SetTimeOfDay(TimeOfDayPreset.Night);Assert.IsTrue(sceneSun.enabled);district.SetTimeOfDay(preset);typeof(DistrictWorldController).GetMethod("OnDisable",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(district,null);Assert.IsTrue(sceneSun.enabled);}
    finally {Object.DestroyImmediate(root);Object.DestroyImmediate(sceneSun.gameObject);}
   }
-  [TestCase(TimeOfDayPreset.Noon)] [TestCase(TimeOfDayPreset.Afternoon)] public void HostedSunTravelsAlongTheProjectedShadowRay(TimeOfDayPreset preset)
+  [TestCase(TimeOfDayPreset.Noon)] [TestCase(TimeOfDayPreset.Afternoon)]
+  [TestCase(TimeOfDayPreset.Night)]
+  public void HostedLotNeverRewritesTheDistrictSun(TimeOfDayPreset preset)
   {
    var root=new GameObject("Afternoon lighting regression");
    try {
@@ -30,11 +32,15 @@ namespace CityForgeV3.Tests.EditMode
     var camera=(Camera)typeof(LotWorldController).GetField("_camera",flags).GetValue(world);
     var sun=(Light)typeof(LotWorldController).GetField("_sun",flags).GetValue(world);
     world.ConfigureAsDistrictHosted(camera,sun,world.ZoomLevel);
+    var expectedRotation=Quaternion.Euler(17f,123f,4f);
+    var expectedColor=new Color(.31f,.47f,.83f);
+    sun.transform.rotation=expectedRotation;sun.color=expectedColor;
+    sun.intensity=.731f;sun.shadowStrength=.619f;
     world.SetTimeOfDay(preset);
-    var ray=(Vector3)typeof(LotWorldController).GetMethod("ProjectedObjectShadowRay",flags).Invoke(world,null);
-    Assert.That(Vector3.Angle(sun.transform.forward,ray),Is.LessThan(.01f),"The sun must illuminate the wall opposite the direction its ground shadow travels.");
-    var awayWall=new Vector3(ray.x,0,ray.z).normalized;
-    Assert.That(Vector3.Dot(awayWall,-sun.transform.forward),Is.LessThan(0),"The wall facing along the shadow must receive no direct sunlight.");
+    Assert.That(Quaternion.Angle(sun.transform.rotation,expectedRotation),Is.LessThan(.001f));
+    Assert.That(sun.color,Is.EqualTo(expectedColor));
+    Assert.That(sun.intensity,Is.EqualTo(.731f).Within(.0001f));
+    Assert.That(sun.shadowStrength,Is.EqualTo(.619f).Within(.0001f));
    } finally {Object.DestroyImmediate(root);}
   }
  }

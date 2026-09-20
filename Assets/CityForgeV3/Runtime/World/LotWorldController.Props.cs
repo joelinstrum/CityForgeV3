@@ -1835,11 +1835,13 @@ namespace CityForgeV3.World
         public Transform CreatePropPresentation(string propId, string name, float alpha)
         {
             if (FoundationGardenBed.TryStyle(propId, out var foundationStyle))
-                return FoundationGardenBed.Create(name, foundationStyle,
-                    alpha, Season);
+                return ApplyWorldLightingToGardenSprites(
+                    FoundationGardenBed.Create(name, foundationStyle,
+                        alpha, Season));
             if (WhitePicketGardenStrip.TryStyle(propId, out var picketStyle))
-                return WhitePicketGardenStrip.Create(name, picketStyle,
-                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+                return ApplyWorldLightingToGardenSprites(
+                    WhitePicketGardenStrip.Create(name, picketStyle,
+                        alpha, Season, TimeOfDay, NaturalGrassSunDirection()));
             if (string.Equals(propId, LowPolyBoxwoodHedgePropId,
                     StringComparison.OrdinalIgnoreCase))
                 return LowPolyBoxwoodHedge.Create(name, alpha);
@@ -1848,13 +1850,16 @@ namespace CityForgeV3.World
                 return StoneGardenFountain.Create(name, alpha);
             if (string.Equals(propId, GeorgianGardenBorderPropId,
                     StringComparison.OrdinalIgnoreCase))
-                return GeorgianGardenBorder.Create(name, alpha, Season);
+                return ApplyWorldLightingToGardenSprites(
+                    GeorgianGardenBorder.Create(name, alpha, Season));
             if (string.Equals(propId, GeorgianGardenSquarePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return GeorgianGardenBed.Create(name, false, alpha, Season);
+                return ApplyWorldLightingToGardenSprites(
+                    GeorgianGardenBed.Create(name, false, alpha, Season));
             if (string.Equals(propId, GeorgianGardenRectanglePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return GeorgianGardenBed.Create(name, true, alpha, Season);
+                return ApplyWorldLightingToGardenSprites(
+                    GeorgianGardenBed.Create(name, true, alpha, Season));
             if (string.Equals(propId, GeorgianHedgeSquarePropId,
                     StringComparison.OrdinalIgnoreCase))
                 return GeorgianClippedHedgeGarden.Create(name, false, alpha, Season);
@@ -2134,6 +2139,15 @@ namespace CityForgeV3.World
             }
             foreach (var collider in root.GetComponentsInChildren<Collider>())
                 collider.enabled = false;
+            return root;
+        }
+
+        private Transform ApplyWorldLightingToGardenSprites(Transform root)
+        {
+            if (root == null) return null;
+            var material = FloraLitShadowReceiverMaterial();
+            foreach (var renderer in root.GetComponentsInChildren<SpriteRenderer>(true))
+                renderer.sharedMaterial = material;
             return root;
         }
 

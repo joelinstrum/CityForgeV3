@@ -2003,7 +2003,6 @@ namespace CityForgeV3.World
                 renderQueue = 3001
             };
             _floraLitShadowReceiverMaterial.SetFloat("_Cutoff", 0.02f);
-            _floraLitShadowReceiverMaterial.SetFloat("_ShadowFloor", 0.38f);
             _floraLitShadowReceiverMaterial.SetFloat("_ZTest",
                 (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             return _floraLitShadowReceiverMaterial;
@@ -2036,7 +2035,6 @@ namespace CityForgeV3.World
                 renderQueue = 3001
             };
             material.SetFloat("_Cutoff", 0.02f);
-            material.SetFloat("_ShadowFloor", 0.38f);
             material.SetFloat("_ZTest",
                 (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             material.SetFloat("_BuildingHostStencilRef", reference1);
@@ -2249,9 +2247,7 @@ namespace CityForgeV3.World
 
         private Color FloraColorForTime(float alpha)
         {
-            var tint = TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint;
-            tint = SeasonLighting.Multiply(
-                tint, SeasonLighting.FloraTint(Season));
+            var tint = SeasonLighting.FloraTint(Season);
             return new Color(tint.r, tint.g, tint.b, alpha);
         }
 
@@ -2347,10 +2343,10 @@ namespace CityForgeV3.World
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             var timeChanged = TimeOfDay != preset;
-            if (timeChanged)
+            if (timeChanged && !_districtHosted)
                 SaveEnvironmentLightingState(TimeOfDay);
             TimeOfDay = preset;
-            if (timeChanged)
+            if (timeChanged && !_districtHosted)
                 LoadEnvironmentLightingState(preset);
             if (timeChanged)
                 ClearRoadWetness();
@@ -5179,12 +5175,8 @@ namespace CityForgeV3.World
                     package.Id == RoadPiecePackage.LegacyPackageId ||
                     placed.RoadMaterialId == "antique-brick" ? 1f : 0f);
             roadObject.GetComponent<Renderer>().sharedMaterial = material;
-            if (material.HasProperty("_TimeTint"))
-                material.SetColor("_TimeTint",
-                    TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
             if (material.HasProperty("_ReceiveSunShadow"))
-                material.SetFloat("_ReceiveSunShadow",
-                    TimeOfDay == TimeOfDayPreset.Noon ? 0f : 1f);
+                material.SetFloat("_ReceiveSunShadow", 1f);
         }
 
         private void BuildCirculationEditor()
@@ -6223,7 +6215,8 @@ namespace CityForgeV3.World
 
         private void ApplyTimeOfDay()
         {
-            ApplyExperimentalBuilding3DShadowDistance();
+            if (!_districtHosted)
+                ApplyExperimentalBuilding3DShadowDistance();
             var spec = TimeOfDayLighting.For(TimeOfDay);
             var ambientLight = IsRaining
                 ? Color.Lerp(spec.AmbientColor, new Color(0.18f, 0.22f, 0.26f), 0.55f)
@@ -6233,13 +6226,7 @@ namespace CityForgeV3.World
             // active time-of-day lighting and let the building participate in
             // it like every other placed object.
             RestoreExperimentalBuilding3DStudioEnvironment();
-            if (_districtHosted && !IsRaining)
-            {
-                // The shared district camera must show the same ambient fill
-                // while a lot is edited as it does after returning to the map.
-                DistrictWorldController.ApplyRegionEnvironment(TimeOfDay, null);
-            }
-            else
+            if (!_districtHosted)
             {
                 RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
                 RenderSettings.ambientLight = ambientLight *
@@ -6257,17 +6244,11 @@ namespace CityForgeV3.World
                 }
             }
 
-            if (_sun != null)
+            if (_sun != null && !_districtHosted)
             {
                 var sunIntensity = spec.SunIntensity;
                 var sunColor = spec.SunColor;
-                if (_districtHosted && !IsRaining)
-                {
-                    sunIntensity = DistrictWorldController.RegionSunIntensity(TimeOfDay);
-                    if (TimeOfDay == TimeOfDayPreset.Morning)
-                        sunColor = new Color(1f, .985f, .96f);
-                }
-                else if (ExperimentalBuilding3DCount > 0)
+                if (ExperimentalBuilding3DCount > 0)
                 {
                     sunIntensity = TimeOfDay switch
                     {
@@ -6317,17 +6298,6 @@ namespace CityForgeV3.World
                     ExperimentalBuilding3DSunRotation();
                 // Afternoon illumination must agree with the projected shadow ray.
                 // Preserve the existing palette and other time-of-day presentations.
-                if (_districtHosted && (TimeOfDay == TimeOfDayPreset.Afternoon ||
-                    TimeOfDay == TimeOfDayPreset.Noon))
-                    physicalSunRotation = Quaternion.LookRotation(
-                        ProjectedObjectShadowRay(), Vector3.up);
-                else if (_districtHosted)
-                {
-                    var projectedRay = physicalSunRotation * Vector3.forward;
-                    physicalSunRotation = Quaternion.LookRotation(new Vector3(
-                        -projectedRay.x, projectedRay.y, -projectedRay.z),
-                        Vector3.up);
-                }
                 _sun.transform.rotation = physicalSunRotation;
                 if (ExperimentalBuilding3DCount <= 0 &&
                     (_environmentSunElevationOffset != 0f ||
@@ -6335,6 +6305,10 @@ namespace CityForgeV3.World
                     _sun.transform.rotation *= Quaternion.Euler(
                         _environmentSunElevationOffset,
                         _environmentSunAzimuthOffset, 0f);
+
+                DistrictWorldController.ApplyWorldShaderLighting(
+                    RenderSettings.ambientLight, _sun.color, _sun.intensity,
+                    _sun.transform.rotation);
             }
 
             UpdateFloraShadowSun();
@@ -6364,49 +6338,11 @@ namespace CityForgeV3.World
                 _groundRenderer.enabled = showLotGround;
                 if (_terrainShadowCasterRenderer != null)
                     _terrainShadowCasterRenderer.enabled = showLotGround;
-                var groundBaseline = string.IsNullOrWhiteSpace(
-                    _session.Data.BaseTextureId)
-                    ? spec.GroundColor
-                    : LotTextureTint(TimeOfDay);
-                if (ExperimentalBuilding3DCount > 0 &&
-                    BaseTextureHasExactSeasonResource())
-                {
-                    // Seasonal grass is already fully color-authored. A warm
-                    // time-of-day multiplier turns its deep green into olive;
-                    // sunlight supplies the time cue without recoloring it.
-                    groundBaseline = TimeOfDay switch
-                    {
-                        TimeOfDayPreset.Evening =>
-                            new Color(0.34f, 0.38f, 0.43f),
-                        TimeOfDayPreset.Night =>
-                            new Color(0.16f, 0.20f, 0.26f),
-                        _ => Color.white
-                    };
-                }
+                var groundBaseline = Color.white;
                 _groundRenderer.sharedMaterial.color =
                     BaseTextureHasExactSeasonResource()
                         ? groundBaseline
                         : SeasonLighting.GroundColor(Season, groundBaseline);
-                if (_groundRenderer.sharedMaterial.HasProperty("_AmbientFloor"))
-                {
-                    _groundRenderer.sharedMaterial.SetFloat("_AmbientFloor", TimeOfDay switch
-                    {
-                        TimeOfDayPreset.Morning => 0.68f,
-                        TimeOfDayPreset.Noon => 0.58f,
-                        TimeOfDayPreset.Afternoon => 0.66f,
-                        _ => 0.52f
-                    });
-                }
-                if (_groundRenderer.sharedMaterial.HasProperty("_TerrainSunDirection"))
-                {
-                    var terrainSunDirection = _sun == null
-                        ? Vector3.up
-                        : -_sun.transform.forward.normalized;
-                    _groundRenderer.sharedMaterial.SetVector(
-                        "_TerrainSunDirection",
-                        new Vector4(terrainSunDirection.x,
-                            terrainSunDirection.y, terrainSunDirection.z, 0f));
-                }
             }
 
             if (_camera != null)
@@ -6443,14 +6379,6 @@ namespace CityForgeV3.World
                         canopy.TryGetComponent<SpriteRenderer>(out var renderer))
                         renderer.color = FloraColorForTime(1f);
                 }
-            var floraShadowFloor = TimeOfDay == TimeOfDayPreset.Noon
-                ? 0.24f : 0.38f;
-            if (_floraLitShadowReceiverMaterial != null)
-                _floraLitShadowReceiverMaterial.SetFloat("_ShadowFloor",
-                    floraShadowFloor);
-            foreach (var material in _floraHostFrontRecoveryMaterials.Values)
-                if (material != null)
-                    material.SetFloat("_ShadowFloor", floraShadowFloor);
             UpdateFloraShadows();
             UpdatePropProjectedShadows();
             UpdateThreeLanternLamppostLighting();
@@ -6460,19 +6388,6 @@ namespace CityForgeV3.World
             RefreshNaturalGrassPatchLighting();
             if (_floraPreview != null)
                 _floraPreview.color = FloraColorForTime(1f);
-            if (_roadArtworkRoot != null)
-            {
-                var roadTint = spec.NeutralArtworkTint;
-                foreach (var renderer in _roadArtworkRoot.GetComponentsInChildren<Renderer>())
-                    if (renderer.sharedMaterial != null &&
-                        renderer.sharedMaterial.HasProperty("_TimeTint"))
-                    {
-                        renderer.sharedMaterial.SetColor("_TimeTint", roadTint);
-                        if (renderer.sharedMaterial.HasProperty("_ReceiveSunShadow"))
-                            renderer.sharedMaterial.SetFloat(
-                                "_ReceiveSunShadow", 1f);
-                    }
-            }
             UpdateProjectedShadow();
             UpdateOtherBuildingProjectedShadows();
             UpdateBuildingGapShadowAppearance();

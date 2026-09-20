@@ -13,6 +13,7 @@ Shader "CityForgeV3/DistrictSnowCover"
    #pragma fragment frag
    #pragma target 3.0
    #include "UnityCG.cginc"
+   #include "CityForgeWorldLighting.cginc"
    float _Accumulation;
    struct appdata { float4 vertex:POSITION; float3 normal:NORMAL; };
    struct v2f { float4 pos:SV_POSITION;float3 normal:TEXCOORD0;float2 ground:TEXCOORD1; };
@@ -27,7 +28,7 @@ Shader "CityForgeV3/DistrictSnowCover"
     float mottling=.5+.25*sin(i.ground.x*.31+sin(i.ground.y*.23))+.25*sin(i.ground.y*.47+i.ground.x*.17);
     float cover=smoothstep(mottling*.45,mottling*.45+.5,_Accumulation);
     float slope=smoothstep(.25,.85,n.y);
-    float light=.72+.28*saturate(dot(n,normalize(float3(-.4,1,-.3))));
+    fixed3 light=CityForgeWorldLighting(n,1.0h);
     return fixed4(float3(.91,.95,1)*light,cover*slope*.96);
    }
    ENDCG

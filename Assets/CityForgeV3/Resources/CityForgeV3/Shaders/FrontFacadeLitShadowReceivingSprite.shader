@@ -5,7 +5,6 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
-        _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
         [Enum(UnityEngine.Rendering.CullMode)] _Cull
             ("Cull Mode", Float) = 0
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest
@@ -28,11 +27,11 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
         CGINCLUDE
         #include "UnityCG.cginc"
         #include "AutoLight.cginc"
+        #include "CityForgeWorldLighting.cginc"
 
         sampler2D _MainTex;
         fixed4 _Color;
         half _Cutoff;
-        half _ShadowFloor;
         float4 _CFCloudShadowCenter;
         float4 _CFCloudShadowParams;
 
@@ -68,7 +67,7 @@ Shader "CityForgeV3/FrontFacadeLitShadowReceivingSprite"
             fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
             clip(artwork.a - _Cutoff);
             half shadowAttenuation = SHADOW_ATTENUATION(input);
-            half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);
+            fixed3 illumination = CityForgeArtworkLighting(shadowAttenuation);
             half cloudDistance = distance(input.worldPosition.xz,
                 _CFCloudShadowCenter.xy);
             half cloudMask = (1.0h - smoothstep(

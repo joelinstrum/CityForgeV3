@@ -671,21 +671,15 @@ namespace CityForgeV3.World
         private void UpdateLotTextureLighting()
         {
             var tint = SeasonLighting.GroundColor(
-                Season, LotTextureTint(TimeOfDay));
+                Season, Color.white);
             foreach (var renderer in _overlayTextureRenderers)
                 if (renderer != null) renderer.sharedMaterial.color = tint;
             foreach (var renderer in _connectorRenderers)
                 if (renderer != null) renderer.sharedMaterial.color = tint;
         }
 
-        private static Color LotTextureTint(TimeOfDayPreset preset) => preset switch
-        {
-            TimeOfDayPreset.Morning => new Color(0.92f, 0.88f, 0.80f, 1f),
-            TimeOfDayPreset.Noon => Color.white,
-            TimeOfDayPreset.Afternoon => Color.white,
-            TimeOfDayPreset.Evening => new Color(0.56f, 0.48f, 0.55f, 1f),
-            _ => new Color(0.22f, 0.26f, 0.38f, 1f)
-        };
+        private static Color LotTextureTint(TimeOfDayPreset preset) =>
+            Color.white;
 
         public static Color TextureTintForTimeOfDay(TimeOfDayPreset preset) =>
             LotTextureTint(preset);

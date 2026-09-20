@@ -2024,7 +2024,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void DistrictTimeOfDayPersistsWithItsRegionTile()
+        public void DistrictTimeOfDayPersistsWithoutPerMaterialGroundTint()
         {
             var tile = new RegionCityTile
             {
@@ -2038,8 +2038,9 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(TimeOfDayPreset.Afternoon));
             Assert.That(LotWorldController.TextureTintForTimeOfDay(
                     TimeOfDayPreset.Night),
-                Is.Not.EqualTo(LotWorldController.TextureTintForTimeOfDay(
-                    TimeOfDayPreset.Noon)));
+                Is.EqualTo(Color.white));
+            Assert.That(LotWorldController.TextureTintForTimeOfDay(
+                    TimeOfDayPreset.Noon), Is.EqualTo(Color.white));
         }
 
         [Test]
@@ -4006,16 +4007,16 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void ShadowReceiverPreservesLowAngleDirectionalContrast()
+        public void ShadowReceiverUsesTheSharedWorldLightingContract()
         {
             var path = System.IO.Path.Combine(
                 Application.dataPath,
                 "CityForgeV3/Resources/CityForgeV3/Shaders/ShadowReceivingLotSurface.shader");
             var source = System.IO.File.ReadAllText(path);
-            StringAssert.Contains(
-                "_AmbientFloor, 1.0h, diffuse * shadow", source);
-            StringAssert.DoesNotContain(
-                "max(_AmbientFloor, diffuse * shadow)", source);
+            StringAssert.Contains("CityForgeWorldLighting.cginc", source);
+            StringAssert.Contains("CityForgeWorldLighting(normal, shadow)", source);
+            StringAssert.DoesNotContain("_AmbientFloor", source);
+            StringAssert.DoesNotContain("_TerrainSunDirection", source);
         }
 
         [Test]
@@ -4027,9 +4028,9 @@ namespace CityForgeV3.Tests
             var material = new Material(shader);
             try
             {
-                Assert.That(material.HasProperty("_AmbientFloor"), Is.True);
-                Assert.That(material.HasProperty("_TerrainSunDirection"), Is.True);
-                Assert.That(material.HasProperty("_TerrainReliefStrength"), Is.True);
+                Assert.That(material.HasProperty("_AmbientFloor"), Is.False);
+                Assert.That(material.HasProperty("_TerrainSunDirection"), Is.False);
+                Assert.That(material.HasProperty("_TerrainReliefStrength"), Is.False);
             }
             finally
             {
@@ -4040,6 +4041,7 @@ namespace CityForgeV3.Tests
                 "CityForgeV3/Resources/CityForgeV3/Shaders/Experimental3DGroundReceiver.shader");
             var source = System.IO.File.ReadAllText(path);
             StringAssert.Contains("SHADOW_ATTENUATION", source);
+            StringAssert.Contains("CityForgeWorldLighting(normal, shadow)", source);
             StringAssert.Contains("SHADOWCASTER", source);
         }
 
@@ -5282,37 +5284,32 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void NightTintAppliesToFloraAndSemanticRoadMaterials()
+        public void FloraAndRoadsUseSharedWorldLightingWithoutLocalNightTint()
         {
             var root = new GameObject("Flora and Road Night Tint Test");
             try
             {
                 var world = root.AddComponent<LotWorldController>();
                 world.Build();
-                world.Session.Data.Flora.Add(new PlacedFlora
-                {
-                    InstanceId = "night-maple",
-                    FloraId = "maple",
-                    PositionX = 7f,
-                    PositionZ = 7f
-                });
-                world.SetInspectionMode(BuildingInspectionMode.Artwork);
+                Assert.That(world.PlaceFloraForQa("maple", 7f, 7f), Is.True);
                 world.SetTimeOfDay(TimeOfDayPreset.Night);
-                var expected = TimeOfDayLighting.For(
-                    TimeOfDayPreset.Night).NeutralArtworkTint;
-                var tree = Find(root.transform, "Flora — maple")
-                    .GetComponent<SpriteRenderer>();
+                var expected = SeasonLighting.FloraTint(world.Season);
+                var tree = root.GetComponentsInChildren<SpriteRenderer>()
+                    .First(renderer => renderer.sharedMaterial != null &&
+                        renderer.sharedMaterial.shader != null &&
+                        renderer.sharedMaterial.shader.name ==
+                        "CityForgeV3/LitShadowReceivingSprite");
                 Assert.That(tree.color.r, Is.EqualTo(expected.r).Within(0.001f));
                 Assert.That(tree.color.g, Is.EqualTo(expected.g).Within(0.001f));
                 Assert.That(tree.color.b, Is.EqualTo(expected.b).Within(0.001f));
 
                 var roadRoot = Find(root.transform, "Road Family Artwork");
                 var road = roadRoot.GetComponentInChildren<Renderer>();
-                Assert.That(road.sharedMaterial.HasProperty("_TimeTint"), Is.True);
-                var roadTint = road.sharedMaterial.GetColor("_TimeTint");
-                Assert.That(roadTint.r, Is.EqualTo(expected.r).Within(0.001f));
-                Assert.That(roadTint.g, Is.EqualTo(expected.g).Within(0.001f));
-                Assert.That(roadTint.b, Is.EqualTo(expected.b).Within(0.001f));
+                Assert.That(road.sharedMaterial.HasProperty("_TimeTint"), Is.False);
+                Assert.That(tree.sharedMaterial.shader.name,
+                    Is.EqualTo("CityForgeV3/LitShadowReceivingSprite"));
+                var ambient = Shader.GetGlobalColor("_CFWorldAmbientColor");
+                Assert.That(ambient.maxColorComponent, Is.LessThan(.2f));
             }
             finally
             {
@@ -10327,8 +10324,8 @@ namespace CityForgeV3.Tests
             var terrainShader = Shader.Find("CityForgeV3/ShadowReceivingLotSurface");
             Assert.That(terrainShader, Is.Not.Null);
             var terrainMaterial = new Material(terrainShader);
-            Assert.That(terrainMaterial.HasProperty("_TerrainSunDirection"), Is.True);
-            Assert.That(terrainMaterial.HasProperty("_TerrainReliefStrength"), Is.True);
+            Assert.That(terrainMaterial.HasProperty("_TerrainSunDirection"), Is.False);
+            Assert.That(terrainMaterial.HasProperty("_TerrainReliefStrength"), Is.False);
             Object.DestroyImmediate(terrainMaterial);
 
             var root = new GameObject("Terrain Heightfield Test");

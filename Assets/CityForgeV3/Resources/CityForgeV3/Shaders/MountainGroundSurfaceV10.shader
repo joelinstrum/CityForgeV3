@@ -11,9 +11,6 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
         _TransitionStrength ("Natural Transitions", Range(0,1)) = 1
         _GrassNeutralStrength ("Neutral Grass Experiment", Range(0,1)) = 1
         _RockEnabled ("Rock Enabled", Float) = 1
-        _AmbientFloor ("Ground Ambient Floor", Range(0, 1)) = 0.52
-        _TerrainSunDirection ("Terrain Sun Direction", Vector) = (0, 1, 0, 0)
-        _TerrainReliefStrength ("Terrain Relief Strength", Range(0, 2)) = 1.8
     }
 
     SubShader
@@ -58,6 +55,7 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData
             {
@@ -83,9 +81,6 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
             float _RockEnabled;
             float _GrassNeutralStrength;
             float _TransitionStrength;
-            float _AmbientFloor;
-            float4 _TerrainSunDirection;
-            float _TerrainReliefStrength;
 
             VertexToFragment vert(AppData input)
             {
@@ -154,27 +149,7 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
             {
                 fixed shadow = SHADOW_ATTENUATION(input);
                 fixed3 normal = normalize(input.worldNormal);
-                fixed3 lightDirection = normalize(_TerrainSunDirection.xyz);
-                fixed diffuse = saturate(dot(normal, lightDirection));
-                // The former max(floor, diffuse * shadow) made low-angle sun
-                // shadows impossible: Morning/Afternoon diffuse was below the
-                // floor for both lit and shadowed pixels. Treat ambient as the
-                // stable minimum and let directional light supply the range
-                // above it. A shadow now removes that directional contribution
-                // without crushing the receiver below its ambient floor.
-                fixed illumination = lerp(
-                    _AmbientFloor, 1.0h, diffuse * shadow);
-                // Broad sculpted hills have shallow normals, so Lambert alone
-                // barely separates their two shoulders after the authored
-                // ambient floor is applied. Reinforce only the horizontal
-                // relief component: the slope facing the active world sun is
-                // lifted, while the opposite slope receives a restrained
-                // directional shade. Flat ground remains unchanged.
-                fixed2 horizontalSun = normalize(lightDirection.xz + fixed2(0.0001h, 0.0001h));
-                fixed reliefFacing = dot(normal.xz, horizontalSun);
-                fixed relief = clamp(reliefFacing * _TerrainReliefStrength,
-                    -0.42h, 0.28h);
-                illumination = saturate(illumination * (1.0h + relief));
+                fixed3 illumination = CityForgeWorldLighting(normal, shadow);
                 fixed4 surface = tex2D(_MainTex, input.uv);
                 surface.rgb = NeutralGrass(surface.rgb);
                 float slope = length(normal.xz) / max(normal.y, 0.05);

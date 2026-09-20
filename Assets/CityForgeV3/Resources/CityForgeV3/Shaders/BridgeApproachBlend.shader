@@ -4,7 +4,6 @@ Shader "CityForgeV3/BridgeApproachBlend"
     {
         _MainTex ("Road Artwork", 2D) = "white" {}
         _MaterialTiling ("Material Tiling", Float) = 5
-        _TimeTint ("Time of Day Tint", Color) = (1,1,1,1)
     }
     SubShader
     {
@@ -22,6 +21,7 @@ Shader "CityForgeV3/BridgeApproachBlend"
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData
             {
@@ -40,7 +40,6 @@ Shader "CityForgeV3/BridgeApproachBlend"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float _MaterialTiling;
-            fixed4 _TimeTint;
 
             Varyings vert(AppData v)
             {
@@ -58,8 +57,9 @@ Shader "CityForgeV3/BridgeApproachBlend"
                 fixed alpha=artwork.a*input.color.a;
                 clip(alpha-.02);
                 fixed shadow=SHADOW_ATTENUATION(input);
-                fixed illumination=lerp(.42,1.0,shadow);
-                return fixed4(artwork.rgb*illumination*_TimeTint.rgb,alpha);
+                fixed3 illumination=CityForgeWorldLighting(
+                    fixed3(0,1,0),shadow);
+                return fixed4(artwork.rgb*illumination,alpha);
             }
             ENDCG
         }

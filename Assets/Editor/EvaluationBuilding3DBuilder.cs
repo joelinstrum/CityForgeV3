@@ -209,7 +209,6 @@ namespace CityForgeV3.Editor
             material.SetFloat("_Vibrance", isNorwalk ? 0.06f : 0.18f);
             material.SetFloat("_AmbientFill", 1f);
             material.SetFloat("_AlbedoBoost", isNorwalk ? 1f : 0.96f);
-            material.SetFloat("_EnvironmentDim", 1f);
             EditorUtility.SetDirty(material);
             return material;
         }

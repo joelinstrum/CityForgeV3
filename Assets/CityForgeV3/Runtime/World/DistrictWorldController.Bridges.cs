@@ -277,7 +277,6 @@ namespace CityForgeV3.World
                 rampMaterial=new Material(Shader.Find("CityForgeV3/BridgeApproachBlend"))
                 {name="Bridge approach — "+surface.DisplayName,mainTexture=surface.LoadTexture()};
                 rampMaterial.SetFloat("_MaterialTiling",surface.TilesPerTenMeters);
-                rampMaterial.SetColor("_TimeTint",TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
                 _bridgeRampMaterials[surfaceId]=rampMaterial;
             }
             var verts=new List<Vector3>();var uv=new List<Vector2>();var colors=new List<Color>();var tris=new List<int>();

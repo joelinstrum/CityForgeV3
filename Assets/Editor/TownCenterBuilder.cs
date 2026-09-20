@@ -168,7 +168,6 @@ public static class TownCenterBuilder
         var material = Mat(name, color);
         material.shader = Shader.Find("CityForgeV3/Experimental3DBuildingPBR");
         material.SetFloat("_GlossMapScale", .1f);
-        material.SetFloat("_DirectionalFloorOverride", .72f);
         material.SetFloat("_AlbedoBoost", 1.08f);
         material.SetFloat("_Contrast", 1.18f);
         material.SetFloat("_Saturation", 1.08f);

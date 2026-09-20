@@ -67,6 +67,8 @@ namespace CityForgeV3.World
         private Sprite sprite;
         private DistrictWorldController world;
         private readonly List<SpriteRenderer> renderers=new();
+        private Quaternion cameraRotation;
+        private bool hasCameraRotation;
         public void Build(DistrictWorldController host,RegionCityTile district,float width,float depth,Material material)
         {
             world=host;var texture=Resources.Load<Texture2D>(TexturePath);if(texture==null)return;
@@ -97,7 +99,11 @@ namespace CityForgeV3.World
         private void LateUpdate()
         {
             if(world==null||world.WorldCamera==null)return;
-            foreach(var renderer in renderers){renderer.transform.rotation=world.WorldCamera.transform.rotation;renderer.color=TimeOfDayLighting.For(world.TimeOfDay).NeutralArtworkTint;}
+            var rotation=world.WorldCamera.transform.rotation;
+            if(hasCameraRotation&&Quaternion.Angle(cameraRotation,rotation)<.001f)return;
+            cameraRotation=rotation;hasCameraRotation=true;
+            foreach(var renderer in renderers)
+            {renderer.transform.rotation=rotation;renderer.color=Color.white;}
         }
         private void OnDestroy(){if(sprite!=null){if(Application.isPlaying)Destroy(sprite);else DestroyImmediate(sprite);}}
     }

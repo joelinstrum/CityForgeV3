@@ -44,7 +44,8 @@ namespace CityForgeV3.World
                     v.Root.gameObject.AddComponent<QuarryMaterials>().Owned.Add(stone);
                     if(!site.Built)
                     {
-                        v.Root.gameObject.AddComponent<DistrictStoneOutcrop>().Build(this);
+                        v.Root.gameObject.AddComponent<DistrictStoneOutcrop>()
+                            .Build(this, DistrictFloraMaterial());
                     }
                     else
                     {
@@ -158,7 +159,9 @@ namespace CityForgeV3.World
         DistrictWorldController world;
         Sprite sprite;
         SpriteRenderer artwork;
-        public void Build(DistrictWorldController host)
+        Quaternion cameraRotation;
+        bool hasCameraRotation;
+        public void Build(DistrictWorldController host, Material material)
         {
             world = host;
             var texture = Resources.Load<Texture2D>(TexturePath);
@@ -169,13 +172,19 @@ namespace CityForgeV3.World
             go.transform.SetParent(transform, false);
             artwork = go.AddComponent<SpriteRenderer>();
             artwork.sprite = sprite;
+            artwork.sharedMaterial = material;
+            artwork.color = Color.white;
             LateUpdate();
         }
         void LateUpdate()
         {
             if (artwork == null || world == null || world.WorldCamera == null) return;
-            artwork.transform.rotation = world.WorldCamera.transform.rotation;
-            artwork.color = TimeOfDayLighting.For(world.TimeOfDay).NeutralArtworkTint;
+            var rotation = world.WorldCamera.transform.rotation;
+            if (hasCameraRotation && Quaternion.Angle(
+                    cameraRotation, rotation) < .001f) return;
+            cameraRotation = rotation;
+            hasCameraRotation = true;
+            artwork.transform.rotation = rotation;
         }
         void OnDestroy() { if (sprite != null) Destroy(sprite); }
     }

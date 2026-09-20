@@ -1,5 +1,38 @@
 # Restart handoff — September 15, 2026
 
+## Latest — September 20 shared world-lighting contract
+
+On `feature/parks-and-gardens`, the district is now the sole owner of its shared
+sun, ambient settings, and shader lighting state. District-hosted Lots no longer
+load saved per-Lot environment controls or rotate, recolor, brighten, dim, or
+otherwise rewrite the district sun. The shared shader state is published once
+per environment transition rather than copied into every road, flora, or Lot
+material.
+
+Native 3D building exteriors—including the Town Center—use Unity's Standard
+lighting path instead of putting the whole authored surface into emission.
+Only authored night window masks remain emissive. Roads, bridges, rivers, Lot
+ground, decals, flora, garden cards, grass patches, and custom building props
+now consume the same world-light inputs; their local night tints, fixed light
+floors, and bespoke sun-direction controls were removed. Lamps, windows,
+torches, fire, and headlights remain intentional local emitters.
+
+Contract and invalidation boundaries are documented in
+`Documentation/WORLD_LIGHTING_CONTRACT.md`. Validation uses an isolated copy of
+CityForge V3 and does not save player content. Per Joe's direction, do not sync
+or restart CityForge-Regions-Review.
+
+Validation passed 57/57 combined focused lighting, Town Center, terrain, river,
+flora, garden, natural-resource, and quarry tests. After the final snow,
+automata, generic-color, and fountain shader conversions, the 4/4 lighting-
+contract tests passed again. Active shaders loaded as supported, `git diff
+--check` passed, and the open CityForge V3 editor compiled without new errors.
+The broader final shader command also exposed an unrelated stale snowfall-size
+source assertion; snowfall code was not changed by this work.
+One earlier broad-filter attempt reproduced the already-known native
+`Camera.Render` preview-test crash and is not counted as a completed suite. See
+`Documentation/Validation/world-lighting-contract-v01/README.md`.
+
 ## Latest — September 19 forest family mix V01
 
 On `feature/parks-and-gardens`, Tree Coverage now supports relative Deciduous,

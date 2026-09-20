@@ -23,6 +23,8 @@ Shader "CityForgeV3/RiverBedSurface"
             #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
+            #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData
             {
@@ -39,6 +41,7 @@ Shader "CityForgeV3/RiverBedSurface"
                 fixed4 color : COLOR;
                 float3 worldNormal : TEXCOORD1;
                 float3 localPosition : TEXCOORD2;
+                SHADOW_COORDS(3)
             };
 
             sampler2D _MainTex;
@@ -55,6 +58,7 @@ Shader "CityForgeV3/RiverBedSurface"
                 output.color = input.color;
                 output.localPosition = input.vertex.xyz;
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
+                TRANSFER_SHADOW(output);
                 return output;
             }
 
@@ -73,14 +77,9 @@ Shader "CityForgeV3/RiverBedSurface"
                 }
                 fixed4 albedo = tex2D(_MainTex, input.uv) * _Color * input.color;
                 float3 normal = normalize(input.worldNormal);
-                float3 lightDirection = normalize(UnityWorldSpaceLightDir(0));
-                float diffuse = saturate(dot(normal, lightDirection));
-                fixed3 ambient = ShadeSH9(float4(normal, 1.0));
-                fixed3 lighting = max(ambient + _LightColor0.rgb * diffuse,
-                    0.64);
-                // Retain useful relief without turning the sloped bank into a
-                // dark marker-like outline at the normal isometric camera.
-                albedo.rgb *= lerp(fixed3(1.0, 1.0, 1.0), lighting, 0.42);
+                fixed3 lighting = CityForgeWorldLighting(normal,
+                    SHADOW_ATTENUATION(input));
+                albedo.rgb *= lighting;
                 return albedo;
             }
             ENDCG

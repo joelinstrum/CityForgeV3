@@ -132,8 +132,7 @@ namespace CityForgeV3.World
             // Subpixel litter fades out at district overview scales. Chunk
             // bounds provide normal frustum culling while inspecting close up.
             var alpha = 1f - Mathf.InverseLerp(80f, 180f, _world.WorldCamera.orthographicSize);
-            var tint = LotWorldController.TextureTintForTimeOfDay(_world.TimeOfDay);
-            tint.a = alpha;
+            var tint = new Color(1f,1f,1f,alpha);
             bool enabled=PresentationEnabled && alpha>.001f;
             if(!_presentationDirty && tint==_lastTint && enabled==_lastEnabled)return;
             _presentationDirty=false;_lastTint=tint;_lastEnabled=enabled;

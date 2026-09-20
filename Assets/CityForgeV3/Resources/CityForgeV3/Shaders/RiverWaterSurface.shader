@@ -44,6 +44,7 @@ Shader "CityForgeV3/RiverWaterSurface"
             #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData
             {
@@ -140,11 +141,8 @@ Shader "CityForgeV3/RiverWaterSurface"
                 float specularPower = lerp(8.0, 128.0, _Smoothness);
                 float specular = pow(saturate(dot(normal, halfDirection)),
                     specularPower) * lerp(0.08, 0.55, _Smoothness);
-                // Preserve the supplied photographic water as the base color.
-                // Lighting only nudges it slightly; the earlier full lighting
-                // multiplication crushed the image into the dark riverbed.
-                float lightResponse = lerp(0.86, 1.04, diffuse);
-                water.rgb = water.rgb * _Brightness * lightResponse +
+                fixed3 worldLighting = CityForgeWorldLighting(normal, 1.0);
+                water.rgb = water.rgb * _Brightness * worldLighting +
                             _LightColor0.rgb * specular;
                 // Lightweight sky reflection keeps the supplied texture
                 // visible while inheriting the current time-of-day lighting.

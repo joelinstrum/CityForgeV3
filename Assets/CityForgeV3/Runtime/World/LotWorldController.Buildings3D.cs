@@ -553,12 +553,6 @@ namespace CityForgeV3.World
 
         private void ApplyExperimentalBuilding3DColorGrade()
         {
-            var timeBrightness = TimeOfDay switch
-            {
-                TimeOfDayPreset.Evening => 0.38f,
-                TimeOfDayPreset.Night => 0.08f,
-                _ => 1f
-            };
             foreach (var root in _experimentalBuilding3DRoots)
             {
                 if (root == null) continue;
@@ -576,27 +570,6 @@ namespace CityForgeV3.World
                             material.SetFloat("_Vibrance",
                                 _environmentBuildingVibrance);
                     }
-                    if (material.HasProperty("_EnvironmentDim"))
-                        material.SetFloat("_EnvironmentDim", timeBrightness);
-                    if (material.HasProperty("_DirectionalContrast"))
-                        material.SetFloat("_DirectionalContrast",
-                            TimeOfDay == TimeOfDayPreset.Afternoon ? 0.72f : 0f);
-                    if (material.HasProperty("_DirectionalLightDirection"))
-                    {
-                        // The projected ray points along the accepted shadow
-                        // travel direction. Facade lighting needs the inverse:
-                        // toward the western afternoon sun. This does not alter
-                        // the ground/prop shadow vector itself.
-                        var directionalRay = -ProjectedObjectShadowRay();
-                        material.SetVector("_DirectionalLightDirection",
-                            new Vector4(directionalRay.x, directionalRay.y,
-                                directionalRay.z, 0f));
-                    }
-                    if (material.HasProperty("_SunIntensityScale"))
-                        material.SetFloat("_SunIntensityScale",
-                            TimeOfDay == TimeOfDayPreset.Afternoon
-                                ? _environmentSunIntensityScale
-                                : 1f);
                 }
             }
         }

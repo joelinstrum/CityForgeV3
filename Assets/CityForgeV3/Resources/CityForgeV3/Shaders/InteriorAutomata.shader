@@ -17,6 +17,7 @@ Shader "CityForge/Interior Automata"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "CityForgeWorldLighting.cginc"
             sampler2D _MainTex;
             fixed4 _EmissionColor;
             float4x4 _WorldToRoom;
@@ -27,6 +28,8 @@ Shader "CityForge/Interior Automata"
             fixed4 frag(output i):SV_Target
             {
                 fixed4 c=tex2D(_MainTex,i.uv)*i.color;
+                c.rgb *= max(0, _CFWorldAmbientColor.rgb +
+                    _CFWorldSunColor.rgb);
                 clip(c.a-.2);
                 // Keep the camera-facing card wholly inside the upper room,
                 // including oblique views and the ends of the walking loop.
