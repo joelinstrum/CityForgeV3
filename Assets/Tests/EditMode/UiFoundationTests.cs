@@ -1799,6 +1799,27 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void DistrictDecalVisibilityAlsoControlsHillSurfaceDetail()
+        {
+            var root = new GameObject("Isolated district presentation toggle");
+            try
+            {
+                var decals = root.AddComponent<DistrictGroundDecals>();
+                var overlay = root.AddComponent<DistrictHillGroundOverlay>();
+                typeof(DistrictGroundDecals).GetField("_hillOverlay",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(decals, overlay);
+
+                decals.PresentationEnabled = false;
+
+                Assert.That(overlay.PresentationEnabled, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void DistrictTimeOfDayPersistsWithItsRegionTile()
         {
             var tile = new RegionCityTile
