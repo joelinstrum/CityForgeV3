@@ -1729,3 +1729,23 @@ Evidence and measurements:
 `Documentation/Validation/lighting-refinement-v01/`. The open City Forge V3
 editor imported the code without a new compile or shader error;
 CityForge-Regions-Review was not touched.
+
+### September 20 — square Small, Medium, and Large regions
+
+Create Region now offers three square model footprints: Small 12 × 12,
+Medium 20 × 20, and Large 28 × 28 map units. Medium is selected by default.
+The former 28 × 20 footprint is not migrated or rewritten; Large extends its
+short axis to 28 units so the existing physically proportional isometric
+projection presents an even diamond. Existing saved-region dimensions and the
+general width/height generator contract remain compatible.
+
+Selection updates only the open creation modal, and the chosen dimensions are
+used once during explicit in-memory creation. No player content is saved, no
+per-frame district work or presentation rebuild was added, and persistence
+remains manual. An isolated Unity project passed 7/7 focused generation,
+selection, creation, regeneration, and save-round-trip checks. The existing
+graphics-dependent projection-orientation check passed 1/1 in a separate
+graphics-enabled isolated run. The initial headless attempt at that projection
+test could not initialize an Editor window and is superseded by the passing
+graphics-enabled result. The open V3 editor was not driven or restarted, and
+CityForge-Regions-Review was not touched.

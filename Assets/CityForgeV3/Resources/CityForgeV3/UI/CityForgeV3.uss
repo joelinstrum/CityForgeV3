@@ -2220,6 +2220,31 @@
     -unity-background-image-tint-color: var(--cf-brass-300);
 }
 
+.region-size-choices {
+    flex-direction: row;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.region-size-choice {
+    min-height: 58px;
+    margin-right: 6px;
+    flex-grow: 1;
+    flex-basis: 0;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.region-size-choice--last {
+    margin-right: 0;
+}
+
+.region-size-choice.is-selected {
+    color: var(--cf-paper-100);
+    background-color: rgb(62, 91, 73);
+    border-color: var(--cf-brass-300);
+}
+
 .unity-base-dropdown__container-outer {
     max-height: 280px;
     padding: 4px;

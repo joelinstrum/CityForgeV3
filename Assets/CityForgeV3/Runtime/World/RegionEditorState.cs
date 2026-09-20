@@ -185,6 +185,23 @@ namespace CityForgeV3.World
         Town
     }
 
+    public enum RegionSizePreset
+    {
+        Small,
+        Medium,
+        Large
+    }
+
+    public static class RegionSizeCatalog
+    {
+        public static Vector2Int Dimensions(RegionSizePreset preset) => preset switch
+        {
+            RegionSizePreset.Small => new Vector2Int(12, 12),
+            RegionSizePreset.Large => new Vector2Int(28, 28),
+            _ => new Vector2Int(20, 20)
+        };
+    }
+
     [Serializable]
     public sealed class RegionCityTile
     {
@@ -268,8 +285,18 @@ namespace CityForgeV3.World
         public static string DefaultRoot => Path.Combine(
             Application.persistentDataPath, FolderName);
 
-        public static RegionSaveData Create(string name, int width = 28,
-            int height = 20)
+        public static RegionSaveData Create(string name) =>
+            Create(name, RegionSizePreset.Medium);
+
+        public static RegionSaveData Create(string name,
+            RegionSizePreset sizePreset)
+        {
+            var dimensions = RegionSizeCatalog.Dimensions(sizePreset);
+            return Create(name, dimensions.x, dimensions.y);
+        }
+
+        public static RegionSaveData Create(string name, int width,
+            int height)
         {
             width = Mathf.Max(8, width / 2 * 2);
             height = Mathf.Max(8, height / 2 * 2);

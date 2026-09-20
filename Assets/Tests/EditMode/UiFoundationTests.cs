@@ -1725,6 +1725,65 @@ namespace CityForgeV3.Tests
                 .Distinct().Count(), Is.GreaterThan(1));
         }
 
+        [TestCase(RegionSizePreset.Small, 12)]
+        [TestCase(RegionSizePreset.Medium, 20)]
+        [TestCase(RegionSizePreset.Large, 28)]
+        public void RegionSizePresetsCreateSquareFootprints(
+            RegionSizePreset preset, int sideLength)
+        {
+            var region = RegionSaveStore.Create("Preset Region", preset);
+
+            Assert.That(region.Width, Is.EqualTo(sideLength));
+            Assert.That(region.Height, Is.EqualTo(sideLength));
+            Assert.That(region.Tiles.Sum(tile => tile.Width * tile.Height),
+                Is.EqualTo(sideLength * sideLength));
+        }
+
+        [Test]
+        public void NewRegionDialogOffersThreeSizesAndDefaultsToMedium()
+        {
+            var go = new GameObject("Isolated New Region dialog");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetMethod(
+                    "ComposeCreateRegionDialog", flags).Invoke(app, null);
+
+                var small = root.Q<Button>("region-size-small");
+                var medium = root.Q<Button>("region-size-medium");
+                var large = root.Q<Button>("region-size-large");
+                Assert.That(small, Is.Not.Null);
+                Assert.That(medium, Is.Not.Null);
+                Assert.That(large, Is.Not.Null);
+                Assert.That(medium.ClassListContains("is-selected"), Is.True);
+                Assert.That(root.Q<Label>("region-size-summary").text,
+                    Does.Contain("20 × 20"));
+
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(large.clickable, new object[] { null, 0 });
+                Assert.That(large.ClassListContains("is-selected"), Is.True);
+                Assert.That(medium.ClassListContains("is-selected"), Is.False);
+                Assert.That(root.Q<Label>("region-size-summary").text,
+                    Does.Contain("28 × 28"));
+
+                var create = root.Q<Button>("create-region-confirm");
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(create.clickable, new object[] { null, 0 });
+                var region = (RegionSaveData)typeof(CityForgeApp).GetField(
+                    "_openRegion", flags).GetValue(app);
+                Assert.That(region.Width, Is.EqualTo(28));
+                Assert.That(region.Height, Is.EqualTo(28));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
         [Test]
         public void LargeDistrictUsesSharedCityScaleContract()
         {
