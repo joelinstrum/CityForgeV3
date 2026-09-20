@@ -4230,7 +4230,7 @@ namespace CityForgeV3.Tests
 
             Assert.That(noon.SunElevation, Is.EqualTo(70f));
             Assert.That(noon.SunAzimuth, Is.EqualTo(180f));
-            Assert.That(noon.SunIntensity, Is.EqualTo(0.92f));
+            Assert.That(noon.SunIntensity, Is.EqualTo(0.64f));
             Assert.That(noon.AmbientColor.grayscale, Is.LessThan(0.36f));
             Assert.That(noon.ScreenTint.a, Is.EqualTo(0.008f));
             Assert.That(

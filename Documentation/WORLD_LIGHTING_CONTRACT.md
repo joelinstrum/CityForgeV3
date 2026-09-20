@@ -12,6 +12,11 @@ City Forge has one environment-lighting owner per rendered world.
   routed through emission to compensate for scene lighting.
 - Custom artwork shaders read `_CFWorldAmbientColor`, `_CFWorldSunColor`, and
   `_CFWorldLightDirection`, published once when the world time changes.
+- Camera-facing artwork receives ambient plus the full directional intensity
+  because its quad normal is not a physical surface normal. Calibrate those
+  shared values so their per-channel sum retains highlight headroom rather than
+  clipping the source artwork. Noon currently totals approximately
+  `(0.96, 0.970, 0.978)` before texture multiplication.
 - Roads, rivers, Lot ground, decals, flora, and garden artwork do not have local
   night tints, light floors, sun directions, or time-of-day brightness controls.
 - Emission and local lights are opt-in effects for actual emitters: windows,

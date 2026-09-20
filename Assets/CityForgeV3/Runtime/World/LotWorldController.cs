@@ -6253,7 +6253,7 @@ namespace CityForgeV3.World
                     sunIntensity = TimeOfDay switch
                     {
                         TimeOfDayPreset.Morning => 0.62f,
-                        TimeOfDayPreset.Noon => 1.05f,
+                        TimeOfDayPreset.Noon => 0.64f,
                         TimeOfDayPreset.Afternoon => 0.50f,
                         TimeOfDayPreset.Evening => 0.14f,
                         _ => 0.035f

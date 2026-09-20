@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="5" result="Passed" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.3264167">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.326417" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2326" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.315758" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="63739" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2327" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.307818" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2328" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.304256" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2329" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="299" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.285267" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2320" name="WorldLightingContractTests" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.278807" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2321" name="DistrictPublishesOneSharedEnvironmentForCustomShaders" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests.DistrictPublishesOneSharedEnvironmentForCustomShaders" methodname="DistrictPublishesOneSharedEnvironmentForCustomShaders" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" seed="289103320" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.012212" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2325" name="GardenArtworkUsesTheSharedLitSpriteMaterial" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests.GardenArtworkUsesTheSharedLitSpriteMaterial" methodname="GardenArtworkUsesTheSharedLitSpriteMaterial" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" seed="2147070217" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.245337" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2324" name="NativeBuildingBaseIsLitAndOnlyNightMaskIsEmissive" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests.NativeBuildingBaseIsLitAndOnlyNightMaskIsEmissive" methodname="NativeBuildingBaseIsLitAndOnlyNightMaskIsEmissive" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" seed="111273105" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.001580" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2322" name="NoonArtworkLightingRetainsTextureHighlightHeadroom" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests.NoonArtworkLightingRetainsTextureHighlightHeadroom" methodname="NoonArtworkLightingRetainsTextureHighlightHeadroom" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" seed="1174763963" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.000303" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2323" name="OrdinaryWorldShadersHaveNoPrivateTimeOfDayLightingControls" fullname="CityForgeV3.Tests.EditMode.WorldLightingContractTests.OrdinaryWorldShadersHaveNoPrivateTimeOfDayLightingControls" methodname="OrdinaryWorldShadersHaveNoPrivateTimeOfDayLightingControls" classname="CityForgeV3.Tests.EditMode.WorldLightingContractTests" runstate="Runnable" seed="1034104271" result="Passed" start-time="2026-09-20 23:19:57Z" end-time="2026-09-20 23:19:57Z" duration="0.009942" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-lighting-contract-v02.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

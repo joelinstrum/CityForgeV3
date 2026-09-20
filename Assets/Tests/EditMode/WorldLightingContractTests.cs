@@ -30,6 +30,22 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void NoonArtworkLightingRetainsTextureHighlightHeadroom()
+        {
+            DistrictWorldController.ApplyRegionEnvironment(
+                TimeOfDayPreset.Noon, null);
+            var ambient = Shader.GetGlobalColor("_CFWorldAmbientColor");
+            var sun = Shader.GetGlobalColor("_CFWorldSunColor");
+            var fullLight = ambient + sun;
+
+            Assert.That(fullLight.r, Is.LessThanOrEqualTo(1f));
+            Assert.That(fullLight.g, Is.LessThanOrEqualTo(1f));
+            Assert.That(fullLight.b, Is.LessThanOrEqualTo(1f));
+            Assert.That(fullLight.maxColorComponent, Is.GreaterThan(.9f),
+                "Noon should remain bright without clipping source artwork.");
+        }
+
+        [Test]
         public void OrdinaryWorldShadersHaveNoPrivateTimeOfDayLightingControls()
         {
             var shaderNames = new[]
