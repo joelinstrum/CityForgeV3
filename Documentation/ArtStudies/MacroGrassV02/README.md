@@ -2,7 +2,7 @@
 
 `colonial-countryside-grass-v02.png` is a simplified 4096 × 4096 RGB terrain albedo for approximately 75 m × 75 m of ground. It replaces V01's conspicuous mid-frequency tan/green mottling and mirrored quadrants with quieter muted-green variation, restrained grain, and sparse faint dry discoloration. V01 remains in the project as a recoverable comparison asset.
 
-The built-in image-generation tool edited V01 in two passes. The selected 1254 × 1254 result was resized to 4096 × 4096, lightly softened, and given a localized 512-pixel smooth edge blend. Opposite one-pixel borders are byte-identical without constructing the full image from mirrored quadrants. Runtime asset: `Assets/CityForgeV3/Resources/CityForgeV3/Terrain/MacroGrassV02/colonial-countryside-grass-v02.png`. SHA-256: `9356839fa2f04e4dabe8b2464c75906fee3776ae97c7877db91d311f3d188d00`.
+The built-in image-generation tool edited V01 in two passes. The selected 1254 × 1254 result was resized to 4096 × 4096, lightly softened, and given a localized 512-pixel smooth edge blend. In-game review showed that Unity still amplified its dry patches, so the final asset compresses the generated variation to 24% around a muted olive-green base and applies a 1.6-pixel softening pass. Opposite one-pixel borders are byte-identical without constructing the full image from mirrored quadrants. Runtime asset: `Assets/CityForgeV3/Resources/CityForgeV3/Terrain/MacroGrassV02/colonial-countryside-grass-v02.png`. SHA-256: `d0517b3f120c4ebea733a50acdf2683662219fdf7236cc088f32ff873908072f`.
 
 First edit prompt:
 
