@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.9793351">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1124" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.979335" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2296" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-town-center-fGIMMc/UnityQa/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1124" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.968886" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="93073" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2297" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="983" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.957966" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2298" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="983" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.955808" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1207" name="CoupleStrollAutomataTests" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:54Z" duration="1.362414" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1208" name="StrollingPairClearsBrickRoadAtSouthEnd" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairClearsBrickRoadAtSouthEnd" methodname="StrollingPairClearsBrickRoadAtSouthEnd" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="1427227052" result="Passed" start-time="2026-09-19 23:48:52Z" end-time="2026-09-19 23:48:53Z" duration="0.589806" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1209" name="StrollingPairLoadsMovesAndSchedulesAsOneGroup" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairLoadsMovesAndSchedulesAsOneGroup" methodname="StrollingPairLoadsMovesAndSchedulesAsOneGroup" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="1347208576" result="Passed" start-time="2026-09-19 23:48:53Z" end-time="2026-09-19 23:48:53Z" duration="0.384211" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1210" name="StrollingPairsShareClipButKeepSeparateGarmentColors" fullname="CityForgeV3.Tests.CoupleStrollAutomataTests.StrollingPairsShareClipButKeepSeparateGarmentColors" methodname="StrollingPairsShareClipButKeepSeparateGarmentColors" classname="CityForgeV3.Tests.CoupleStrollAutomataTests" runstate="Runnable" seed="242346193" result="Passed" start-time="2026-09-19 23:48:53Z" end-time="2026-09-19 23:48:54Z" duration="0.377361" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestSuite" id="2299" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="288" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.567119" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1978" name="BuildingDoorControllerTests" fullname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" classname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.020417" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1982" name="DoorStateRoundTripsAndOldLotsDefaultClosed" fullname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests.DoorStateRoundTripsAndOldLotsDefaultClosed" methodname="DoorStateRoundTripsAndOldLotsDefaultClosed" classname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" runstate="Runnable" seed="1289906703" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.002636" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1979" name="OpensAndClosesWithoutMovingPivot" fullname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests.OpensAndClosesWithoutMovingPivot" methodname="OpensAndClosesWithoutMovingPivot" classname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" runstate="Runnable" seed="1187768763" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.001475" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1980" name="ReversesSmoothlyDuringOpening" fullname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests.ReversesSmoothlyDuringOpening" methodname="ReversesSmoothlyDuringOpening" classname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" runstate="Runnable" seed="271105848" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.000411" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1981" name="ShadowFollowerCopiesDoorAngle" fullname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests.ShadowFollowerCopiesDoorAngle" methodname="ShadowFollowerCopiesDoorAngle" classname="CityForgeV3.Tests.EditMode.BuildingDoorControllerTests" runstate="Runnable" seed="637766526" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.000476" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="2287" name="TownCenterTests" fullname="CityForgeV3.Tests.EditMode.TownCenterTests" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.534632" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2289" name="InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" methodname="InteriorMovesWithoutLeavingItsAnchorAndCullsAtDistance" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="979922226" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.029654" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2288" name="NightAndEveningArePerInstanceAndDayDisablesEveryLamp" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.NightAndEveningArePerInstanceAndDayDisablesEveryLamp" methodname="NightAndEveningArePerInstanceAndDayDisablesEveryLamp" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="135917487" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.001154" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2291" name="RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" methodname="RealLotPlacementAppliesNightAndSuppressesShadowCopyOccupants" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="957747578" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.492011" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2290" name="RearWallClosesTheOpeningAndDistantShellReducesGeometry" fullname="CityForgeV3.Tests.EditMode.TownCenterTests.RearWallClosesTheOpeningAndDistantShellReducesGeometry" methodname="RearWallClosesTheOpeningAndDistantShellReducesGeometry" classname="CityForgeV3.Tests.EditMode.TownCenterTests" runstate="Runnable" seed="1543005942" result="Passed" start-time="2026-09-19 23:48:54Z" end-time="2026-09-19 23:48:54Z" duration="0.001664" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-town-center-fGIMMc/tests-verified.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

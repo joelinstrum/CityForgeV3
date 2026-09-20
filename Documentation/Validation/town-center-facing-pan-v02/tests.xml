@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.370789">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1144" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.370789" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2317" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-town-center.in2AaB/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1144" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.353851" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="85007" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2318" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="999" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.323589" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2319" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="999" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.312940" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1338" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="589" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.253455" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1409" name="ConsistentSavedCameraKeepsEstablishedDiagonalMapping" fullname="CityForgeV3.Tests.UiFoundationTests.ConsistentSavedCameraKeepsEstablishedDiagonalMapping" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.016210" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1405" name="ConsistentSavedCameraKeepsEstablishedDiagonalMapping(0,0)" fullname="CityForgeV3.Tests.UiFoundationTests.ConsistentSavedCameraKeepsEstablishedDiagonalMapping(0,0)" methodname="ConsistentSavedCameraKeepsEstablishedDiagonalMapping" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1534080424" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.010402" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1406" name="ConsistentSavedCameraKeepsEstablishedDiagonalMapping(2,3)" fullname="CityForgeV3.Tests.UiFoundationTests.ConsistentSavedCameraKeepsEstablishedDiagonalMapping(2,3)" methodname="ConsistentSavedCameraKeepsEstablishedDiagonalMapping" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1091027172" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.000072" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1407" name="ConsistentSavedCameraKeepsEstablishedDiagonalMapping(4,2)" fullname="CityForgeV3.Tests.UiFoundationTests.ConsistentSavedCameraKeepsEstablishedDiagonalMapping(4,2)" methodname="ConsistentSavedCameraKeepsEstablishedDiagonalMapping" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="917494690" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.000037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1408" name="ConsistentSavedCameraKeepsEstablishedDiagonalMapping(6,1)" fullname="CityForgeV3.Tests.UiFoundationTests.ConsistentSavedCameraKeepsEstablishedDiagonalMapping(6,1)" methodname="ConsistentSavedCameraKeepsEstablishedDiagonalMapping" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1218279314" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.000036" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1402" name="DistrictLotPlacementPreservesSavedDiagonalView" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementPreservesSavedDiagonalView" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.014370" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1398" name="DistrictLotPlacementPreservesSavedDiagonalView(0,0,45.0f)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementPreservesSavedDiagonalView(0,0,45.0f)" methodname="DistrictLotPlacementPreservesSavedDiagonalView" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="155485064" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.004487" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1399" name="DistrictLotPlacementPreservesSavedDiagonalView(2,3,135.0f)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementPreservesSavedDiagonalView(2,3,135.0f)" methodname="DistrictLotPlacementPreservesSavedDiagonalView" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="904459183" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.002318" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1400" name="DistrictLotPlacementPreservesSavedDiagonalView(4,2,225.0f)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementPreservesSavedDiagonalView(4,2,225.0f)" methodname="DistrictLotPlacementPreservesSavedDiagonalView" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="234987771" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.004012" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1401" name="DistrictLotPlacementPreservesSavedDiagonalView(6,1,315.0f)" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementPreservesSavedDiagonalView(6,1,315.0f)" methodname="DistrictLotPlacementPreservesSavedDiagonalView" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1091901007" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.002133" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1404" name="DistrictLotPlacementUsesSavedCameraWhenOctantLabelIsStale" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictLotPlacementUsesSavedCameraWhenOctantLabelIsStale" methodname="DistrictLotPlacementUsesSavedCameraWhenOctantLabelIsStale" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1351433242" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:29Z" duration="0.000200" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1524" name="DistrictPanningBecomesFineAtCloseZoomLevels" fullname="CityForgeV3.Tests.UiFoundationTests.DistrictPanningBecomesFineAtCloseZoomLevels" methodname="DistrictPanningBecomesFineAtCloseZoomLevels" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="581409736" result="Passed" start-time="2026-09-20 19:21:29Z" end-time="2026-09-20 19:21:30Z" duration="0.001743" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1403" name="LegacyAndTopDownLotsKeepGridDefaultOrientation" fullname="CityForgeV3.Tests.UiFoundationTests.LegacyAndTopDownLotsKeepGridDefaultOrientation" methodname="LegacyAndTopDownLotsKeepGridDefaultOrientation" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1107672272" result="Passed" start-time="2026-09-20 19:21:30Z" end-time="2026-09-20 19:21:30Z" duration="0.000136" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-town-center.in2AaB/orientation-pan-results-final.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

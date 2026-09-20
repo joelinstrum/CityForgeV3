@@ -10,7 +10,6 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         [PerRendererData] _DistrictFloraBatch ("Camera-Facing Flora Batch", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
-        _ShadowFloor ("Shadow Floor", Range(0, 1)) = 0.38
         [PerRendererData] _GroundFadeEnabled ("Ground Fade Enabled", Float) = 0
         [PerRendererData] _GroundY ("Ground Height", Float) = 0.02
         [PerRendererData] _GroundFadeWidth ("Ground Fade Width", Float) = 0.42
@@ -52,6 +51,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
 
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             sampler2D _MainTex;
             fixed4 _Color;
@@ -61,7 +61,6 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             float4 _FloraBaseEllipse;
             half _FloraOpacity;
             half _Cutoff;
-            half _ShadowFloor;
             half _GroundFadeEnabled;
             float _GroundY;
             float _GroundFadeWidth;
@@ -139,7 +138,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 artwork.a *= lerp(1.0h, groundFade, _GroundFadeEnabled);
                 clip(artwork.a - _Cutoff);
                 half shadowAttenuation = SHADOW_ATTENUATION(input);
-                half illumination = lerp(_ShadowFloor, 1.0h, shadowAttenuation);
+                fixed3 illumination = CityForgeArtworkLighting(shadowAttenuation);
                 half cloudDistance = distance(input.worldPosition.xz,
                     _CFCloudShadowCenter.xy);
                 half cloudMask = (1.0h - smoothstep(

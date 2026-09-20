@@ -205,33 +205,17 @@ namespace CityForgeV3.World
             TimeOfDayPreset timeOfDay, Vector3 sunDirection)
         {
             if (_renderer == null) return;
-            var tint = SeasonLighting.GroundColor(season,
-                LotWorldController.TextureTintForTimeOfDay(timeOfDay));
+            var tint = SeasonLighting.GroundColor(season, Color.white);
             tint.a = _opacity;
             _properties ??= new MaterialPropertyBlock();
             _properties.SetColor("_Color", tint);
             _renderer.SetPropertyBlock(_properties);
-            _material.SetVector("_TerrainSunDirection", sunDirection);
-            _material.SetFloat("_AmbientFloor", timeOfDay switch
-            {
-                TimeOfDayPreset.Morning => .68f,
-                TimeOfDayPreset.Noon => .58f,
-                TimeOfDayPreset.Afternoon => .66f,
-                _ => .52f
-            });
             if (_borderRenderer != null)
             {
                 var edge = new Color(0.26f, 0.25f, 0.21f,
                     Mathf.Clamp01(_opacity) * 0.82f);
-                var timeTint = LotWorldController.TextureTintForTimeOfDay(timeOfDay);
-                edge.r *= timeTint.r;
-                edge.g *= timeTint.g;
-                edge.b *= timeTint.b;
                 _properties.SetColor("_Color", edge);
                 _borderRenderer.SetPropertyBlock(_properties);
-                _borderMaterial.SetVector("_TerrainSunDirection", sunDirection);
-                _borderMaterial.SetFloat("_AmbientFloor",
-                    _material.GetFloat("_AmbientFloor"));
             }
         }
     }

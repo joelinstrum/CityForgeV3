@@ -14,7 +14,6 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
         _HideCurbBorders ("Hide Curb Borders", Float) = 0
         _UseWorldUv ("Use World UV", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
-        _TimeTint ("Time of Day Tint", Color) = (1, 1, 1, 1)
         _ReceiveSunShadow ("Receive Sun Shadow", Range(0, 1)) = 1
     }
 
@@ -86,6 +85,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData { float4 vertex : POSITION; float2 uv : TEXCOORD0; };
             struct Varyings
@@ -102,7 +102,6 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             sampler2D _SidewalkSurfaceTex;
             float4 _MainTex_ST;
             fixed4 _Color;
-            fixed4 _TimeTint;
             float _UseMaterialZones;
             float _MaterialTiling;
             float _RoadMaterialTiling;
@@ -189,10 +188,11 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
 
                 }
                 fixed shadow = SHADOW_ATTENUATION(input);
-                // Road art remains legible at night while still showing the
-                // silhouettes cast by fully 3D vehicles.
-                fixed illumination = lerp(0.42, 1.0, shadow);
-                illumination = lerp(1.0, illumination, _ReceiveSunShadow);
+                fixed3 illumination = CityForgeWorldLighting(
+                    fixed3(0, 1, 0), shadow);
+                illumination = lerp(CityForgeWorldLighting(
+                    fixed3(0, 1, 0), 1.0), illumination,
+                    _ReceiveSunShadow);
                 fixed cloudDistance = distance(input.worldPosition.xz,
                     _CFCloudShadowCenter.xy);
                 fixed cloudMask = (1.0h - smoothstep(
@@ -203,7 +203,7 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                 // The road now receives the native shadow map itself. The old
                 // 90% opacity workaround exposed the already-shadowed ground
                 // below it and doubled/dirtied shadows across road tiles.
-                return fixed4(artwork.rgb * illumination * _TimeTint.rgb,
+                return fixed4(artwork.rgb * illumination,
                     1.0);
             }
             ENDCG
@@ -235,7 +235,6 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
             #include "NationalPikeDirt.cginc"
             float4 _MainTex_ST;
             fixed4 _Color;
-            fixed4 _TimeTint;
             float _UseWorldUv;
             float _MaterialTiling;
 
@@ -256,8 +255,8 @@ Shader "CityForgeV3/ShadowReceivingRoadOverlay"
                 fixed4 artwork = RoadArtwork(input.uv) * _Color;
                 clip(artwork.a - 0.02);
                 fixed attenuation = LIGHT_ATTENUATION(input);
-                fixed3 beam = artwork.rgb * _TimeTint.rgb *
-                    _LightColor0.rgb * attenuation * 0.12;
+                fixed3 beam = artwork.rgb * _LightColor0.rgb *
+                    attenuation * 0.12;
                 return fixed4(beam, 0);
             }
             ENDCG

@@ -2,6 +2,18 @@
   "schema": "cityforge-building-content-v1",
   "buildings": [
     {
+      "id": "town-center-v01",
+      "displayName": "Town Center",
+      "category": "Civics",
+      "description": "Weathered timber Town Center • warm night lighting • interior strolling couple",
+      "modelResourcePath": "CityForgeV3/Buildings3D/TownCenterV01/Prefabs/TownCenter",
+      "thumbnailResourcePath": "CityForgeV3/Buildings3D/TownCenterV01/thumbnail",
+      "pitchDegrees": 0,
+      "baseYawDegrees": 180,
+      "materialMode": "embedded",
+      "runtimeProfile": "authored-materials"
+    },
+    {
       "id": "dry-goods-v05",
       "displayName": "Dry Goods Store",
       "category": "Commercial",

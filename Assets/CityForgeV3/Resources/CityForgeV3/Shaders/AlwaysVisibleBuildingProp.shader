@@ -21,20 +21,27 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
 
         Pass
         {
+            Tags { "LightMode"="ForwardBase" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct appdata
             {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
             };
             struct v2f
             {
                 float4 vertex : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 worldNormal : TEXCOORD1;
+                SHADOW_COORDS(2)
             };
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -46,6 +53,8 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
                 v2f output;
                 output.vertex = UnityObjectToClipPos(input.vertex);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.worldNormal = UnityObjectToWorldNormal(input.normal);
+                TRANSFER_SHADOW(output);
                 return output;
             }
 
@@ -54,9 +63,14 @@ Shader "CityForgeV3/AlwaysVisibleBuildingProp"
                 // Imported sign lettering is authored on the front surface.
                 // If that surface is viewed from behind, show opaque stained
                 // wood rather than the mirrored front texture.
-                if (facing < 0 && _UseWoodBackface > 0.5)
-                    return fixed4(0.24, 0.13, 0.07, 1.0) * _Color;
-                return tex2D(_MainTex, input.uv) * _Color;
+                fixed4 surface = facing < 0 && _UseWoodBackface > 0.5
+                    ? fixed4(0.24, 0.13, 0.07, 1.0) * _Color
+                    : tex2D(_MainTex, input.uv) * _Color;
+                fixed shadow = SHADOW_ATTENUATION(input);
+                surface.rgb *= CityForgeWorldLighting(
+                    facing < 0 ? -input.worldNormal : input.worldNormal,
+                    shadow);
+                return surface;
             }
             ENDCG
         }

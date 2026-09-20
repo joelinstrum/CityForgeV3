@@ -25,6 +25,7 @@ Shader "CityForge/SnowAccumulation"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct appdata
             {
@@ -54,6 +55,7 @@ Shader "CityForge/SnowAccumulation"
             fixed4 frag(v2f input) : SV_Target
             {
                 fixed4 snow = tex2D(_MainTex, input.uv) * _Color;
+                snow.rgb *= CityForgeArtworkLighting(1.0h);
                 snow.a *= saturate(_Accumulation);
                 return snow;
             }

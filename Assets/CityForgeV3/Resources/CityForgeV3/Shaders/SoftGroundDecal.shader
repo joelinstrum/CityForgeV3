@@ -21,11 +21,15 @@ Shader "CityForgeV3/SoftGroundDecal"
 
         Pass
         {
+            Tags { "LightMode"="ForwardBase" }
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct appdata
             {
@@ -37,6 +41,7 @@ Shader "CityForgeV3/SoftGroundDecal"
             {
                 float4 position : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                SHADOW_COORDS(1)
             };
 
             sampler2D _MainTex;
@@ -51,6 +56,7 @@ Shader "CityForgeV3/SoftGroundDecal"
                 v2f output;
                 output.position = UnityObjectToClipPos(input.vertex);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                TRANSFER_SHADOW(output);
                 return output;
             }
 
@@ -69,6 +75,8 @@ Shader "CityForgeV3/SoftGroundDecal"
                         (input.uv - _EraseMarks[markIndex].xy) / radii);
                     decal.a *= smoothstep(0.72, 1.0, eraseDistance);
                 }
+                decal.rgb *= CityForgeWorldLighting(fixed3(0,1,0),
+                    SHADOW_ATTENUATION(input));
                 return decal;
             }
             ENDCG

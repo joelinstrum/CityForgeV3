@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="23" result="Passed" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:37Z" duration="2.8617226">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1136" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:37Z" duration="2.861723" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2308" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1136" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:37Z" duration="2.846651" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16239" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1005" name="DistrictFloraBatchesTests" fullname="DistrictFloraBatchesTests" classname="DistrictFloraBatchesTests" runstate="Runnable" testcasecount="23" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:37Z" duration="2.829029" total="23" passed="23" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1015" name="AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha" fullname="DistrictFloraBatchesTests.AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha" methodname="AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="538068656" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.067189" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1022" name="BatchedSeasonSwapRetainsUnrelatedCellAndSelectionHandle" fullname="DistrictFloraBatchesTests.BatchedSeasonSwapRetainsUnrelatedCellAndSelectionHandle" methodname="BatchedSeasonSwapRetainsUnrelatedCellAndSelectionHandle" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1695333257" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.018511" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1026" name="CachedTreeStillRendersAfterNinetyDegreeCameraOrbit" fullname="DistrictFloraBatchesTests.CachedTreeStillRendersAfterNinetyDegreeCameraOrbit" methodname="CachedTreeStillRendersAfterNinetyDegreeCameraOrbit" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1454109060" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.006827" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1019" name="CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason" fullname="DistrictFloraBatchesTests.CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason" methodname="CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="969103968" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.042664" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1014" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.019376" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1009" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(0)" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(0)" methodname="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1784471853" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.009474" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1010" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(1)" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(1)" methodname="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="66094942" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.004236" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1011" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(2)" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(2)" methodname="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="660192823" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.001300" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1012" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(3)" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(3)" methodname="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1131994551" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.001209" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1013" name="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(4)" fullname="DistrictFloraBatchesTests.ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(4)" methodname="ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1465286360" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.001235" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1016" name="FamilyClustersResolveCompactAndLargeSeasonalArtwork" fullname="DistrictFloraBatchesTests.FamilyClustersResolveCompactAndLargeSeasonalArtwork" methodname="FamilyClustersResolveCompactAndLargeSeasonalArtwork" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1212138893" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.024806" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1027" name="HarvestOrMoveRebuildsOnlyTheAffectedCell" fullname="DistrictFloraBatchesTests.HarvestOrMoveRebuildsOnlyTheAffectedCell" methodname="HarvestOrMoveRebuildsOnlyTheAffectedCell" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1559763551" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.001605" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1028" name="HarvestStateDoesNotInvalidateSpatialComposition" fullname="DistrictFloraBatchesTests.HarvestStateDoesNotInvalidateSpatialComposition" methodname="HarvestStateDoesNotInvalidateSpatialComposition" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1682413323" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.004547" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1025" name="HostedLotOrbitKeepsCachedDistrictTreesFacingCamera" fullname="DistrictFloraBatchesTests.HostedLotOrbitKeepsCachedDistrictTreesFacingCamera" methodname="HostedLotOrbitKeepsCachedDistrictTreesFacingCamera" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="244891187" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:34Z" duration="0.003052" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1007" name="IncrementalFloraInsertionKeepsExistingPresentations" fullname="DistrictFloraBatchesTests.IncrementalFloraInsertionKeepsExistingPresentations" methodname="IncrementalFloraInsertionKeepsExistingPresentations" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1687538774" result="Passed" start-time="2026-09-20 01:46:34Z" end-time="2026-09-20 01:46:35Z" duration="0.632389" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[RIVER REFRESH mesh=1ms terrain=1ms decals=19ms total=21ms
+]]></output>
+        </test-case>
+        <test-case id="1017" name="LargeFamilyClusterShadowsUseNineGroundContacts" fullname="DistrictFloraBatchesTests.LargeFamilyClusterShadowsUseNineGroundContacts" methodname="LargeFamilyClusterShadowsUseNineGroundContacts" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1770110227" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.001265" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1029" name="LightingRebuildUpdatesTintWithoutAccumulatingMeshes" fullname="DistrictFloraBatchesTests.LightingRebuildUpdatesTintWithoutAccumulatingMeshes" methodname="LightingRebuildUpdatesTintWithoutAccumulatingMeshes" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1951755245" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.000853" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1020" name="LondonPlaneAUsesTheRealisticSeasonalArtwork" fullname="DistrictFloraBatchesTests.LondonPlaneAUsesTheRealisticSeasonalArtwork" methodname="LondonPlaneAUsesTheRealisticSeasonalArtwork" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="993112760" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.242638" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1021" name="LondonPlaneBUsesTheHighIsometricArtBeforeWinter" fullname="DistrictFloraBatchesTests.LondonPlaneBUsesTheHighIsometricArtBeforeWinter" methodname="LondonPlaneBUsesTheHighIsometricArtBeforeWinter" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1144856403" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.006197" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1008" name="MovingFloraKeepsUnchangedPresentationsAndRejoinsItsBatch" fullname="DistrictFloraBatchesTests.MovingFloraKeepsUnchangedPresentationsAndRejoinsItsBatch" methodname="MovingFloraKeepsUnchangedPresentationsAndRejoinsItsBatch" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="579875339" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.315622" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[RIVER REFRESH mesh=0ms terrain=0ms decals=8ms total=8ms
+]]></output>
+        </test-case>
+        <test-case id="1024" name="NearbyCopiesShareOneMeshAndRemainPickable" fullname="DistrictFloraBatchesTests.NearbyCopiesShareOneMeshAndRemainPickable" methodname="NearbyCopiesShareOneMeshAndRemainPickable" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="994911173" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:35Z" duration="0.001665" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1023" name="SeasonWorkIsBoundedAndNewSeasonSupersedesPendingWork" fullname="DistrictFloraBatchesTests.SeasonWorkIsBoundedAndNewSeasonSupersedesPendingWork" methodname="SeasonWorkIsBoundedAndNewSeasonSupersedesPendingWork" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1450357317" result="Passed" start-time="2026-09-20 01:46:35Z" end-time="2026-09-20 01:46:36Z" duration="0.110516" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1006" name="TimeOfDayChangesStageDenseFloraWithoutReplacingTrees" fullname="DistrictFloraBatchesTests.TimeOfDayChangesStageDenseFloraWithoutReplacingTrees" methodname="TimeOfDayChangesStageDenseFloraWithoutReplacingTrees" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="587000116" result="Passed" start-time="2026-09-20 01:46:36Z" end-time="2026-09-20 01:46:37Z" duration="1.316891" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[RIVER REFRESH mesh=0ms terrain=0ms decals=35ms total=35ms
+]]></output>
+        </test-case>
+        <test-case id="1018" name="WinterShadowsRetainFirButOpenDeciduousCanopies" fullname="DistrictFloraBatchesTests.WinterShadowsRetainFirButOpenDeciduousCanopies" methodname="WinterShadowsRetainFirButOpenDeciduousCanopies" classname="DistrictFloraBatchesTests" runstate="Runnable" seed="1962943300" result="Passed" start-time="2026-09-20 01:46:37Z" end-time="2026-09-20 01:46:37Z" duration="0.001369" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-forest-mix-qjxQRT/shadow-final-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

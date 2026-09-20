@@ -810,7 +810,7 @@ namespace CityForgeV3.World
                 palette.SetFloat("_ForestPalette", ForestClusterCatalog.IsCluster(placed.FloraId) ? 0f : 2f);
                 renderer.SetPropertyBlock(palette);
             }
-            renderer.color = TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint;
+            renderer.color = Color.white;
             renderer.sortingOrder = DistrictFloraSortingOrder(
                 item.transform.localPosition);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
@@ -843,7 +843,6 @@ namespace CityForgeV3.World
                 renderQueue = (int)RenderQueue.AlphaTest
             };
             _districtFloraMaterial.SetFloat("_Cutoff", 0.02f);
-            _districtFloraMaterial.SetFloat("_ShadowFloor", 0.38f);
             _districtFloraMaterial.SetFloat("_ZTest",
                 (float)CompareFunction.LessEqual);
             return _districtFloraMaterial;
@@ -1939,9 +1938,6 @@ namespace CityForgeV3.World
             roadObject.GetComponent<Renderer>().sharedMaterial = material;
             _roadsByCell[new Vector2Int(placed.GridX, placed.GridZ)] = roadObject;
             _roadVisualState[new Vector2Int(placed.GridX, placed.GridZ)] = JsonUtility.ToJson(placed);
-            if (material.HasProperty("_TimeTint"))
-                material.SetColor("_TimeTint",
-                    TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
         }
 
         private void AddAntiqueBrickRoad(PlacedRoadPiece placed)
@@ -1974,8 +1970,6 @@ namespace CityForgeV3.World
                 _antiqueDiagonalMaterial.SetFloat("_MaterialTiling",
                     surface.TilesPerTenMeters);
             }
-            _antiqueDiagonalMaterial.SetColor("_TimeTint",
-                TimeOfDayLighting.For(TimeOfDay).NeutralArtworkTint);
             var roadObject = new GameObject("District Antique Brick Road");
             roadObject.transform.SetParent(_roadArtworkRoot, false);
             roadObject.transform.localPosition = new Vector3(
@@ -2415,25 +2409,16 @@ namespace CityForgeV3.World
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
             TimeOfDay = preset;
-            foreach(var bridgeRamp in _bridgeRampMaterials.Values)
-                bridgeRamp.SetColor("_TimeTint",TimeOfDayLighting.For(preset).NeutralArtworkTint);
-            if (_antiqueDiagonalMaterial != null)
-                _antiqueDiagonalMaterial.SetColor("_TimeTint",
-                    TimeOfDayLighting.For(preset).NeutralArtworkTint);
             ApplyAfternoonSceneLights(preset);
-            foreach (var renderer in _districtFloraPresentations.Values)
-                if (renderer != null)
-                    renderer.color = TimeOfDayLighting.For(preset)
-                        .NeutralArtworkTint;
+            // The district is the sole owner of the shared environment. Publish
+            // it before Lots update their opt-in windows and lamps; a hosted Lot
+            // must never rewrite the shared sun, ambient light, or shader state.
+            ApplyRegionEnvironment(preset, _sun);
             foreach (var lot in _lots)
                 if (lot != null)
                     lot.SetTimeOfDay(preset);
 
             var spec = TimeOfDayLighting.For(preset);
-            // District terrain owns its environment, regardless of whether a lot
-            // happened to initialize global ambient lighting first. Match the
-            // established native-building daylight baseline (including District 9).
-            ApplyRegionEnvironment(preset, _sun);
             if (_camera != null)
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
@@ -2595,29 +2580,9 @@ namespace CityForgeV3.World
         {
             if (_groundRenderer?.sharedMaterial == null) return;
             var material = _groundRenderer.sharedMaterial;
-            var tint = LotWorldController.TextureTintForTimeOfDay(preset);
-            // Preserve the authored colour just as the riverbank surface does.
-            // The previous additional 0.75/0.80 calibration turned these
-            // matching grass pixels into a dark olive field.
-            material.color = tint;
-            if (material.HasProperty("_AmbientFloor"))
-                material.SetFloat("_AmbientFloor", preset switch
-                {
-                    TimeOfDayPreset.Morning => .68f,
-                    TimeOfDayPreset.Noon => .58f,
-                    TimeOfDayPreset.Afternoon => .66f,
-                    _ => .52f
-                });
-            if (!material.HasProperty("_TerrainSunDirection")) return;
-            var direction = _sun == null
-                ? Vector3.up
-                : -_sun.transform.forward.normalized;
-            // Mountain morning faces the visible eastern side. Preserve the
-            // authored elevation and every other lighting preset.
-            if (_terrainDistrict?.Hills?.Mountains == true && preset == TimeOfDayPreset.Morning)
-                direction = new Vector3(-direction.x, direction.y, -direction.z);
-            material.SetVector("_TerrainSunDirection", new Vector4(
-                direction.x, direction.y, direction.z, 0f));
+            // Time of day belongs to the shared environment. The material tint
+            // remains an authored/seasonal color, never a private light source.
+            material.color = Color.white;
         }
 
         private void BuildGrid()

@@ -44,14 +44,15 @@ public class RegionFloraGeneratorTests
         var sparse = RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Sparse, 83);
         var wooded = RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83);
         Assert.Greater(sparse.Count, 2); Assert.Greater(wooded.Count, sparse.Count * 5);
-        Assert.True(wooded.All(t => RegionClimateRules.AllowsTree(climate, t.FloraId)));
+        Assert.True(wooded.All(t => ForestClusterCatalog.IsCluster(t.FloraId) ||
+            t.FloraId is "cilician-fir" or "mature-oak" or "american-elm" or
+            "shagbark-hickory" or "medium-balsam-fir" or "medium-fraser-fir" or
+            "medium-blue-spruce" or "date-palm-tall" or "la-fan-palm-a" or
+            "la-fan-palm-b"));
         Assert.True(wooded.All(t => t.GeneratedByRegion && t.NormalizedX > 0 && t.NormalizedX < 1 && t.NormalizedZ > 0 && t.NormalizedZ < 1));
         CollectionAssert.AreEqual(wooded.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83).Select(JsonUtility.ToJson));
         Assert.AreNotEqual(wooded[0].InstanceId, RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 84)[0].InstanceId);
-        if (climate != RegionClimate.Tropical) Assert.True(wooded.Any(DistrictTreeHarvest.CanFell));
-        else Assert.True(wooded.All(t => t.FloraId is "date-palm-tall" or "date-palm-short" or
-            "la-fan-palm-a" or "la-fan-palm-b" or "la-fan-palm-a-medium" or
-            "la-fan-palm-b-medium"));
+        Assert.True(wooded.Any(DistrictTreeHarvest.CanFell));
     }
     [Test] public void HeavyTriplesMediumDensityAndPreservesSavedCoverageValues()
     {
@@ -142,7 +143,7 @@ public class RegionFloraGeneratorTests
             Assert.False(DistrictBrickworks.Contains(d, works, p, 4));
             if (ForestClusterCatalog.IsCluster(tree.FloraId))
             {
-                float radius = ForestClusterCatalog.ClearanceMeters * tree.Scale;
+                float radius = ForestClusterCatalog.ClearanceMeters(tree.FloraId) * tree.Scale;
                 Assert.Greater(Mathf.Abs(p.x - 5), 9 + radius);
                 Assert.Greater(Mathf.Abs(p.y - (.8f - .5f) * 640), 19 + radius);
                 Assert.GreaterOrEqual(tree.NormalizedX * 640 - radius, 5);
@@ -150,12 +151,17 @@ public class RegionFloraGeneratorTests
             }
         }
     }
-    [Test] public void MixedForestUsesAllClustersAndSeparateHarvestableFirsWithFewerRecords()
+    [Test] public void WeightedForestUsesAllDominantFamiliesAndSeparateHarvestableFirsWithFewerRecords()
     {
         var d = District(); d.Width = d.Height = 2;
         var trees = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Wooded, 192);
         var clusters = trees.Where(t => ForestClusterCatalog.IsCluster(t.FloraId)).ToArray();
-        Assert.AreEqual(5, clusters.Select(t => t.FloraId).Distinct().Count());
+        Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-deciduous-")));
+        Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-mountain-")));
+        Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-tropical-")));
+        Assert.Greater(clusters.Count(t => ForestClusterCatalog.IsLarge(t.FloraId)),
+            clusters.Count(t => !ForestClusterCatalog.IsLarge(t.FloraId)),
+            "Level ground favors broad compositions; edge conflicts may fall back to compact");
         Assert.Greater(clusters.Length, trees.Count * .65f);
         var firs = trees.Where(DistrictTreeHarvest.CanFell).ToArray();
         Assert.Greater(firs.Length, trees.Count * .12f);
@@ -182,6 +188,39 @@ public class RegionFloraGeneratorTests
             Assert.NotNull(texture, id); Assert.Greater(texture.width, 1000);
             Assert.AreEqual(ForestClusterCatalog.Pivot, LotWorldController.FloraPivot(texture.name));
         }
+    }
+    [Test] public void FamilyWeightsAreRelativeAndSteepSlopesUseGroundedSingleTrees()
+    {
+        var flat = District(); flat.Width = flat.Height = 4;
+        var deciduous = RegionFloraGenerator.Generate(flat, RegionClimate.Temperate,
+            RegionTreeCoverage.Heavy, 311, familyMix: new ForestFamilyMix
+            { Deciduous = 100, Mountain = 0, Tropical = 0 });
+        var deciduousClusters = deciduous.Where(t => ForestClusterCatalog.IsCluster(t.FloraId)).ToArray();
+        Assert.True(deciduousClusters.All(t => t.FloraId.StartsWith("forest-deciduous-")));
+        Assert.True(deciduousClusters.Any(t => t.FloraId == "forest-deciduous-large"));
+        var mixed = RegionFloraGenerator.Generate(flat, RegionClimate.Temperate,
+            RegionTreeCoverage.Heavy, 312, familyMix: new ForestFamilyMix
+            { Deciduous = 33, Mountain = 33, Tropical = 33 });
+        foreach (var id in new[] { "forest-deciduous-large", "forest-mountain-large", "forest-tropical-large" })
+            Assert.Greater(mixed.Count(t => t.FloraId == id), 20, id);
+        Assert.Throws<InvalidOperationException>(() => RegionFloraGenerator.Generate(flat,
+            RegionClimate.Temperate, RegionTreeCoverage.Wooded, 1,
+            familyMix: new ForestFamilyMix { Deciduous = 0, Mountain = 0, Tropical = 0 }));
+
+        var hills = District(); hills.Width = hills.Height = 4;
+        hills.Hills = new DistrictHillSettings { Seed = 99, HeightMeters = 55, Coverage = 1 };
+        var sloped = RegionFloraGenerator.Generate(hills, RegionClimate.Temperate,
+            RegionTreeCoverage.Heavy, 313);
+        Assert.True(sloped.Any(t => !ForestClusterCatalog.IsCluster(t.FloraId) &&
+            t.FloraId != "cilician-fir"),
+            "A steep footprint must not stretch a multi-tree shared baseline");
+        Assert.True(sloped.Any(t => ForestClusterCatalog.IsCluster(t.FloraId) &&
+            !ForestClusterCatalog.IsLarge(t.FloraId)),
+            "Gentler hillside patches may retain compact groups");
+        foreach (var tree in sloped.Where(t => !ForestClusterCatalog.IsCluster(t.FloraId) &&
+                     t.FloraId != "cilician-fir"))
+            Assert.NotNull(Resources.Load<Texture2D>(LotWorldController.ResolveFloraResourcePath(
+                tree.FloraId, SeasonPreset.Summer)), tree.FloraId);
     }
     [Test] public void IncompleteAndFailedGenerationLeaveRegionAndHarvestIndexIntact()
     {
@@ -212,6 +251,7 @@ public class RegionFloraGeneratorTests
             var copy = RegionSaveStore.Load("test", root);
             Assert.AreEqual(RegionClimate.Mediterranean, copy.Tiles[0].Climate);
             Assert.AreEqual(RegionTreeCoverage.Wooded, copy.Terrain.TreeCoverage);
+            Assert.AreEqual(33, copy.Terrain.ForestMix.Deciduous);
             Assert.AreEqual(RegionWaterAmount.Many, copy.Terrain.Streams);
             Assert.AreEqual(region.Tiles[0].Flora.Count, copy.Tiles[0].Flora.Count);
             Assert.AreEqual(JsonUtility.ToJson(region), JsonUtility.ToJson(copy));

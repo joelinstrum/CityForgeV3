@@ -15,7 +15,18 @@ namespace CityForgeV3.World
         public int LastUpdatedChunkCount {get;private set;}
         private Material material;
         private DistrictWorldController world;
-        public bool PresentationEnabled {get;set;}=true;
+        private bool presentationEnabled=true;
+        public bool PresentationEnabled
+        {
+            get=>presentationEnabled;
+            set
+            {
+                if(presentationEnabled==value)return;
+                presentationEnabled=value;
+                foreach(var chunk in chunks.Values)
+                    chunk.Renderer.enabled=value;
+            }
+        }
         public int PatchCount {get;private set;}
         public Vector2 ReviewPoint {get;private set;}
         public float GeometrySignature {get;private set;}
@@ -41,9 +52,9 @@ namespace CityForgeV3.World
                 if(chunks.TryGetValue(key,out var old)){old.Object.SetActive(false);Dispose(old.Object);Dispose(old.Mesh);chunks.Remove(key);}
                 BuildChunk(key,width,depth,seed,cols,rows);
             }
+            world.ConfigureHillOverlayLighting(material,.20f);
             PatchCount=0;GeometrySignature=0;float closest=float.MaxValue;
             foreach(var chunk in chunks.Values){PatchCount+=chunk.Count;GeometrySignature+=chunk.Signature;if(chunk.ReviewDistance<closest){closest=chunk.ReviewDistance;ReviewPoint=chunk.Review;}}
-            LateUpdate();
         }
         void BuildChunk(Vector2Int key,float width,float depth,uint seed,int cols,int rows)
         {
@@ -83,13 +94,7 @@ namespace CityForgeV3.World
                 if(vertices.Count==0)return;
                 var mesh=new Mesh{name=$"Hill detail {cx},{cz}",indexFormat=IndexFormat.UInt32};mesh.SetVertices(vertices);mesh.SetNormals(normals);mesh.SetUVs(0,uv);mesh.SetColors(colors);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();
                 var chunk=new GameObject(mesh.name);chunk.transform.SetParent(transform,false);chunk.AddComponent<MeshFilter>().sharedMesh=mesh;
-                var renderer=chunk.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.Off;renderer.receiveShadows=true;chunks[key]=new Chunk{Object=chunk,Mesh=mesh,Renderer=renderer,Count=patchCount,Signature=signature,Review=reviewPoint,ReviewDistance=reviewDistance};
-        }
-        private void LateUpdate()
-        {
-            if(world==null||material==null)return;
-            world.ConfigureHillOverlayLighting(material,.20f);
-            foreach(var chunk in chunks.Values)chunk.Renderer.enabled=PresentationEnabled;
+                var renderer=chunk.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.Off;renderer.receiveShadows=true;renderer.enabled=presentationEnabled;chunks[key]=new Chunk{Object=chunk,Mesh=mesh,Renderer=renderer,Count=patchCount,Signature=signature,Review=reviewPoint,ReviewDistance=reviewDistance};
         }
         private static uint Hash(uint v){unchecked{v^=v>>16;v*=0x7feb352du;v^=v>>15;v*=0x846ca68bu;return v^(v>>16);}}
         private static float Unit(uint v)=>(v&65535)/65535f;
@@ -100,11 +105,8 @@ namespace CityForgeV3.World
     {
         public void ConfigureHillOverlayLighting(Material material,float opacity)
         {
-            var ground=_groundRenderer?.sharedMaterial;if(ground==null)return;
-            var tint=ground.color;tint.a=opacity;material.color=tint;
-            material.SetFloat("_AmbientFloor",ground.GetFloat("_AmbientFloor"));
-            material.SetFloat("_TerrainReliefStrength",ground.GetFloat("_TerrainReliefStrength"));
-            material.SetVector("_TerrainSunDirection",ground.GetVector("_TerrainSunDirection"));
+            if(material==null)return;
+            material.color=new Color(1f,1f,1f,opacity);
         }
     }
 }

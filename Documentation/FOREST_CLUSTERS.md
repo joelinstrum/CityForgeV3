@@ -1,5 +1,53 @@
 # Mixed forest placements
 
+## September 19 — weighted families and terrain-sized clumps
+
+Follow-up: multi-tree artwork is now limited to terrain where its shared root
+line can remain credible. Five local elevation samples choose large groups on
+flat ground (≤0.4m spread), compact groups on gentle slopes (≤0.9m), and one
+family-matched, individually grounded tree on steeper terrain. This prevents a
+single five-tree baseline from appearing skewed across a hill. Steep candidates
+remain one placement and one renderer; the fix does not multiply records,
+objects, draw batches, or per-frame work. Existing generated records change only
+after explicit Tree Coverage regeneration; no district is rewritten or saved
+automatically.
+
+Tree Coverage now stores three relative weights: Deciduous, Fir & Mountain,
+and Tropical. The default is 33 / 33 / 33; totals do not need to equal 100.
+These weights select a billboard's **dominant** family, not an exclusive stand.
+Deciduous compositions contain one fir and Fir & Mountain compositions contain
+one deciduous tree. Tropical compositions mix fan palms, date palms and tropical
+broadleaf trees. Existing saved districts receive the default mix and are not
+regenerated until the player explicitly uses Generate Tree Coverage.
+
+Each candidate samples the existing deterministic elevation field at its center
+and four points 12m away. A maximum height spread of 1.25m selects a broad
+nine-tree billboard with a 23m clearance; gentle terrain selects a compact
+five-tree billboard with a 16m clearance; steep terrain selects one rooted tree.
+If a broad footprint conflicts with a road, river, lot or district edge, the
+same candidate may fall back to compact.
+This is five bounded samples and one occupancy-grid query per candidate during
+explicit generation, never a routine district scan or per-frame calculation.
+
+All six family/size compositions are one `PlacedDistrictFlora`, one
+`SpriteRenderer`, and one spatially batched presentation. Large art uses 36
+pixels/metre and compact art uses 50 pixels/metre. Summer/autumn/winter variants
+are provided for deciduous and mountain compositions; tropical compositions use
+their summer art in every season. Shadows stay one mesh per billboard, using five
+or nine approximate grounded proxies. Separately placed harvestable Cilician firs
+remain at the existing one-in-five candidate rate, preserving lumber yields,
+worker selection, carts and mill routing. Trees painted inside a cluster remain
+non-harvestable scenery.
+
+The district and regional Flora panels expose the same mix controls. Applying a
+district mix changes only that district; regional generation copies the mix to
+each district. Generation and Undo remain in memory. Only the existing explicit
+Save action writes district or region state to disk.
+
+Runtime art and lineage are recorded in
+`Documentation/Migration/FOREST_FAMILY_MIX_V01.md`. Validation evidence is in
+`Documentation/Validation/forest-family-mix-v01/`.
+
 ## September 19 — interactive groups and bounded presentation updates
 
 The interactive **Paint Family Groups** tool now includes a harvestable

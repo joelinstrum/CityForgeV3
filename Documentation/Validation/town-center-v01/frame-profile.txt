@@ -1,0 +1,6 @@
+100 isolated Town Centers; 1400x1200 automatic camera RenderTexture; Editor Play mode; no player saves.
+Counters valid: draws=True triangles=True gc=True main=True
+LOD=0 frame ms median=1.10975059214979 p95=1.41074974089861 max=1.60166528075933 main-thread ms median=1.112334 p95=1.411208 draws median=11 triangles median=2763482 GC bytes/frame median=4154 max=9434
+LOD=1 frame ms median=1.05379114393145 p95=1.30183529108763 max=1.41021120361984 main-thread ms median=1.033583 p95=1.304334 draws median=11 triangles median=943582 GC bytes/frame median=4154 max=9434
+LOD=-1 frame ms median=1.65879388805479 p95=1.94649945478886 max=2.00608698651195 main-thread ms median=1.632291 p95=1.984917 draws median=224 triangles median=907386 GC bytes/frame median=4154 max=9434
+Active people=5 lights=25

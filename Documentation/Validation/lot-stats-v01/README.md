@@ -46,3 +46,12 @@ deleting it removes the same capacity and residents through the incremental Lot
 simulation. Eight category cases and the existing placement/removal/reload,
 demographic, requirement and dense-cache checks passed 16/16. Stats UI and JSON
 compatibility passed 3/3. No player Lot or district was saved.
+
+September 19, 2026: the Lot Editor now has a separate **Bonus** category for
+one-time placement resources. It exposes all ten district stockpiles: lumber,
+coal, stone, iron ore, gold, oil, food, jewels, cloth, and bricks. Bonuses are
+persisted with the Lot but granted only by the incremental new-placement path.
+Reloading, editing, or removing a placed Lot neither repeats nor reverses them.
+Gold means the Gold resource stockpile, not Treasury cash. Seasonal and
+delivery production remain separate, so the lumber mill's ordinary output
+still requires delivered tree trunks.

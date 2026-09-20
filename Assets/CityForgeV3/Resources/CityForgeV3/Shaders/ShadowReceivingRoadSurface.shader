@@ -10,7 +10,6 @@ Shader "CityForgeV3/ShadowReceivingRoadSurface"
         _RoadMaterialTiling ("Road Material Tiling", Float) = 5
         _SidewalkMaterialTiling ("Sidewalk Material Tiling", Float) = 5
         _Color ("Tint", Color) = (1, 1, 1, 1)
-        _TimeTint ("Time of Day Tint", Color) = (1, 1, 1, 1)
     }
 
     SubShader
@@ -30,7 +29,6 @@ Shader "CityForgeV3/ShadowReceivingRoadSurface"
         sampler2D _RoadSurfaceTex;
         sampler2D _SidewalkSurfaceTex;
         fixed4 _Color;
-        fixed4 _TimeTint;
         float _UseMaterialZones;
         float _RoadMaterialTiling;
         float _SidewalkMaterialTiling;
@@ -69,8 +67,8 @@ Shader "CityForgeV3/ShadowReceivingRoadSurface"
                 artwork.rgb = lerp(artwork.rgb, road, roadMask);
                 artwork.rgb = lerp(artwork.rgb, sidewalk, sidewalkMask);
             }
-            output.Albedo = artwork.rgb * _TimeTint.rgb;
-            output.Alpha = artwork.a * _TimeTint.a;
+            output.Albedo = artwork.rgb;
+            output.Alpha = artwork.a;
             output.Metallic = 0.0;
             output.Smoothness = 0.05;
         }

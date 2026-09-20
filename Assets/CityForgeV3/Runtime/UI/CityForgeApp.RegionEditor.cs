@@ -1704,9 +1704,13 @@ namespace CityForgeV3.UI
         {
           var founder = Array.Find(FounderBuildings(),
               item => item.Id == _pendingFounderBuildingId);
+          var founderName = _pendingFounderBuildingId ==
+              DistrictTownCenterFounderId
+              ? _pendingFounderLot?.Name ?? "District Town Center"
+              : founder.Name;
           panel.Add(StyledLabel("PLACE YOUR FOUNDER BUILDING",
               "district-unfounded-label"));
-          panel.Add(StyledLabel(founder.Name,
+          panel.Add(StyledLabel(founderName,
               "district-founder-placement-name"));
           panel.Add(StyledLabel(
               "Move the building outline onto the land and click to start your town.",
@@ -1728,7 +1732,7 @@ namespace CityForgeV3.UI
         found.tooltip = "Start building a district or establish a town";
         panel.Add(found);
         panel.Add(StyledLabel(
-            "Start a district now, or place a Fort or City Center to begin a town.",
+            "Start a district now, or place a Fort or District Town Center to begin a town.",
             "district-founder-hint"));
         return panel;
       }
@@ -1754,7 +1758,7 @@ namespace CityForgeV3.UI
       var panel = CreateDocumentModal("START DISTRICT OR TOWN",
           "Choose how you want to begin here.");
       const string districtCopy = "Start a district now to begin building and linking resources. You can always start a town here later.";
-      const string townCopy = "Place a Fort or City Center to begin your town.";
+      const string townCopy = "Place a Fort or District Town Center to begin your town.";
       var caption = StyledLabel(district.Founded ? townCopy : districtCopy, "document-modal-copy");
       caption.name = "district-start-caption";
       var choices = DocumentModalActions();
@@ -1794,7 +1798,7 @@ namespace CityForgeV3.UI
       var district = FindSelectedRegionTile();
       if (district == null) return;
       var panel = CreateDocumentModal(town ? "NAME YOUR TOWN" : "NAME YOUR DISTRICT",
-          town ? "Confirm the name, then choose a Fort or City Center." : "Confirm the name to start your district.");
+          town ? "Confirm the name, then choose a Fort or District Town Center." : "Confirm the name to start your district.");
       var name = new TextField("NAME")
       {
         name = "district-start-name",
@@ -1839,13 +1843,13 @@ namespace CityForgeV3.UI
       panel.AddToClassList("founder-modal");
       panel.Add(StyledLabel("START TOWN", "founder-modal-title"));
       panel.Add(StyledLabel(
-          "Place a Fort or City Center to begin your town.",
+          "Place a Fort or any District Town Center Lot to begin your town.",
           "founder-modal-intro"));
       var scroll = new ScrollView(ScrollViewMode.Vertical);
       scroll.AddToClassList("founder-building-list");
       foreach (var founder in FounderBuildings())
       {
-        if (founder.Id != "fortress" && founder.Id != "city-charter-house") continue;
+        if (founder.Id != "fortress") continue;
         var captured = founder;
         var card = new Button(() => ArmFounderPlacement(captured.Id));
         bool available = !string.IsNullOrWhiteSpace(captured.LotId) &&
@@ -1854,16 +1858,38 @@ namespace CityForgeV3.UI
         card.AddToClassList("founder-building-card");
         card.name = $"founder-{captured.Id}";
         card.tooltip = string.IsNullOrWhiteSpace(captured.LotId)
-            ? "Coming later — the City Center Lot has not been created yet."
-            : $"Place the saved {captured.Name} in this district";
+            ? "Coming later — this founder Lot has not been created yet."
+            : $"Place {captured.Name} in this district";
         card.Add(StyledLabel(string.IsNullOrWhiteSpace(captured.LotId)
             ? "HOUSE" : "LOT", "founder-building-icon"));
         var copy = new VisualElement();
         copy.AddToClassList("founder-building-copy");
         copy.Add(StyledLabel(captured.Name, "founder-building-name"));
         copy.Add(StyledLabel(available ? captured.Description : captured.Id == "city-charter-house"
-            ? "Coming later — the City Center Lot has not been created yet."
+            ? "Coming later — this founder Lot has not been created yet."
             : "Not available yet — a saved building Lot is required.",
+            "founder-building-description"));
+        card.Add(copy);
+        scroll.Add(card);
+      }
+      // Refresh only when this explicit, infrequent browser opens. Eligibility
+      // comes from the authored Lot type; no district objects are scanned.
+      LotContentCatalog.InvalidateCache();
+      foreach (var summary in LotContentCatalog.All.Where(
+                   IsDistrictTownCenterLot))
+      {
+        var captured = summary;
+        var card = new Button(() => ArmDistrictTownCenterPlacement(
+            captured.LotId));
+        card.AddToClassList("founder-building-card");
+        card.name = $"founder-lot-{captured.LotId}";
+        card.tooltip = $"Start the town with {captured.Name} and its authored Lot settings";
+        card.Add(StyledLabel("LOT", "founder-building-icon"));
+        var copy = new VisualElement();
+        copy.AddToClassList("founder-building-copy");
+        copy.Add(StyledLabel(captured.Name, "founder-building-name"));
+        copy.Add(StyledLabel(
+            "District Town Center • uses this Lot's authored population, resources, services, jobs, and finances.",
             "founder-building-description"));
         card.Add(copy);
         scroll.Add(card);
@@ -1876,7 +1902,11 @@ namespace CityForgeV3.UI
       _root.Add(overlay);
     }
 
+    private const string DistrictTownCenterFounderId = "district-town-center";
     private LotSaveData _pendingFounderLot;
+
+    private static bool IsDistrictTownCenterLot(LotSaveSummary summary) =>
+      summary != null && summary.LotType == LotType.DistrictTownCenter;
 
     private void ArmFounderPlacement(string founderId)
     {
@@ -1891,6 +1921,19 @@ namespace CityForgeV3.UI
       Show(AppScreen.DistrictTerraform);
     }
 
+    private void ArmDistrictTownCenterPlacement(string lotId)
+    {
+      var lot = LotContentCatalog.Read(lotId);
+      if (lot == null || lot.LotType != LotType.DistrictTownCenter) return;
+      _pendingFounderLot = lot;
+      ReturnToQuietDistrict();
+      _pendingDistrictLotId = "";
+      _pendingDistrictLotIsTest = false;
+      _pendingFounderBuildingId = DistrictTownCenterFounderId;
+      RemoveDocumentModal();
+      Show(AppScreen.DistrictTerraform);
+    }
+
     private void ComposeDistrictLotBrowser(LotType? lotType, bool testing = false)
     {
       testing = testing && TestLotToolsAvailable;
@@ -1899,7 +1942,9 @@ namespace CityForgeV3.UI
       // a Lot manually saved since the previous browse appears immediately.
       LotContentCatalog.InvalidateCache();
       var saves = LotContentCatalog.All.Where(summary =>
-          testing || summary.LotType == lotType).ToList();
+          testing || summary.LotType == lotType ||
+          lotType == LotType.Civics &&
+          summary.LotType == LotType.DistrictTownCenter).ToList();
       var category = testing ? "Test" : lotType == LotType.CivicsParks
           ? "Park" : LotTypeLabel(lotType.Value);
       var panel = CreateDocumentModal(
@@ -1926,6 +1971,7 @@ namespace CityForgeV3.UI
           var captured = summary;
           var entry = new Button(() => ArmDistrictLotPlacement(
               captured.LotId, captured.Name, testing));
+          entry.name = $"district-lot-{captured.LotId}";
           entry.AddToClassList("district-lot-entry");
           entry.tooltip = $"Place {captured.Name} — a " +
               $"{LotTypeLabel(captured.LotType).ToLowerInvariant()} lot measuring " +
@@ -1985,6 +2031,8 @@ namespace CityForgeV3.UI
 
     private Texture2D LoadSavedLotPreview(string lotId)
     {
+      var bundled = LotContentCatalog.PreviewTexture(lotId);
+      if (bundled != null) return bundled;
       var previewPath = LotContentCatalog.PreviewPath(lotId);
       if (!File.Exists(previewPath)) return null;
       if (_districtLotPreviewTextures.TryGetValue(previewPath,
@@ -2195,13 +2243,51 @@ namespace CityForgeV3.UI
       var view = lot?.EditorView;
       if (view == null || !view.Valid || view.TopDown) return 0;
       var octant = ((view.OrbitOctant % 8) + 8) % 8;
+      var clockwiseDiagonal = (octant + 1) / 2;
+      var authoredTurns = (4 - clockwiseDiagonal) & 3;
+      if (TrySavedCameraOrbitOctant(view, out var cameraOctant))
+      {
+        // Preserve the established octant-label mapping, then apply only the
+        // signed difference carried by the real camera. This keeps consistent
+        // saves unchanged while correcting stale labels in the same direction
+        // the author actually turned the Lot Editor camera.
+        var deltaOctants = ((cameraOctant - octant + 4) & 7) - 4;
+        var correction = deltaOctants >= 0
+            ? (deltaOctants + 1) / 2
+            : (deltaOctants - 1) / 2;
+        return (authoredTurns + correction) & 3;
+      }
       // The district camera looks across the Lot from the opposite diagonal,
       // and hosted Lots already carry the matching 180-degree camera offset.
       // Saved diagonal views therefore map to quarter turns in reverse order:
       // NE=0, SE=3, SW=2, NW=1. Cardinal authoring views sit between grid-safe
       // orientations and choose the next clockwise diagonal.
-      var clockwiseDiagonal = (octant + 1) / 2;
-      return (4 - clockwiseDiagonal) & 3;
+      return authoredTurns;
+    }
+
+    private static bool TrySavedCameraOrbitOctant(
+        LotEditorViewState view, out int octant)
+    {
+      octant = 0;
+      if (view.OrthographicSize <= 0f) return false;
+      var rotation = view.Rotation;
+      var magnitude = rotation.x * rotation.x + rotation.y * rotation.y +
+          rotation.z * rotation.z + rotation.w * rotation.w;
+      if (magnitude < 0.5f) return false;
+
+      // The rendered camera transform is the authoritative saved view. A few
+      // real Lots carry an old OrbitOctant label that disagrees with that
+      // transform, so trusting the label rotates their district placement by
+      // one quarter turn. Recover the camera's horizontal position direction
+      // from its look rotation and snap it to the same eight-octant contract.
+      var awayFromTarget = -(rotation * Vector3.forward);
+      awayFromTarget.y = 0f;
+      if (awayFromTarget.sqrMagnitude < 0.01f) return false;
+      var degrees = Mathf.Repeat(Mathf.Atan2(
+          awayFromTarget.z, awayFromTarget.x) * Mathf.Rad2Deg, 360f);
+      octant = Mathf.RoundToInt(
+          Mathf.Repeat(degrees - 45f, 360f) / 45f) & 7;
+      return true;
     }
 
     private bool QuotePendingDistrictLot(RegionCityTile district, LotSaveData lot,
@@ -2380,25 +2466,32 @@ namespace CityForgeV3.UI
     private void PlaceFounderBuilding(RegionCityTile district, float x,
         float y)
     {
+      var authoredTownCenter = _pendingFounderBuildingId ==
+          DistrictTownCenterFounderId;
       var founder = Array.Find(FounderBuildings(),
           item => item.Id == _pendingFounderBuildingId);
-      if (district == null || string.IsNullOrWhiteSpace(founder.Id)) return;
       var lot = _pendingFounderLot;
-      if (lot == null) return;
+      if (district == null || lot == null ||
+          (authoredTownCenter &&
+              lot.LotType != LotType.DistrictTownCenter) ||
+          (!authoredTownCenter && string.IsNullOrWhiteSpace(founder.Id))) return;
+      var founderId = authoredTownCenter
+          ? DistrictTownCenterFounderId : founder.Id;
+      var founderName = authoredTownCenter ? lot.Name : founder.Name;
       var snapped = SnapFounderPlacement(district, x, y);
       if (!TryFounderFootprint(district, x, y, out var gridX, out var gridZ,
           out var spanX, out var spanZ)) return;
       var placement = new PlacedDistrictLot
       {
         InstanceId = Guid.NewGuid().ToString("N"),
-        LotId = founder.LotId,
-        HasPopulationOverride = true,
+        LotId = lot.LotId,
+        HasPopulationOverride = !authoredTownCenter,
         PopulationOverride = 0,
         GridX = gridX,
         GridZ = gridZ
       };
       if (!IsDistrictFootprintClear(district, placement.GridX, placement.GridZ, spanX, spanZ))
-      { ShowDistrictNotice("Choose an open area for the Fort."); return; }
+      { ShowDistrictNotice("Choose an open area for the founder Lot."); return; }
       DistrictLotSimulation.For(district);
       district.Lots ??= new List<PlacedDistrictLot>();
       district.Lots.Add(placement);
@@ -2409,12 +2502,13 @@ namespace CityForgeV3.UI
       }
       InitializeDistrictStart(district, UnityEngine.Random.Range(1740, 1761));
       district.Designation = RegionPlaceDesignation.Town;
-      district.FounderBuildingId = founder.Id;
-      district.FounderBuildingName = founder.Name;
-      district.LotId = founder.LotId;
+      district.FounderBuildingId = founderId;
+      district.FounderBuildingName = founderName;
+      district.LotId = lot.LotId;
       district.FounderNormalizedX = snapped.x;
       district.FounderNormalizedY = snapped.y;
-      ApplyFounderStartingFood(district, founder.Id);
+      if (!authoredTownCenter)
+        ApplyFounderStartingFood(district, founder.Id);
       DistrictLotSimulation.For(district).Add(placement.InstanceId, lot,
           placement.HasPopulationOverride, placement.PopulationOverride);
       _pendingFounderBuildingId = "";
@@ -2433,14 +2527,14 @@ namespace CityForgeV3.UI
       _root?.Q<Button>("district-simulation-pause")?.SetEnabled(true);
       _root?.Q<Button>("district-simulation-go")?.SetEnabled(true);
       _root?.Q(className: "district-simulation-panel")?.RemoveFromHierarchy();
-      if (founder.Id == "fortress") ShowFortNextSteps();
+      if (!authoredTownCenter && founder.Id == "fortress")
+        ShowFortNextSteps();
     }
 
     private static int FounderStartingFood(string founderBuildingId) =>
       founderBuildingId switch
       {
         "fortress" => 250,
-        "city-charter-house" => 500,
         _ => 0
       };
 
@@ -2597,7 +2691,7 @@ namespace CityForgeV3.UI
                 ("trading-post", "Frontier Trading Post", "Create a crossroads for commerce, supplies, travelers, and regional exchange.", ""),
                 ("village-hall", "Village Hall", "Found a compact small town organized around local civic life.", ""),
                 ("river-landing", "River Landing", "Build around waterways, shipping, fishing, and future waterfront industry.", ""),
-                ("city-charter-house", "City Center", "Establish the civic center of your new town.", "")
+                ("city-charter-house", "Legacy City Center", "Compatibility identity for older town saves.", "")
         };
 
     private void SetDistrictSimulationPaused(bool paused)
@@ -2712,8 +2806,9 @@ namespace CityForgeV3.UI
       var panStep = DistrictZoom.PanStepMeters(_terraformZoomLevel) *
           (_terraformZoomLevel == DistrictZoomLevel.LOD0 ? 3f : 2f) *
           DistrictZoom.PanSpeedScale(_terraformZoomLevel);
-      // The two closest views retain fine movement. Player-facing Zoom 3 uses
-      // its requested 30% increase for both edge hovering and arrow keys.
+      // Every stop has its own perceived-speed calibration. In particular,
+      // player-facing Zooms 4–6 are intentionally slower than close inspection
+      // for both edge hovering and arrow keys.
       var horizontalWorldMotion = 0;
       var verticalWorldMotion = 0;
       if (Input.GetKeyDown(KeyCode.LeftArrow))

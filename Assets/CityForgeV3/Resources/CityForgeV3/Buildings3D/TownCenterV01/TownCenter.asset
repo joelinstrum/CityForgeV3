@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b55a71d6fccc547d4b5613e483fa6ad7, type: 3}
+  m_Name: TownCenter
+  m_EditorClassIdentifier:
+  SchemaVersion: 2
+  AssetId: town-center-v01
+  SourceProvenance: Joe's hollow-window Tripo model; Blender rear wall, interior,
+    sashes and lantern derivative. Shared strolling Automata.
+  AuthoredScale: {x: 1, y: 1, z: 1}
+  PivotOffset: {x: 0, y: 0, z: 0}
+  FrontYawDegrees: 180
+  FootprintMeters: {x: 14.2, y: 11.64}
+  BoundsTolerance: 0.05
+  UseCrossFade: 0
+  CrossFadeWidth: 0.1
+  KeepShadowMeshWithImpostor: 1
+  CollisionPrefab: {fileID: 0}
+  NightLightingPrefab: {fileID: 0}
+  NightLightingMaterial: {fileID: 0}
+  NightLightingLocalPosition: {x: 0, y: 0, z: 0}
+  NightLightingLocalEulerAngles: {x: 0, y: 0, z: 0}
+  NightLightingLocalScale: {x: 1, y: 1, z: 1}
+  Representations:
+  - Level: 0
+    ScreenRelativeHeight: 0.18
+    VisualPrefab: {fileID: 7084409971825431310, guid: 1401e4ffedc1141e2bd021a579a4fdd4, type: 3}
+    OverrideMaterial: {fileID: 0}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 27618
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance:
+  - Level: 3
+    ScreenRelativeHeight: 0.001
+    VisualPrefab: {fileID: 2783423783764281704, guid: 1937b0a1e68dd4b15b2928c3d38b019b, type: 3}
+    OverrideMaterial: {fileID: 0}
+    ShadowPrefab: {fileID: 0}
+    LocalPosition: {x: 0, y: 0, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+    TargetTriangleBudget: 9419
+    BillboardAngleCount: 0
+    BillboardYawOffset: 0
+    Provenance:

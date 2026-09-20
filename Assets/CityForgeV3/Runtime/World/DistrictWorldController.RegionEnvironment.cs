@@ -5,6 +5,13 @@ namespace CityForgeV3.World
 {
     public sealed partial class DistrictWorldController
     {
+        private static readonly int WorldAmbientColorId =
+            Shader.PropertyToID("_CFWorldAmbientColor");
+        private static readonly int WorldSunColorId =
+            Shader.PropertyToID("_CFWorldSunColor");
+        private static readonly int WorldLightDirectionId =
+            Shader.PropertyToID("_CFWorldLightDirection");
+
         public static float RegionSunIntensity(TimeOfDayPreset preset) => preset switch
         {
             TimeOfDayPreset.Morning => .62f,
@@ -25,12 +32,28 @@ namespace CityForgeV3.World
                 RenderSettings.ambientEquatorColor = new Color(.30f,.305f,.315f);
                 RenderSettings.ambientGroundColor = new Color(.12f,.115f,.105f);
             }
+            var sunRotation = TimeOfDayLighting.SunRotation(preset);
+            var sunColor = preset == TimeOfDayPreset.Morning
+                ? new Color(1f,.985f,.96f) : spec.SunColor;
+            var sunIntensity = RegionSunIntensity(preset);
+            ApplyWorldShaderLighting(spec.AmbientColor, sunColor,
+                sunIntensity, sunRotation);
             if (sun == null) return;
-            sun.transform.rotation = TimeOfDayLighting.SunRotation(preset);
-            sun.color = preset == TimeOfDayPreset.Morning ? new Color(1f,.985f,.96f) : spec.SunColor;
-            sun.intensity = RegionSunIntensity(preset);
+            sun.transform.rotation = sunRotation;
+            sun.color = sunColor;
+            sun.intensity = sunIntensity;
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = preset == TimeOfDayPreset.Noon ? .92f : .86f;
+        }
+
+        public static void ApplyWorldShaderLighting(Color ambientColor,
+            Color sunColor, float sunIntensity, Quaternion sunRotation)
+        {
+            var directionToSun = -(sunRotation * Vector3.forward).normalized;
+            Shader.SetGlobalColor(WorldAmbientColorId, ambientColor);
+            Shader.SetGlobalColor(WorldSunColorId, sunColor * sunIntensity);
+            Shader.SetGlobalVector(WorldLightDirectionId, new Vector4(
+                directionToSun.x, directionToSun.y, directionToSun.z, 0f));
         }
     }
 }

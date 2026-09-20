@@ -32,6 +32,90 @@ namespace CityForgeV3.UI
             return button;
         }
 
+        private Button CreateLotBonusButton()
+        {
+            var button = new Button(OpenLotBonus)
+            {
+                name = "lot-bonus",
+                tooltip = "Bonus — resources added once when the Lot is placed"
+            };
+            button.AddToClassList("cf-image-button");
+            button.AddToClassList("cf-image-button--tool-category");
+            var icon = new Label("+") { pickingMode = PickingMode.Ignore };
+            icon.style.fontSize = 34;
+            icon.style.unityFontStyleAndWeight = FontStyle.Bold;
+            icon.style.unityTextAlign = TextAnchor.MiddleCenter;
+            icon.style.height = 30;
+            icon.style.color = new Color(.85f, .73f, .42f);
+            button.Add(icon);
+            var caption = new Label("BONUS")
+                { pickingMode = PickingMode.Ignore };
+            caption.AddToClassList("tool-category-caption");
+            button.Add(caption);
+            button.SetEnabled(_hasOpenLot);
+            return button;
+        }
+
+        private void OpenLotBonus()
+        {
+            if (!_hasOpenLot || _lotWorld == null) return;
+            var lot = _lotWorld.Session.Data;
+            var draft = lot.Stats?.Copy() ?? new LotStats();
+            draft.PlacementBonuses ??= new List<LotResourceBonus>();
+            var panel = CreateDocumentModal("LOT BONUS",
+                "These resources are added to the district stockpile once when the Lot is placed. Apply changes, then Save the Lot to keep them.");
+            panel.style.width = 700;
+            var scroll = new ScrollView(ScrollViewMode.Vertical)
+                { name = "lot-bonus-scroll" };
+            scroll.style.height = 440;
+            scroll.style.flexShrink = 0;
+            foreach (var id in LotPlacementBonusCatalog.ResourceIds)
+            {
+                var bonus = draft.PlacementBonuses.Find(item =>
+                    item != null && item.ResourceId == id);
+                if (bonus == null)
+                {
+                    bonus = new LotResourceBonus { ResourceId = id };
+                    draft.PlacementBonuses.Add(bonus);
+                }
+                var captured = bonus;
+                var field = new IntegerField(
+                    LotPlacementBonusCatalog.DisplayName(id) + " added")
+                {
+                    value = Math.Max(0, bonus.Amount),
+                    isDelayed = true
+                };
+                field.name = "lot-bonus-" + id;
+                field.AddToClassList("document-field");
+                field.style.flexDirection = FlexDirection.Row;
+                field.style.minHeight = 42;
+                field.style.flexShrink = 0;
+                field.Q(className: "unity-base-field__input").style.flexGrow = 1;
+                field.RegisterValueChangedCallback(e =>
+                {
+                    var value = Math.Max(0, e.newValue);
+                    field.SetValueWithoutNotify(value);
+                    captured.Amount = value;
+                });
+                scroll.Add(field);
+            }
+            scroll.Add(StyledLabel(
+                "A Bonus is not seasonal production. Loading, editing, or removing the Lot does not grant it again or take it back. Gold here is the district's Gold resource, not Treasury cash.",
+                "inspector-note"));
+            panel.Add(scroll);
+            var actions = DocumentModalActions();
+            actions.Add(CfButton.Create("APPLY", () =>
+            {
+                lot.Stats = draft;
+                RemoveDocumentModal();
+                _lotStatus = "Lot bonus updated — Save to keep changes";
+                Show(AppScreen.LotEditor);
+            }, true, "primary"));
+            actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal,
+                true, "quiet"));
+            panel.Add(actions);
+        }
+
         private void OpenLotStats()
         {
             if (!_hasOpenLot || _lotWorld == null) return;

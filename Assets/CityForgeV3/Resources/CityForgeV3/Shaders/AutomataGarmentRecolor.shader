@@ -24,6 +24,7 @@ Shader "CityForgeV3/AutomataGarmentRecolor"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "CityForgeWorldLighting.cginc"
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -64,7 +65,9 @@ Shader "CityForgeV3/AutomataGarmentRecolor"
                     saturate(mask.r * _RecolorOneMix));
                 original.rgb = lerp(original.rgb, coat,
                     saturate(mask.g * _RecolorTwoMix));
-                return original * i.color;
+                fixed4 result = original * i.color;
+                result.rgb *= CityForgeArtworkLighting(1.0h);
+                return result;
             }
             ENDCG
         }

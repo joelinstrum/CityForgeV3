@@ -15,7 +15,8 @@ namespace CityForgeV3.World
         Mixed = 4,
         Agricultural = 5,
         Civics = 6,
-        CivicsParks = 7
+        CivicsParks = 7,
+        DistrictTownCenter = 8
     }
 
     public enum LotZoomLevel
@@ -166,6 +167,19 @@ namespace CityForgeV3.World
                 RoadPorts = new List<RoadConnectionPort>
                 {
                     new() { Id = "park-access", WidthMeters = 6f, LaneCount = 2 }
+                }
+            },
+            new()
+            {
+                Type = LotType.DistrictTownCenter,
+                DisplayName = "DISTRICT TOWN CENTER LOT",
+                AllowsInternalRoads = true,
+                AllowsThroughTraffic = false,
+                MaximumBuildings = 16,
+                RoadPorts = new List<RoadConnectionPort>
+                {
+                    new() { Id = "town-center-access", WidthMeters = 6f,
+                        LaneCount = 2 }
                 }
             }
         };

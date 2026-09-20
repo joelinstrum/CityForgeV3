@@ -194,7 +194,7 @@ namespace CityForgeV3.World
             RefreshPose();
         }
 
-        private static Sprite[][] FramesFor(AutomataClipEntry entry)
+        internal static Sprite[][] FramesFor(AutomataClipEntry entry)
         {
             if (SharedFrames.TryGetValue(entry.id, out var cached))
                 return cached;

@@ -1,0 +1,1 @@
+Actual LotWorldController.Build/NewEmptyLot/AddExperimentalBuilding3D; active Lot camera; Noon and Night; in-memory fixture only, no Save. Native camera angle retained, framing centred for review.

@@ -1,5 +1,55 @@
 # Restart handoff — September 15, 2026
 
+## Latest — September 20 shared world-lighting contract
+
+On `feature/parks-and-gardens`, the district is now the sole owner of its shared
+sun, ambient settings, and shader lighting state. District-hosted Lots no longer
+load saved per-Lot environment controls or rotate, recolor, brighten, dim, or
+otherwise rewrite the district sun. The shared shader state is published once
+per environment transition rather than copied into every road, flora, or Lot
+material.
+
+Native 3D building exteriors—including the Town Center—use Unity's Standard
+lighting path instead of putting the whole authored surface into emission.
+Only authored night window masks remain emissive. Roads, bridges, rivers, Lot
+ground, decals, flora, garden cards, grass patches, and custom building props
+now consume the same world-light inputs; their local night tints, fixed light
+floors, and bespoke sun-direction controls were removed. Lamps, windows,
+torches, fire, and headlights remain intentional local emitters.
+
+Contract and invalidation boundaries are documented in
+`Documentation/WORLD_LIGHTING_CONTRACT.md`. Validation uses an isolated copy of
+CityForge V3 and does not save player content. Per Joe's direction, do not sync
+or restart CityForge-Regions-Review.
+
+Validation passed 57/57 combined focused lighting, Town Center, terrain, river,
+flora, garden, natural-resource, and quarry tests. After the final snow,
+automata, generic-color, and fountain shader conversions, the 4/4 lighting-
+contract tests passed again. Active shaders loaded as supported, `git diff
+--check` passed, and the open CityForge V3 editor compiled without new errors.
+The broader final shader command also exposed an unrelated stale snowfall-size
+source assertion; snowfall code was not changed by this work.
+One earlier broad-filter attempt reproduced the already-known native
+`Camera.Render` preview-test crash and is not counted as a completed suite. See
+`Documentation/Validation/world-lighting-contract-v01/README.md`.
+
+## Latest — September 19 forest family mix V01
+
+On `feature/parks-and-gardens`, Tree Coverage now supports relative Deciduous,
+Fir & Mountain, and Tropical weights in both district and regional terrain UI.
+Weights select a dominant family: deciduous and mountain compositions visibly
+include one tree from the other family. Explicit generation uses broad nine-tree
+one-billboard art on level ground and compact five-tree art on slopes or where a
+large bounded footprint cannot fit. Separately harvestable Cilician fir records
+and all timber worker/labor behavior remain intact.
+
+New art is in `Flora/ForestClustersFamilyMixV01`; lineage and prompts are in
+`Documentation/Migration/FOREST_FAMILY_MIX_V01.md` and validation evidence is in
+`Documentation/Validation/forest-family-mix-v01/`. The isolated Unity suite
+passed 47/47 forest tests plus 3/3 graphics-enabled Region Terrain UI tests.
+No player save was read or written. Per Joe's latest direction, validate in the
+open CityForge V3 editor and do not sync, restart, or use CityForge-Regions-Review.
+
 Workspace: `/Users/joelinstrum/dev/CityForge - V3`
 
 Branch: `feature/regions-rivers-mountains-hills`
@@ -1485,3 +1535,175 @@ passed 22/22 across district simulation, founder placement, zero-population
 persistence through reload and definition edits, and Fort/Town Center food
 reserves. No player Lot or district was saved, and no commit, push, or review
 sync was performed.
+
+### September 19 — hill-safe forests and per-zoom panning
+
+Generated multi-tree billboards now require a locally level footprint: large
+groups at ≤0.4m height spread, compact groups at ≤0.9m, and individually rooted
+family-matched trees on steeper hills. Five bounded height samples run only
+during explicit coverage generation. Steep candidates remain one record and one
+renderer, so no new district scan, per-frame work, or hill-specific record
+multiplier was added. Existing forests update only when explicitly regenerated.
+
+District pan multipliers are now explicit for all six player zooms. Zooms 4–6
+use 0.18, 0.07, and 0.035, making the two reported distant levels substantially
+slower on screen than the close views. Arrow keys and edge hover share the same
+calibration. Focused isolated validation passed 16/16; no player save or labor
+behavior changed. Evidence: `Validation/hill-forest-pan-v01/`.
+
+### September 19 — Town Center building, repaired rear and interior activity
+
+Imported Joe's hollow-window Town Center as Buildings → Civics → Town Center.
+The original six source files remain unchanged. A reproducible Blender script
+rebuilds the missing rear elevation, adds interior floors and lining, window
+sashes/glass and five lanterns, and exports full and reduced visual meshes.
+The default facing presents the entrance in the Lot Editor. Day, evening and
+night use the existing lighting presets and per-instance emission controls.
+
+An existing strolling-couple Automata clip supplies decorative upper-floor
+activity behind the windows. It retains the room anchor, uses depth and room
+clipping, and stops advancing when distant/offscreen. Nearby night lights are
+also culled locally; distant prefabs and shadow copies have no active people.
+This does not change population, labor, worker optimization or navigation.
+No district scan/rebuild or automatic persistence was added. No player Lot,
+district or region was saved; creating/assigning a founder Lot remains manual.
+
+Focused isolated EditMode validation passed 11/11 (Town Center, existing door
+controls and outdoor couple animation). Graphics-enabled isolated Unity checks
+covered day/night, rear closure, moving occupants and actual Lot placement.
+A 100-building asset-density fixture measured 27,618 versus 9,419 triangles per
+full/distant building and 11 distant draw calls. Close views with five active
+couples and 25 lamps measured 224 draws; this is not a full-city or long-duration
+benchmark. Details, timings, captures and reproducible helpers are recorded in
+`Documentation/Validation/town-center-v01/`; source lineage is recorded in
+`Documentation/Migration/TOWN_CENTER_V01.md`. This change uses the automatic
+committed Regions Review handoff, without pushing or merging.
+
+### September 19 — brighter Town Center windows
+
+Raised Town Center interior emission from 0.62 to 2.0 and attic emission from
+1.3 to 2.4 in the builder and all near/distant/catalog prefab representations.
+Day remains unlit; lanterns, people, light counts and culling are unchanged.
+Updated the focused lighting assertions for both interior and attic emission.
+The original geometry repair used Blender's background Python interface; its
+editable master remains under `Authoring/Buildings/TownCenterV01/`.
+
+### September 19 — bundled Town Center Civics Lot
+
+The Town Center is now available during normal play under **Build → Civic →
+Browse Civic Lots** as the read-only bundled Lot `town-center-civic-v01`.
+It occupies 2 × 2 district cells, costs $2,500, requires road access, is
+available from the Founders Era, and contributes zero population. The catalog
+uses the existing Town Center thumbnail and loads this resource once into the
+cached Lot summaries; it adds no routine district scan or rebuild.
+
+The previously disabled City Center founder card is now the enabled **Town
+Center** choice backed by this same Lot. Founder placement retains its existing
+zero-population override and 500-food reserve. The bundled definition is not a
+player Lot save, and no player Lot, district, or region was written during QA.
+
+### September 19 — authored District Town Center founder Lots
+
+Added the persisted Civics subcategory **District Town Center** as `LotType` 8,
+preserving every earlier numeric value. New Lot and Lot General expose it under
+the Civics parent. District Town Centers remain visible in **Build → Civic →
+Browse Civic Lots**, and every saved, bundled, or mod Lot in the new category
+appears as an independent choice in the Start Town founder browser.
+
+The selected founder Lot retains its authored population, jobs, wages, seasonal
+revenue/cost, services, and resource benefits. The Town Center-specific
+zero-population override and 500-food grant were removed; zero population on the
+bundled example is now simply its own authored setting. The Fort alone retains
+its legacy zero-population override and 250-food reserve. Older placements using
+the legacy `city-charter-house` identity keep their load compatibility.
+
+Founder discovery refreshes the existing cached Lot catalog only when the Start
+Town browser opens. Placement updates one simulation profile and performs no
+routine district scan or presentation rebuild. Existing player Lots are not
+recategorized or saved automatically; assign Civics → District Town Center and
+use the ordinary Save action when an authored Lot should become eligible.
+
+### September 19 — one-time Lot resource Bonuses
+
+Added **Bonus** beside Stats in the Lot Editor. It authors a one-time placement
+grant for each of the ten existing district resources: lumber, coal, stone,
+iron ore, gold, oil, food, jewels, cloth, and bricks. Values are part of the Lot
+definition and require the ordinary explicit Lot Save; merely opening or
+applying the modal does not write a player file.
+
+The grant runs only after a new Lot instance is accepted into a district. The
+existing per-instance simulation lookup rejects duplicate placement callbacks,
+while load/rebuild, Lot-definition edits, and removal never invoke the grant.
+This makes Bonuses durable without a district scan or per-frame work. They do
+not replace recurring Benefits or delivery production: lumber mills still
+produce their normal lumber only from dynamically delivered tree trunks. Gold
+is the district Gold stockpile and does not alter Treasury cash.
+
+### September 19 — expanded Lot Settings catalog
+
+The Lot Editor's gear now opens a large catalog-style **Lot Settings** panel
+rather than the small two-button flyout. Its authored width is 600 px versus the
+previous shared 390 px context width, with a 430 px minimum height and a two-by-
+two card layout matching the visual hierarchy of the Buildings catalog.
+
+The catalog exposes all four Lot-settings categories together: **General**,
+**Stats**, **Bonus**, and **Lot Behaviors**, each with a short description.
+Stats and Bonus remain top-level tools on the left rail for direct access. This
+is presentation-only and does not add a Lot scan, rebuild, or save. Per Joe's
+latest testing direction, validation stays in CityForge - V3 plus isolated
+fixtures; CityForge-Regions-Review is no longer part of the handoff workflow.
+
+### September 19 — categorized Load Lot library
+
+The Lot Editor's **Load Lot** browser is now a 780 px catalog instead of the
+shared 520 px document modal. It provides first-class filters for **All Lots**,
+Residential, Commercial, Industrial, Mixed Use, Farms, Transportation, Civics,
+Parks, and **District Town Center**, matching the organization used while
+authoring and placing saved Lots. The selected category is filtered only when
+the user opens or changes this explicit browser; no district scan, rebuild, or
+automatic save was added.
+
+### September 20 — saved Town Center facing and coherent exterior light
+
+New district Lot placement now treats the saved Lot camera transform as the
+authoritative authored view and uses the persisted orbit-octant label only as a
+legacy fallback. Joe's `town-center.json` said NE/octant 0 while its actual saved
+camera resolved to octant 6, which caused exactly one unwanted placement turn.
+The correction applies to future placements; it does not rotate existing Lots,
+rewrite the player Lot, or save the active district.
+
+The Town Center's opaque shell, wood, iron, rear siding, and rear stone now use
+the shared City Forge experimental-building directional shader. Geometric face
+normals therefore follow the same district sun direction as the building's cast
+shadow instead of inheriting a contradictory façade direction from imported
+Tripo tangent normals. A material-local ambient floor keeps the recessed porch
+readable. Window glass, interior/attic emission, lantern materials, and night
+controls remain separate and unchanged.
+
+Focused isolated EditMode validation passed 12/12, including the exact camera
+quaternion from the user-authored Town Center, all prior diagonal mappings, and
+the complete Town Center suite. A graphics-enabled isolated render through the
+real Lot controller confirmed the noon façade/shadow direction and material
+separation. No district scan, redraw, presentation rebuild, player save, or
+change to the active Unity play session was performed. Evidence:
+`Documentation/Validation/town-center-placement-lighting-v01/`.
+
+### September 20 — corrected Town Center host handedness and farthest pan
+
+The first saved-camera placement correction converted the Town Center camera
+octant through the legacy label mapping and chose the wrong rotation direction.
+Saved camera transforms now contribute only their signed difference from the
+established octant-label mapping, while old Lots without a usable camera
+transform retain the label fallback unchanged. Joe's exact `town-center.json` now
+resolves to turn 3 rather than turn 1. A graphics-enabled isolated render of the
+complete player-authored Lot confirms the entrance/sign face the district
+camera, the fence lies along the near-left edge, and the two trees sit behind
+and to the right. Existing placed Lots are not mutated or saved.
+
+The farthest district zoom (`LOD5Billboard`) pan multiplier is 0.04725, exactly
+35% above its former 0.035 value. Zooms 0–4, pan direction, pan steps, camera
+framing, and all presentation thresholds are unchanged. The focused isolated
+suite passed 11/11 and Unity completed the full-Lot graphics capture without
+compiler or shader errors. No district scan, redraw, rebuild, persistence, or
+worker/labor change was added. Evidence:
+`Documentation/Validation/town-center-facing-pan-v02/`.

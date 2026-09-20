@@ -50,6 +50,13 @@ City Forge V3 is a clean successor to City Forge - Foundations Next.
   write progress to disk. Do not add timer-based, edit-triggered, navigation,
   or quit autosaves. Keep in-memory undo independent from disk persistence.
 
-## Automatic isolated review handoff
+## Active City Forge V3 testing handoff
 
-Joe has requested automatic review updates after validated changes. For this workspace, finish by committing the tested changes and running `python3 Documentation/Validation/Tools/sync_regions_review.py`. This syncs only changed project files into `/Users/joelinstrum/dev/CityForge-Regions-Review`, backs up replaced files, restarts only that editor, and checks its import/compile log. Do not leave validated work only in the feature worktree and report it as available in the game. The review editor is a disposable test session and may restart during this handoff. Keep region persistence manual; never save progress automatically. Do not control or change the separate `/Users/joelinstrum/dev/CityForge - V3` editor. Do not push or merge as part of this workflow.
+Joe performs interactive testing in the Unity editor opened directly on
+`/Users/joelinstrum/dev/CityForge - V3`. Leave that editor open so it can import
+validated changes; do not restart or drive it unless Joe explicitly asks. Use
+temporary isolated project fixtures for destructive or headless QA. Do not sync
+to, restart, or otherwise use `/Users/joelinstrum/dev/CityForge-Regions-Review`.
+Finish validated work by committing it locally. Keep Lot, district, and region
+persistence manual, never write player progress automatically, and do not push
+or merge as part of this workflow.

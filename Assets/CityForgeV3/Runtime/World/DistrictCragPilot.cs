@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 namespace CityForgeV3.World
@@ -12,7 +11,7 @@ namespace CityForgeV3.World
         public int RockCount {get;private set;}
         public float ExposedHeight {get;private set;}
         readonly List<Mesh> meshes=new();
-        Material material,ground;
+        Material material;
         float previousShadowDistance;
         DistrictWorldController world;
         public static DistrictCragPilot Create(DistrictWorldController world)
@@ -25,7 +24,7 @@ namespace CityForgeV3.World
         void Build(DistrictWorldController host)
         {
             previousShadowDistance=QualitySettings.shadowDistance;QualitySettings.shadowDistance=Mathf.Max(previousShadowDistance,300f);
-            world=host;ground=world.GetComponentsInChildren<MeshRenderer>().First(r=>r.name.StartsWith("District Ground")).sharedMaterial;
+            world=host;
             material=new Material(Shader.Find("CityForgeV3/CragSurfaceV01")){name="Silver gray crag pilot",renderQueue=1998};
             material.mainTexture=Resources.Load<Texture2D>("CityForgeV3/Terrain/QuietSilverV01/quiet-silver-v01");
             float best=float.MinValue;Vector2 bestGradient=Vector2.up;
@@ -48,7 +47,7 @@ namespace CityForgeV3.World
                 AddRock(p+across*Rand(3,6)-bestGradient*Rand(1,4),new Vector3(Rand(5,8),Rand(4,7),Rand(4,7)),yaw+Rand(-30,30),rng);
                 for(int i=0;i<3;i++)AddRock(p-bestGradient*Rand(7,14)+across*Rand(-7,7),new Vector3(Rand(1,2.8f),Rand(.8f,2),Rand(1,2.5f)),Rand(0,360),rng);
             }
-            LateUpdate();
+            material.color=Color.white;
         }
         Vector2 Gradient(float x,float z)=>new Vector2(world.TerrainElevation(x+2,z)-world.TerrainElevation(x-2,z),world.TerrainElevation(x,z+2)-world.TerrainElevation(x,z-2))/4;
         void AddRock(Vector2 p,Vector3 size,float yaw,System.Random rng)
@@ -83,7 +82,6 @@ namespace CityForgeV3.World
             go.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=go.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.On;renderer.receiveShadows=true;
             ExposedHeight=Mathf.Max(ExposedHeight,size.y*.47f);
         }
-        void LateUpdate(){if(material==null||ground==null)return;material.SetVector("_TerrainSunDirection",ground.GetVector("_TerrainSunDirection"));material.SetColor("_Color",ground.color);material.SetFloat("_AmbientFloor",ground.GetFloat("_AmbientFloor"));}
         void RestoreShadowDistance(){if(previousShadowDistance>0)QualitySettings.shadowDistance=previousShadowDistance;previousShadowDistance=0;}
         void OnDestroy(){RestoreShadowDistance();foreach(var mesh in meshes)Destroy(mesh);if(material!=null)Destroy(material);}
     }

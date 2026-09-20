@@ -34,6 +34,27 @@ namespace CityForgeV3.UI
             }
         }
 
+        private static void AddForestFamilyMix(VisualElement parent, string prefix,
+            ForestFamilyMix mix, Action changed = null)
+        {
+            parent.Add(StyledLabel("FOREST FAMILY MIX", "document-modal-title"));
+            void Add(string name, string label, Func<int> read, Action<int> write)
+            {
+                var field = new IntegerField(label) { name = prefix + "-" + name, value = read() };
+                field.style.marginTop = 8;
+                field.RegisterValueChangedCallback(evt =>
+                {
+                    int value = Mathf.Clamp(evt.newValue, 0, 100);
+                    field.SetValueWithoutNotify(value); write(value); changed?.Invoke();
+                });
+                parent.Add(field);
+            }
+            Add("deciduous", "Deciduous %", () => mix.Deciduous, value => mix.Deciduous = value);
+            Add("mountain", "Fir & Mountain %", () => mix.Mountain, value => mix.Mountain = value);
+            Add("tropical", "Tropical %", () => mix.Tropical, value => mix.Tropical = value);
+            parent.Add(StyledLabel("These are relative weights, so 33 / 33 / 33 is valid. Each deciduous-dominant clump includes a fir, and each fir-dominant clump includes a deciduous tree.", "inspector-note"));
+        }
+
         private void ClearDistrictTrees()
         {
             var district = FindSelectedRegionTile();
@@ -77,6 +98,7 @@ namespace CityForgeV3.UI
             FinishDistrictFloraPaint(district); CancelDistrictSelectionPointer();
             EnsureDistrictUndo(district);
             var selected = district.TreeCoverage;
+            var familyMix = (district.ForestMix ?? region.Terrain?.ForestMix ?? new ForestFamilyMix()).Copy();
             var climate = CurrentRegionClimate;
             bool cancelled = false, busy = false;
             var panel = CreateDocumentModal("DISTRICT FLORA", "Generate tree coverage for " + district.Name + " only.");
@@ -107,7 +129,8 @@ namespace CityForgeV3.UI
                     if (!Current()) return;
                     try
                     {
-                        var job = new RegionFloraGeneration(region, selected, RegionRiverGenerator.FreshSeed(district.FloraSeed), district);
+                        var job = new RegionFloraGeneration(region, selected,
+                            RegionRiverGenerator.FreshSeed(district.FloraSeed), district, familyMix);
                         job.Step(); notice.text = $"Ready to apply {job.TreeCount:N0} flora placements in {district.Name}…";
                         panel.schedule.Execute(() =>
                         {
@@ -143,13 +166,13 @@ namespace CityForgeV3.UI
                 content.Add(StyledLabel($"{district.Name} · Climate: {climate} (from region) · {district.Flora?.Count ?? 0:N0} existing flora placements", "document-modal-copy"));
                 AddFloraCoverageChoices(content, "district-flora", climate, selected, value => { selected = value; RefreshChoices(); });
                 bool enabled = RegionClimateRules.AllowsForest(climate);
-                generate.SetEnabled(enabled && selected != RegionTreeCoverage.None);
+                AddForestFamilyMix(content, "district-forest-mix", familyMix,
+                    () => generate.SetEnabled(enabled && selected != RegionTreeCoverage.None && familyMix.Total > 0));
+                generate.SetEnabled(enabled && selected != RegionTreeCoverage.None && familyMix.Total > 0);
                 generate.tooltip = !enabled ? "Unavailable in Desert climate" : "Generate coverage in this district only";
                 content.Add(StyledLabel(enabled
-                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Temperate and Mediterranean forests mix five-tree clusters with individual harvestable firs. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
+                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Level ground uses broader nine-tree billboards, gentle slopes use compact five-tree billboards, and steep hills use individually grounded trees. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
                     : "Tree coverage is unavailable in Desert. Change the regional climate to generate tree coverage.", "document-modal-copy"));
-                if (climate == RegionClimate.Tropical)
-                    content.Add(StyledLabel("Tropical coverage uses tropical trees. Lumber crews currently harvest Cilician firs, available in Temperate and Mediterranean forests.", "inspector-note"));
             }
             RefreshChoices();
         }

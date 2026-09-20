@@ -191,6 +191,7 @@ namespace CityForgeV3.World
         [NonSerialized] public RegionClimate Climate;
         public RegionTreeCoverage TreeCoverage;
         public int FloraSeed;
+        public ForestFamilyMix ForestMix = new();
         public string TileId = "";
         public string Name = "";
         public RegionPlaceDesignation Designation =

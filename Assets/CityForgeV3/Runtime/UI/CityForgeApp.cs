@@ -125,6 +125,7 @@ namespace CityForgeV3.UI
     private LotEditorCategory _lotEditorCategory = LotEditorCategory.Main;
     private bool _lotEditorCategoryExpanded;
     private bool _hasOpenLot;
+    private LotType? _loadLotCategory;
     private BuildingUseCategory _buildingUseCategory = BuildingUseCategory.Residential;
     private string _buildingSubcategory = string.Empty;
     private bool _roadPointerDown;
@@ -2598,7 +2599,7 @@ namespace CityForgeV3.UI
       viewActions.Add(CfButton.Create("SAVE", SaveLot, _hasOpenLot, "quiet"));
       viewActions.Add(CfButton.Create("SAVE AS", ComposeSaveAsDialog, _hasOpenLot, "quiet"));
       viewActions.Add(CfButton.Create("LOAD",
-          () => RequestDocumentAction(ComposeLoadLotBrowser), true, "quiet"));
+          () => RequestDocumentAction(OpenLoadLotBrowser), true, "quiet"));
       viewActions.Add(CfButton.Create("TRAFFIC TEST",
           () => RequestDocumentAction(ApplyTrafficTemplate), _hasOpenLot, "quiet"));
       topbar.Add(viewActions);
@@ -2611,6 +2612,7 @@ namespace CityForgeV3.UI
       toolRailScroll.AddToClassList("tool-rail-scroll");
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Main, "main", "Main"));
       toolRailScroll.Add(CreateLotStatsButton());
+      toolRailScroll.Add(CreateLotBonusButton());
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Buildings3D,
           "buildings", "Buildings"));
       toolRailScroll.Add(CategoryButton(LotEditorCategory.Roads, "roads-car-v74", "Roads"));
@@ -2643,18 +2645,7 @@ namespace CityForgeV3.UI
 
       if (_hasOpenLot && _lotEditorCategoryExpanded &&
           _lotEditorCategory == LotEditorCategory.Main)
-      {
-        var main = new VisualElement { name = "main-category-panel" };
-        main.AddToClassList("context-panel");
-        main.Add(StyledLabel("LOT SETTINGS", "section-label"));
-        var general = CfButton.Create("GENERAL…", OpenLotGeneralModal, true, "primary");
-        general.name = "open-lot-general";
-        main.Add(general);
-        var behaviors = CfButton.Create("LOT BEHAVIORS…", OpenLotBehaviorsModal, true, "primary");
-        behaviors.name = "open-lot-behaviors";
-        main.Add(behaviors);
-        screen.Add(main);
-      }
+        ComposeLotSettingsCatalog(screen);
 
       if (_lotEditorCategoryExpanded &&
           _lotEditorCategory == LotEditorCategory.Buildings3D)
@@ -4577,6 +4568,56 @@ namespace CityForgeV3.UI
       // Rebuilding editor chrome must never recenter or refit the lot.
     }
 
+    private void ComposeLotSettingsCatalog(VisualElement screen)
+    {
+      if (screen == null) return;
+      var panel = new VisualElement { name = "main-category-panel" };
+      panel.AddToClassList("context-panel");
+      panel.AddToClassList("lot-settings-catalog");
+      panel.Add(StyledLabel("LOT", "section-label"));
+      panel.Add(StyledLabel("LOT SETTINGS", "catalog-title"));
+      panel.Add(StyledLabel(
+          "AUTHORING CATEGORIES FOR THIS LOT",
+          "catalog-meta"));
+      var close = CfButton.Create("CLOSE", () =>
+      {
+        _lotEditorCategoryExpanded = false;
+        Show(AppScreen.LotEditor);
+      }, true, "quiet");
+      close.name = "close-lot-settings";
+      close.AddToClassList("lot-settings-close");
+      panel.Add(close);
+
+      var grid = new VisualElement { name = "lot-settings-category-grid" };
+      grid.AddToClassList("lot-settings-category-grid");
+      void AddCategory(string id, string title, string description,
+          Action open)
+      {
+        var card = CfButton.Create("", open, true, "quiet");
+        card.name = id;
+        card.tooltip = description;
+        card.AddToClassList("lot-settings-category-card");
+        card.Add(StyledLabel(title, "lot-settings-category-title"));
+        card.Add(StyledLabel(description,
+            "lot-settings-category-description"));
+        grid.Add(card);
+      }
+      AddCategory("open-lot-general", "GENERAL",
+          "Identity, category, dimensions, cost, access, and construction requirements.",
+          OpenLotGeneralModal);
+      AddCategory("open-lot-stats", "STATS",
+          "Population, jobs, services, recurring production, and seasonal finances.",
+          OpenLotStats);
+      AddCategory("open-lot-bonus", "BONUS",
+          "One-time district resource additions granted when this Lot is placed.",
+          OpenLotBonus);
+      AddCategory("open-lot-behaviors", "LOT BEHAVIORS",
+          "Scripts and authored logic that control activity on this Lot.",
+          OpenLotBehaviorsModal);
+      panel.Add(grid);
+      screen.Add(panel);
+    }
+
     private void SelectCharacterScript(string scriptId)
     {
       if (_lotWorld.SetSelectedCharacterBehaviorScript(scriptId))
@@ -5022,7 +5063,8 @@ namespace CityForgeV3.UI
         _lotInspectorVisible = true;
       _lotStatus = $"{category} tools opened";
       if (category == LotEditorCategory.Buildings3D &&
-          _lotWorld.LotType is LotType.Civics or LotType.CivicsParks)
+          _lotWorld.LotType is LotType.Civics or LotType.CivicsParks or
+              LotType.DistrictTownCenter)
         _buildingUseCategory = BuildingUseCategory.Civics;
       if (category == LotEditorCategory.Buildings3D)
         _buildingSubcategory = string.Empty;
@@ -6892,7 +6934,7 @@ namespace CityForgeV3.UI
       panel.Add(parentField);
       var subcategoryField = new CityForgeChoiceField(
           _root, "CIVICS SUBCATEGORY",
-          new List<string> { "General", "Park" }, 0);
+          CivicsSubcategoryChoices(), 0);
       subcategoryField.style.display = DisplayStyle.None;
       parentField.changed += _ => subcategoryField.style.display =
           parentField.value == "Civics" ? DisplayStyle.Flex : DisplayStyle.None;
@@ -6963,16 +7005,39 @@ namespace CityForgeV3.UI
       nameField.schedule.Execute(nameField.Focus);
     }
 
+    private void OpenLoadLotBrowser()
+    {
+      _loadLotCategory = null;
+      ComposeLoadLotBrowser();
+    }
+
     private void ComposeLoadLotBrowser()
     {
       var saves = LotSaveStore.List();
+      var visibleSaves = _loadLotCategory.HasValue
+          ? saves.FindAll(summary => LotMatchesLoadCategory(
+              summary, _loadLotCategory))
+          : saves;
+      var categoryName = _loadLotCategory.HasValue
+          ? LoadLotCategoryLabel(_loadLotCategory.Value)
+          : "All Lots";
       var panel = CreateDocumentModal(
           "LOAD LOT",
           saves.Count == 0
               ? "No saved lots exist yet."
-              : "Choose a saved lot. Most recently modified lots appear first.");
+              : $"Browse {categoryName.ToLowerInvariant()}. Most recently modified lots appear first.");
       panel.AddToClassList("load-lot-modal-panel");
-      if (saves.Count > 0)
+      panel.AddToClassList("lot-library-modal-panel");
+
+      var categoryTabs = new VisualElement { name = "load-lot-category-tabs" };
+      categoryTabs.AddToClassList("building-use-tabs");
+      categoryTabs.AddToClassList("load-lot-category-tabs");
+      AddLoadLotCategoryTab(categoryTabs, null, "All Lots");
+      foreach (var type in LoadLotCategories())
+        AddLoadLotCategoryTab(categoryTabs, type, LoadLotCategoryLabel(type));
+      panel.Add(categoryTabs);
+
+      if (visibleSaves.Count > 0)
       {
         var list = new ScrollView(ScrollViewMode.Vertical)
         {
@@ -6980,13 +7045,10 @@ namespace CityForgeV3.UI
           verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible,
           horizontalScrollerVisibility = ScrollerVisibility.Hidden
         };
-        list.style.height = 420f;
-        list.style.maxHeight = 420f;
-        list.style.flexGrow = 0f;
-        list.style.flexShrink = 0f;
         list.contentViewport.style.overflow = Overflow.Hidden;
         list.AddToClassList("lot-save-list");
-        foreach (var summary in saves)
+        list.AddToClassList("lot-library-save-list");
+        foreach (var summary in visibleSaves)
         {
           var captured = summary;
           var missing = _lotWorld.MissingDependencies(summary.LotId);
@@ -7035,11 +7097,59 @@ namespace CityForgeV3.UI
         }
         panel.Add(list);
       }
+      else if (saves.Count > 0)
+      {
+        var empty = StyledLabel(
+            $"No saved {categoryName.ToLowerInvariant()} yet.",
+            "catalog-empty");
+        empty.name = "load-lot-category-empty";
+        panel.Add(empty);
+      }
 
       var actions = DocumentModalActions();
       actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet"));
       panel.Add(actions);
     }
+
+    private void AddLoadLotCategoryTab(VisualElement tabs, LotType? type,
+        string label)
+    {
+      var selected = _loadLotCategory == type;
+      var button = CfButton.Create(label.ToUpperInvariant(), () =>
+      {
+        _loadLotCategory = type;
+        ComposeLoadLotBrowser();
+      }, true, selected ? "building-use-selected" : "building-use");
+      button.name = type.HasValue
+          ? $"load-lot-category-{type.Value}"
+          : "load-lot-category-all";
+      tabs.Add(button);
+    }
+
+    private static IReadOnlyList<LotType> LoadLotCategories() => new[]
+    {
+      LotType.Residential,
+      LotType.Commercial,
+      LotType.Industrial,
+      LotType.Mixed,
+      LotType.Agricultural,
+      LotType.Transportation,
+      LotType.Civics,
+      LotType.CivicsParks,
+      LotType.DistrictTownCenter
+    };
+
+    private static string LoadLotCategoryLabel(LotType type) => type switch
+    {
+      LotType.Mixed => "Mixed Use",
+      LotType.Agricultural => "Farms",
+      LotType.CivicsParks => "Parks",
+      _ => LotTypeLabel(type)
+    };
+
+    private static bool LotMatchesLoadCategory(LotSaveSummary summary,
+        LotType? category) => summary != null &&
+        (!category.HasValue || summary.LotType == category.Value);
 
     private void ComposeRenameLotDialog(LotSaveSummary summary)
     {
@@ -7498,6 +7608,7 @@ namespace CityForgeV3.UI
       LotType.Agricultural => "Farm",
       LotType.Civics => "Civics",
       LotType.CivicsParks => "Civics / Parks",
+      LotType.DistrictTownCenter => "District Town Center",
       _ => "Transportation"
     };
 
@@ -7512,6 +7623,7 @@ namespace CityForgeV3.UI
       LotType.Mixed => "Mixed Use",
       LotType.Agricultural => "Farms",
       LotType.CivicsParks => "Civics",
+      LotType.DistrictTownCenter => "Civics",
       _ => LotTypeLabel(type)
     };
 
@@ -7524,8 +7636,22 @@ namespace CityForgeV3.UI
       "Farms" => LotType.Agricultural,
       "Transportation" => LotType.Transportation,
       "Civics" when subcategory == "Park" => LotType.CivicsParks,
+      "Civics" when subcategory == "District Town Center" =>
+          LotType.DistrictTownCenter,
       "Civics" => LotType.Civics,
       _ => LotType.Residential
+    };
+
+    private static List<string> CivicsSubcategoryChoices() => new()
+    {
+      "General", "Park", "District Town Center"
+    };
+
+    private static int CivicsSubcategoryIndex(LotType type) => type switch
+    {
+      LotType.CivicsParks => 1,
+      LotType.DistrictTownCenter => 2,
+      _ => 0
     };
 
     private sealed class CityForgeChoiceField : VisualElement

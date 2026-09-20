@@ -26,6 +26,8 @@ Shader "CityForgeV3/RiverBankSurface"
             #pragma multi_compile_fwdbase
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
+            #include "AutoLight.cginc"
+            #include "CityForgeWorldLighting.cginc"
             struct AppData
             {
                 float4 vertex : POSITION;
@@ -42,6 +44,7 @@ Shader "CityForgeV3/RiverBankSurface"
                 float3 localPosition : TEXCOORD2;
                 float3 worldNormal : TEXCOORD3;
                 fixed4 color : COLOR;
+                SHADOW_COORDS(4)
             };
             sampler2D _MainTex, _GravelTex, _EarthTex;
             fixed4 _Color;
@@ -58,6 +61,7 @@ Shader "CityForgeV3/RiverBankSurface"
                 input.normal.y = abs(input.normal.y);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 output.color = input.color;
+                TRANSFER_SHADOW(output);
                 return output;
             }
             // Crossfade offset copies only near the artwork's wrap boundary.
@@ -105,9 +109,9 @@ Shader "CityForgeV3/RiverBankSurface"
                 fixed3 bed = Strip(_GravelTex, bedUv) * .8;
                 albedo = lerp(bed, albedo, smoothstep(.015, .13, across));
                 float3 normal = normalize(input.worldNormal);
-                float diffuse = saturate(dot(normal, normalize(UnityWorldSpaceLightDir(0))));
-                fixed3 lighting = max(ShadeSH9(float4(normal, 1)) + _LightColor0.rgb * diffuse, .64);
-                albedo *= lerp(fixed3(1,1,1), lighting, .42) * _Color.rgb;
+                fixed3 lighting = CityForgeWorldLighting(normal,
+                    SHADOW_ATTENUATION(input));
+                albedo *= lighting * _Color.rgb;
                 // Reveal the real terrain at the grass boundary rather than
                 // ending on a hard strip of differently coloured baked grass.
                 float fadeStart = .72 + .025 * (ReachNoise(along * 2.3) - .5);

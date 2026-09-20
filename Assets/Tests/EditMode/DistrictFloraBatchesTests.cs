@@ -222,6 +222,38 @@ public class DistrictFloraBatchesTests
         CollectionAssert.AreEqual(new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter, SeasonPreset.Spring, SeasonPreset.Summer },
             Enumerable.Range(0, 5).Select(ForestClusterCatalog.SeasonForIndex));
     }
+    [Test] public void FamilyClustersResolveCompactAndLargeSeasonalArtwork()
+    {
+        foreach (var family in FloraFamilies.Names)
+        foreach (var large in new[] { false, true })
+        {
+            var id = ForestClusterCatalog.Id(family, large);
+            foreach (var season in new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter })
+            {
+                var path = ForestClusterCatalog.ResourcePath(id, season);
+                var art = Resources.Load<Texture2D>(path);
+                Assert.NotNull(art, path); Assert.AreEqual(1254, art.width); Assert.AreEqual(1254, art.height);
+                Assert.True(ForestClusterCatalog.IsTexture(art.name));
+            }
+            Assert.AreEqual(large ? ForestClusterCatalog.LargePixelsPerUnit :
+                ForestClusterCatalog.CompactPixelsPerUnit,
+                LotWorldController.FloraPixelsPerUnit(id, id));
+        }
+        Assert.AreEqual(ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Summer),
+            ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Winter));
+    }
+    [Test] public void LargeFamilyClusterShadowsUseNineGroundContacts()
+    {
+        texture.name = "forest-deciduous-large-winter";
+        var tree = Tree(0);
+        var item = new GameObject("District Flora Shadow"); item.transform.SetParent(tree.transform, false);
+        item.AddComponent<MeshFilter>().sharedMesh = new Mesh();
+        item.AddComponent<DistrictFloraShadowMesh>(); var shadow = item.AddComponent<MeshRenderer>();
+        int contacts = 0;
+        Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, _ => 0,
+            p => { contacts++; p.y = 0; return p; }));
+        Assert.AreEqual(9, contacts);
+    }
     [Test] public void WinterShadowsRetainFirButOpenDeciduousCanopies()
     {
         texture.name = "forest-cluster-01-summer";

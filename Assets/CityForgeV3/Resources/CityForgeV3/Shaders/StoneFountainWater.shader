@@ -20,6 +20,7 @@ Shader "CityForgeV3/StoneFountainWater"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "CityForgeWorldLighting.cginc"
 
             struct AppData
             {
@@ -77,7 +78,8 @@ Shader "CityForgeV3/StoneFountainWater"
                     float radius = length(input.uv * 2.0 - 1.0);
                     alpha *= pow(saturate(1.0 - radius), 1.5);
                 }
-                return fixed4(rgb * input.color.rgb, saturate(alpha));
+                return fixed4(rgb * input.color.rgb *
+                    CityForgeArtworkLighting(1.0h), saturate(alpha));
             }
             ENDCG
         }

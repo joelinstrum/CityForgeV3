@@ -80,8 +80,8 @@ namespace CityForgeV3.UI
                     LotTypeParentLabel(_lotWorld.LotType))));
             scroll.Add(parentField);
             var subcategoryField = new CityForgeChoiceField(_root,
-                "CIVICS SUBCATEGORY", new List<string> { "General", "Park" },
-                _lotWorld.LotType == LotType.CivicsParks ? 1 : 0);
+                "CIVICS SUBCATEGORY", CivicsSubcategoryChoices(),
+                CivicsSubcategoryIndex(_lotWorld.LotType));
             void ShowSubcategory(string parent) => subcategoryField.style.display =
                 parent == "Civics" ? DisplayStyle.Flex : DisplayStyle.None;
             parentField.changed += ShowSubcategory;
