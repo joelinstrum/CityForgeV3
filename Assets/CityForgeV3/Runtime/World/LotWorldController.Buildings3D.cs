@@ -742,10 +742,16 @@ namespace CityForgeV3.World
             var authoredTexture = Resources.Load<Texture2D>(
                 option.ResolveResourcePath(Season));
             material.SetTexture("_MainTex", authoredTexture);
+            var repeatMeters = option.BaseRepeatMeters;
             material.SetTextureScale("_MainTex", new Vector2(
-                Mathf.Max(1f, LotWidthMeters / 5f),
-                Mathf.Max(1f, LotDepthMeters / 5f)));
+                Mathf.Max(1f, LotWidthMeters / repeatMeters),
+                Mathf.Max(1f, LotDepthMeters / repeatMeters)));
             material.SetTextureOffset("_MainTex", Vector2.zero);
+            if (material.HasProperty("_UseWorldSpaceUV"))
+                material.SetFloat("_UseWorldSpaceUV",
+                    option.UseWorldSpaceUv ? 1f : 0f);
+            if (material.HasProperty("_TextureWorldSize"))
+                material.SetFloat("_TextureWorldSize", repeatMeters);
             // The selected base texture must draw first. Projected 3D-building
             // shadows use transparent queue 3001, so they blend visibly over
             // the opaque grass without changing its color calculation.

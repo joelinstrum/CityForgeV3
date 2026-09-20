@@ -1764,6 +1764,13 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(8));
             Assert.That(DistrictZoom.GridInterval(DistrictZoomLevel.LOD4),
                 Is.EqualTo(16));
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD0), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD1), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD2), Is.True);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD3), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD4), Is.False);
+            Assert.That(DistrictZoom.ShowsGrid(DistrictZoomLevel.LOD5Billboard),
+                Is.False);
         }
 
         [Test]
@@ -2015,12 +2022,67 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void DistrictDefaultGrassRetainsFixedWorldTextureDensity()
+        public void DistrictDefaultGrassUsesBroadWorldSpaceTextureDensity()
         {
-            Assert.That(DistrictWorldController.DefaultGrassResource,
-                Is.EqualTo("CityForgeV3/Art/Regions/default-grass-texture"));
-            Assert.That(DistrictWorldController.GrassTextureWorldSizeMeters,
-                Is.EqualTo(5f));
+            Assert.That(DistrictWorldController.DistrictGrassResource,
+                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV05/colonial-countryside-grass-v05"));
+            Assert.That(DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
+                Is.EqualTo(75f));
+            var texture = Resources.Load<Texture2D>(
+                DistrictWorldController.DistrictGrassResource);
+            Assert.That(texture, Is.Not.Null);
+            Assert.That(texture.width, Is.EqualTo(4096));
+            Assert.That(texture.height, Is.EqualTo(4096));
+            Assert.That(texture.mipmapCount, Is.GreaterThan(1));
+            Assert.That(texture.wrapMode, Is.EqualTo(TextureWrapMode.Repeat));
+            foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
+                Assert.That(DistrictWorldController.DistrictGrassWorldSizeForZoom(level),
+                    Is.EqualTo(75f));
+
+            var naturalGrass = LotWorldController.ResolveBaseTexture("default-grass");
+            Assert.That(naturalGrass.ResourcePath,
+                Is.EqualTo(DistrictWorldController.DistrictGrassResource));
+            Assert.That(naturalGrass.BaseRepeatMeters, Is.EqualTo(75f));
+            Assert.That(naturalGrass.UseWorldSpaceUv, Is.True);
+
+            foreach (var shaderName in new[]
+                     {
+                         "CityForgeV3/MeadowGroundSurface",
+                         "CityForgeV3/ShadowReceivingLotSurface",
+                         "CityForgeV3/Experimental3DGroundReceiver"
+                     })
+            {
+                var shader = Shader.Find(shaderName);
+                Assert.That(shader, Is.Not.Null, shaderName);
+                Assert.That(UnityEditor.ShaderUtil.ShaderHasError(shader),
+                    Is.False, shaderName);
+                var material = new Material(shader);
+                Assert.That(material.HasProperty("_TextureWorldSize"),
+                    Is.True, shaderName);
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
+        public void DistrictDecalVisibilityAlsoControlsHillSurfaceDetail()
+        {
+            var root = new GameObject("Isolated district presentation toggle");
+            try
+            {
+                var decals = root.AddComponent<DistrictGroundDecals>();
+                var overlay = root.AddComponent<DistrictHillGroundOverlay>();
+                Assert.That(decals.PresentationEnabled, Is.False);
+                typeof(DistrictGroundDecals).GetField("_hillOverlay",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(decals, overlay);
+
+                decals.PresentationEnabled = false;
+
+                Assert.That(overlay.PresentationEnabled, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]

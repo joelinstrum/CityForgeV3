@@ -148,13 +148,7 @@ namespace CityForgeV3.UI
                         var level=(DistrictZoomLevel)i;
                         _districtWorld.SetZoom(level);
                         float metres=DistrictWorldController.DistrictGrassWorldSizeForZoom(level);
-                        if(i>=2 && !Mathf.Approximately(metres,40))throw new Exception("Far grass scale changed");
-                        if(i<2)
-                        {
-                            float nextCamera=DistrictWorldController.OrthographicSize((DistrictZoomLevel)(i+1),1,1,1);
-                            float camera=DistrictWorldController.OrthographicSize(level,1,1,1);
-                            if(!Mathf.Approximately(metres/camera,40/nextCamera))throw new Exception("Near grass apparent scale differs");
-                        }
+                        if(!Mathf.Approximately(metres,75))throw new Exception("World-space grass scale changed");
                         // This isolated fixture is 640m square.
                         if(Vector2.Distance(material.mainTextureScale,Vector2.one*(640/metres))>.001f)
                             throw new Exception("Ground material did not inherit zoom scale");

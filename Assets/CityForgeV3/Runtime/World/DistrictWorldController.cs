@@ -49,8 +49,10 @@ namespace CityForgeV3.World
     {
         public const string DefaultGrassResource =
             "CityForgeV3/Art/Regions/default-grass-texture";
-        // A single meadow composition covers four by four 10-metre lots.
-        public const string DistrictGrassResource = "CityForgeV3/Terrain/MeadowV01/meadow-4x4";
+        // One broad countryside composition spans many lots. It is authored as
+        // flat albedo at district scale rather than as a close-up grass tile.
+        public const string DistrictGrassResource =
+            "CityForgeV3/Terrain/MacroGrassV05/colonial-countryside-grass-v05";
         public const string RiverBedResource =
             "CityForgeV3/Water/River/river-bed";
         public const string RiverBedBorderResource =
@@ -79,7 +81,7 @@ namespace CityForgeV3.World
         private const float RiverBedTextureWorldSizeMeters = 48f;
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
-        public const float DistrictGrassTextureWorldSizeMeters = 40f;
+        public const float DistrictGrassTextureWorldSizeMeters = 75f;
         public static readonly Color RiverWaterTint =
             new(0.82f, 1.04f, 1.18f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;
@@ -2367,9 +2369,10 @@ namespace CityForgeV3.World
         {
             if (_grid != null)
                 _grid.gameObject.SetActive(_districtGridVisible &&
-                    _zoomLevel != DistrictZoomLevel.LOD5Billboard);
+                    DistrictZoom.ShowsGrid(_zoomLevel));
             if (_minorGrid != null)
                 _minorGrid.SetActive(_districtGridVisible &&
+                    DistrictZoom.ShowsGrid(_zoomLevel) &&
                     _zoomLevel <= DistrictZoomLevel.LOD2);
         }
 

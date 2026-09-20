@@ -27,6 +27,7 @@ namespace CityForgeV3.World
             public readonly float PedestrianWidthMeters;
             public readonly float StairRiseMeters;
             public readonly float BaseRepeatMeters;
+            public readonly bool UseWorldSpaceUv;
             public readonly int FootprintWidthCells;
             public readonly int FootprintDepthCells;
 
@@ -38,6 +39,7 @@ namespace CityForgeV3.World
                 float pedestrianWidthMeters = 1.8f,
                 float stairRiseMeters = 0f,
                 float baseRepeatMeters = 5f,
+                bool useWorldSpaceUv = false,
                 int footprintWidthCells = 1,
                 int footprintDepthCells = 1)
             {
@@ -50,6 +52,7 @@ namespace CityForgeV3.World
                 PedestrianWidthMeters = pedestrianWidthMeters;
                 StairRiseMeters = stairRiseMeters;
                 BaseRepeatMeters = baseRepeatMeters;
+                UseWorldSpaceUv = useWorldSpaceUv;
                 FootprintWidthCells = Mathf.Max(1, footprintWidthCells);
                 FootprintDepthCells = Mathf.Max(1, footprintDepthCells);
             }
@@ -85,7 +88,9 @@ namespace CityForgeV3.World
         public static readonly IReadOnlyList<LotTextureOption> GrassBaseTextures = new[]
         {
             new LotTextureOption("default-grass", "Natural Grass",
-                DistrictWorldController.DefaultGrassResource),
+                DistrictWorldController.DistrictGrassResource,
+                baseRepeatMeters: DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
+                useWorldSpaceUv: true),
             new LotTextureOption("brick-paving-v01", "Brick Paving",
                 "CityForgeV3/LotTextures/BrickPavingV01/brick-texture-1",
                 baseRepeatMeters: 10f),
@@ -578,6 +583,12 @@ namespace CityForgeV3.World
             _groundRenderer.sharedMaterial.mainTextureScale = new Vector2(
                 Mathf.Max(1f, LotWidthMeters / repeatMeters),
                 Mathf.Max(1f, LotDepthMeters / repeatMeters));
+            if (_groundRenderer.sharedMaterial.HasProperty("_UseWorldSpaceUV"))
+                _groundRenderer.sharedMaterial.SetFloat("_UseWorldSpaceUV",
+                    option?.UseWorldSpaceUv == true ? 1f : 0f);
+            if (_groundRenderer.sharedMaterial.HasProperty("_TextureWorldSize"))
+                _groundRenderer.sharedMaterial.SetFloat("_TextureWorldSize",
+                    repeatMeters);
             ApplyTimeOfDay();
         }
 

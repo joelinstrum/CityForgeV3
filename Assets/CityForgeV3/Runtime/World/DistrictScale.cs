@@ -103,6 +103,11 @@ namespace CityForgeV3.World
             _ => 16
         };
 
+        // Player-facing Zoom 1-3 are LOD0-LOD2. Construction grids belong to
+        // those close working views and disappear at the two distant views.
+        public static bool ShowsGrid(DistrictZoomLevel level) =>
+            level <= DistrictZoomLevel.LOD2;
+
         public static float PanStepMeters(DistrictZoomLevel level) => level switch
         {
             DistrictZoomLevel.LOD0 => LotMetricScale.MinorGridMeters * 2f,
