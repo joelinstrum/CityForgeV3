@@ -1760,7 +1760,7 @@ namespace CityForgeV3.Tests
         public void DistrictDefaultGrassUsesBroadWorldSpaceTextureDensity()
         {
             Assert.That(DistrictWorldController.DistrictGrassResource,
-                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV01/colonial-countryside-grass-v01"));
+                Is.EqualTo("CityForgeV3/Terrain/MacroGrassV02/colonial-countryside-grass-v02"));
             Assert.That(DistrictWorldController.DistrictGrassTextureWorldSizeMeters,
                 Is.EqualTo(75f));
             var texture = Resources.Load<Texture2D>(

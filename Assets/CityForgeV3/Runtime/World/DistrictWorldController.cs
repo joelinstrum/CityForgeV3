@@ -52,7 +52,7 @@ namespace CityForgeV3.World
         // One broad countryside composition spans many lots. It is authored as
         // flat albedo at district scale rather than as a close-up grass tile.
         public const string DistrictGrassResource =
-            "CityForgeV3/Terrain/MacroGrassV01/colonial-countryside-grass-v01";
+            "CityForgeV3/Terrain/MacroGrassV02/colonial-countryside-grass-v02";
         public const string RiverBedResource =
             "CityForgeV3/Water/River/river-bed";
         public const string RiverBedBorderResource =
