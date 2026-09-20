@@ -1,0 +1,428 @@
+Unity Editor version:    6000.1.12f1 (da0c3ee78ee0)
+Branch:                  6000.1/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 15.7.3 (Build 24G419)
+Darwin version:          24.6.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        32768 MB
+Date:                    2026-09-20T01:48:36Z
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-joelinstrum" at "2026-09-20T01:48:36.239632Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 1493, path: "/Applications/Unity Hub.app/Contents/Frameworks/UnityLicensingClient_V1.app/Contents/MacOS/Unity.Licensing.Client")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.17.4+4293ba1
+  Session Id:              f8f8930448e94b51892d4e85a5a509aa
+  Correlation Id:          fb7123812533839635926dd39dd5f3b8
+  External correlation Id: 6767816920530802805
+  Machine Id:              80iMB7K9Jv3cQdVdSEVLRNKQ4y8=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-joelinstrum" (connect: 0.00s, validation: 0.01s, handshake: 0.27s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-joelinstrum-notifications" at "2026-09-20T01:48:36.523513Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "F4-UDSB-FPFN-69XP-FJP7-XXXX"
+[Licensing::Client] Successfully updated license, isAync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+Pro License: NO
+Launching external process: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/Server/UnityPackageManager
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/MacOS/Unity
+-batchmode
+-projectPath
+/tmp/cityforge-forest-mix-qjxQRT/UnityQa
+-runTests
+-testPlatform
+EditMode
+-testFilter
+RegionTerrainMenuTests
+-testResults
+/tmp/cityforge-forest-mix-qjxQRT/terrain-ui-results-3.xml
+-logFile
+/tmp/cityforge-forest-mix-qjxQRT/terrain-ui-3.log
+Successfully changed project path to: /tmp/cityforge-forest-mix-qjxQRT/UnityQa
+/private/tmp/cityforge-forest-mix-qjxQRT/UnityQa
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8637817408]  Target information:
+
+Player connection [8637817408]  * "[IP] 192.168.1.128 [Port] 55505 [Flags] 2 [Guid] 1839644597 [EditorId] 1839644597 [Version] 1048832 [Id] OSXEditor(0,MacBookPro.lan) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor"
+
+Player connection [8637817408] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8637817408] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-16674" after 0.4 seconds.
+Library Redirect Path: Library/
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 37 packages:
+  Built-in packages:
+    com.unity.multiplayer.center@1.0.0 (location: /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Library/PackageCache/com.unity.multiplayer.center@f3fb577b3546)
+    com.unity.test-framework@1.5.1 (location: /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Library/PackageCache/com.unity.test-framework@7056e7f856e9)
+    com.unity.modules.accessibility@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vehicles@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.xr)
+    com.unity.modules.subsystems@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.modules.hierarchycore)
+    com.unity.ext.nunit@2.0.5 (location: /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Library/PackageCache/com.unity.ext.nunit@031a54704bff)
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+[Subsystems] No new subsystems found in resolved package list.
+Package Manager log level set to [2]
+[Package Manager] Done registering packages in 0.14 seconds
+Refreshing native plugins compatible for Editor in 0.00 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.1.12f1 (da0c3ee78ee0)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+ preferred device: Apple M1 Max (high power)
+Metal devices available: 1
+0: Apple M1 Max (high power)
+Using device Apple M1 Max (high power)
+Initializing Metal device caps: Apple M1 Max
+[Licensing::Client] Successfully resolved entitlement details
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56674
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/6000.1.12f1/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Registered in 0.000483 seconds.
+- Loaded All Assemblies, in  0.242 seconds
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.278 seconds
+Domain Reload Profiling: 520ms
+	BeginReloadAssembly (51ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (1ms)
+	RebuildCommonClasses (28ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (31ms)
+	LoadAllAssembliesAndSetupDomain (122ms)
+		LoadAssemblies (51ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (119ms)
+			TypeCache.Refresh (118ms)
+				TypeCache.ScanAssembly (109ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (278ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (248ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (39ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (55ms)
+			ProcessInitializeOnLoadAttributes (98ms)
+			ProcessInitializeOnLoadMethodAttributes (53ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[ScriptCompilation] Requested script compilation because: Assetdatabase observed changes in script compilation related files
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://unix:/tmp/ilpp.sock-40bb08e5dc0599cee54cb930d24c1f2e
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Content root path: /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 36.1314ms
+Starting: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: /private/tmp/cityforge-forest-mix-qjxQRT/UnityQa
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 2s84ms
+[180/183    2s] Csc Library/Bee/artifacts/200b0aE.dag/CityForgeV3.Tests.EditMode.dll (+2 others)
+[181/183    0s] CopyFiles Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll
+[182/183    0s] CopyFiles Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.pdb
+*** Tundra build success (2.06 seconds), 3 items updated, 183 evaluated
+AssetDatabase: script compilation time: 2.568197s
+Begin MonoManager ReloadAssembly
+Total cache size 108751240
+Total cache size after purge 108751240, took 00:00:00.0770391
+- Loaded All Assemblies, in  0.279 seconds
+Refreshing native plugins compatible for Editor in 0.00 ms, found 0 plugins.
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.316 seconds
+Domain Reload Profiling: 595ms
+	BeginReloadAssembly (132ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (24ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (40ms)
+	RebuildCommonClasses (29ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (16ms)
+	LoadAllAssembliesAndSetupDomain (92ms)
+		LoadAssemblies (106ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (26ms)
+			TypeCache.Refresh (20ms)
+				TypeCache.ScanAssembly (16ms)
+			BuildScriptInfoCaches (4ms)
+			ResolveRequiredComponents (1ms)
+	FinalizeReload (316ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (231ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (20ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (81ms)
+			ProcessInitializeOnLoadAttributes (99ms)
+			ProcessInitializeOnLoadMethodAttributes (28ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (4ms)
+Refreshing native plugins compatible for Editor in 0.00 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=934520f426c1641cfa5748fc0878206c): Total: 3.551 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=609 ms
+		Asset DB Callback time: managed=85 ms, native=2 ms
+		Scripting: domain reloads=1, domain reload time=279 ms, compile time=2569 ms, other=5 ms
+		Project Asset Count: scripts=731, non-scripts=3116
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 1
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 0.908ms
+	ApplyChangesToAssetFolders: 0.191ms
+	Scan: 186.843ms
+	OnSourceAssetsModified: 0.656ms
+	CategorizeAssetsWithTransientArtifact: 5.105ms
+	ProcessAssetsWithTransientArtifactChanges: 6.652ms
+	CategorizeAssets: 26.421ms
+	ImportOutOfDateAssets: 317.726ms (-2252.621ms without children)
+		CompileScripts: 2569.378ms
+		ReloadNativeAssets: 0.000ms
+		UnloadImportedAssets: 0.214ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.435ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.320ms
+	PostProcessAllAssets: 85.566ms
+	Hotreload: 1.422ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.000ms
+	UnloadStreamsBegin: 0.141ms
+	PersistCurrentRevisions: 0.100ms
+	UnloadStreamsEnd: 0.001ms
+	GenerateScriptTypeHashes: 0.422ms
+	Untracked: 2919.463ms
+
+Application.AssetDatabase Initial Refresh End
+Launching external process: /Applications/Unity/Hub/Editor/6000.1.12f1/Unity.app/Contents/Tools/UnityShaderCompiler
+Launched and connected shader compiler UnityShaderCompiler after 0.04 seconds
+Scanning for USB devices : 0.035ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-City Forge V3
+2026-09-19 18:48:41.679 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x147822d10 Open Art Deco Corner Live Placement, ke='Command-F8'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.679 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x14781a240 Open StreetCar Pan Visibility QA, ke='Command-F10'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.679 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x14781a5e0 Open Terraform District Scale QA, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.679 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x14781a980 Open Winter Snowfall QA, ke='Command-F9'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.679 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x14781aae0 Pan StreetCar QA Up, ke='Command-F11'>, but is only supported for system-provided menu items; will not be used
+Unloading 63 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 950 unused Assets / (6.6 MB). Loaded Objects now: 1403.
+Memory consumption went from 128.1 MB to 121.4 MB.
+Total: 6.674000 ms (FindLiveObjects: 0.067459 ms CreateObjectMapping: 0.023417 ms MarkObjects: 4.113458 ms  DeleteObjects: 2.469375 ms)
+
+2026-09-19 18:48:41.717 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x15fadea80 Open Art Deco Corner Live Placement, ke='Command-F8'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.717 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x15fae1510 Open StreetCar Pan Visibility QA, ke='Command-F10'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.717 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x15fae1870 Open Terraform District Scale QA, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.717 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x15fae1b90 Open Winter Snowfall QA, ke='Command-F9'>, but is only supported for system-provided menu items; will not be used
+2026-09-19 18:48:41.717 Unity[16674:8202721] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x15fae1d20 Pan StreetCar QA Up, ke='Command-F11'>, but is only supported for system-provided menu items; will not be used
+[Project] Loading completed in 5.504 seconds
+	Project init time: 				5.000 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		0.400 seconds
+		Asset Database init time: 		0.170 seconds
+		Global illumination init time: 	0.001 seconds
+		Assemblies load time: 			0.530 seconds
+		Unity extensions init time: 	0.001 seconds
+		Asset Database refresh time: 	3.551 seconds
+	Scene opening time: 			0.087 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1789868921738,"processId":16674,"projectLoad":5.5039570840000009,"projectInit":5.000416791,"templateInit":0.0,"packageManagerInit":0.400176958,"assetDatabaseInit":0.170233542,"globalIlluminationInit":0.00067175,"assembliesLoad":0.529958292,"unityExtensionsInit":0.001311083,"assetDatabaseRefresh":3.551265208,"sceneOpening":0.087303958}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1789868921738,"processId":16674,"editorVersion":"6000.1.12f1 (da0c3ee78ee0)","branch":"6000.1/staging","buildType":"Release","platform":"OSX"}
+Subscribe to USB device events
+Asset Pipeline Refresh (id=2cefda0b2275e442ba526a4221aaaa73): Total: 0.102 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Running tests for ExecutionSettings with details:
+targetPlatform =
+playerHeartbeatTimeout = 600
+filters[0] =
+   Filter with settings:
+   testMode = EditMode
+   targetPlatform =
+   testNames = null
+   groupNames = RegionTerrainMenuTests
+   categoryNames = null
+   assemblyNames = null
+ignoreTests = {}
+featureFlags = null
+
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:InitializeAndExecuteRun (string[]) (at ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/Executer.cs:53)
+UnityEditor.TestTools.TestRunner.CommandLineTest.TestStarter:InitializeAndExecuteRun () (at ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/TestStarter.cs:64)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions () (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorApplication.cs:384)
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 53)
+
+Request Asset Garbage Collect because used heap size increased from 121.9 MB to 425.7 MB, exceeding the threshold of 256.0 MB.
+Unloading 182 Unused Serialized files (Serialized files now loaded: 0)
+[UnityConnectServicesConfig] config is NOT valid, switching to default
+Created GICache directory at /Users/joelinstrum/Library/Caches/com.unity3d.UnityEditor/GiCache. Took: 0.002s, timestamps: [5.513 - 5.515]
+Unloading 2366 unused Assets / (210.5 MB). Loaded Objects now: 1442.
+Memory consumption went from 425.2 MB to 214.7 MB.
+Total: 12.519500 ms (FindLiveObjects: 0.116917 ms CreateObjectMapping: 0.041125 ms MarkObjects: 4.506792 ms  DeleteObjects: 7.854083 ms)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (0 B). Loaded Objects now: 1447.
+Memory consumption went from 203.5 MB to 203.5 MB.
+Total: 5.513000 ms (FindLiveObjects: 0.055917 ms CreateObjectMapping: 0.014083 ms MarkObjects: 5.439208 ms  DeleteObjects: 0.003334 ms)
+
+2026-09-19 18:48:43.142 Unity[16674:8202721] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-09-19 18:48:43.174 Unity[16674:8202721] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-09-19 18:48:43.236 Unity[16674:8202721] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+2026-09-19 18:48:43.240 Unity[16674:8202721] CAMetalLayer ignoring invalid setDrawableSize width=0.000000 height=0.000000
+Saving results to: /tmp/cityforge-forest-mix-qjxQRT/terrain-ui-results-3.xml
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 0 unused Assets / (36.5 KB). Loaded Objects now: 1449.
+Memory consumption went from 169.8 MB to 169.8 MB.
+Total: 6.162125 ms (FindLiveObjects: 0.046791 ms CreateObjectMapping: 0.012083 ms MarkObjects: 6.098250 ms  DeleteObjects: 0.004375 ms)
+
+DisplayProgressbar: Undo
+Test run completed. Exiting with code 0 (Ok). Run completed.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:35)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitApplication (UnityEditor.TestTools.TestRunner.CommandLineTest.Executer/ReturnCodes,string) (at ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/Executer.cs:81)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitIfRunIsCompleted () (at ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/Executer.cs:74)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions () (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorApplication.cs:384)
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@7056e7f856e9/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 81)
+
+Thread 0x16fb0f000 may have been prematurely finalized
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+[Physics::Module] Cleanup current backned.
+[Physics::Module] Id: 0xf2b8ea05
+[Licensing::IpcConnector] LicenseClient-joelinstrum-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-joelinstrum channel disconnected successfully.
+Thread 0x16fffb000 may have been prematurely finalized
+Thread 0x330a87000 may have been prematurely finalized
+AcceleratorClientConnectionCallback - disconnected - :0
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+Cleanup mono
+debugger-agent: Unable to listen on 44
+[Package Manager] Server process was shutdown
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1789868923629,"processId":16674,"allocatedMemory":11277467,"memoryLabels":[{"Default":14085},{"Permanent":15376},{"Thread":1088712},{"Manager":26422},{"VertexData":8},{"Geometry":408},{"VFX":-104},{"Texture":296},{"Shader":78624},{"Material":24},{"GfxDevice":40568},{"GfxThread":960},{"Animation":344},{"Audio":4600},{"FontEngine":272},{"Physics":1241},{"Serialization":736},{"Input":9488},{"JobScheduler":33552},{"TextLib":160},{"Mono":32},{"ScriptingNativeRuntime":155032},{"BaseObject":1620288},{"Resource":912},{"Renderer":3456},{"Transform":4654},{"File":820},{"WebCam":32},{"Culling":32},{"Terrain":11298},{"Wind":24},{"String":8849},{"DynamicArray":88302},{"HashMap":80796},{"Utility":2675744},{"PoolAlloc":1760},{"AI":40},{"TypeTree":5005},{"ScriptManager":512},{"RuntimeInitializeOnLoadManager":64},{"SpriteAtlas":112},{"GI":7248},{"Director":8192},{"WebRequest":776},{"VR":45698},{"SceneManager":504},{"Video":2112},{"LazyScriptCache":32},{"NativeArray":8},{"Camera":17},{"Secure":9865},{"SerializationCache":1576},{"APIUpdating":10320},{"Subsystems":336},{"VirtualTexturing":57504},{"StaticSafetyDebugInfo":278528},{"Baselib":16},{"Analytics":240},{"Hierarchy":384},{"Gui":112},{"EditorUtility":66529},{"VersionControl":4},{"Undo":955},{"AssetDatabase":4767696},{"EditorGi":328},{"UnityConnect":25168},{"Upm":1772},{"DrivenProperties":72},{"LocalIPC":210},{"ProfilerEditor":9730},{"CoreBusinessMetrics":4423},{"Licensing":3512},{"AssetReference":32},{"IPCStream":32}]}

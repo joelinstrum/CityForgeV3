@@ -10,11 +10,19 @@ namespace CityForgeV3.World
     public static class ForestClusterShadows
     {
         // Both palettes depict the same arrangement. Left, rear, right, fir, front.
-        static readonly Vector4[] Trees =
+        static readonly Vector4[] CompactTrees =
         {
             new(.267f,.843f,.49f,.64f), new(.537f,.72f,.48f,.70f),
             new(.782f,.834f,.42f,.56f), new(.663f,.850f,.23f,.54f),
             new(.480f,.975f,.43f,.48f)
+        };
+        static readonly Vector4[] LargeTrees =
+        {
+            new(.10f,.92f,.25f,.52f), new(.22f,.78f,.29f,.66f),
+            new(.34f,.94f,.28f,.49f), new(.45f,.72f,.30f,.72f),
+            new(.55f,.94f,.28f,.50f), new(.66f,.77f,.29f,.66f),
+            new(.77f,.94f,.27f,.50f), new(.88f,.82f,.25f,.61f),
+            new(.50f,.98f,.31f,.46f)
         };
 
         public static bool Update(SpriteRenderer source, MeshRenderer shadow, Vector3 ray,
@@ -23,9 +31,11 @@ namespace CityForgeV3.World
             string name = source.sprite.texture.name;
             if (!ForestClusterCatalog.IsTexture(name)) return false;
             bool winter = name.EndsWith("-winter");
-            var vertices = new List<Vector3>(200);
-            var colors = new List<Color>(200);
-            var indices = new List<int>(600);
+            var trees = ForestClusterCatalog.IsLarge(FloraTreeRepairs.Identity(name))
+                ? LargeTrees : CompactTrees;
+            var vertices = new List<Vector3>(trees.Length * 55);
+            var colors = new List<Color>(trees.Length * 55);
+            var indices = new List<int>(trees.Length * 200);
             var sprite = source.sprite;
             var size = sprite.rect.size / sprite.pixelsPerUnit;
             var pivot = sprite.pivot / sprite.pixelsPerUnit;
@@ -45,9 +55,9 @@ namespace CityForgeV3.World
             {
                 vertices.Add(Cast(point, height)); colors.Add(new Color(opacity, 1, 1, .4f));
             }
-            for (int tree = 0; tree < 5; tree++)
+            for (int tree = 0; tree < trees.Length; tree++)
             {
-                var t = Trees[tree];
+                var t = trees[tree];
                 // Intersect the camera ray through the pictured trunk foot with
                 // its ground plane, so the shadow touches that foot on screen.
                 var foot = source.transform.TransformPoint(new Vector3(t.x * size.x - pivot.x,
@@ -55,7 +65,11 @@ namespace CityForgeV3.World
                 foot = groundAnchor(foot);
                 float height = t.w * size.y * scale.y / verticalProjection;
                 float width = t.z * size.x * scale.x;
-                bool fir = tree == 3;
+                bool deciduousDominant = name.StartsWith("forest-deciduous-");
+                bool mountainDominant = name.StartsWith("forest-mountain-");
+                int crossFamilyTree = trees.Length == 9 ? 4 : 2;
+                bool fir = deciduousDominant ? tree == crossFamilyTree :
+                    mountainDominant ? tree != crossFamilyTree : tree == 3;
                 bool bare = winter && !fir;
                 // Soft canopy/contact shade reads beneath the grove even when
                 // the directional projection is hidden behind its billboard.

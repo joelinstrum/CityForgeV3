@@ -20,9 +20,11 @@ public class DistrictFloraCoverageTests
         var r = Region(); var a = r.Tiles[0]; var b = r.Tiles[1];
         var neighbor = JsonUtility.ToJson(b); var settings = r.Terrain;
         var firstIndex = DistrictHarvestIndex.For(a); var secondIndex = DistrictHarvestIndex.For(b);
-        var job = new RegionFloraGeneration(r, RegionTreeCoverage.Wooded, 83, a);
+        var mix = new ForestFamilyMix { Deciduous = 60, Mountain = 30, Tropical = 10 };
+        var job = new RegionFloraGeneration(r, RegionTreeCoverage.Wooded, 83, a, mix);
         job.Step(); Assert.True(job.Ready); job.Commit(_ => {});
         Assert.Greater(a.Flora.Count, 75); Assert.AreEqual(RegionTreeCoverage.Wooded, a.TreeCoverage); Assert.AreEqual(83, a.FloraSeed);
+        Assert.AreEqual(60, a.ForestMix.Deciduous);
         Assert.AreEqual(neighbor, JsonUtility.ToJson(b)); Assert.AreSame(settings, r.Terrain);
         Assert.AreEqual(71, r.Terrain.FloraSeed); Assert.AreEqual(RegionTreeCoverage.Sparse, r.Terrain.TreeCoverage);
         Assert.AreNotSame(firstIndex, DistrictHarvestIndex.For(a)); Assert.AreSame(secondIndex, DistrictHarvestIndex.For(b));
@@ -59,5 +61,6 @@ public class DistrictFloraCoverageTests
         while (!job.Ready) job.Step(); job.Commit(_ => {});
         foreach (var d in r.Tiles) { Assert.AreEqual(RegionTreeCoverage.Wooded, d.TreeCoverage); Assert.AreEqual(92, d.FloraSeed); }
         Assert.AreEqual(RegionTreeCoverage.Wooded, r.Terrain.TreeCoverage);
+        Assert.AreEqual(33, r.Terrain.ForestMix.Deciduous);
     }
 }

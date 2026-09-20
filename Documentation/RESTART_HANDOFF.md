@@ -1,5 +1,22 @@
 # Restart handoff — September 15, 2026
 
+## Latest — September 19 forest family mix V01
+
+On `feature/parks-and-gardens`, Tree Coverage now supports relative Deciduous,
+Fir & Mountain, and Tropical weights in both district and regional terrain UI.
+Weights select a dominant family: deciduous and mountain compositions visibly
+include one tree from the other family. Explicit generation uses broad nine-tree
+one-billboard art on level ground and compact five-tree art on slopes or where a
+large bounded footprint cannot fit. Separately harvestable Cilician fir records
+and all timber worker/labor behavior remain intact.
+
+New art is in `Flora/ForestClustersFamilyMixV01`; lineage and prompts are in
+`Documentation/Migration/FOREST_FAMILY_MIX_V01.md` and validation evidence is in
+`Documentation/Validation/forest-family-mix-v01/`. The isolated Unity suite
+passed 47/47 forest tests plus 3/3 graphics-enabled Region Terrain UI tests.
+No player save was read or written. Per Joe's latest direction, validate in the
+open CityForge V3 editor and do not sync, restart, or use CityForge-Regions-Review.
+
 Workspace: `/Users/joelinstrum/dev/CityForge - V3`
 
 Branch: `feature/regions-rivers-mountains-hills`

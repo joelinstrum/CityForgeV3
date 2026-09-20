@@ -73,7 +73,8 @@ namespace CityForgeV3.UI
             void GenerateFlora()
             {
                 var seed = RegionRiverGenerator.FreshSeed(saved.FloraSeed);
-                var generation = new RegionFloraGeneration(region, draft.TreeCoverage, seed);
+                var generation = new RegionFloraGeneration(region, draft.TreeCoverage, seed,
+                    familyMix: draft.ForestMix);
                 SetBusy(true);
                 void Step()
                 {
@@ -165,12 +166,12 @@ namespace CityForgeV3.UI
                     bool enabled = RegionClimateRules.AllowsForest(saved.Climate);
                     AddFloraCoverageChoices(content, "region-flora", saved.Climate, draft.TreeCoverage,
                         value => { draft.TreeCoverage = value; SelectCategory("Flora"); });
-                    save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None);
+                    AddForestFamilyMix(content, "region-forest-mix", draft.ForestMix,
+                        () => save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None && draft.ForestMix.Total > 0));
+                    save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None && draft.ForestMix.Total > 0);
                     content.Add(StyledLabel(enabled
-                        ? "Generate tree coverage across all districts. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Temperate and Mediterranean forests mix five-tree clusters with individual harvestable firs. Roads, water and buildings stay clear. Regeneration replaces this tool’s standing flora placements; planted trees and harvested trees stay."
+                        ? "Generate tree coverage across all districts. The family percentages select each clump’s dominant family; deciduous and fir clumps contain one cross-family tree. Level ground uses broader nine-tree billboards and slopes use compact five-tree billboards. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear."
                         : "Tree coverage is unavailable in Desert. Choose and apply another climate to generate tree coverage.", "document-modal-copy"));
-                    if (saved.Climate == RegionClimate.Tropical)
-                        content.Add(StyledLabel("Tropical coverage uses tropical trees. Lumber crews currently harvest Cilician firs, available in Temperate and Mediterranean forests.", "inspector-note"));
                     return;
                 }
                 if (category == "Roads")

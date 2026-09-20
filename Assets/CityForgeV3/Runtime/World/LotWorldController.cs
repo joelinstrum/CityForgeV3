@@ -1799,7 +1799,7 @@ namespace CityForgeV3.World
             string textureName)
         {
             floraId = CurrentTreeArtwork(floraId);
-            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.PixelsPerUnit;
+            if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.PixelsPerUnit(floraId);
             var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId);
             if(repairPpu>0f)return repairPpu;
             if (PlaneUkFloraPresentation.IsTree(floraId) && floraId!="angel-oak-spanish-moss") return 512f / 18f;

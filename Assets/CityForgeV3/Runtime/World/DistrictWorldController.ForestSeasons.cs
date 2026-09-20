@@ -83,7 +83,7 @@ namespace CityForgeV3.World
             var texture = Resources.Load<Texture2D>(path);
             if (texture == null) throw new MissingReferenceException(path);
             sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                ForestClusterCatalog.Pivot, ForestClusterCatalog.PixelsPerUnit);
+                ForestClusterCatalog.Pivot, ForestClusterCatalog.PixelsPerUnit(id));
             return _districtFloraSprites[path] = sprite;
         }
 
@@ -91,11 +91,15 @@ namespace CityForgeV3.World
         {
             _pendingForestSeason = null; _pendingForestIndex = 0;
             _forestSeason = ForestClusterCatalog.SeasonForIndex(district.Labor?.SeasonIndex ?? 0);
-            // Warm six shared sprites at the existing loading/bulk-edit boundary.
+            // Warm the family sprites at the existing loading/bulk-edit boundary.
             // First seasonal use must not decode textures or build tight sprite meshes.
             if (_forestClusters.Count == 0) return;
             foreach (var season in new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter })
-                for (int i = 0; i < 2; i++) ForestSprite(ForestClusterCatalog.Id(i), season);
+                foreach (var family in FloraFamilies.Names)
+                {
+                    ForestSprite(ForestClusterCatalog.Id(family, false), season);
+                    ForestSprite(ForestClusterCatalog.Id(family, true), season);
+                }
         }
 
         // Read the existing calendar without advancing it or touching labor state.

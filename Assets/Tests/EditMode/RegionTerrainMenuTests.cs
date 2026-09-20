@@ -41,9 +41,30 @@ public class RegionTerrainMenuTests
         var region = RegionSaveStore.Create("Terrain options",8,8);
         region.Terrain.DeepRivers = RegionWaterAmount.Many;
         region.Terrain.Streams = RegionWaterAmount.Few;
+        region.Terrain.ForestMix = new ForestFamilyMix
+            { Deciduous = 40, Mountain = 35, Tropical = 25 };
         var loaded=JsonUtility.FromJson<RegionSaveData>(JsonUtility.ToJson(region));
         Assert.That(loaded.Terrain.DeepRivers,Is.EqualTo(RegionWaterAmount.Many));
         Assert.That(loaded.Terrain.Streams,Is.EqualTo(RegionWaterAmount.Few));
+        Assert.That(loaded.Terrain.ForestMix.Deciduous,Is.EqualTo(40));
+        Assert.That(loaded.Terrain.ForestMix.Mountain,Is.EqualTo(35));
+        Assert.That(loaded.Terrain.ForestMix.Tropical,Is.EqualTo(25));
         Assert.That(loaded.Tiles.Count,Is.EqualTo(region.Tiles.Count));
+    }
+    [Test] public void ForestFamilyControlsUseRelativeWeightsAndClampPercentages()
+    {
+        window = ScriptableObject.CreateInstance<UnityEditor.EditorWindow>();
+        window.Show(); var root = window.rootVisualElement;
+        var mix = new ForestFamilyMix(); int changes = 0;
+        var method = typeof(CityForgeApp).GetMethod("AddForestFamilyMix",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        method.Invoke(null, new object[] { root, "test-mix", mix, (Action)(() => changes++) });
+        Assert.AreEqual(33, root.Q<IntegerField>("test-mix-deciduous").value);
+        root.Q<IntegerField>("test-mix-deciduous").value = 140;
+        root.Q<IntegerField>("test-mix-mountain").value = -4;
+        Assert.AreEqual(100, mix.Deciduous);
+        Assert.AreEqual(0, mix.Mountain);
+        Assert.AreEqual(133, mix.Total);
+        Assert.AreEqual(2, changes);
     }
 }

@@ -2,18 +2,33 @@ using UnityEngine;
 
 namespace CityForgeV3.World
 {
-    // Five saved identities remain compatible; they share two approved palettes.
-    // A cluster is scenery. Separate fir records retain the lumber contract.
+    // Legacy identities remain compatible. New identities encode dominant
+    // family and terrain footprint while each is still one scenery billboard.
+    // Separate fir records retain the lumber contract.
     public static class ForestClusterCatalog
     {
         public const int VariantCount = 5;
-        public const float PixelsPerUnit = 50f;
-        public const float ClearanceMeters = 16f;
+        public const float CompactPixelsPerUnit = 50f;
+        public const float LargePixelsPerUnit = 36f;
+        public const float CompactClearanceMeters = 16f;
+        public const float LargeClearanceMeters = 23f;
         public static readonly Vector2 Pivot = new(.5f, .027f);
         public static string Id(int variant) => "forest-cluster-0" + (variant + 1);
+        public static string Id(string family, bool large) => "forest-" +
+            (family == FloraFamilies.Mountain ? "mountain" :
+             family == FloraFamilies.Tropical ? "tropical" : "deciduous") +
+            (large ? "-large" : "-compact");
+        public static bool IsLarge(string id) => id != null && id.EndsWith("-large");
+        public static float ClearanceMeters(string id) => IsLarge(id)
+            ? LargeClearanceMeters : CompactClearanceMeters;
+        public static float PixelsPerUnit(string id) => IsLarge(id)
+            ? LargePixelsPerUnit : CompactPixelsPerUnit;
         public static bool IsCluster(string id) => id == "forest-cluster-01" ||
             id == "forest-cluster-02" || id == "forest-cluster-03" ||
-            id == "forest-cluster-04" || id == "forest-cluster-05";
+            id == "forest-cluster-04" || id == "forest-cluster-05" ||
+            id == "forest-deciduous-compact" || id == "forest-mountain-compact" ||
+            id == "forest-tropical-compact" || id == "forest-deciduous-large" ||
+            id == "forest-mountain-large" || id == "forest-tropical-large";
         public static bool IsTexture(string name) => name != null &&
             IsCluster(FloraTreeRepairs.Identity(name)) &&
             (name.EndsWith("-summer") || name.EndsWith("-autumn") || name.EndsWith("-winter"));
@@ -25,6 +40,14 @@ namespace CityForgeV3.World
         public static string ResourcePath(string id, SeasonPreset season = SeasonPreset.Summer)
         {
             if (!IsCluster(id)) return null;
+            if (id.StartsWith("forest-deciduous-") || id.StartsWith("forest-mountain-") ||
+                id.StartsWith("forest-tropical-"))
+            {
+                string familySuffix = id.StartsWith("forest-tropical-") ? "summer" :
+                    season == SeasonPreset.Autumn ? "autumn" :
+                    season == SeasonPreset.Winter ? "winter" : "summer";
+                return "CityForgeV3/Flora/ForestClustersFamilyMixV01/" + id + "-" + familySuffix;
+            }
             string palette = (id[16] - '1') % 2 == 0 ? "01" : "02";
             string suffix = season == SeasonPreset.Autumn ? "autumn" :
                 season == SeasonPreset.Winter ? "winter" : "summer";

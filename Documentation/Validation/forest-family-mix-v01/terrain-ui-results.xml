@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.2597105">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1137" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.259711" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2309" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-forest-mix-qjxQRT/UnityQa/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1137" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.241420" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16674" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1174" name="RegionTerrainMenuTests" fullname="RegionTerrainMenuTests" classname="RegionTerrainMenuTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.226762" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1175" name="CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" fullname="RegionTerrainMenuTests.CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" methodname="CheckboxesAreExclusiveWithinTypeAndIndependentAcrossTypes" classname="RegionTerrainMenuTests" runstate="Runnable" seed="518667787" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.183647" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1177" name="ForestFamilyControlsUseRelativeWeightsAndClampPercentages" fullname="RegionTerrainMenuTests.ForestFamilyControlsUseRelativeWeightsAndClampPercentages" methodname="ForestFamilyControlsUseRelativeWeightsAndClampPercentages" classname="RegionTerrainMenuTests" runstate="Runnable" seed="1500361102" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.028154" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1176" name="RegionOptionsSurviveSerialization" fullname="RegionTerrainMenuTests.RegionOptionsSurviveSerialization" methodname="RegionOptionsSurviveSerialization" classname="RegionTerrainMenuTests" runstate="Runnable" seed="53350537" result="Passed" start-time="2026-09-20 01:48:43Z" end-time="2026-09-20 01:48:43Z" duration="0.005353" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-forest-mix-qjxQRT/terrain-ui-results-3.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
