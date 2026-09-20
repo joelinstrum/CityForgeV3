@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.1514136">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1138" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.151414" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2310" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-lot-library.Q1yCD5/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1138" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.132545" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="41993" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2311" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="993" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.114895" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2312" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="993" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.101587" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1338" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="584" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.086150" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1724" name="LoadLotBrowserConstrainsEntriesToAnAlwaysScrollableModalBody" fullname="CityForgeV3.Tests.UiFoundationTests.LoadLotBrowserConstrainsEntriesToAnAlwaysScrollableModalBody" methodname="LoadLotBrowserConstrainsEntriesToAnAlwaysScrollableModalBody" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="637649369" result="Passed" start-time="2026-09-20 03:30:45Z" end-time="2026-09-20 03:30:45Z" duration="0.037835" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-lot-library.Q1yCD5/results-existing.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

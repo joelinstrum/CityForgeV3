@@ -1619,3 +1619,13 @@ Stats and Bonus remain top-level tools on the left rail for direct access. This
 is presentation-only and does not add a Lot scan, rebuild, or save. Per Joe's
 latest testing direction, validation stays in CityForge - V3 plus isolated
 fixtures; CityForge-Regions-Review is no longer part of the handoff workflow.
+
+### September 19 — categorized Load Lot library
+
+The Lot Editor's **Load Lot** browser is now a 780 px catalog instead of the
+shared 520 px document modal. It provides first-class filters for **All Lots**,
+Residential, Commercial, Industrial, Mixed Use, Farms, Transportation, Civics,
+Parks, and **District Town Center**, matching the organization used while
+authoring and placing saved Lots. The selected category is filtered only when
+the user opens or changes this explicit browser; no district scan, rebuild, or
+automatic save was added.

@@ -2144,6 +2144,25 @@
     max-height: 88%;
 }
 
+.document-modal-panel.lot-library-modal-panel {
+    width: 780px;
+    height: 760px;
+    max-width: 92%;
+    max-height: 90%;
+    overflow: hidden;
+}
+
+.lot-library-modal-panel > .document-modal-title,
+.lot-library-modal-panel > .document-modal-copy,
+.lot-library-modal-panel > .load-lot-category-tabs,
+.lot-library-modal-panel > .document-modal-actions {
+    flex-shrink: 0;
+}
+
+.load-lot-category-tabs .cf-button {
+    min-width: 132px;
+}
+
 .document-modal-title {
     color: var(--cf-paper-100);
     font-size: 22px;
@@ -2386,6 +2405,20 @@
 
 .lot-save-list .unity-scroll-view__content-container {
     flex-shrink: 0;
+}
+
+.lot-save-list.lot-library-save-list {
+    height: auto;
+    max-height: none;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.lot-save-list.lot-library-save-list .unity-scroll-view__content-viewport {
+    height: auto;
+    max-height: none;
+    flex-grow: 1;
 }
 
 .lot-save-list .unity-scroller--vertical {

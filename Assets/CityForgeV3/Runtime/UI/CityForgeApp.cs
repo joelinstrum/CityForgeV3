@@ -125,6 +125,7 @@ namespace CityForgeV3.UI
     private LotEditorCategory _lotEditorCategory = LotEditorCategory.Main;
     private bool _lotEditorCategoryExpanded;
     private bool _hasOpenLot;
+    private LotType? _loadLotCategory;
     private BuildingUseCategory _buildingUseCategory = BuildingUseCategory.Residential;
     private string _buildingSubcategory = string.Empty;
     private bool _roadPointerDown;
@@ -2598,7 +2599,7 @@ namespace CityForgeV3.UI
       viewActions.Add(CfButton.Create("SAVE", SaveLot, _hasOpenLot, "quiet"));
       viewActions.Add(CfButton.Create("SAVE AS", ComposeSaveAsDialog, _hasOpenLot, "quiet"));
       viewActions.Add(CfButton.Create("LOAD",
-          () => RequestDocumentAction(ComposeLoadLotBrowser), true, "quiet"));
+          () => RequestDocumentAction(OpenLoadLotBrowser), true, "quiet"));
       viewActions.Add(CfButton.Create("TRAFFIC TEST",
           () => RequestDocumentAction(ApplyTrafficTemplate), _hasOpenLot, "quiet"));
       topbar.Add(viewActions);
@@ -7004,16 +7005,39 @@ namespace CityForgeV3.UI
       nameField.schedule.Execute(nameField.Focus);
     }
 
+    private void OpenLoadLotBrowser()
+    {
+      _loadLotCategory = null;
+      ComposeLoadLotBrowser();
+    }
+
     private void ComposeLoadLotBrowser()
     {
       var saves = LotSaveStore.List();
+      var visibleSaves = _loadLotCategory.HasValue
+          ? saves.FindAll(summary => LotMatchesLoadCategory(
+              summary, _loadLotCategory))
+          : saves;
+      var categoryName = _loadLotCategory.HasValue
+          ? LoadLotCategoryLabel(_loadLotCategory.Value)
+          : "All Lots";
       var panel = CreateDocumentModal(
           "LOAD LOT",
           saves.Count == 0
               ? "No saved lots exist yet."
-              : "Choose a saved lot. Most recently modified lots appear first.");
+              : $"Browse {categoryName.ToLowerInvariant()}. Most recently modified lots appear first.");
       panel.AddToClassList("load-lot-modal-panel");
-      if (saves.Count > 0)
+      panel.AddToClassList("lot-library-modal-panel");
+
+      var categoryTabs = new VisualElement { name = "load-lot-category-tabs" };
+      categoryTabs.AddToClassList("building-use-tabs");
+      categoryTabs.AddToClassList("load-lot-category-tabs");
+      AddLoadLotCategoryTab(categoryTabs, null, "All Lots");
+      foreach (var type in LoadLotCategories())
+        AddLoadLotCategoryTab(categoryTabs, type, LoadLotCategoryLabel(type));
+      panel.Add(categoryTabs);
+
+      if (visibleSaves.Count > 0)
       {
         var list = new ScrollView(ScrollViewMode.Vertical)
         {
@@ -7021,13 +7045,10 @@ namespace CityForgeV3.UI
           verticalScrollerVisibility = ScrollerVisibility.AlwaysVisible,
           horizontalScrollerVisibility = ScrollerVisibility.Hidden
         };
-        list.style.height = 420f;
-        list.style.maxHeight = 420f;
-        list.style.flexGrow = 0f;
-        list.style.flexShrink = 0f;
         list.contentViewport.style.overflow = Overflow.Hidden;
         list.AddToClassList("lot-save-list");
-        foreach (var summary in saves)
+        list.AddToClassList("lot-library-save-list");
+        foreach (var summary in visibleSaves)
         {
           var captured = summary;
           var missing = _lotWorld.MissingDependencies(summary.LotId);
@@ -7076,11 +7097,59 @@ namespace CityForgeV3.UI
         }
         panel.Add(list);
       }
+      else if (saves.Count > 0)
+      {
+        var empty = StyledLabel(
+            $"No saved {categoryName.ToLowerInvariant()} yet.",
+            "catalog-empty");
+        empty.name = "load-lot-category-empty";
+        panel.Add(empty);
+      }
 
       var actions = DocumentModalActions();
       actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal, true, "quiet"));
       panel.Add(actions);
     }
+
+    private void AddLoadLotCategoryTab(VisualElement tabs, LotType? type,
+        string label)
+    {
+      var selected = _loadLotCategory == type;
+      var button = CfButton.Create(label.ToUpperInvariant(), () =>
+      {
+        _loadLotCategory = type;
+        ComposeLoadLotBrowser();
+      }, true, selected ? "building-use-selected" : "building-use");
+      button.name = type.HasValue
+          ? $"load-lot-category-{type.Value}"
+          : "load-lot-category-all";
+      tabs.Add(button);
+    }
+
+    private static IReadOnlyList<LotType> LoadLotCategories() => new[]
+    {
+      LotType.Residential,
+      LotType.Commercial,
+      LotType.Industrial,
+      LotType.Mixed,
+      LotType.Agricultural,
+      LotType.Transportation,
+      LotType.Civics,
+      LotType.CivicsParks,
+      LotType.DistrictTownCenter
+    };
+
+    private static string LoadLotCategoryLabel(LotType type) => type switch
+    {
+      LotType.Mixed => "Mixed Use",
+      LotType.Agricultural => "Farms",
+      LotType.CivicsParks => "Parks",
+      _ => LotTypeLabel(type)
+    };
+
+    private static bool LotMatchesLoadCategory(LotSaveSummary summary,
+        LotType? category) => summary != null &&
+        (!category.HasValue || summary.LotType == category.Value);
 
     private void ComposeRenameLotDialog(LotSaveSummary summary)
     {

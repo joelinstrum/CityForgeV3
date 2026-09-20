@@ -6532,6 +6532,52 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void LoadLotBrowserIsLargeAndOffersEverySavedLotCategory()
+        {
+            var app = typeof(CityForgeApp);
+            var flags = BindingFlags.Static | BindingFlags.NonPublic;
+            var categories = (IReadOnlyList<LotType>)app.GetMethod(
+                    "LoadLotCategories", flags)
+                .Invoke(null, null);
+
+            Assert.That(categories, Is.EqualTo(new[]
+            {
+                LotType.Residential,
+                LotType.Commercial,
+                LotType.Industrial,
+                LotType.Mixed,
+                LotType.Agricultural,
+                LotType.Transportation,
+                LotType.Civics,
+                LotType.CivicsParks,
+                LotType.DistrictTownCenter
+            }));
+            Assert.That(app.GetMethod("LoadLotCategoryLabel", flags)
+                    .Invoke(null, new object[] { LotType.DistrictTownCenter }),
+                Is.EqualTo("District Town Center"));
+            var matches = app.GetMethod("LotMatchesLoadCategory", flags);
+            var townCenter = new LotSaveSummary
+                { LotType = LotType.DistrictTownCenter };
+            Assert.That(matches.Invoke(null, new object[]
+                { townCenter, LotType.DistrictTownCenter }), Is.EqualTo(true));
+            Assert.That(matches.Invoke(null, new object[]
+                { townCenter, LotType.Civics }), Is.EqualTo(false),
+                "District Town Center must remain a first-class category");
+            Assert.That(matches.Invoke(null, new object[] { townCenter, null }),
+                Is.EqualTo(true), "All Lots includes every category");
+
+            var source = File.ReadAllText(
+                "Assets/CityForgeV3/Runtime/UI/CityForgeApp.cs");
+            var styles = File.ReadAllText(
+                "Assets/CityForgeV3/Resources/CityForgeV3/UI/CityForgeV3.uss");
+            StringAssert.Contains("load-lot-category-tabs", source);
+            StringAssert.Contains("load-lot-category-all", source);
+            StringAssert.Contains("lot-library-modal-panel", source);
+            StringAssert.Contains(".document-modal-panel.lot-library-modal-panel", styles);
+            StringAssert.Contains("width: 780px", styles);
+        }
+
+        [Test]
         public void StreetcarSourceMeshCannotCastDisconnectedOffscreenShadows()
         {
             var source = File.ReadAllText(
