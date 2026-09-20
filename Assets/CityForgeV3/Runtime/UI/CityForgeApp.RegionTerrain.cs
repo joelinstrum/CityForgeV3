@@ -170,7 +170,7 @@ namespace CityForgeV3.UI
                         () => save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None && draft.ForestMix.Total > 0));
                     save.SetEnabled(enabled && draft.TreeCoverage != RegionTreeCoverage.None && draft.ForestMix.Total > 0);
                     content.Add(StyledLabel(enabled
-                        ? "Generate tree coverage across all districts. The family percentages select each clump’s dominant family; deciduous and fir clumps contain one cross-family tree. Level ground uses broader nine-tree billboards and slopes use compact five-tree billboards. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear."
+                        ? "Generate tree coverage across all districts. The family percentages select each clump’s dominant family; deciduous and fir clumps contain one cross-family tree. Level ground uses broader nine-tree billboards, gentle slopes use compact five-tree billboards, and steep hills use individually grounded trees. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear."
                         : "Tree coverage is unavailable in Desert. Choose and apply another climate to generate tree coverage.", "document-modal-copy"));
                     return;
                 }

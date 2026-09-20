@@ -171,7 +171,7 @@ namespace CityForgeV3.UI
                 generate.SetEnabled(enabled && selected != RegionTreeCoverage.None && familyMix.Total > 0);
                 generate.tooltip = !enabled ? "Unavailable in Desert climate" : "Generate coverage in this district only";
                 content.Add(StyledLabel(enabled
-                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Level ground uses broader nine-tree billboards; slopes use compact five-tree billboards. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
+                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Level ground uses broader nine-tree billboards, gentle slopes use compact five-tree billboards, and steep hills use individually grounded trees. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
                     : "Tree coverage is unavailable in Desert. Change the regional climate to generate tree coverage.", "document-modal-copy"));
             }
             RefreshChoices();

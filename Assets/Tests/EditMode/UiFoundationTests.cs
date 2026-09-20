@@ -1825,7 +1825,14 @@ namespace CityForgeV3.Tests
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD2),
                 Is.EqualTo(1.3f), "Zoom 3 is 30% faster than its original pan rate.");
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD3),
-                Is.EqualTo(1f), "More distant zoom levels keep their existing pan rate.");
+                Is.EqualTo(0.18f));
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD4),
+                Is.EqualTo(0.07f));
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD5Billboard),
+                Is.EqualTo(0.035f));
+            Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD4),
+                Is.LessThan(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD1)),
+                "Player-facing Zoom 5 must pan much more slowly than Zoom 2.");
         }
 
         [Test]

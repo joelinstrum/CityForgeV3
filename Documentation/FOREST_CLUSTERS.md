@@ -2,6 +2,16 @@
 
 ## September 19 — weighted families and terrain-sized clumps
 
+Follow-up: multi-tree artwork is now limited to terrain where its shared root
+line can remain credible. Five local elevation samples choose large groups on
+flat ground (≤0.4m spread), compact groups on gentle slopes (≤0.9m), and one
+family-matched, individually grounded tree on steeper terrain. This prevents a
+single five-tree baseline from appearing skewed across a hill. Steep candidates
+remain one placement and one renderer; the fix does not multiply records,
+objects, draw batches, or per-frame work. Existing generated records change only
+after explicit Tree Coverage regeneration; no district is rewritten or saved
+automatically.
+
 Tree Coverage now stores three relative weights: Deciduous, Fir & Mountain,
 and Tropical. The default is 33 / 33 / 33; totals do not need to equal 100.
 These weights select a billboard's **dominant** family, not an exclusive stand.
@@ -12,9 +22,10 @@ regenerated until the player explicitly uses Generate Tree Coverage.
 
 Each candidate samples the existing deterministic elevation field at its center
 and four points 12m away. A maximum height spread of 1.25m selects a broad
-nine-tree billboard with a 23m clearance; steeper terrain selects a compact
-five-tree billboard with a 16m clearance. If a broad footprint conflicts with a
-road, river, lot or district edge, the same candidate may fall back to compact.
+nine-tree billboard with a 23m clearance; gentle terrain selects a compact
+five-tree billboard with a 16m clearance; steep terrain selects one rooted tree.
+If a broad footprint conflicts with a road, river, lot or district edge, the
+same candidate may fall back to compact.
 This is five bounded samples and one occupancy-grid query per candidate during
 explicit generation, never a routine district scan or per-frame calculation.
 

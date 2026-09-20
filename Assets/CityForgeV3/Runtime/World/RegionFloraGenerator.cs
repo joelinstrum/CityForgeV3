@@ -8,6 +8,12 @@ namespace CityForgeV3.World
     // Pure spatial generation. No scene objects, rendering, navigation searches or forest scans per candidate.
     public static class RegionFloraGenerator
     {
+        static readonly string[] DeciduousSlopeTrees =
+            { "mature-oak", "american-elm", "shagbark-hickory" };
+        static readonly string[] MountainSlopeTrees =
+            { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce" };
+        static readonly string[] TropicalSlopeTrees =
+            { "date-palm-tall", "la-fan-palm-a", "la-fan-palm-b" };
         public static bool Retain(PlacedDistrictFlora tree) => tree != null &&
             (!tree.GeneratedByRegion || tree.HarvestState != DistrictTreeHarvestState.Standing || tree.WoodCredited);
 
@@ -77,8 +83,10 @@ namespace CityForgeV3.World
                 else
                 {
                     string family = ChooseFamily(random, familyMix);
-                    bool large = IsLargeFlatFootprint(elevation, point, mask.Width, mask.Depth);
-                    floraId = ForestClusterCatalog.Id(family, large);
+                    int footprint = TerrainFootprint(elevation, point,
+                        mask.Width, mask.Depth);
+                    floraId = footprint == 0 ? SlopeTree(random, family) :
+                        ForestClusterCatalog.Id(family, footprint == 2);
                 }
                 float scale = .86f + (float)random.NextDouble() * .3f;
                 float clearance = ForestClusterCatalog.IsCluster(floraId) ? ForestClusterCatalog.ClearanceMeters(floraId) * scale : 0;
@@ -119,10 +127,19 @@ namespace CityForgeV3.World
             ? FloraFamilies.Mountain : id.StartsWith("forest-tropical-")
             ? FloraFamilies.Tropical : FloraFamilies.Deciduous;
 
-        // Five constant-time elevation samples decide whether a candidate has
-        // enough level ground for a nine-tree composition. This is generation-
-        // time work only and never scans district objects or runs per frame.
-        static bool IsLargeFlatFootprint(DistrictElevation elevation, Vector2 point,
+        static string SlopeTree(System.Random random, string family)
+        {
+            var choices = family == FloraFamilies.Mountain ? MountainSlopeTrees :
+                family == FloraFamilies.Tropical ? TropicalSlopeTrees :
+                DeciduousSlopeTrees;
+            return choices[random.Next(choices.Length)];
+        }
+
+        // Five constant-time elevation samples select a large group (2), compact
+        // group (1), or individually grounded tree (0). A multi-tree bitmap has
+        // one shared baseline, so it is never used across steep relief.
+        // This is explicit generation-time work only and never a district scan.
+        static int TerrainFootprint(DistrictElevation elevation, Vector2 point,
             float width, float depth)
         {
             float x = point.x - width * .5f, z = point.y - depth * .5f;
@@ -134,7 +151,10 @@ namespace CityForgeV3.World
             Include(elevation.Sample(x + offset, z));
             Include(elevation.Sample(x, z - offset));
             Include(elevation.Sample(x, z + offset));
-            return max - min <= 1.25f;
+            float spread = max - min;
+            if (spread <= .4f) return 2;
+            if (spread <= .9f) return 1;
+            return 0;
         }
 
         // Eight-meter occupancy cells conservatively reserve roads, river banks and

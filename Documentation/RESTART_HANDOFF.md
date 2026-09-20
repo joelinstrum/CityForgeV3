@@ -1503,6 +1503,21 @@ persistence through reload and definition edits, and Fort/Town Center food
 reserves. No player Lot or district was saved, and no commit, push, or review
 sync was performed.
 
+### September 19 — hill-safe forests and per-zoom panning
+
+Generated multi-tree billboards now require a locally level footprint: large
+groups at ≤0.4m height spread, compact groups at ≤0.9m, and individually rooted
+family-matched trees on steeper hills. Five bounded height samples run only
+during explicit coverage generation. Steep candidates remain one record and one
+renderer, so no new district scan, per-frame work, or hill-specific record
+multiplier was added. Existing forests update only when explicitly regenerated.
+
+District pan multipliers are now explicit for all six player zooms. Zooms 4–6
+use 0.18, 0.07, and 0.035, making the two reported distant levels substantially
+slower on screen than the close views. Arrow keys and edge hover share the same
+calibration. Focused isolated validation passed 16/16; no player save or labor
+behavior changed. Evidence: `Validation/hill-forest-pan-v01/`.
+
 ### September 19 — Town Center building, repaired rear and interior activity
 
 Imported Joe's hollow-window Town Center as Buildings → Civics → Town Center.

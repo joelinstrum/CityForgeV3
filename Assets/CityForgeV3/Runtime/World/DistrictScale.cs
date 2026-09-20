@@ -121,7 +121,12 @@ namespace CityForgeV3.World
             DistrictZoomLevel.LOD1 => 0.525f,
             // Player-facing Zoom 3 retains its previously approved rate.
             DistrictZoomLevel.LOD2 => 1.3f,
-            _ => 1f
+            // Distant views cover far more world space per screen pixel. Keep
+            // their apparent motion deliberately slower than close inspection.
+            DistrictZoomLevel.LOD3 => 0.18f,
+            DistrictZoomLevel.LOD4 => 0.07f,
+            DistrictZoomLevel.LOD5Billboard => 0.035f,
+            _ => 0.07f
         };
 
         /// <summary>
