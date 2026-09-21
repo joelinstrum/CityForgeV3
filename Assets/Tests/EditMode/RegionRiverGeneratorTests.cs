@@ -40,6 +40,39 @@ public class RegionRiverGeneratorTests
         Assert.That(paths[2].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-6)<.0001f),Is.True);
         Assert.That(paths[0].Points.Max(point=>point.Z),Is.LessThan(paths[1].Points.Min(point=>point.Z)));
     }
+    [Test] public void FourSmallRiversSplitEvenlyAcrossCardinalDirections()
+    {
+        var settings=new RegionTerrainSettings{RiverCountsVersion=1,SmallRiverCount=4};
+        var paths=RegionRiverGenerator.Generate(Region(),settings,91);
+        Assert.That(paths,Has.Count.EqualTo(4));
+        Assert.That(paths.All(path=>path.GeneratedSize==GeneratedRegionRiverSize.Small),Is.True);
+        Assert.That(paths.All(path=>path.WidthMeters>=24&&path.WidthMeters<=36),Is.True);
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(2));
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(2));
+    }
+    [Test] public void ExplicitCountsCreateEveryRequestedRiverSize()
+    {
+        var settings=new RegionTerrainSettings{RiverCountsVersion=1,
+            DeepRivers=RegionWaterAmount.Few,MediumRiverCount=3,
+            SmallRiverCount=4,StreamCount=5};
+        var paths=RegionRiverGenerator.Generate(Region(),settings,121);
+        Assert.That(paths,Has.Count.EqualTo(13));
+        Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Major),Is.EqualTo(1));
+        Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Medium),Is.EqualTo(3));
+        Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Small),Is.EqualTo(4));
+        Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Stream),Is.EqualTo(5));
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(7));
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(6));
+    }
+    [Test] public void OccupiedDistrictCentersAreNotPreferredRouteTargets()
+    {
+        var r=Region();
+        r.Tiles[0].Lots.Add(new PlacedDistrictLot{InstanceId="occupied"});
+        var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,SmallRiverCount=1},19);
+        Assert.That(paths.Single().Points.Any(point=>
+            Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.False);
+    }
     [Test] public void SharedDistrictBoundaryMatchesAndReloadPreservesPaths()
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Many},7);

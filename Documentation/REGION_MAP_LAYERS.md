@@ -64,6 +64,15 @@ swings and long uninterrupted straight sections. The Rivers panel exposes one
 major toggle plus the two small-river amounts. Existing authored geometry is
 unchanged.
 
+Cardinal V05 replaces the two/five small-river toggles with explicit counts:
+zero or one Major, zero through three Medium, and zero through five each for
+Small and Stream. Even groups split evenly by direction (four Small produces
+two west-to-east and two north-to-south), while odd remainders keep the whole
+layout as balanced as possible. Occupied districts are excluded from preferred
+center targets, and Generate Rivers tries up to 24 fresh candidates before
+reporting that no building-safe layout was found. Legacy Few/Many saves migrate
+to two/five Small rivers without rewriting existing geometry.
+
 When a region has no saved procedural river selection, Regenerate Rivers now
 opens the Rivers panel with the intended one-major-plus-two-small defaults.
 Generate Rivers rejects an explicitly empty selection with visible guidance;

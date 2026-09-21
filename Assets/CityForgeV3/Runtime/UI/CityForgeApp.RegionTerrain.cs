@@ -18,13 +18,19 @@ namespace CityForgeV3.UI
             var saved = region.Terrain ?? new RegionTerrainSettings();
             var draft = saved.Copy();
             draft.Flow = RegionRiverFlow.Varied;
-            if (draft.DeepRivers != RegionWaterAmount.None)
-                draft.DeepRivers = RegionWaterAmount.Few;
-            if (draft.DeepRivers == RegionWaterAmount.None &&
-                draft.Streams == RegionWaterAmount.None)
+            if (draft.RiverCountsVersion <= 0)
             {
-                draft.DeepRivers = RegionWaterAmount.Few;
-                draft.Streams = RegionWaterAmount.Few;
+                if (draft.DeepRivers != RegionWaterAmount.None)
+                    draft.DeepRivers = RegionWaterAmount.Few;
+                draft.SmallRiverCount = draft.Streams == RegionWaterAmount.Many ? 5 :
+                    draft.Streams == RegionWaterAmount.Few ? 2 : 0;
+                if (draft.DeepRivers == RegionWaterAmount.None && draft.SmallRiverCount == 0)
+                {
+                    draft.DeepRivers = RegionWaterAmount.Few;
+                    draft.SmallRiverCount = 2;
+                }
+                draft.Streams = RegionWaterAmount.None;
+                draft.RiverCountsVersion = 1;
             }
             var category = initialCategory;
             bool busy = false, cancelled = false;
@@ -113,7 +119,14 @@ namespace CityForgeV3.UI
                 notice.style.display = DisplayStyle.Flex;
                 if (category == "Rivers")
                 {
-                    var rivers = saved.Copy(); rivers.DeepRivers = draft.DeepRivers; rivers.Streams = draft.Streams; rivers.Flow = draft.Flow;
+                    var rivers = saved.Copy();
+                    rivers.DeepRivers = draft.DeepRivers;
+                    rivers.Streams = RegionWaterAmount.None;
+                    rivers.RiverCountsVersion = 1;
+                    rivers.MediumRiverCount = draft.MediumRiverCount;
+                    rivers.SmallRiverCount = draft.SmallRiverCount;
+                    rivers.StreamCount = draft.StreamCount;
+                    rivers.Flow = draft.Flow;
                     notice.text = GenerateFreshRegionRivers(region, rivers) ?? "";
                 }
                 else if (category == "Flora")
@@ -192,13 +205,16 @@ namespace CityForgeV3.UI
                 {
                     content.Add(StyledLabel(category + " options will be added in a later pass.", "document-modal-copy")); return;
                 }
-                content.Add(StyledLabel("Choose a major river and an amount of small rivers. Use Remove Rivers to clear the current layout.", "document-modal-copy"));
-                AddRegionWaterChoices(content, "deep-rivers", "One major river", "", draft.DeepRivers, value => draft.DeepRivers = value);
-                var legacyMajorChoice = content.Q<Toggle>("deep-rivers-many");
-                if (legacyMajorChoice != null)
-                    legacyMajorChoice.style.display = DisplayStyle.None;
-                AddRegionWaterChoices(content, "streams", "Two small rivers", "Five small rivers", draft.Streams, value => draft.Streams = value);
-                content.Add(StyledLabel("At most one major river is generated, at three times the former width. Two small rivers plus a major produce two west-to-east routes and one north-to-south route. Parallel rivers use separate corridors; routes favor district centers and gentle local bends. Generation replaces this tool’s rivers; manually placed rivers stay. Each generation chooses a fresh placement.", "inspector-note"));
+                content.Add(StyledLabel("Choose how many rivers of each size to generate. Use Remove Rivers to clear the current layout.", "document-modal-copy"));
+                AddRegionMajorToggle(content, draft.DeepRivers != RegionWaterAmount.None,
+                    value => draft.DeepRivers = value ? RegionWaterAmount.Few : RegionWaterAmount.None);
+                AddRegionRiverCountDropdown(content, "medium-river-count", "Medium rivers",
+                    draft.MediumRiverCount, 3, value => draft.MediumRiverCount = value);
+                AddRegionRiverCountDropdown(content, "small-river-count", "Small rivers",
+                    draft.SmallRiverCount, 5, value => draft.SmallRiverCount = value);
+                AddRegionRiverCountDropdown(content, "stream-count", "Streams",
+                    draft.StreamCount, 5, value => draft.StreamCount = value);
+                content.Add(StyledLabel("At most one major river is generated. Medium rivers use the former river width; major rivers are three times wider. Directions are balanced between west-to-east and north-to-south, including a 2/2 split for four rivers of one size. Parallel rivers use separate corridors; routes favor unoccupied district centers and gentle local bends. Generation tries multiple fresh layouts to avoid buildings, replaces this tool’s rivers, and preserves manually placed rivers.", "inspector-note"));
             }
             foreach (var name in new[] { "Rivers", "Flora", "Climate", "Shorefront", "Roads", "Mountains", "Hills" })
             {
@@ -238,9 +254,8 @@ namespace CityForgeV3.UI
 
         private string GenerateFreshRegionRivers(RegionSaveData region, RegionTerrainSettings draft)
         {
-            if (draft == null || draft.DeepRivers == RegionWaterAmount.None &&
-                draft.Streams == RegionWaterAmount.None)
-                return "Choose one major river or a small-river amount before generating.";
+            if (GeneratedRiverCount(draft) == 0)
+                return "Choose at least one major, medium, small river, or stream before generating.";
             var newSeed = RegionRiverGenerator.FreshSeed(region.RiverSeed);
             var previous = region.Terrain;
             var previousPaths = region.RiverPaths;
@@ -248,11 +263,20 @@ namespace CityForgeV3.UI
             var previousRivers = region.Tiles.Select(tile => tile.Rivers).ToList();
             try
             {
-                var paths = RegionRiverGenerator.Generate(region, draft, newSeed);
-                var conflict = FindRegionRiverBuildingConflict(region, paths);
+                List<RegionRiverPath> paths = null;
+                string conflict = null;
+                const int maximumAttempts = 24;
+                for (var attempt = 0; attempt < maximumAttempts; attempt++)
+                {
+                    paths = RegionRiverGenerator.Generate(region, draft, newSeed);
+                    conflict = FindRegionRiverBuildingConflict(region, paths);
+                    if (conflict == null) break;
+                    newSeed = RegionRiverGenerator.FreshSeed(newSeed);
+                }
                 if (conflict != null)
                 {
-                    return "This layout crosses a building in " + conflict + ". Try regenerating again or choosing fewer rivers.";
+                    return "Could not find a building-safe layout after 24 tries. The closest conflict is in " +
+                        conflict + ". Choose fewer rivers or move the building, then try again.";
                 }
                 // Use fresh lists so a failed generation can restore the complete old layout.
                 foreach (var tile in region.Tiles)
@@ -281,8 +305,7 @@ namespace CityForgeV3.UI
         {
             if (_openRegion == null) return;
             var saved = _openRegion.Terrain ?? new RegionTerrainSettings();
-            if (saved.DeepRivers == RegionWaterAmount.None &&
-                saved.Streams == RegionWaterAmount.None)
+            if (GeneratedRiverCount(saved) == 0)
             {
                 ComposeRegionTerrainCategory("Rivers");
                 return;
@@ -294,6 +317,18 @@ namespace CityForgeV3.UI
             actions.Add(CfButton.Create("TRY AGAIN", () => { RemoveDocumentModal(); RegenerateRegionRivers(); }, true, "primary"));
             actions.Add(CfButton.Create("CLOSE", RemoveDocumentModal, true, "quiet"));
             panel.Add(actions);
+        }
+
+        private static int GeneratedRiverCount(RegionTerrainSettings settings)
+        {
+            if (settings == null) return 0;
+            var major = settings.DeepRivers == RegionWaterAmount.None ? 0 : 1;
+            if (settings.RiverCountsVersion <= 0)
+                return major + (settings.Streams == RegionWaterAmount.Many ? 5 :
+                    settings.Streams == RegionWaterAmount.Few ? 2 : 0);
+            return major + Mathf.Clamp(settings.MediumRiverCount, 0, 3) +
+                Mathf.Clamp(settings.SmallRiverCount, 0, 5) +
+                Mathf.Clamp(settings.StreamCount, 0, 5);
         }
 
         private static string FindRegionRiverBuildingConflict(RegionSaveData region, List<RegionRiverPath> paths)
@@ -324,6 +359,62 @@ namespace CityForgeV3.UI
                 }
             }
             return null;
+        }
+
+        private static void AddRegionMajorToggle(VisualElement parent, bool selected,
+            Action<bool> change)
+        {
+            var toggle = new Toggle("One major river")
+                { name = "major-river-toggle", value = selected };
+            toggle.style.fontSize = 28;
+            toggle.style.flexDirection = FlexDirection.RowReverse;
+            toggle.style.alignItems = Align.Center;
+            toggle.labelElement.style.flexGrow = 1;
+            toggle.labelElement.style.minWidth = 0;
+            var input = toggle.Q<VisualElement>(className: "unity-base-field__input");
+            if (input != null)
+            {
+                input.style.flexGrow = 0; input.style.flexShrink = 0;
+                input.style.width = 44;
+            }
+            toggle.style.minHeight = 42;
+            toggle.style.marginBottom = 6;
+            var box = toggle.Q<VisualElement>(className: "unity-toggle__checkmark");
+            if (box != null)
+            {
+                box.style.width = 28; box.style.height = 28;
+                box.style.minWidth = 28; box.style.flexShrink = 0;
+                box.style.marginRight = 12;
+                box.style.backgroundColor = new Color(.08f,.14f,.19f);
+                box.style.borderTopWidth = box.style.borderBottomWidth =
+                    box.style.borderLeftWidth = box.style.borderRightWidth = 2;
+                box.style.borderTopColor = box.style.borderBottomColor =
+                    box.style.borderLeftColor = box.style.borderRightColor =
+                    new Color(.8f,.7f,.4f);
+                var check = new Label(selected ? "✓" : "")
+                    { name = "region-checkbox-glyph", pickingMode = PickingMode.Ignore };
+                check.style.color = new Color(.3f,1f,.55f); check.style.fontSize = 24;
+                check.style.unityTextAlign = TextAnchor.MiddleCenter;
+                box.Add(check);
+                toggle.RegisterValueChangedCallback(e => check.text = e.newValue ? "✓" : "");
+            }
+            toggle.RegisterValueChangedCallback(e => change(e.newValue));
+            parent.Add(toggle);
+        }
+
+        private void AddRegionRiverCountDropdown(VisualElement parent, string id,
+            string label, int selected, int maximum, Action<int> change)
+        {
+            var choices = new List<string> { "None" };
+            for (var value = 1; value <= maximum; value++) choices.Add(value.ToString());
+            var field = new CityForgeChoiceField(_root, label, choices,
+                Mathf.Clamp(selected, 0, maximum)) { name = id };
+            field.changed += value =>
+            {
+                var index = choices.IndexOf(value);
+                change(index < 0 ? 0 : index);
+            };
+            parent.Add(field);
         }
 
         private static void AddRegionWaterChoices(VisualElement parent, string id, string fewText, string manyText,

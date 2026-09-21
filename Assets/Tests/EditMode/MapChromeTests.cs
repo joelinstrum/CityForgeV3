@@ -153,13 +153,13 @@ namespace CityForgeV3.Tests
             {
                 Call(app, "RegenerateRegionRivers");
                 Assert.That(root.Q("region-terrain-modal"), Is.Not.Null);
-                Assert.That(root.Q<Toggle>("deep-rivers-few").value, Is.True);
-                Assert.That(root.Q<Toggle>("deep-rivers-many").style.display.value,
-                    Is.EqualTo(DisplayStyle.None));
-                Assert.That(root.Q<Toggle>("streams-few").value, Is.True);
+                Assert.That(root.Q<Toggle>("major-river-toggle").value, Is.True);
+                Assert.That(ChoiceValue(root.Q("medium-river-count")), Is.EqualTo("None"));
+                Assert.That(ChoiceValue(root.Q("small-river-count")), Is.EqualTo("2"));
+                Assert.That(ChoiceValue(root.Q("stream-count")), Is.EqualTo("None"));
                 var error = (string)Call(app, "GenerateFreshRegionRivers",
-                    region, new RegionTerrainSettings());
-                Assert.That(error, Does.Contain("Choose one major river"));
+                    region, new RegionTerrainSettings { RiverCountsVersion = 1 });
+                Assert.That(error, Does.Contain("Choose at least one"));
                 Assert.That(region.RiverPaths, Is.Empty);
                 var generate = root.Q<Button>("generate-region-rivers");
                 typeof(Clickable).GetMethod("SimulateSingleClick", Private)
@@ -169,6 +169,8 @@ namespace CityForgeV3.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+        static string ChoiceValue(VisualElement element) =>
+            (string)element.GetType().GetProperty("value").GetValue(element);
         [Test] public void CaptionUpdatesPreserveIconAndUseSeparateLabel()
         {
             var chrome = typeof(CityForgeApp).Assembly.GetType("CityForgeV3.UI.CfMapChrome");

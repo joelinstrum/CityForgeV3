@@ -4,11 +4,21 @@ using UnityEngine;
 
 namespace CityForgeV3.World
 {
+    public enum GeneratedRegionRiverSize
+    {
+        None,
+        Major,
+        Medium,
+        Small,
+        Stream
+    }
+
     [Serializable]
     public sealed class RegionRiverPath
     {
         public string Id;
         public bool HandDrawn;
+        public GeneratedRegionRiverSize GeneratedSize;
         public DistrictRiverDepth Depth;
         public float WidthMeters;
         // Region map units, shared by all districts; Z corresponds to tile.Y.
@@ -31,22 +41,55 @@ namespace CityForgeV3.World
             var random = new System.Random(seed);
             float Next(float a, float b) => Mathf.Lerp(a,b,(float)random.NextDouble());
             int Count(RegionWaterAmount value,int few,int many) => value==RegionWaterAmount.Few?few:value==RegionWaterAmount.Many?many:0;
+            bool explicitCounts=settings.RiverCountsVersion>0;
             int major=settings.DeepRivers==RegionWaterAmount.None?0:1;
-            int streams=Count(settings.Streams,2,5);
-            int total=major+streams;
+            int medium=explicitCounts?Mathf.Clamp(settings.MediumRiverCount,0,3):0;
+            int small=explicitCounts?Mathf.Clamp(settings.SmallRiverCount,0,5):
+                Count(settings.Streams,2,5);
+            int streams=explicitCounts?Mathf.Clamp(settings.StreamCount,0,5):0;
+            var horizontalSizes=new List<GeneratedRegionRiverSize>();
+            var verticalSizes=new List<GeneratedRegionRiverSize>();
+            void AddBalanced(GeneratedRegionRiverSize size,int count)
+            {
+                // Alternate within every size. An odd remainder goes to the
+                // direction with fewer rivers so the complete layout remains
+                // as balanced as its total count permits.
+                bool horizontal=horizontalSizes.Count<=verticalSizes.Count;
+                for(int index=0;index<count;index++)
+                {
+                    (horizontal?horizontalSizes:verticalSizes).Add(size);
+                    horizontal=!horizontal;
+                }
+            }
+            AddBalanced(GeneratedRegionRiverSize.Major,major);
+            AddBalanced(GeneratedRegionRiverSize.Medium,medium);
+            AddBalanced(GeneratedRegionRiverSize.Small,small);
+            AddBalanced(GeneratedRegionRiverSize.Stream,streams);
+            var sizes=new List<GeneratedRegionRiverSize>(horizontalSizes);
+            sizes.AddRange(verticalSizes);
+            int total=sizes.Count;
             if(total==0)return result;
-            int horizontalCount=(total+1)/2;
+            int horizontalCount=horizontalSizes.Count;
             int verticalCount=total-horizontalCount;
             int horizontalLane=0,verticalLane=0;
             for(int n=0;n<total;n++)
             {
                 bool horizontal=n<horizontalCount;
-                bool isMajor=n<major;
+                var size=sizes[n];
                 var path=new RegionRiverPath
                 {
                     Id=$"region-{seed}-{n}",
-                    Depth=isMajor?DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
-                    WidthMeters=isMajor?Next(144,228):Next(14,24)
+                    GeneratedSize=size,
+                    Depth=size is GeneratedRegionRiverSize.Major or
+                        GeneratedRegionRiverSize.Medium?
+                        DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
+                    WidthMeters=size switch
+                    {
+                        GeneratedRegionRiverSize.Major=>Next(144,228),
+                        GeneratedRegionRiverSize.Medium=>Next(48,76),
+                        GeneratedRegionRiverSize.Small=>Next(24,36),
+                        _=>Next(10,16)
+                    }
                 };
                 int lane=horizontal?horizontalLane++:verticalLane++;
                 int laneCount=horizontal?horizontalCount:verticalCount;
@@ -73,6 +116,7 @@ namespace CityForgeV3.World
             foreach(var tile in region.Tiles??new List<RegionCityTile>())
             {
                 if(tile==null)continue;
+                if(tile.Lots!=null&&tile.Lots.Count>0)continue;
                 float along=horizontal?tile.X+tile.Width*.5f:
                     tile.Y+tile.Height*.5f;
                 float cross=horizontal?tile.Y+tile.Height*.5f:

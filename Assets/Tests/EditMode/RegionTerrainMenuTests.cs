@@ -41,11 +41,19 @@ public class RegionTerrainMenuTests
         var region = RegionSaveStore.Create("Terrain options",8,8);
         region.Terrain.DeepRivers = RegionWaterAmount.Many;
         region.Terrain.Streams = RegionWaterAmount.Few;
+        region.Terrain.RiverCountsVersion = 1;
+        region.Terrain.MediumRiverCount = 3;
+        region.Terrain.SmallRiverCount = 4;
+        region.Terrain.StreamCount = 5;
         region.Terrain.ForestMix = new ForestFamilyMix
             { Deciduous = 40, Mountain = 35, Tropical = 25 };
         var loaded=JsonUtility.FromJson<RegionSaveData>(JsonUtility.ToJson(region));
         Assert.That(loaded.Terrain.DeepRivers,Is.EqualTo(RegionWaterAmount.Many));
         Assert.That(loaded.Terrain.Streams,Is.EqualTo(RegionWaterAmount.Few));
+        Assert.That(loaded.Terrain.RiverCountsVersion,Is.EqualTo(1));
+        Assert.That(loaded.Terrain.MediumRiverCount,Is.EqualTo(3));
+        Assert.That(loaded.Terrain.SmallRiverCount,Is.EqualTo(4));
+        Assert.That(loaded.Terrain.StreamCount,Is.EqualTo(5));
         Assert.That(loaded.Terrain.ForestMix.Deciduous,Is.EqualTo(40));
         Assert.That(loaded.Terrain.ForestMix.Mountain,Is.EqualTo(35));
         Assert.That(loaded.Terrain.ForestMix.Tropical,Is.EqualTo(25));
