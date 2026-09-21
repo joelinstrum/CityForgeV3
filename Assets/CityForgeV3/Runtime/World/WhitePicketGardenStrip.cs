@@ -116,7 +116,10 @@ namespace CityForgeV3.World
             {
                 name = "Garden aged ivory picket fence",
                 mainTexture = albedo,
-                color = new Color(.78f, .76f, .68f),
+                // The texture already carries its age, grain, and gray wear.
+                // Keep the shared paint tint near white so a shaded district
+                // fence still reads as aged ivory rather than neutral gray.
+                color = new Color(.98f, .97f, .92f),
                 enableInstancing = true
             };
             _fenceMaterial.SetFloat("_Metallic", 0f);

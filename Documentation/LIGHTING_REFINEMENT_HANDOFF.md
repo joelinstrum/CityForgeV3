@@ -122,3 +122,24 @@ uniform write with no district scan or material walk. An isolated fixture passed
 district comparison verified that the fence returns to aged ivory while flowers
 and grass remain stable. Evidence:
 `Documentation/Validation/garden-prop-lighting-v01/`.
+
+## White-paint and first-frame shadow follow-up — September 21, 2026
+
+The aged-picket texture already contains gray wear, but its shared material also
+multiplied the entire texture by a 0.78 gray tint. The family-wide tint is now
+near-white ivory, so all nine composed picket gardens preserve their weathering
+while white paint continues to read white in district shade. This remains one
+cached material calibration, not a Lot override.
+
+District construction previously created flora and its spatial shadow batches
+under the controller's temporary default sun, then staged the saved time preset
+after first paint. The saved environment is now published before terrain,
+flora, or Lots are composed. Reapplying the same preset no longer queues a
+redundant shadow transition; genuine later time changes retain the existing
+bounded eight-tree slices and one-cell batch rebuilds.
+
+An isolated fresh-import suite passed 43/43 lighting, flora-batch, picket, and
+district-environment checks. The initial Morning shadow batch contains the exact
+Morning sun ray and has no pending transition. A graphics-enabled Noon capture
+confirmed white/ivory pickets with source grain and colorful planting intact.
+Evidence: `Documentation/Validation/lighting-stability-v01/`.

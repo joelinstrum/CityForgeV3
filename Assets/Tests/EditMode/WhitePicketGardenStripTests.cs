@@ -71,6 +71,10 @@ public class WhitePicketGardenStripTests
                     Assert.NotNull(renderer);
                     Assert.That(renderer.sharedMaterial.shader.name,
                         Is.EqualTo("CityForgeV3/GardenPropPBR"));
+                    Assert.That(renderer.sharedMaterial.color.r,
+                        Is.GreaterThan(.95f));
+                    Assert.That(renderer.sharedMaterial.color.g,
+                        Is.GreaterThan(.95f));
                     Assert.That(renderer.bounds.size.x, Is.EqualTo(2f).Within(.04f));
                     Assert.That(renderer.bounds.size.y,
                         Is.GreaterThan(.9f).And.LessThan(1.2f));

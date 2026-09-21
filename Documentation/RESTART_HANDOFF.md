@@ -1806,3 +1806,25 @@ placement previews. A graphics-enabled comparison verified the fence lift while
 flowers and grass remained unchanged and reported no shader errors. No player
 content was saved, and the open editor and CityForge-Regions-Review were not
 driven. Evidence: `Documentation/Validation/garden-prop-lighting-v01/`.
+
+### September 21 — stable first paint and white garden paint
+
+All nine aged white-picket garden compositions now use a shared near-white ivory
+tint. Their texture remains responsible for grain and age; the former 0.78 gray
+material multiplier no longer forces shaded paint to read gray. A real isolated
+Noon render confirmed white pickets without bleaching flowers or grass.
+
+District rebuild now publishes the saved time-of-day environment immediately
+after creating its sun and before building terrain, flora, or Lots. Flora shadow
+meshes and spatial batches therefore use the final saved sun ray on first paint
+instead of appearing with a temporary construction sun and changing afterward.
+Calling the same preset again performs environment/local emitter updates but
+does not queue redundant flora work. Actual time changes still use bounded
+eight-tree update slices followed by one spatial-cell batch rebuild at a time.
+
+Fresh isolated validation passed 43/43 focused checks. It directly verifies that
+a Morning district's first shadow batch has the Morning sun vector with no
+pending transition, then verifies a later Afternoon change remains staged. No
+player content was loaded or saved, and neither the open editor nor
+CityForge-Regions-Review was driven. Evidence:
+`Documentation/Validation/lighting-stability-v01/`.

@@ -43,4 +43,7 @@ incremental and do not rebuild a district.
 the district time changes or its environment is initialized. A standalone
 `LotWorldController` republishes it after updating its own preview sun. Loading,
 district entry, and editor preview construction already pass through one of
-those boundaries. No persistence is involved.
+those boundaries. District construction publishes the saved preset before any
+terrain, flora shadow, or Lot presentation derives lighting state; applying the
+same preset again does not schedule a redundant flora-shadow transition. No
+persistence is involved.

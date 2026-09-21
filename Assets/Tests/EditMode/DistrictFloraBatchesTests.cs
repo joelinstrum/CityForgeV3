@@ -27,6 +27,18 @@ public class DistrictFloraBatchesTests
             var world = host.AddComponent<DistrictWorldController>();
             world.RebuildEntireDistrict(district,
                 DistrictBulkRebuildReason.TestFixture);
+            Assert.That(world.TimeOfDay, Is.EqualTo(TimeOfDayPreset.Morning));
+            Assert.That(world.TimeOfDayPresentationPending, Is.False,
+                "Initial paint must already use the saved environment.");
+            var initialShadow = host.GetComponentsInChildren<MeshRenderer>(true)
+                .First(renderer => renderer.name == "Flora shadow batch");
+            var initialProperties = new MaterialPropertyBlock();
+            initialShadow.GetPropertyBlock(initialProperties);
+            var expectedRay = TimeOfDayLighting.SunRotation(
+                TimeOfDayPreset.Morning) * Vector3.forward;
+            Assert.That(Vector3.Distance(initialProperties.GetVector("_SunRay"),
+                    expectedRay.normalized), Is.LessThan(.001f),
+                "First paint must project flora with the saved preset sun.");
             var before = host.GetComponentsInChildren<SpriteRenderer>(true)
                 .Where(renderer => renderer.name.StartsWith("District Flora —"))
                 .OrderBy(renderer => renderer.GetComponent<DistrictSelectable>()?

@@ -35,3 +35,8 @@ indirect scale 1.0 the shaded fence read charcoal-gray. At the district scale
 unchanged. Unity reported no compiler or shader errors. The fixture did not load
 or save player Lot, district, or region content; the open editor was not driven,
 and CityForge-Regions-Review was not used.
+
+September 21 follow-up: the lighting path was correct, but the aged-picket
+material still applied a family-wide 0.78 gray tint on top of an already
+weathered texture. That tint is now near-white ivory. See
+`Documentation/Validation/lighting-stability-v01/`.

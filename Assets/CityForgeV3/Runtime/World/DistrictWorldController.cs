@@ -296,6 +296,12 @@ namespace CityForgeV3.World
             // viewing pose first, including when reloading a saved district.
             ApplyCameraPose();
             BuildSun();
+            // Establish the saved environment before any presentation derives
+            // lighting or projected-shadow geometry. Otherwise flora paints
+            // once with the temporary construction sun, then visibly changes
+            // as the saved preset is staged after the first frame.
+            TimeOfDay = district.TimeOfDay;
+            ApplyRegionEnvironment(TimeOfDay, _sun);
             _terrainDistrict = district;
             _surfaceCache=new DistrictSurfaceCache();_surfaceChanges=_surfaceCache.Update(district);
             _elevation = new DistrictElevation(district);
@@ -2408,6 +2414,7 @@ namespace CityForgeV3.World
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
+            var changed = TimeOfDay != preset;
             TimeOfDay = preset;
             ApplyAfternoonSceneLights(preset);
             // The district is the sole owner of the shared environment. Publish
@@ -2423,7 +2430,7 @@ namespace CityForgeV3.World
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
             _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
-            PrepareTimeOfDayPresentation();
+            if (changed) PrepareTimeOfDayPresentation();
         }
 
         public static Vector2 DistrictLotCenterMeters(RegionCityTile district,
