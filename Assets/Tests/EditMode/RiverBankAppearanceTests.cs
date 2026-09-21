@@ -181,6 +181,11 @@ namespace CityForgeV3.Tests
             Assert.That(major.OuterFadeEnd,
                 Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
                     .Within(.00001f));
+            Assert.That(medium.OuterFadeNoise, Is.Zero);
+            Assert.That(medium.TerrainBlendStrength, Is.Zero);
+            Assert.That(major.OuterFadeNoise,
+                Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
+            Assert.That(major.TerrainBlendStrength, Is.EqualTo(1f));
         }
 
         [Test]
@@ -277,6 +282,16 @@ namespace CityForgeV3.Tests
                 Assert.That(material.GetFloat("_OuterFadeEnd"),
                     Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
                         .Within(.00001f));
+                Assert.That(material.GetFloat("_OuterFadeNoise"),
+                    Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
+                Assert.That(material.GetFloat("_TerrainBlendStrength"),
+                    Is.EqualTo(1f));
+                Assert.That(material.GetFloat("_TerrainWorldSize"),
+                    Is.EqualTo(DistrictWorldController.
+                        DistrictGrassTextureWorldSizeMeters));
+                Assert.That(material.GetTexture("_TerrainTex"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        DistrictWorldController.DistrictGrassResource)));
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

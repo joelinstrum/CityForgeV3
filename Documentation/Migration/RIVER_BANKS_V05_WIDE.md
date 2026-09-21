@@ -17,10 +17,13 @@ Only resource selection changes: continuous 48-metre mapping, bend variation,
 meshes, water animation, junction blending, simulation and persistence are
 unchanged. To avoid a visible cutoff against terrain, the major-river bank
 overlay extends eight metres beyond the physical channel and its existing
-transparent edge fade spans that shoulder. This is presentation-only: channel
-width, collision and construction clearance do not expand. Resource choice and
-fade calibration occur during an existing river presentation rebuild and add
-no per-frame work or draw calls.
+transparent edge fade spans that shoulder. The outer portion samples the same
+world-anchored terrain grass used by the district, reaching a full terrain
+match before opacity reaches zero. Two scales of deterministic noise displace
+the fade boundary so it does not describe a long parallel line. This is
+presentation-only: channel width, collision and construction clearance do not
+expand. Resource choice and fade calibration occur during an existing river
+presentation rebuild and add no draw calls or per-frame CPU work.
 
 Generation lineage and exact prompts are documented in
 `Documentation/ArtStudies/RiverBanksV05Wide/README.md`.

@@ -13,9 +13,11 @@ The split adds no draw calls, no additional material per river, and no
 per-frame work; the three resource paths are selected once during river mesh
 rebuild. Major-river bank presentation also extends eight metres beyond the
 physical channel and fades through that shoulder into the underlying terrain.
-This removes the visible texture cutoff without changing channel width,
-collision, construction clearance or simulation. V1–V04 remain present and
-unchanged.
+The shoulder samples the same world-anchored V05 terrain grass before its
+opacity reaches zero, and multi-scale noise breaks up the fade contour. This
+removes the differently tinted straight ribbon without changing channel
+width, collision, construction clearance or simulation. V1–V04 remain
+present and unchanged.
 
 Exact prompts and source identifiers are in
 `Documentation/ArtStudies/RiverBanksV05Wide/README.md`.

@@ -1795,6 +1795,20 @@ namespace CityForgeV3.World
                     material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
                     material.SetFloat("_OuterFadeEnd",
                         bankAppearance.OuterFadeEnd);
+                    material.SetFloat("_OuterFadeNoise",
+                        bankAppearance.OuterFadeNoise);
+                    material.SetFloat("_TerrainBlendStrength",
+                        bankAppearance.TerrainBlendStrength);
+                    bool mountainGround =
+                        _terrainDistrict?.Hills?.Mountains == true;
+                    var terrainTexture = Resources.Load<Texture2D>(
+                        mountainGround ? DefaultGrassResource :
+                            DistrictGrassResource);
+                    material.SetTexture("_TerrainTex",
+                        terrainTexture ?? bandTexture);
+                    material.SetFloat("_TerrainWorldSize", mountainGround
+                        ? GrassTextureWorldSizeMeters
+                        : DistrictGrassTextureWorldSizeMeters);
                     material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
                         bankAppearance.SubmergedGravelTextureResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(

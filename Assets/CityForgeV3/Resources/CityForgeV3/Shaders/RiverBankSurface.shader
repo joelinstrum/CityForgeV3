@@ -5,12 +5,16 @@ Shader "CityForgeV3/RiverBankSurface"
         _MainTex ("Grass and pebble bank", 2D) = "white" {}
         _GravelTex ("Submerged fine gravel", 2D) = "white" {}
         _EarthTex ("Alternate shoreline composition", 2D) = "white" {}
+        _TerrainTex ("Matching terrain grass", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _DistrictHalfSize ("District half size", Vector) = (100000,100000,0,0)
         _RiverWaterLevel ("Water level", Float) = -0.1
         _BankTop ("Top of bank", Float) = 0.186
         _DetailMeters ("Material repeat metres", Float) = 48
         _OuterFadeEnd ("Outer terrain fade end", Float) = 0.833333
+        _OuterFadeNoise ("Outer fade irregularity", Float) = 0
+        _TerrainBlendStrength ("Terrain match strength", Float) = 0
+        _TerrainWorldSize ("Terrain texture metres", Float) = 75
     }
     SubShader
     {
@@ -45,12 +49,14 @@ Shader "CityForgeV3/RiverBankSurface"
                 float3 localPosition : TEXCOORD2;
                 float3 worldNormal : TEXCOORD3;
                 fixed4 color : COLOR;
+                float2 worldMetres : TEXCOORD5;
                 SHADOW_COORDS(4)
             };
-            sampler2D _MainTex, _GravelTex, _EarthTex;
+            sampler2D _MainTex, _GravelTex, _EarthTex, _TerrainTex;
             fixed4 _Color;
             float4 _DistrictHalfSize;
             float _RiverWaterLevel, _BankTop, _DetailMeters, _OuterFadeEnd;
+            float _OuterFadeNoise, _TerrainBlendStrength, _TerrainWorldSize;
             Varyings vert(AppData input)
             {
                 Varyings output;
@@ -62,6 +68,8 @@ Shader "CityForgeV3/RiverBankSurface"
                 input.normal.y = abs(input.normal.y);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 output.color = input.color;
+                output.worldMetres =
+                    mul(unity_ObjectToWorld, input.vertex).xz;
                 TRANSFER_SHADOW(output);
                 return output;
             }
@@ -81,6 +89,18 @@ Shader "CityForgeV3/RiverBankSurface"
                 float a = frac(sin(cell * 127.1 + 311.7) * 43758.5453);
                 float b = frac(sin((cell + 1) * 127.1 + 311.7) * 43758.5453);
                 return lerp(a, b, t);
+            }
+            float EdgeNoise(float2 p)
+            {
+                float2 cell = floor(p), t = frac(p);
+                t = t * t * (3 - 2 * t);
+                float4 corners = frac(sin(float4(
+                    dot(cell, float2(127.1, 311.7)),
+                    dot(cell + float2(1, 0), float2(127.1, 311.7)),
+                    dot(cell + float2(0, 1), float2(127.1, 311.7)),
+                    dot(cell + 1, float2(127.1, 311.7)))) * 43758.5453);
+                return lerp(lerp(corners.x, corners.y, t.x),
+                    lerp(corners.z, corners.w, t.x), t.y);
             }
             fixed4 frag(Varyings input) : SV_Target
             {
@@ -112,11 +132,24 @@ Shader "CityForgeV3/RiverBankSurface"
                 float3 normal = normalize(input.worldNormal);
                 fixed3 lighting = CityForgeWorldLighting(normal,
                     SHADOW_ATTENUATION(input));
+                float broadNoise = EdgeNoise(input.worldMetres / 11);
+                float fineNoise = EdgeNoise(input.worldMetres / 3.7 + 17.3);
+                float edgeNoise = broadNoise * .68 + fineNoise * .32 - .5;
+                float jitter = edgeNoise * _OuterFadeNoise;
+                // Match the actual ground artwork before transparency reaches
+                // zero, rather than ending on differently tinted baked grass.
+                fixed3 terrain = tex2D(_TerrainTex,
+                    input.worldMetres / max(.01, _TerrainWorldSize)).rgb;
+                float terrainBlend = smoothstep(.68 + jitter * .25,
+                    _OuterFadeEnd - .18 + jitter * .5, across) *
+                    _TerrainBlendStrength;
+                albedo = lerp(albedo, terrain, terrainBlend);
                 albedo *= lighting * _Color.rgb;
-                // Reveal the real terrain at the grass boundary rather than
-                // ending on a hard strip of differently coloured baked grass.
-                float fadeStart = .72 + .025 * (ReachNoise(along * 2.3) - .5);
-                float alpha = 1 - smoothstep(fadeStart, _OuterFadeEnd, across);
+                // Multi-scale irregularity breaks the long parallel contour;
+                // physical bank and construction boundaries stay unchanged.
+                float fadeStart = .64 + jitter * .35;
+                float alpha = 1 - smoothstep(fadeStart,
+                    _OuterFadeEnd + jitter, across);
                 return fixed4(albedo, alpha * input.color.a * _Color.a);
             }
             ENDCG

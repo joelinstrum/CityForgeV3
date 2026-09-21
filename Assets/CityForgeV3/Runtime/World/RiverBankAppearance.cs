@@ -25,6 +25,7 @@ namespace CityForgeV3.World
         public const float WideRiverMinimumWidthMeters = 100f;
         public const float WideOuterBlendMeters = 8f;
         public const float DefaultOuterFadeEnd = 0.833333f;
+        public const float WideOuterFadeNoise = 0.18f;
         public const float DetailMeters = 48f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
@@ -32,6 +33,8 @@ namespace CityForgeV3.World
         public readonly string OpenGravelTextureResource;
         public readonly float OuterBlendMeters;
         public readonly float OuterFadeEnd;
+        public readonly float OuterFadeNoise;
+        public readonly float TerrainBlendStrength;
         public float ShoreDistance { get; set; }
 
         public RiverBankAppearance(IReadOnlyList<Vector2> points, float widthMeters)
@@ -46,6 +49,8 @@ namespace CityForgeV3.World
                 ? WideOpenGravelResource : OpenGravelResource;
             OuterBlendMeters = usesWideBank ? WideOuterBlendMeters : 0f;
             OuterFadeEnd = DefaultOuterFadeEnd + OuterBlendMeters / 16f;
+            OuterFadeNoise = usesWideBank ? WideOuterFadeNoise : 0f;
+            TerrainBlendStrength = usesWideBank ? 1f : 0f;
             Bend = new float[points.Count];
             if (points.Count < 3) return;
             var distances = new float[points.Count];
