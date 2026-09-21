@@ -28,3 +28,22 @@ parameters remain unchanged.
 The raw NUnit report is stored beside this file. Final color, crest density and
 motion acceptance remains pending in the isolated `CityForge-Regions-Review`
 editor.
+
+## Controlled render comparison
+
+An additional isolated-review test rendered the same generated river twice
+through the production `RiverWaterSurface` material: first with the active V01
+base/crest resources, then with the previous unversioned resources. The test
+asserted that the live material held the exact textures returned by both V01
+resource paths before capturing. It passed 1/1.
+
+`active-left-previous-right.png` places the active V01 render on the left and
+the previous render on the right. Their whole-frame pixel RMSE is only
+0.0110705, confirming the visual change is real but too subtle. The active
+render is slightly more teal, while deep-water darkening, bed transmission and
+the restrained whitecap contribution suppress most of the intended blue and
+crest change. `active-river-render.png` is the standalone active capture.
+
+This comparison does not constitute artistic acceptance. The next revision
+should calibrate the existing material's color/depth and crest controls while
+preserving its current flow animation.
