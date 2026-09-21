@@ -23,11 +23,15 @@ namespace CityForgeV3.World
         // rivers. Keeping the cutoff between the 76 m medium maximum and the
         // 144 m major minimum makes the art choice stable and size-driven.
         public const float WideRiverMinimumWidthMeters = 100f;
+        public const float WideOuterBlendMeters = 8f;
+        public const float DefaultOuterFadeEnd = 0.833333f;
         public const float DetailMeters = 48f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
         public readonly string OpenGravelTextureResource;
+        public readonly float OuterBlendMeters;
+        public readonly float OuterFadeEnd;
         public float ShoreDistance { get; set; }
 
         public RiverBankAppearance(IReadOnlyList<Vector2> points, float widthMeters)
@@ -40,6 +44,8 @@ namespace CityForgeV3.World
                 ? WideSubmergedGravelResource : SubmergedGravelResource;
             OpenGravelTextureResource = usesWideBank
                 ? WideOpenGravelResource : OpenGravelResource;
+            OuterBlendMeters = usesWideBank ? WideOuterBlendMeters : 0f;
+            OuterFadeEnd = DefaultOuterFadeEnd + OuterBlendMeters / 16f;
             Bend = new float[points.Count];
             if (points.Count < 3) return;
             var distances = new float[points.Count];

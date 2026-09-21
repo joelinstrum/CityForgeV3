@@ -173,6 +173,14 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(RiverBankAppearance.WideOpenGravelResource));
             Assert.That(major.SubmergedGravelTextureResource,
                 Is.EqualTo(RiverBankAppearance.WideSubmergedGravelResource));
+            Assert.That(medium.OuterBlendMeters, Is.Zero);
+            Assert.That(medium.OuterFadeEnd,
+                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd));
+            Assert.That(major.OuterBlendMeters,
+                Is.EqualTo(RiverBankAppearance.WideOuterBlendMeters));
+            Assert.That(major.OuterFadeEnd,
+                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                    .Within(.00001f));
         }
 
         [Test]
@@ -266,6 +274,19 @@ namespace CityForgeV3.Tests
                 Assert.That(material.GetTexture("_GravelTex"),
                     Is.SameAs(Resources.Load<Texture2D>(
                         RiverBankAppearance.WideSubmergedGravelResource)));
+                Assert.That(material.GetFloat("_OuterFadeEnd"),
+                    Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                        .Within(.00001f));
+
+                var grassEdge = host.GetComponentsInChildren<MeshFilter>()
+                    .First(filter => filter.name.Contains("Grass Edge"));
+                var outerDistance = grassEdge.sharedMesh.vertices
+                    .Max(vertex => Mathf.Abs(vertex.z));
+                var expectedBankEdge = 144f * 1.08f * .5f;
+                Assert.That(outerDistance,
+                    Is.EqualTo(expectedBankEdge +
+                        RiverBankAppearance.WideOuterBlendMeters)
+                    .Within(.01f));
             }
             finally
             {

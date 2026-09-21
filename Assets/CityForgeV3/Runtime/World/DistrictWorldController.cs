@@ -1076,6 +1076,8 @@ namespace CityForgeV3.World
             if (bankAppearance != null)
                 bankAppearance.ShoreDistance = bedWidth * .5f;
             var halfWidth = bedWidth * 0.5f;
+            var bankOuterDistance = halfWidth +
+                (bankAppearance?.OuterBlendMeters ?? 0f);
             var edgeWidth = Mathf.Min(
                 deep ? RiverBedTransitionWidthMeters * .55f
                      : RiverBedTransitionWidthMeters,
@@ -1128,7 +1130,7 @@ namespace CityForgeV3.World
                     1f, 1f, 0,
                     $"Riverbed {sideName} Upper Bank — {river.InstanceId}",
                     bankAppearance: bankAppearance);
-                AddRiverBand(centerline, upperBankEnd, halfWidth,
+                AddRiverBand(centerline, upperBankEnd, bankOuterDistance,
                     RiverElevation(0.20f), terrainSurface + 0.002f, side,
                     bankTexture != null ? bankTexture : edgeTexture,
                     0.04f, 0.96f, 24f,
@@ -1791,6 +1793,8 @@ namespace CityForgeV3.World
                 if (bankAppearance != null)
                 {
                     material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
+                    material.SetFloat("_OuterFadeEnd",
+                        bankAppearance.OuterFadeEnd);
                     material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
                         bankAppearance.SubmergedGravelTextureResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(

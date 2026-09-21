@@ -11,7 +11,11 @@ V04 resources unchanged. This preserves their clear mountain-stream character
 and keeps that brighter art available for a future tropical climate treatment.
 The split adds no draw calls, no additional material per river, and no
 per-frame work; the three resource paths are selected once during river mesh
-rebuild. V1–V04 remain present and unchanged.
+rebuild. Major-river bank presentation also extends eight metres beyond the
+physical channel and fades through that shoulder into the underlying terrain.
+This removes the visible texture cutoff without changing channel width,
+collision, construction clearance or simulation. V1–V04 remain present and
+unchanged.
 
 Exact prompts and source identifiers are in
 `Documentation/ArtStudies/RiverBanksV05Wide/README.md`.

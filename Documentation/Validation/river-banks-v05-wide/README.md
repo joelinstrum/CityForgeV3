@@ -10,6 +10,9 @@ Date: September 21, 2026
   filtering, horizontal repeat and vertical clamp.
 - Widths below 100 metres retain V04; widths of 100 metres and above use V05
   Wide. Generated mediums stop at 76 metres and majors start at 144 metres.
+- Major banks carry an eight-metre presentation-only outer shoulder. The
+  shader fade ends at the shoulder edge, while physical channel width remains
+  unchanged.
 - V1–V04 resources remain present and unchanged.
 
 ## Color validation

@@ -15,8 +15,12 @@ Runtime assets:
 The accepted `BanksV4` artwork remains the active family below 100 metres.
 Only resource selection changes: continuous 48-metre mapping, bend variation,
 meshes, water animation, junction blending, simulation and persistence are
-unchanged. Resource choice occurs during an existing river presentation
-rebuild and adds no per-frame work or draw calls.
+unchanged. To avoid a visible cutoff against terrain, the major-river bank
+overlay extends eight metres beyond the physical channel and its existing
+transparent edge fade spans that shoulder. This is presentation-only: channel
+width, collision and construction clearance do not expand. Resource choice and
+fade calibration occur during an existing river presentation rebuild and add
+no per-frame work or draw calls.
 
 Generation lineage and exact prompts are documented in
 `Documentation/ArtStudies/RiverBanksV05Wide/README.md`.

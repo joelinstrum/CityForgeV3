@@ -10,6 +10,7 @@ Shader "CityForgeV3/RiverBankSurface"
         _RiverWaterLevel ("Water level", Float) = -0.1
         _BankTop ("Top of bank", Float) = 0.186
         _DetailMeters ("Material repeat metres", Float) = 48
+        _OuterFadeEnd ("Outer terrain fade end", Float) = 0.833333
     }
     SubShader
     {
@@ -49,7 +50,7 @@ Shader "CityForgeV3/RiverBankSurface"
             sampler2D _MainTex, _GravelTex, _EarthTex;
             fixed4 _Color;
             float4 _DistrictHalfSize;
-            float _RiverWaterLevel, _BankTop, _DetailMeters;
+            float _RiverWaterLevel, _BankTop, _DetailMeters, _OuterFadeEnd;
             Varyings vert(AppData input)
             {
                 Varyings output;
@@ -115,7 +116,7 @@ Shader "CityForgeV3/RiverBankSurface"
                 // Reveal the real terrain at the grass boundary rather than
                 // ending on a hard strip of differently coloured baked grass.
                 float fadeStart = .72 + .025 * (ReachNoise(along * 2.3) - .5);
-                float alpha = 1 - smoothstep(fadeStart, .833, across);
+                float alpha = 1 - smoothstep(fadeStart, _OuterFadeEnd, across);
                 return fixed4(albedo, alpha * input.color.a * _Color.a);
             }
             ENDCG
