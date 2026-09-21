@@ -119,6 +119,7 @@ namespace CityForgeV3.World
                 var run=random.Next(1,maximumRun+1);
                 if(maximumRun>1&&run==previousRun)run=run%maximumRun+1;
                 previousRun=run;currentAlong+=run;Add(currentAlong,currentCross);
+                if(alongCells-currentAlong<=1)break;
                 if(lowerCross==upperCross)continue;
                 var target=random.Next(lowerCross,upperCross+1);
                 if(target==currentCross)target=target==upperCross?lowerCross:target+1;
@@ -127,7 +128,8 @@ namespace CityForgeV3.World
             if(currentCross!=baseCross)Add(currentAlong,baseCross);
             Add(alongCells,baseCross);
             if(reversed)logical.Reverse();
-            foreach(var point in logical)
+            foreach(var point in RiverPathGeometry.RoundOrthogonalCorners(
+                        logical,1.8f))
                 path.Points.Add(new DistrictRiverPoint(point.x,point.y));
         }
 

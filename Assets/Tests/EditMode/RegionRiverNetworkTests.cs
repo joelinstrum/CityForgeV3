@@ -8,7 +8,7 @@ public class RegionRiverNetworkTests
 {
     RegionSaveData Region()=>new RegionSaveData{Width=28,Height=20,Tiles=new List<RegionCityTile>{new(){TileId="south",Width=28,Height=10},new(){TileId="north",Y=10,Width=28,Height=10}}};
     [TestCase(1)][TestCase(1785)][TestCase(994)][TestCase(26)]
-    public void NetworkUsesCardinalStairStepsAndConnectedSegments(int seed)
+    public void NetworkUsesRoundedCardinalStairsAndConnectedSegments(int seed)
     {
         var r=Region();var settings=new RegionTerrainSettings{Streams=RegionWaterAmount.Few};
         var paths=RegionRiverGenerator.Generate(r,settings,seed);
@@ -26,14 +26,11 @@ public class RegionRiverNetworkTests
         {
             foreach(var p in path.Points){Assert.That(p.X,Is.InRange(0,28));Assert.That(p.Z,Is.InRange(0,20));}
             foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
-                Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||
-                    Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True,
-                    "Every generated segment must follow one district-grid axis.");
+                Assert.That(new Vector2(pair.a.X-pair.b.X,pair.a.Z-pair.b.Z).sqrMagnitude,Is.GreaterThan(.000000001f));
         }
         var trunk=paths[0];
         Assert.That(trunk.Points.Count,Is.GreaterThan(4));
-        Assert.That(trunk.Points.Zip(trunk.Points.Skip(1),(a,b)=>Mathf.Abs(a.X-b.X)>.000001f).Any(value=>value),Is.True);
-        Assert.That(trunk.Points.Zip(trunk.Points.Skip(1),(a,b)=>Mathf.Abs(a.Z-b.Z)>.000001f).Any(value=>value),Is.True);
+        AssertRoundedTrunk(trunk);
     }
     [TestCase(RegionRiverFlow.WestToEast,DistrictRiverDirection.WestToEast)]
     [TestCase(RegionRiverFlow.EastToWest,DistrictRiverDirection.EastToWest)]
@@ -43,14 +40,13 @@ public class RegionRiverNetworkTests
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Few,Flow=flow},3);
         Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(expected));
-        foreach(var path in paths)foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
-            Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True);
+        AssertRoundedTrunk(paths[0]);
         RegionRiverGenerator.Apply(r,paths);
         foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==paths[0].Id))
         {
             Assert.That(section.Direction,Is.EqualTo(expected));
             foreach(var pair in section.Points.Zip(section.Points.Skip(1),(a,b)=>(a,b)))
-                Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True);
+                Assert.That(new Vector2(pair.a.X-pair.b.X,pair.a.Z-pair.b.Z).sqrMagnitude,Is.GreaterThan(.000000001f));
         }
     }
     [Test] public void BorderClippingDoesNotRotateTheRiver()
@@ -80,5 +76,22 @@ public class RegionRiverNetworkTests
             Assert.That(RenderSettings.ambientSkyColor,Is.EqualTo(expected));
         }
         finally{UnityEngine.Object.DestroyImmediate(go);RenderSettings.ambientMode=mode;RenderSettings.ambientLight=ambient;RenderSettings.ambientSkyColor=sky;RenderSettings.ambientEquatorColor=eq;RenderSettings.ambientGroundColor=ground;}
+    }
+
+    static void AssertRoundedTrunk(RegionRiverPath path)
+    {
+        bool horizontal=false,vertical=false,curved=false,hasPrior=false;
+        var prior=Vector2.zero;
+        foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
+        {
+            var delta=new Vector2(pair.b.X-pair.a.X,pair.b.Z-pair.a.Z);
+            var x=Mathf.Abs(delta.x);var z=Mathf.Abs(delta.y);
+            horizontal|=x>.000001f&&z<.000001f;
+            vertical|=z>.000001f&&x<.000001f;
+            curved|=x>.000001f&&z>.000001f;
+            if(hasPrior)Assert.That(Vector2.Angle(prior,delta),Is.LessThan(50f));
+            prior=delta;hasPrior=true;
+        }
+        Assert.That(horizontal&&vertical&&curved,Is.True);
     }
 }

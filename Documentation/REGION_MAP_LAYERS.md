@@ -48,6 +48,12 @@ direction. District points remain on the 10-meter lattice, and regional
 tributaries retain exact perpendicular junctions. Existing saved and authored
 river geometry is not rewritten.
 
+Cardinal V03 rounds each generated stair corner with a short tangent curve.
+Long sections remain parallel to the district axes, while the former hard L
+turns transition through four smooth centerline segments. The rounding radius
+is bounded by both neighboring runs so nearby corners cannot overlap.
+Hand-drawn and locally sculpted rivers are unchanged.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.

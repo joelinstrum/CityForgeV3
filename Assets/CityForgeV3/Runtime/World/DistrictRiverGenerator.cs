@@ -103,6 +103,7 @@ namespace CityForgeV3.World
                 previousRun = run;
                 currentAlong += run;
                 AddPoint(currentAlong, currentCross);
+                if (alongCells - currentAlong <= 1) break;
                 if (lowerCross == upperCross) continue;
                 var targetCross = random.Next(lowerCross, upperCross + 1);
                 if (targetCross == currentCross)
@@ -115,7 +116,14 @@ namespace CityForgeV3.World
                 AddPoint(currentAlong, baseCrossCell);
             AddPoint(alongCells, baseCrossCell);
             if (reversed) logical.Reverse();
-            river.Points.AddRange(logical);
+            var cellPoints = new List<Vector2>();
+            foreach (var point in logical)
+                cellPoints.Add(new Vector2(point.X * district.Width,
+                    point.Z * district.Height));
+            foreach (var point in RiverPathGeometry.RoundOrthogonalCorners(
+                         cellPoints, 1.8f))
+                river.Points.Add(new DistrictRiverPoint(
+                    point.x / district.Width, point.y / district.Height));
             return river;
         }
 

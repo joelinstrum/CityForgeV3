@@ -23,7 +23,7 @@ namespace CityForgeV3.Tests
             Assert.That(result.River.Points.Count, Is.GreaterThan(4));
             Assert.That(LateralRange(result.River, true), Is.GreaterThan(0f));
             Assert.That(result.River.Curvature, Is.EqualTo(0f));
-            AssertCardinalGridStairs(result.River, 4, 4);
+            AssertRoundedStairs(result.River);
         }
 
         [TestCase(DistrictRiverDirection.WestToEast, 0f, 1f)]
@@ -42,7 +42,7 @@ namespace CityForgeV3.Tests
             Assert.That(result.River.Points.Count, Is.GreaterThan(4));
             Assert.That(LateralRange(result.River, false), Is.GreaterThan(0f));
             Assert.That(result.River.Curvature, Is.EqualTo(0f));
-            AssertCardinalGridStairs(result.River, 4, 4);
+            AssertRoundedStairs(result.River);
         }
 
         [Test]
@@ -232,38 +232,32 @@ namespace CityForgeV3.Tests
             return Mathf.Max(values.ToArray()) - Mathf.Min(values.ToArray());
         }
 
-        private static void AssertGridAligned(float normalized,
-            float crossSize)
+        private static void AssertRoundedStairs(PlacedDistrictRiver river)
         {
-            var meters = (normalized - .5f) * crossSize;
-            var cells = meters / DistrictScale.CellSizeMeters;
-            Assert.That(cells, Is.EqualTo(Mathf.Round(cells)).Within(.0001f));
-        }
-
-        private static void AssertCardinalGridStairs(PlacedDistrictRiver river,
-            int widthCells, int heightCells)
-        {
-            foreach (var point in river.Points)
-            {
-                AssertGridAligned(point.X,
-                    DistrictScale.SizeMeters(widthCells));
-                AssertGridAligned(point.Z,
-                    DistrictScale.SizeMeters(heightCells));
-            }
             var horizontal = false;
             var vertical = false;
+            var curved = false;
+            var hasPrior = false;
+            var prior = Vector2.zero;
             foreach (var pair in river.Points.Zip(river.Points.Skip(1),
                          (a, b) => (a, b)))
             {
                 var x = Mathf.Abs(pair.a.X - pair.b.X);
                 var z = Mathf.Abs(pair.a.Z - pair.b.Z);
-                Assert.That((x < .000001f) ^ (z < .000001f), Is.True,
-                    "Every stair segment must follow exactly one grid axis.");
-                horizontal |= x > .000001f;
-                vertical |= z > .000001f;
+                var delta = new Vector2(pair.b.X - pair.a.X,
+                    pair.b.Z - pair.a.Z);
+                Assert.That(delta.sqrMagnitude, Is.GreaterThan(.000000001f));
+                horizontal |= x > .000001f && z < .000001f;
+                vertical |= z > .000001f && x < .000001f;
+                curved |= x > .000001f && z > .000001f;
+                if (hasPrior)
+                    Assert.That(Vector2.Angle(prior, delta), Is.LessThan(50f),
+                        "Rounded stairs must not retain a hard 90-degree turn.");
+                prior = delta;
+                hasPrior = true;
             }
-            Assert.That(horizontal && vertical, Is.True,
-                "A generated stair river must contain forward runs and steps.");
+            Assert.That(horizontal && vertical && curved, Is.True,
+                "A rounded stair river needs straight runs, steps, and curves.");
         }
     }
 }
