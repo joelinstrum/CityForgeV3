@@ -1849,3 +1849,27 @@ confirmed a coordinated garden-mesh lift without changing billboard planting
 or ground presentation. The separate saved-preset-before-first-paint fix for
 tree shadows remains in place. Evidence:
 `Documentation/Validation/garden-family-lighting-v02/`.
+
+### September 21 — Town Center distant LOD, glazing, and interior actor
+
+The Town Center at district zooms was its reduced 3D LOD, not a billboard. Its
+shell had been baked 100 times too small and flat because the builder cancelled
+the imported root's scale and rotation. The corrected shared mesh now retains
+the complete upright building at LOD3; no zoom-time rebuild or replacement was
+added.
+
+Day glass now reads as cool reflective glazing rather than a clear opening into
+the unlit room. It remains transparent and non-emissive, and existing genuine
+night window/lamp lighting is unchanged. The interior strolling-couple card now
+stays parallel to its authored facade while its eight-direction sprite choice
+continues to follow the camera. It sits close behind the glazing, so the whole
+actor artwork crosses the windows instead of rotating through the room clip and
+appearing as a thin slice.
+
+All changes use shared mesh/material/prefab state and the existing local actor
+update. There is no district scan, material walk, redraw, rebuild, or player
+save. Isolated Town Center tests passed 7/7 and world-lighting contracts passed
+9/9. A broader building-package pass was 12/13; its sole failure is the
+unrelated existing NY Brownstone evaluation ground-offset mismatch. Graphics
+captures and details are in
+`Documentation/Validation/town-center-lod-window-v01/`.

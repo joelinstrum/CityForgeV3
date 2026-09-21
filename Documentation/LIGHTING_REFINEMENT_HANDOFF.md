@@ -165,3 +165,18 @@ picket compositions, boxwood, clipped hedges, and square/rectangular Georgian
 beds. Native garden colors lifted together while billboard planting and the
 ground stayed unchanged. Evidence:
 `Documentation/Validation/garden-family-lighting-v02/`.
+
+## Town Center glazing and distant presentation — September 21, 2026
+
+The Town Center daylight windows now use one shared cool reflective glass
+material so they read as glazing instead of exposing an unlit room. The glass
+remains transparent and non-emissive; real evening/night window and lamp
+emitters are unchanged.
+
+The district-zoom defect was geometric rather than a lighting or billboard
+problem: the generated reduced 3D shell had lost its imported 100x scale and
+upright rotation. Its corrected shared mesh matches the full shell bounds. The
+interior actor card also remains parallel to the facade rather than copying the
+pitched camera rotation, preventing the room clip from reducing it to a thin
+slice. No per-frame district work or per-building material mutation was added.
+Evidence: `Documentation/Validation/town-center-lod-window-v01/`.

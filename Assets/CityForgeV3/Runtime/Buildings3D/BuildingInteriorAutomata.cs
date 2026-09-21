@@ -28,6 +28,8 @@ namespace CityForgeV3.Buildings3D
 
         public bool IsPresenting => art != null && art.enabled;
         public int CurrentFrame => lastFrame;
+        public Vector3 RoomMinimum => roomMinimum;
+        public Vector3 RoomMaximum => roomMaximum;
 
         public void Configure(SpriteRenderer renderer, Renderer building,
             BuildingNightLighting[] controls)
@@ -35,6 +37,12 @@ namespace CityForgeV3.Buildings3D
             art = renderer;
             shell = building;
             lighting = controls;
+        }
+
+        public void ConfigureRoom(Vector3 minimum, Vector3 maximum)
+        {
+            roomMinimum = Vector3.Min(minimum, maximum);
+            roomMaximum = Vector3.Max(minimum, maximum);
         }
 
         public void DisableForShadowCopy()
@@ -90,7 +98,12 @@ namespace CityForgeV3.Buildings3D
             var frame = Mathf.FloorToInt(elapsed * entry.framesPerSecond) % entry.frameCount;
             // Preserve the authored interior position: the outdoor Automata
             // ground-clearance offset would pull the people through the wall.
-            art.transform.rotation = camera.transform.rotation;
+            // This artwork lives behind a real window, not in the open world.
+            // Keep its plane upright and parallel to the authored facade so a
+            // pitched/oblique camera cannot rotate the eight-metre card through
+            // the room clip and leave only a thin visible slice. The selected
+            // eight-direction frame still tracks the camera-facing direction.
+            art.transform.localRotation = Quaternion.identity;
             roomProperties ??= new MaterialPropertyBlock();
             art.GetPropertyBlock(roomProperties,0);
             roomProperties.SetMatrix(WorldToRoom,transform.worldToLocalMatrix);
