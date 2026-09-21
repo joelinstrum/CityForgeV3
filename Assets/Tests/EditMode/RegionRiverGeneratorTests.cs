@@ -16,8 +16,10 @@ public class RegionRiverGeneratorTests
         Assert.That(paths.Count,Is.EqualTo(6));
         Assert.That(paths.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
         Assert.That(paths.Single(path=>path.Depth==DistrictRiverDepth.Deep).WidthMeters,Is.InRange(144f,228f));
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(3));
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(3));
+        Assert.That(paths.All(path=>RegionRiverGenerator.DirectionOf(path) is
+            DistrictRiverDirection.WestToEast or DistrictRiverDirection.NorthToSouth),Is.True);
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.True);
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.True);
         AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),true);
         AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),false);
         RegionRiverGenerator.Apply(r,paths);var before=JsonUtility.ToJson(r);
@@ -27,28 +29,24 @@ public class RegionRiverGeneratorTests
         Assert.That(legacyMany.Count,Is.EqualTo(3));
         Assert.That(legacyMany.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
     }
-    [Test] public void ThreeRiversUseSeparateCorridorsAndFavorDistrictCenters()
+    [Test] public void ThreeRiversUseSeparateIrregularEnvelopes()
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Few},1785);
         Assert.That(paths.Count,Is.EqualTo(3));
-        Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(DistrictRiverDirection.WestToEast));
-        Assert.That(RegionRiverGenerator.DirectionOf(paths[1]),Is.EqualTo(DistrictRiverDirection.WestToEast));
-        Assert.That(RegionRiverGenerator.DirectionOf(paths[2]),Is.EqualTo(DistrictRiverDirection.NorthToSouth));
-        Assert.That(DistanceToPath(paths[0],new Vector2(4,2)),Is.LessThan(1.25f));
-        Assert.That(DistanceToPath(paths[1],new Vector2(4,6)),Is.LessThan(1.25f));
-        Assert.That(DistanceToPath(paths[2],new Vector2(4,2)),Is.LessThan(1.25f));
-        Assert.That(DistanceToPath(paths[2],new Vector2(4,6)),Is.LessThan(1.25f));
-        Assert.That(paths[0].Points.Max(point=>point.Z),Is.LessThan(paths[1].Points.Min(point=>point.Z)));
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.True);
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.True);
+        AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),true);
+        AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),false);
     }
-    [Test] public void FourSmallRiversSplitEvenlyAcrossCardinalDirections()
+    [Test] public void FourSmallRiversUseBothCardinalOrientations()
     {
         var settings=new RegionTerrainSettings{RiverCountsVersion=1,SmallRiverCount=4};
         var paths=RegionRiverGenerator.Generate(Region(),settings,91);
         Assert.That(paths,Has.Count.EqualTo(4));
         Assert.That(paths.All(path=>path.GeneratedSize==GeneratedRegionRiverSize.Small),Is.True);
         Assert.That(paths.All(path=>path.WidthMeters>=24&&path.WidthMeters<=36),Is.True);
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(2));
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(2));
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.True);
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.True);
     }
     [Test] public void ExplicitCountsCreateEveryRequestedRiverSize()
     {
@@ -61,8 +59,8 @@ public class RegionRiverGeneratorTests
         Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Medium),Is.EqualTo(3));
         Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Small),Is.EqualTo(4));
         Assert.That(paths.Count(path=>path.GeneratedSize==GeneratedRegionRiverSize.Stream),Is.EqualTo(5));
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(7));
-        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(6));
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.True);
+        Assert.That(paths.Any(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.True);
     }
     [Test] public void OccupiedDistrictCentersAreNotPreferredRouteTargets()
     {
@@ -73,12 +71,19 @@ public class RegionRiverGeneratorTests
         Assert.That(paths.Single().Points.Any(point=>
             Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.False);
     }
-    [Test] public void EveryFullDistrictCrossingContainsAtLeastTwoTurns()
+    [Test] public void SmallRiverStraightRunsAreBoundedWithoutForcedDistrictTurns()
     {
         var r=RegionSaveStore.Create("Meander coverage",28,20);
         var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
             RiverCountsVersion=1,SmallRiverCount=4},7721);
-        var checkedSections=0;
+        var foundStraightDistrict=false;
+        foreach(var path in paths)
+        foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
+        {
+            var delta=new Vector2(pair.b.X-pair.a.X,pair.b.Z-pair.a.Z);
+            if(Mathf.Abs(delta.x)<.0001f||Mathf.Abs(delta.y)<.0001f)
+                Assert.That(delta.magnitude,Is.LessThanOrEqualTo(4.21f));
+        }
         foreach(var tile in r.Tiles)
         foreach(var section in RegionRiverGenerator.Sections(tile,paths))
         {
@@ -88,29 +93,67 @@ public class RegionRiverGeneratorTests
                 first.X<.001f&&last.X>.999f:
                 first.Z>.999f&&last.Z<.001f;
             if(!full)continue;
-            checkedSections++;
-            Assert.That(CountTurns(section.Points),Is.GreaterThanOrEqualTo(2),
-                $"{section.RegionRiverId} crossed {tile.Name} without two turns.");
+            if(CountTurns(section.Points)==0)foundStraightDistrict=true;
         }
-        Assert.That(checkedSections,Is.GreaterThan(12));
+        Assert.That(foundStraightDistrict,Is.True);
     }
-    [Test] public void DistrictShiftsPersistAcrossBordersAndFormLongDrifts()
+    [Test] public void SmallerWatercoursesCreateInteriorHeadsAndConfluences()
     {
-        var r=RegionSaveStore.Create("Persistent drift",28,20);
-        var path=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
-            RiverCountsVersion=1,SmallRiverCount=1},7721).Single();
-        var crossings=path.Points
-            .Where(point=>point.X>0&&point.X<r.Width&&
-                Mathf.Abs(point.X/2f-Mathf.Round(point.X/2f))<.0001f)
-            .GroupBy(point=>Mathf.RoundToInt(point.X*1000))
-            .OrderBy(group=>group.Key)
-            .Select(group=>group.Average(point=>point.Z)).ToArray();
-        Assert.That(crossings.Length,Is.GreaterThan(4));
-        Assert.That(crossings.Max()-crossings.Min(),Is.GreaterThan(.35f));
-        var deltas=crossings.Zip(crossings.Skip(1),(a,b)=>b-a).ToArray();
-        Assert.That(deltas.Zip(deltas.Skip(1),(a,b)=>a*b)
-            .Any(product=>product>.0025f),Is.True,
-            "At least two consecutive districts should continue the same drift.");
+        var r=RegionSaveStore.Create("Natural network",28,20);
+        var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,DeepRivers=RegionWaterAmount.Few,
+            MediumRiverCount=3,SmallRiverCount=5,StreamCount=5},7721);
+        Assert.That(paths,Has.Count.EqualTo(14));
+        var tributaries=paths.Where(path=>!string.IsNullOrEmpty(
+            path.TributaryOfRiverId)).ToArray();
+        Assert.That(tributaries.Length,Is.GreaterThan(2));
+        foreach(var tributary in tributaries)
+        {
+            var parent=paths.Single(path=>path.Id==tributary.TributaryOfRiverId);
+            var end=tributary.Points[^1];
+            Assert.That(DistanceToPath(parent,new Vector2(end.X,end.Z)),
+                Is.LessThan(.001f));
+        }
+        Assert.That(paths.Where(path=>path.GeneratedSize is
+            GeneratedRegionRiverSize.Small or GeneratedRegionRiverSize.Stream)
+            .Any(path=>path.Points[0].X>.001f&&path.Points[0].X<r.Width-.001f&&
+                path.Points[0].Z>.001f&&path.Points[0].Z<r.Height-.001f),Is.True);
+        for(var later=1;later<paths.Count;later++)
+        for(var earlier=0;earlier<later;earlier++)
+        foreach(var intersection in Intersections(paths[later],paths[earlier]))
+        {
+            var end=paths[later].Points[^1];
+            Assert.That(paths[later].TributaryOfRiverId,
+                Is.EqualTo(paths[earlier].Id));
+            Assert.That(Vector2.Distance(intersection,
+                new Vector2(end.X,end.Z)),Is.LessThan(.002f),
+                "Generated rivers may meet only at the later river's confluence.");
+        }
+    }
+    [Test] public void SpacingIsIrregularAndRiverSizesHaveDifferentCadence()
+    {
+        var r=RegionSaveStore.Create("Irregular spacing",28,20);
+        var settings=new RegionTerrainSettings{RiverCountsVersion=1,
+            MediumRiverCount=3,SmallRiverCount=5,StreamCount=5};
+        var paths=RegionRiverGenerator.Generate(r,settings,8842);
+        var foundIrregularGroup=false;
+        foreach(var group in paths.GroupBy(RegionRiverGenerator.DirectionOf))
+        {
+            var horizontal=group.Key==DistrictRiverDirection.WestToEast;
+            var centers=group.Select(path=>path.Points.Average(point=>
+                horizontal?point.Z:point.X)).OrderBy(value=>value).ToArray();
+            if(centers.Length<3)continue;
+            var gaps=centers.Zip(centers.Skip(1),(a,b)=>b-a).ToArray();
+            if(gaps.Max()-gaps.Min()>.2f)foundIrregularGroup=true;
+        }
+        Assert.That(foundIrregularGroup,Is.True);
+
+        var major=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,DeepRivers=RegionWaterAmount.Few},92).Single();
+        var stream=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,StreamCount=1},92).Single();
+        Assert.That(major.Points.Count,Is.LessThan(stream.Points.Count),
+            "Major rivers should use longer, slower meanders than streams.");
     }
     [Test] public void SharedDistrictBoundaryMatchesAndReloadPreservesPaths()
     {
@@ -199,5 +242,24 @@ public class RegionRiverGeneratorTests
             closest=Mathf.Min(closest,Vector2.Distance(target,a+delta*t));
         }
         return closest;
+    }
+    static IEnumerable<Vector2> Intersections(RegionRiverPath first,
+        RegionRiverPath second)
+    {
+        float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
+        for(var one=1;one<first.Points.Count;one++)
+        for(var two=1;two<second.Points.Count;two++)
+        {
+            var a=new Vector2(first.Points[one-1].X,first.Points[one-1].Z);
+            var b=new Vector2(first.Points[one].X,first.Points[one].Z);
+            var c=new Vector2(second.Points[two-1].X,second.Points[two-1].Z);
+            var d=new Vector2(second.Points[two].X,second.Points[two].Z);
+            var ab=b-a;var cd=d-c;var denominator=Cross(ab,cd);
+            if(Mathf.Abs(denominator)<1e-6f)continue;
+            var t=Cross(c-a,cd)/denominator;
+            var u=Cross(c-a,ab)/denominator;
+            if(t>=-1e-4f&&t<=1.0001f&&u>=-1e-4f&&u<=1.0001f)
+                yield return a+ab*Mathf.Clamp01(t);
+        }
     }
 }

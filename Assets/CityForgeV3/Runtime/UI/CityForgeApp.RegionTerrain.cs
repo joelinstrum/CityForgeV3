@@ -214,7 +214,7 @@ namespace CityForgeV3.UI
                     draft.SmallRiverCount, 5, value => draft.SmallRiverCount = value);
                 AddRegionRiverCountDropdown(content, "stream-count", "Streams",
                     draft.StreamCount, 5, value => draft.StreamCount = value);
-                content.Add(StyledLabel("At most one major river is generated. Medium rivers use the former river width; major rivers are three times wider. Directions are balanced between west-to-east and north-to-south, including a 2/2 split for four rivers of one size. Parallel rivers use separate corridors; routes favor unoccupied district centers and gentle local bends. Generation tries multiple fresh layouts to avoid buildings, replaces this tool’s rivers, and preserves manually placed rivers.", "inspector-note"));
+                content.Add(StyledLabel("At most one major river is generated. Medium rivers use the former river width; major rivers are three times wider. Routes keep grid-aligned construction reaches but use irregular spacing and size-specific meanders. Smaller rivers and streams may begin inland and merge into an earlier, larger watercourse; generated rivers never cross through one another. Generation tries multiple fresh layouts to avoid buildings, replaces this tool’s rivers, and preserves manually placed rivers.", "inspector-note"));
             }
             foreach (var name in new[] { "Rivers", "Flora", "Climate", "Shorefront", "Roads", "Mountains", "Hills" })
             {

@@ -19,6 +19,9 @@ namespace CityForgeV3.World
         public string Id;
         public bool HandDrawn;
         public GeneratedRegionRiverSize GeneratedSize;
+        public string TributaryOfRiverId;
+        public bool HasGeneratedDirection;
+        public DistrictRiverDirection GeneratedDirection;
         public DistrictRiverDepth Depth;
         public float WidthMeters;
         // Region map units, shared by all districts; Z corresponds to tile.Y.
@@ -47,34 +50,28 @@ namespace CityForgeV3.World
             int small=explicitCounts?Mathf.Clamp(settings.SmallRiverCount,0,5):
                 Count(settings.Streams,2,5);
             int streams=explicitCounts?Mathf.Clamp(settings.StreamCount,0,5):0;
-            var horizontalSizes=new List<GeneratedRegionRiverSize>();
-            var verticalSizes=new List<GeneratedRegionRiverSize>();
-            void AddBalanced(GeneratedRegionRiverSize size,int count)
-            {
-                // Alternate within every size. An odd remainder goes to the
-                // direction with fewer rivers so the complete layout remains
-                // as balanced as its total count permits.
-                bool horizontal=horizontalSizes.Count<=verticalSizes.Count;
-                for(int index=0;index<count;index++)
-                {
-                    (horizontal?horizontalSizes:verticalSizes).Add(size);
-                    horizontal=!horizontal;
-                }
-            }
-            AddBalanced(GeneratedRegionRiverSize.Major,major);
-            AddBalanced(GeneratedRegionRiverSize.Medium,medium);
-            AddBalanced(GeneratedRegionRiverSize.Small,small);
-            AddBalanced(GeneratedRegionRiverSize.Stream,streams);
-            var sizes=new List<GeneratedRegionRiverSize>(horizontalSizes);
-            sizes.AddRange(verticalSizes);
+            var sizes=new List<GeneratedRegionRiverSize>();
+            if(major>0)sizes.Add(GeneratedRegionRiverSize.Major);
+            for(var index=0;index<medium;index++)sizes.Add(GeneratedRegionRiverSize.Medium);
+            for(var index=0;index<small;index++)sizes.Add(GeneratedRegionRiverSize.Small);
+            for(var index=0;index<streams;index++)sizes.Add(GeneratedRegionRiverSize.Stream);
             int total=sizes.Count;
             if(total==0)return result;
-            int horizontalCount=horizontalSizes.Count;
-            int verticalCount=total-horizontalCount;
-            int horizontalLane=0,verticalLane=0;
+            var orientations=new List<bool>();
+            for(var index=0;index<total;index++)
+            {
+                if(index==0)orientations.Add(random.NextDouble()<.5);
+                else if(index==1)orientations.Add(!orientations[0]);
+                else orientations.Add(random.NextDouble()<.5);
+            }
+            var horizontalPositions=RandomCrossPositions(
+                orientations.FindAll(value=>value).Count,region.Height,random);
+            var verticalPositions=RandomCrossPositions(
+                orientations.FindAll(value=>!value).Count,region.Width,random);
+            int horizontalIndex=0,verticalIndex=0;
             for(int n=0;n<total;n++)
             {
-                bool horizontal=n<horizontalCount;
+                bool horizontal=orientations[n];
                 var size=sizes[n];
                 var path=new RegionRiverPath
                 {
@@ -91,48 +88,80 @@ namespace CityForgeV3.World
                         _=>Next(10,16)
                     }
                 };
-                int lane=horizontal?horizontalLane++:verticalLane++;
-                int laneCount=horizontal?horizontalCount:verticalCount;
-                BuildCenterSeekingTrunk(region,path,horizontal,lane,laneCount,
-                    random);
+                var positions=horizontal?horizontalPositions:verticalPositions;
+                var positionIndex=horizontal?horizontalIndex++:verticalIndex++;
+                CrossEnvelope(positions,positionIndex,
+                    horizontal?region.Height:region.Width,
+                    out var lowerCross,out var upperCross);
+                BuildNaturalRoute(region,path,horizontal,
+                    positions[positionIndex],lowerCross,upperCross,random);
+                TruncateAtFirstConfluence(path,result);
+                var useInteriorHeadwater=
+                    size==GeneratedRegionRiverSize.Small&&random.NextDouble()<.48||
+                    size==GeneratedRegionRiverSize.Stream&&random.NextDouble()<.72;
+                if(useInteriorHeadwater)
+                    TrimInteriorHeadwater(path,random);
                 result.Add(path);
             }
             return result;
         }
 
-        private static void BuildCenterSeekingTrunk(RegionSaveData region,
-            RegionRiverPath path, bool horizontal, int lane, int laneCount,
+        private static List<float> RandomCrossPositions(int count,float extent,
             System.Random random)
         {
-            int alongCells=horizontal?region.Width:region.Height;
-            int crossCells=horizontal?region.Height:region.Width;
-            float bandWidth=crossCells/(float)laneCount;
-            float margin=Mathf.Min(.75f,bandWidth*.1f);
-            float lowerCross=lane*bandWidth+margin;
-            float upperCross=(lane+1)*bandWidth-margin;
-            float idealCross=(lowerCross+upperCross)*.5f;
-
-            var centers=new List<Vector2>();
-            foreach(var tile in region.Tiles??new List<RegionCityTile>())
+            var result=new List<float>();
+            if(count<=0)return result;
+            var margin=Mathf.Min(.7f,extent*.06f);
+            var minimum=Mathf.Clamp(extent/(count*2.25f),.5f,2.4f);
+            for(var index=0;index<count;index++)
             {
-                if(tile==null)continue;
-                if(tile.Lots!=null&&tile.Lots.Count>0)continue;
-                float along=horizontal?tile.X+tile.Width*.5f:
-                    tile.Y+tile.Height*.5f;
-                float cross=horizontal?tile.Y+tile.Height*.5f:
-                    tile.X+tile.Width*.5f;
-                if(cross>=lowerCross-.0001f&&cross<=upperCross+.0001f)
-                    centers.Add(new Vector2(along,cross));
+                var accepted=false;
+                for(var attempt=0;attempt<80;attempt++)
+                {
+                    var candidate=Mathf.Lerp(margin,extent-margin,
+                        (float)random.NextDouble());
+                    if(result.TrueForAll(value=>Mathf.Abs(value-candidate)>=minimum))
+                    {result.Add(candidate);accepted=true;break;}
+                }
+                if(accepted)continue;
+                var best=margin;var bestDistance=-1f;
+                for(var attempt=0;attempt<80;attempt++)
+                {
+                    var candidate=Mathf.Lerp(margin,extent-margin,
+                        (float)random.NextDouble());
+                    var distance=float.PositiveInfinity;
+                    foreach(var value in result)
+                        distance=Mathf.Min(distance,Mathf.Abs(value-candidate));
+                    if(distance>bestDistance){best=candidate;bestDistance=distance;}
+                }
+                result.Add(best);
             }
-            float baseCross=idealCross;
-            float closest=float.PositiveInfinity;
-            foreach(var center in centers)
-            {
-                float distance=Mathf.Abs(center.y-idealCross);
-                if(distance>=closest)continue;
-                closest=distance;baseCross=center.y;
-            }
+            return result;
+        }
 
+        private static void CrossEnvelope(List<float> positions,int index,
+            float extent,out float lower,out float upper)
+        {
+            var center=positions[index];
+            float nearestLower=0,nearestUpper=extent;
+            foreach(var other in positions)
+            {
+                if(other<center&&other>nearestLower)nearestLower=other;
+                if(other>center&&other<nearestUpper)nearestUpper=other;
+            }
+            lower=nearestLower==0?.15f:(nearestLower+center)*.5f+.06f;
+            upper=nearestUpper==extent?extent-.15f:(nearestUpper+center)*.5f-.06f;
+            if(upper-lower<.5f){lower=center-.25f;upper=center+.25f;}
+        }
+
+        private static void BuildNaturalRoute(RegionSaveData region,
+            RegionRiverPath path,bool horizontal,float baseCross,
+            float lowerCross,float upperCross,System.Random random)
+        {
+            path.HasGeneratedDirection=true;
+            path.GeneratedDirection=horizontal?DistrictRiverDirection.WestToEast:
+                DistrictRiverDirection.NorthToSouth;
+            float alongCells=horizontal?region.Width:region.Height;
             var logical=new List<Vector2>();
             void Add(float along,float cross)
             {
@@ -143,131 +172,133 @@ namespace CityForgeV3.World
             }
             float Next(float a,float b)=>Mathf.Lerp(a,b,
                 (float)random.NextDouble());
-            float TileAlongMin(RegionCityTile tile)=>horizontal?tile.X:tile.Y;
-            float TileAlongMax(RegionCityTile tile)=>horizontal?
-                tile.X+tile.Width:tile.Y+tile.Height;
-            float TileCrossMin(RegionCityTile tile)=>horizontal?tile.Y:tile.X;
-            float TileCrossMax(RegionCityTile tile)=>horizontal?
-                tile.Y+tile.Height:tile.X+tile.Width;
-            RegionCityTile TileAt(float along,float cross)
+            (float Minimum,float Maximum,float Shift,float Radius) Shape()=>
+                path.GeneratedSize switch
             {
-                RegionCityTile closestTile=null;var closest=float.PositiveInfinity;
-                foreach(var tile in region.Tiles??new List<RegionCityTile>())
-                {
-                    if(tile==null||along<TileAlongMin(tile)-.0001f||
-                        along>TileAlongMax(tile)+.0001f)continue;
-                    if(cross>=TileCrossMin(tile)-.0001f&&
-                        cross<=TileCrossMax(tile)+.0001f)return tile;
-                    var distance=Mathf.Min(Mathf.Abs(cross-TileCrossMin(tile)),
-                        Mathf.Abs(cross-TileCrossMax(tile)));
-                    if(distance<closest){closest=distance;closestTile=tile;}
-                }
-                return closestTile;
-            }
-            int NextDriftRun()=>path.GeneratedSize switch
-            {
-                GeneratedRegionRiverSize.Major=>random.Next(3,6),
-                GeneratedRegionRiverSize.Medium=>random.Next(3,5),
-                GeneratedRegionRiverSize.Small=>random.Next(2,5),
-                _=>random.Next(1,4)
+                GeneratedRegionRiverSize.Major=>(3.6f,7.2f,2.3f,2.4f),
+                GeneratedRegionRiverSize.Medium=>(2.6f,5.6f,1.7f,1.9f),
+                GeneratedRegionRiverSize.Small=>(1.7f,4.2f,1.2f,1.35f),
+                _=>(1.15f,3.1f,.8f,.9f)
             };
-            float MaximumShift()=>path.GeneratedSize switch
-            {
-                GeneratedRegionRiverSize.Major=>.9f,
-                GeneratedRegionRiverSize.Medium=>.72f,
-                GeneratedRegionRiverSize.Small=>.56f,
-                _=>.42f
-            };
-            float ShiftFraction()=>path.GeneratedSize switch
-            {
-                GeneratedRegionRiverSize.Major=>.24f,
-                GeneratedRegionRiverSize.Medium=>.2f,
-                GeneratedRegionRiverSize.Small=>.17f,
-                _=>.14f
-            };
-            float currentAlong=0,currentCross=baseCross;
+            var shape=Shape();
+            var inset=Mathf.Min(.18f,(upperCross-lowerCross)*.12f);
+            lowerCross+=inset;upperCross-=inset;
+            var startCross=Mathf.Clamp(baseCross+Next(-.45f,.45f),
+                lowerCross,upperCross);
+            var exitCross=Next(lowerCross,upperCross);
+            float currentAlong=0,currentCross=startCross;
             int driftDirection=random.NextDouble()<.5?-1:1;
-            int driftRemaining=NextDriftRun();
+            int driftRemaining=random.Next(2,5);
             Add(currentAlong,currentCross);
             var guard=0;
-            while(currentAlong<alongCells-.0001f&&
-                guard++<(region.Tiles?.Count??0)+8)
+            while(alongCells-currentAlong>shape.Maximum&&guard++<64)
             {
-                var probe=Mathf.Min(alongCells-.0001f,currentAlong+.001f);
-                var tile=TileAt(probe,currentCross);
-                if(tile==null)
-                {
-                    Add(alongCells,currentCross);break;
-                }
-                var exit=Mathf.Min(alongCells,TileAlongMax(tile));
-                var span=exit-currentAlong;
-                if(span<.0001f)
-                {
-                    currentAlong=Mathf.Min(alongCells,currentAlong+.001f);
-                    continue;
-                }
-                var crossMinimum=Mathf.Max(lowerCross,
-                    TileCrossMin(tile))+.1f;
-                var crossMaximum=Mathf.Min(upperCross,
-                    TileCrossMax(tile))-.1f;
-                if(crossMaximum-crossMinimum<.24f)
-                {
-                    Add(exit,currentCross);currentAlong=exit;continue;
-                }
-                var safeCross=Mathf.Clamp(currentCross,crossMinimum,crossMaximum);
-                if(Mathf.Abs(safeCross-currentCross)>.0001f)
-                {
-                    Add(currentAlong,currentCross);Add(currentAlong,safeCross);
-                    currentCross=safeCross;
-                }
-                var room=driftDirection>0?crossMaximum-currentCross:
-                    currentCross-crossMinimum;
-                if(room<.16f)
+                var turn=currentAlong+Next(shape.Minimum,shape.Maximum);
+                Add(turn,currentCross);
+                var room=driftDirection>0?upperCross-currentCross:
+                    currentCross-lowerCross;
+                if(room<.28f)
                 {
                     driftDirection=-driftDirection;
-                    driftRemaining=NextDriftRun();
-                    room=driftDirection>0?crossMaximum-currentCross:
-                        currentCross-crossMinimum;
+                    driftRemaining=random.Next(2,5);
+                    room=driftDirection>0?upperCross-currentCross:
+                        currentCross-lowerCross;
                 }
-                var tileCrossSpan=TileCrossMax(tile)-TileCrossMin(tile);
-                var shift=Mathf.Min(MaximumShift(),
-                    Mathf.Min(tileCrossSpan*ShiftFraction(),room*.72f));
-                shift*=Next(.72f,1f);
+                var shift=Mathf.Min(shape.Shift,room*.78f)*Next(.48f,1f);
                 var nextCross=currentCross+driftDirection*shift;
-                if(tile.Lots==null||tile.Lots.Count==0)
-                {
-                    var center=Mathf.Clamp((TileCrossMin(tile)+
-                        TileCrossMax(tile))*.5f,crossMinimum,crossMaximum);
-                    nextCross=Mathf.Lerp(nextCross,center,.18f);
-                }
-                nextCross=Mathf.Clamp(nextCross,crossMinimum,crossMaximum);
-                if(Mathf.Abs(nextCross-currentCross)<.1f)
-                {
-                    var alternate=currentCross-driftDirection*
-                        Mathf.Min(MaximumShift()*.55f,
-                            driftDirection>0?currentCross-crossMinimum:
-                            crossMaximum-currentCross);
-                    nextCross=Mathf.Clamp(alternate,crossMinimum,crossMaximum);
-                    driftDirection=-driftDirection;
-                    driftRemaining=NextDriftRun();
-                }
-                var turn=currentAlong+span*Next(.24f,.72f);
-                Add(turn,currentCross);Add(turn,nextCross);Add(exit,nextCross);
-                currentAlong=exit;currentCross=nextCross;
+                var progress=turn/alongCells;
+                nextCross=Mathf.Lerp(nextCross,exitCross,.1f+progress*.16f);
+                nextCross=Mathf.Clamp(nextCross,lowerCross,upperCross);
+                Add(turn,nextCross);
+                currentAlong=turn;currentCross=nextCross;
                 driftRemaining--;
                 if(driftRemaining<=0)
                 {
                     driftDirection=-driftDirection;
-                    driftRemaining=NextDriftRun();
+                    driftRemaining=random.Next(2,5);
                 }
             }
-            if(currentAlong<alongCells-.0001f)Add(alongCells,currentCross);
-            // Region Z increases south-to-north, so reverse vertical point
-            // order to produce the requested north-to-south flow.
+            var remaining=alongCells-currentAlong;
+            if(remaining>shape.Minimum*1.35f&&
+                Mathf.Abs(exitCross-currentCross)>.14f)
+            {
+                var finalTurn=currentAlong+remaining*Next(.28f,.62f);
+                Add(finalTurn,currentCross);Add(finalTurn,exitCross);
+                currentCross=exitCross;
+            }
+            Add(alongCells,currentCross);
             if(!horizontal)logical.Reverse();
             foreach(var point in RiverPathGeometry.RoundOrthogonalCorners(
-                        logical,1.8f))
+                        logical,shape.Radius))
                 path.Points.Add(new DistrictRiverPoint(point.x,point.y));
+        }
+
+        private static void TrimInteriorHeadwater(RegionRiverPath path,
+            System.Random random)
+        {
+            if(path.Points.Count<8)return;
+            var fraction=Mathf.Lerp(.12f,.36f,(float)random.NextDouble());
+            var remove=Mathf.Clamp(Mathf.RoundToInt(
+                (path.Points.Count-1)*fraction),1,path.Points.Count-5);
+            path.Points.RemoveRange(0,remove);
+        }
+
+        private static void TruncateAtFirstConfluence(RegionRiverPath candidate,
+            List<RegionRiverPath> existingPaths)
+        {
+            if(candidate.Points.Count<2||existingPaths.Count==0)return;
+            var bestDistance=float.PositiveInfinity;
+            var bestSegment=-1;
+            var bestPoint=Vector2.zero;
+            string bestParent=null;
+            var travelled=0f;
+            const float minimumTravel=.05f;
+            for(var index=1;index<candidate.Points.Count;index++)
+            {
+                var a=new Vector2(candidate.Points[index-1].X,
+                    candidate.Points[index-1].Z);
+                var b=new Vector2(candidate.Points[index].X,
+                    candidate.Points[index].Z);
+                var segmentLength=Vector2.Distance(a,b);
+                foreach(var parent in existingPaths)
+                for(var parentIndex=1;parentIndex<parent.Points.Count;parentIndex++)
+                {
+                    var c=new Vector2(parent.Points[parentIndex-1].X,
+                        parent.Points[parentIndex-1].Z);
+                    var d=new Vector2(parent.Points[parentIndex].X,
+                        parent.Points[parentIndex].Z);
+                    if(!TrySegmentIntersection(a,b,c,d,out var point,out var t))
+                        continue;
+                    var distance=travelled+segmentLength*t;
+                    if(distance<minimumTravel||distance>=bestDistance)continue;
+                    bestDistance=distance;bestSegment=index;
+                    bestPoint=point;bestParent=parent.Id;
+                }
+                travelled+=segmentLength;
+            }
+            if(bestSegment<1)return;
+            candidate.Points.RemoveRange(bestSegment,
+                candidate.Points.Count-bestSegment);
+            var last=candidate.Points[^1];
+            if(Vector2.Distance(new Vector2(last.X,last.Z),bestPoint)>.00001f)
+                candidate.Points.Add(new DistrictRiverPoint(bestPoint.x,bestPoint.y));
+            candidate.TributaryOfRiverId=bestParent;
+        }
+
+        private static bool TrySegmentIntersection(Vector2 a,Vector2 b,
+            Vector2 c,Vector2 d,out Vector2 point,out float alongFirst)
+        {
+            float Cross(Vector2 one,Vector2 two)=>one.x*two.y-one.y*two.x;
+            var first=b-a;var second=d-c;
+            var denominator=Cross(first,second);
+            if(Mathf.Abs(denominator)<.000001f)
+            {point=default;alongFirst=0;return false;}
+            var offset=c-a;
+            var t=Cross(offset,second)/denominator;
+            var u=Cross(offset,first)/denominator;
+            if(t<-.0001f||t>1.0001f||u<-.0001f||u>1.0001f)
+            {point=default;alongFirst=0;return false;}
+            alongFirst=Mathf.Clamp01(t);point=a+first*alongFirst;return true;
         }
 
         // Clip exact shared segments rather than generating or snapping per district.
@@ -304,6 +335,7 @@ namespace CityForgeV3.World
 
         public static DistrictRiverDirection DirectionOf(RegionRiverPath path)
         {
+            if(path.HasGeneratedDirection)return path.GeneratedDirection;
             var first=path.Points[0];var last=path.Points[path.Points.Count-1];
             float x=last.X-first.X,z=last.Z-first.Z;
             return Mathf.Abs(x)>Mathf.Abs(z)?(x>=0?DistrictRiverDirection.WestToEast:DistrictRiverDirection.EastToWest)

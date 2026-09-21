@@ -90,6 +90,16 @@ waypoints. All logical segments remain cardinal, corridor spacing and exact
 border continuity remain intact, and each complete district crossing still has
 at least two turns.
 
+Cardinal V08 keeps the grid-angle contract but removes exact direction balance,
+equal spacing, district-center attraction, and mandatory per-district turns.
+Seeded minimum-clearance entry positions create irregular non-crossing route
+envelopes, while size-specific maximum run lengths, shift amplitudes, and corner
+radii give Major rivers broad slow meanders and Streams a quicker cadence.
+Smaller watercourses may begin inland. Paths generate largest-first and stop at
+their first encounter with an earlier river, recording a parent and forming a
+confluence instead of crossing through. Straight cardinal reaches remain long
+enough for bridges and riverside construction.
+
 When a region has no saved procedural river selection, Regenerate Rivers now
 opens the Rivers panel with the intended one-major-plus-two-small defaults.
 Generate Rivers rejects an explicitly empty selection with visible guidance;
