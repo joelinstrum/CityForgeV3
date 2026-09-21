@@ -73,6 +73,14 @@ center targets, and Generate Rivers tries up to 24 fresh candidates before
 reporting that no building-safe layout was found. Legacy Few/Many saves migrate
 to two/five Small rivers without rewriting existing geometry.
 
+Cardinal V06 prevents ruler-straight generated crossings. Each district keeps
+an existing route when it already has at least two turns; otherwise one compact
+seeded dogleg is added to its longest forward run. The dogleg stays inside both
+the district and the river's disjoint corridor, returns to the original
+centerline before the border, and is rounded by the existing corner treatment.
+This adds local natural variation without changing cardinal flow, spacing,
+district-center targets, or saved geometry until the next explicit generation.
+
 When a region has no saved procedural river selection, Regenerate Rivers now
 opens the Rivers panel with the intended one-major-plus-two-small defaults.
 Generate Rivers rejects an explicitly empty selection with visible guidance;

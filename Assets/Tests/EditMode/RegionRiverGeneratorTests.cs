@@ -73,6 +73,27 @@ public class RegionRiverGeneratorTests
         Assert.That(paths.Single().Points.Any(point=>
             Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.False);
     }
+    [Test] public void EveryFullDistrictCrossingContainsAtLeastTwoTurns()
+    {
+        var r=RegionSaveStore.Create("Meander coverage",28,20);
+        var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,SmallRiverCount=4},7721);
+        var checkedSections=0;
+        foreach(var tile in r.Tiles)
+        foreach(var section in RegionRiverGenerator.Sections(tile,paths))
+        {
+            var horizontal=section.Direction==DistrictRiverDirection.WestToEast;
+            var first=section.Points[0];var last=section.Points[^1];
+            var full=horizontal?
+                first.X<.001f&&last.X>.999f:
+                first.Z>.999f&&last.Z<.001f;
+            if(!full)continue;
+            checkedSections++;
+            Assert.That(CountTurns(section.Points),Is.GreaterThanOrEqualTo(2),
+                $"{section.RegionRiverId} crossed {tile.Name} without two turns.");
+        }
+        Assert.That(checkedSections,Is.GreaterThan(12));
+    }
     [Test] public void SharedDistrictBoundaryMatchesAndReloadPreservesPaths()
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Many},7);
@@ -131,5 +152,20 @@ public class RegionRiverGeneratorTests
         var ranges=paths.Select(path=>(Minimum:path.Points.Min(point=>horizontal?point.Z:point.X),Maximum:path.Points.Max(point=>horizontal?point.Z:point.X))).OrderBy(range=>range.Minimum).ToArray();
         for(int index=1;index<ranges.Length;index++)
             Assert.That(ranges[index-1].Maximum,Is.LessThan(ranges[index].Minimum),"Parallel river corridors must not intersect.");
+    }
+    static int CountTurns(IReadOnlyList<DistrictRiverPoint> points)
+    {
+        var count=0;
+        for(var index=1;index<points.Count-1;index++)
+        {
+            var incoming=new Vector2(points[index].X-points[index-1].X,
+                points[index].Z-points[index-1].Z);
+            var outgoing=new Vector2(points[index+1].X-points[index].X,
+                points[index+1].Z-points[index].Z);
+            if(incoming.sqrMagnitude<1e-10f||outgoing.sqrMagnitude<1e-10f)
+                continue;
+            if(Vector2.Angle(incoming,outgoing)>2f)count++;
+        }
+        return count;
     }
 }

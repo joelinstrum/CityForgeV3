@@ -185,12 +185,135 @@ namespace CityForgeV3.World
                 Add(target.x,target.y);
                 currentAlong=target.x;currentCross=target.y;
             }
+            logical=AddDistrictMeanders(region,logical,horizontal,
+                lowerCross,upperCross,random);
             // Region Z increases south-to-north, so reverse vertical point
             // order to produce the requested north-to-south flow.
             if(!horizontal)logical.Reverse();
             foreach(var point in RiverPathGeometry.RoundOrthogonalCorners(
                         logical,1.8f))
                 path.Points.Add(new DistrictRiverPoint(point.x,point.y));
+        }
+
+        private static List<Vector2> AddDistrictMeanders(RegionSaveData region,
+            List<Vector2> logical, bool horizontal, float lowerCross,
+            float upperCross, System.Random random)
+        {
+            if(logical.Count<2||region.Tiles==null||region.Tiles.Count==0)
+                return logical;
+            float Along(Vector2 point)=>horizontal?point.x:point.y;
+            float Cross(Vector2 point)=>horizontal?point.y:point.x;
+            float TileAlongMin(RegionCityTile tile)=>horizontal?tile.X:tile.Y;
+            float TileAlongMax(RegionCityTile tile)=>horizontal?
+                tile.X+tile.Width:tile.Y+tile.Height;
+            float TileCrossMin(RegionCityTile tile)=>horizontal?tile.Y:tile.X;
+            float TileCrossMax(RegionCityTile tile)=>horizontal?
+                tile.Y+tile.Height:tile.X+tile.Width;
+            bool Inside(RegionCityTile tile,Vector2 point)
+            {
+                const float inset=.0001f;
+                var along=Along(point);var cross=Cross(point);
+                return along>TileAlongMin(tile)+inset&&
+                    along<TileAlongMax(tile)-inset&&
+                    cross>TileCrossMin(tile)+inset&&
+                    cross<TileCrossMax(tile)-inset;
+            }
+
+            var turns=new Dictionary<RegionCityTile,int>();
+            foreach(var tile in region.Tiles)
+            {
+                if(tile==null)continue;
+                var count=0;
+                for(var index=1;index<logical.Count-1;index++)
+                {
+                    if(!Inside(tile,logical[index]))continue;
+                    var incoming=logical[index]-logical[index-1];
+                    var outgoing=logical[index+1]-logical[index];
+                    if(incoming.sqrMagnitude>.000001f&&
+                        outgoing.sqrMagnitude>.000001f&&
+                        Mathf.Abs(Vector2.Dot(incoming.normalized,
+                            outgoing.normalized))<.001f)count++;
+                }
+                turns[tile]=count;
+            }
+
+            // Pick only the longest forward run in each straight district.
+            // One contained dogleg contributes four rounded corners while
+            // leaving the route on its original centerline at the border.
+            var selected=new Dictionary<RegionCityTile,
+                (int Segment,float Start,float End,float Cross)>();
+            for(var segment=0;segment<logical.Count-1;segment++)
+            {
+                var a=logical[segment];var b=logical[segment+1];
+                var start=Along(a);var end=Along(b);var cross=Cross(a);
+                if(end-start<.0001f||Mathf.Abs(Cross(b)-cross)>.0001f)
+                    continue;
+                foreach(var tile in region.Tiles)
+                {
+                    if(tile==null||turns[tile]>=2||
+                        cross<TileCrossMin(tile)+.0001f||
+                        cross>TileCrossMax(tile)-.0001f)continue;
+                    var overlapStart=Mathf.Max(start,TileAlongMin(tile));
+                    var overlapEnd=Mathf.Min(end,TileAlongMax(tile));
+                    if(overlapEnd-overlapStart<.6f)continue;
+                    if(!selected.TryGetValue(tile,out var existing)||
+                        overlapEnd-overlapStart>existing.End-existing.Start)
+                        selected[tile]=(segment,overlapStart,overlapEnd,cross);
+                }
+            }
+
+            var bySegment=new Dictionary<int,List<(float Start,float End,
+                float Cross,RegionCityTile Tile)>>();
+            foreach(var pair in selected)
+            {
+                var value=pair.Value;
+                if(!bySegment.TryGetValue(value.Segment,out var list))
+                {
+                    list=new List<(float,float,float,RegionCityTile)>();
+                    bySegment[value.Segment]=list;
+                }
+                list.Add((value.Start,value.End,value.Cross,pair.Key));
+            }
+            var result=new List<Vector2>();
+            void Add(float along,float cross)
+            {
+                var point=horizontal?new Vector2(along,cross):
+                    new Vector2(cross,along);
+                if(result.Count==0||Vector2.Distance(result[^1],point)>.000001f)
+                    result.Add(point);
+            }
+            for(var segment=0;segment<logical.Count-1;segment++)
+            {
+                Add(Along(logical[segment]),Cross(logical[segment]));
+                if(!bySegment.TryGetValue(segment,out var candidates))continue;
+                candidates.Sort((a,b)=>a.Start.CompareTo(b.Start));
+                foreach(var candidate in candidates)
+                {
+                    var span=candidate.End-candidate.Start;
+                    var entry=candidate.Start+span*Mathf.Lerp(.18f,.32f,
+                        (float)random.NextDouble());
+                    var exit=candidate.Start+span*Mathf.Lerp(.58f,.76f,
+                        (float)random.NextDouble());
+                    var minimum=Mathf.Max(lowerCross,
+                        TileCrossMin(candidate.Tile))+.08f;
+                    var maximum=Mathf.Min(upperCross,
+                        TileCrossMax(candidate.Tile))-.08f;
+                    var positive=maximum-candidate.Cross;
+                    var negative=candidate.Cross-minimum;
+                    bool rise=positive>=.12f&&negative>=.12f?
+                        random.NextDouble()>=.5:positive>=negative;
+                    var room=rise?positive:negative;
+                    if(room<.12f)continue;
+                    var amplitude=Mathf.Min(.55f,
+                        Mathf.Min(span*.2f,room*.6f));
+                    amplitude*=Mathf.Lerp(.72f,1f,(float)random.NextDouble());
+                    var bend=candidate.Cross+(rise?amplitude:-amplitude);
+                    Add(entry,candidate.Cross);Add(entry,bend);
+                    Add(exit,bend);Add(exit,candidate.Cross);
+                }
+            }
+            Add(Along(logical[^1]),Cross(logical[^1]));
+            return result;
         }
 
         // Clip exact shared segments rather than generating or snapping per district.
