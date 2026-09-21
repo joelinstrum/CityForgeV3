@@ -7,7 +7,12 @@ namespace CityForgeV3.World
     public sealed class RiverBankAppearance
     {
         public const string ResourceRoot = "CityForgeV3/Water/River/BanksV1/";
-        public const string ShorelineResourceRoot = "CityForgeV3/Water/River/BanksV2/";
+        public const string ShorelineResourceRoot =
+            "CityForgeV3/Water/River/BanksV4/";
+        public const string SubmergedGravelResource =
+            "CityForgeV3/Water/River/BanksV4/submerged-gravel-light";
+        public const string OpenGravelResource =
+            "CityForgeV3/Water/River/BanksV4/open-gravel-light";
         public const float DetailMeters = 48f;
         public readonly float[] Bend;
         public float ShoreDistance { get; set; }

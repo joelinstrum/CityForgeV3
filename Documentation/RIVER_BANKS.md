@@ -1,3 +1,19 @@
+# V4 approved light shoreline
+
+On September 21 the user approved a shoreline direction in which deep blue
+water is the darkest value, clear cyan-blue shallows are lighter, and pale
+silver-gray gravel forms the dry bank without a brown or dark wet outline.
+`BanksV4` supplies three new, versioned derivatives: a natural shoreline, a
+sparser open-gravel alternate, and a uniform pale submerged-gravel bed. Runtime
+mapping, shader blending, bend variation, mesh geometry and water animation are
+unchanged. V1–V3 remain available for rollback.
+
+Exact generation prompts, output identifiers and mechanical processing are in
+`Documentation/ArtStudies/RiverBanksV04/README.md`. The approved concept is
+preserved beside that document.
+
+---
+
 # V3 refinement — less grass in the gravel
 
 The user endorsed the V2 direction, then requested fewer grass fingers and less grass/rock repetition. V3 retains the continuous 48m mapping and existing geometry. Its dominant alternate artwork is now `BanksV3/open-gravel.png`, an imagegen edit of `BanksV2/shoreline-gravel.png` that removes the three conspicuous sedge tufts and most descending grass. V2 sources are preserved.

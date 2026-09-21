@@ -1065,7 +1065,10 @@ namespace CityForgeV3.World
                 .ToArray();
             if (edgeVariants.Length > 0) edgeTexture = edgeVariants[0];
             var dirtTexture = Resources.Load<Texture2D>(RiverBedDirtResource);
-            var bankTexture = Resources.Load<Texture2D>(RiverBankAppearance.ShorelineResourceRoot + "shoreline") ?? Resources.Load<Texture2D>(RiverBankAppearance.ResourceRoot + "grass-pebbles");
+            var bankTexture = Resources.Load<Texture2D>(
+                RiverBankAppearance.ShorelineResourceRoot +
+                "shoreline-light") ?? Resources.Load<Texture2D>(
+                RiverBankAppearance.ResourceRoot + "grass-pebbles");
             var bankAppearance = bankTexture != null
                 ? new RiverBankAppearance(centerline, river.WidthMeters) { ShoreDistance = bedWidth * .5f } : null;
             var halfWidth = bedWidth * 0.5f;
@@ -1785,9 +1788,9 @@ namespace CityForgeV3.World
                 {
                     material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
                     material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
-                        RiverBankAppearance.ResourceRoot + "inside-gravel") ?? bandTexture);
+                        RiverBankAppearance.SubmergedGravelResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(
-                        "CityForgeV3/Water/River/BanksV3/open-gravel") ?? bandTexture);
+                        RiverBankAppearance.OpenGravelResource) ?? bandTexture);
                 }
                 if (material.HasProperty("_DistrictHalfSize"))
                     material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));

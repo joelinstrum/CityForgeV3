@@ -132,7 +132,12 @@ namespace CityForgeV3.Tests
         [Test]
         public void BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp()
         {
-            foreach (var name in new[] { "BanksV1/grass-pebbles", "BanksV1/inside-gravel", "BanksV1/outside-earth", "BanksV2/shoreline", "BanksV2/shoreline-gravel", "BanksV3/open-gravel" })
+            foreach (var name in new[] { "BanksV1/grass-pebbles",
+                         "BanksV1/inside-gravel", "BanksV1/outside-earth",
+                         "BanksV2/shoreline", "BanksV2/shoreline-gravel",
+                         "BanksV3/open-gravel", "BanksV4/shoreline-light",
+                         "BanksV4/open-gravel-light",
+                         "BanksV4/submerged-gravel-light" })
             {
                 var texture = Resources.Load<Texture2D>("CityForgeV3/Water/River/" + name);
                 Assert.That(texture, Is.Not.Null, name);
@@ -143,6 +148,62 @@ namespace CityForgeV3.Tests
             var shader = Shader.Find("CityForgeV3/RiverBankSurface");
             Assert.That(shader, Is.Not.Null);
             Assert.That(UnityEditor.ShaderUtil.ShaderHasError(shader), Is.False);
+        }
+
+        [Test]
+        public void LightV04BanksAreTheActiveRuntimeResources()
+        {
+            Assert.That(RiverBankAppearance.ShorelineResourceRoot,
+                Does.EndWith("/BanksV4/"));
+            Assert.That(Resources.Load<Texture2D>(
+                RiverBankAppearance.ShorelineResourceRoot +
+                "shoreline-light"), Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(
+                RiverBankAppearance.OpenGravelResource), Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(
+                RiverBankAppearance.SubmergedGravelResource), Is.Not.Null);
+        }
+
+        [Test]
+        public void RiverBankMaterialBindsAllThreeLightV04Textures()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "light-v04-bank-test",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 46f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .5f), new(1f, .5f)
+                }
+            });
+            var host = new GameObject("Light V04 bank material test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var material = host.GetComponentsInChildren<MeshRenderer>()
+                    .Select(renderer => renderer.sharedMaterial)
+                    .First(candidate => candidate.shader.name ==
+                        "CityForgeV3/RiverBankSurface");
+
+                Assert.That(material.mainTexture, Is.SameAs(Resources.Load<Texture2D>(
+                    RiverBankAppearance.ShorelineResourceRoot +
+                    "shoreline-light")));
+                Assert.That(material.GetTexture("_EarthTex"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.OpenGravelResource)));
+                Assert.That(material.GetTexture("_GravelTex"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.SubmergedGravelResource)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
         }
     }
 }
