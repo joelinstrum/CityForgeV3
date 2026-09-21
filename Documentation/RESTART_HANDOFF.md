@@ -1892,3 +1892,29 @@ unchanged. There are no extra samples, draw calls, meshes, allocations, scans,
 redraws, or rebuilds. An isolated focused suite passed 40/40 and a
 graphics-enabled six-family grove was inspected without shader errors.
 Evidence: `Documentation/Validation/flora-edge-shadow-v01/`.
+
+### September 21 — forest-cluster edge/shadow correction (supersedes preceding entry)
+
+The preceding flora entry diagnosed the wrong path: its fixture rendered
+individual trees, while the reported close view contained V03 multi-tree
+forest composites. The V03 edge artifact is their shared chromatic antialias
+fringe. Their dark bars came from a separate procedural shadow path using
+five/nine hard-coded trunk coordinates authored for older V01 compositions.
+The generic flora cutoff and projected-texture mip changes did not repair
+either cluster artifact and have been reverted.
+
+All forest clusters now use one soft directional footprint anchored to the
+composition root and scaled from the sprite bounds. It has no synthetic trunk
+rectangles or per-asset coordinates. V03 family composites share a 0.50
+coverage cutoff that removes their sub-half-coverage color fringe without
+recoloring foliage. Individual tree presentation is restored to its prior
+0.02 coverage contract; winter cluster art retains 0.12.
+
+The clean isolated district-flora suite passed 26/26. A graphics-enabled render
+of the actual large V03 deciduous, mountain, and tropical composites showed
+clean contours and feathered grounded shade without detached bars. Cluster
+shadow geometry is now 42 vertices instead of approximately 270–486, and each
+cluster update performs one terrain registration query instead of five/nine.
+The existing cached spatial cells and bounded time-of-day slices are unchanged;
+there is no per-frame scan, redraw, material walk, or player save. Evidence:
+`Documentation/Validation/flora-cluster-edge-shadow-v02/`.

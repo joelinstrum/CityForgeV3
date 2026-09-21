@@ -848,10 +848,7 @@ namespace CityForgeV3.World
                 // stones visibly submerged instead of pasted over the river.
                 renderQueue = (int)RenderQueue.AlphaTest
             };
-            // A two-percent cutout admitted the green RGB padding around
-            // transparent tree pixels. Keep antialiasing, but reject the
-            // low-coverage fringe for every district flora billboard.
-            _districtFloraMaterial.SetFloat("_Cutoff", 0.08f);
+            _districtFloraMaterial.SetFloat("_Cutoff", 0.02f);
             _districtFloraMaterial.SetFloat("_ZTest",
                 (float)CompareFunction.LessEqual);
             return _districtFloraMaterial;
@@ -865,10 +862,7 @@ namespace CityForgeV3.World
                 _districtFloraShadowMaterial = new Material(shader)
                 { name = "District Projected Flora Shadow" };
             _districtFloraShadowMaterial.shader = shader;
-            // Ground projections are strongly foreshortened. A firmer shared
-            // alpha threshold prevents coarse transparent mip coverage from
-            // turning a tree silhouette back into its rectangular source card.
-            _districtFloraShadowMaterial.SetFloat("_Cutoff", .12f);
+            _districtFloraShadowMaterial.SetFloat("_Cutoff", .02f);
             var shadowObject = new GameObject("District Flora Shadow");
             shadowObject.transform.SetParent(flora, false);
             var filter = shadowObject.AddComponent<MeshFilter>();
@@ -949,9 +943,9 @@ namespace CityForgeV3.World
                     return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
                 }, foot =>
                 {
-                    // Five bounded collider queries per cluster at build/update,
-                    // never per frame. Follow the camera ray through each trunk
-                    // so steep terrain cannot detach its shadow contact.
+                    // One bounded collider query per cluster at build/update,
+                    // never per frame. Register the composition's shared root
+                    // to the receiver so steep terrain cannot detach it.
                     var direction = visibleRenderer.transform.forward;
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);

@@ -71,8 +71,15 @@ namespace CityForgeV3.World
         {
             var properties = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(properties);
-            // Remove faint residual canopy alpha while keeping opaque winter wood.
-            properties.SetFloat("_Cutoff", renderer.sprite.texture.name.EndsWith("-winter") ? .12f : .08f);
+            string textureName = renderer.sprite.texture.name;
+            // V03 cluster art has a nearly opaque interior and a broad,
+            // chromatic antialias fringe. Clip that shared derivative family
+            // at half coverage; older seasonal and individual-tree art keeps
+            // its established threshold. This is one batch property per
+            // texture, not a per-tree material or update.
+            properties.SetFloat("_Cutoff",
+                ForestClusterCatalog.UsesDepthShadedCutout(textureName) ? .5f :
+                textureName.EndsWith("-winter") ? .12f : .02f);
             renderer.SetPropertyBlock(properties);
         }
 

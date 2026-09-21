@@ -181,7 +181,7 @@ public class DistrictFloraBatchesTests
         return r;
     }
     MeshRenderer[] Batches() => root.GetComponentsInChildren<MeshRenderer>().Where(r => r.name == "Flora batch").ToArray();
-    [Test] public void SharedFloraAndShadowCoverageRejectTransparentSourceCards()
+    [Test] public void SharedIndividualFloraKeepsEstablishedCutoutAndProjectedTexture()
     {
         var district = new RegionCityTile
         {
@@ -201,9 +201,9 @@ public class DistrictFloraBatchesTests
         var shadow = root.GetComponentsInChildren<MeshRenderer>(true)
             .Single(renderer => renderer.name == "Flora shadow batch");
         Assert.That(flora.sharedMaterial.GetFloat("_Cutoff"),
-            Is.EqualTo(.08f).Within(.001f));
+            Is.EqualTo(.02f).Within(.001f));
         Assert.That(shadow.sharedMaterial.GetFloat("_Cutoff"),
-            Is.EqualTo(.12f).Within(.001f));
+            Is.EqualTo(.02f).Within(.001f));
         var properties = new MaterialPropertyBlock();
         shadow.GetPropertyBlock(properties);
         var source = root.GetComponentsInChildren<SpriteRenderer>(true)
@@ -213,7 +213,7 @@ public class DistrictFloraBatchesTests
             "The batched projection must sample the tree cutout, not a white card.");
     }
     [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(4)]
-    public void ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(int variant)
+    public void ClusterShadowsUseOneArtworkRootAndSoftFootprint(int variant)
     {
         texture.name = ForestClusterCatalog.Id(variant) + "-summer";
         var tree = Tree(0); tree.transform.rotation = Quaternion.Euler(35, 45, 0);
@@ -224,7 +224,9 @@ public class DistrictFloraBatchesTests
         var contacts = new System.Collections.Generic.List<Vector3>();
         Assert.True(ForestClusterShadows.Update(tree, shadow, new Vector3(.3f,-1,.2f).normalized,
             _ => 0, foot => { contacts.Add(foot); foot.y = 0; return foot; }));
-        Assert.AreEqual(5, contacts.Distinct().Count());
+        Assert.AreEqual(1, contacts.Count,
+            "A cluster is one composition and must not use hidden per-tree coordinates.");
+        Assert.AreEqual(42, mesh.vertexCount);
         Assert.True(mesh.colors.Any(c => c.r == 0), "Feathered canopy boundary");
         Assert.True(mesh.colors.Any(c => c.r > .5f), "Visible shadow interior");
         Assert.True(mesh.vertices.All(v => Mathf.Abs(shadow.transform.TransformPoint(v).y - .031f) < .001f));
@@ -233,10 +235,9 @@ public class DistrictFloraBatchesTests
         {
             ForestClusterShadows.Update(tree, shadow, light, _ => 0, foot => { foot.y = 0; return foot; });
             var points = mesh.vertices.Select(shadow.transform.TransformPoint).ToArray();
-            // Per tree: 17 contact vertices, 4 trunk vertices, then canopy center/rings.
-            var center = points[21]; float area = 0;
-            for (int i=0;i<16;i++) area += Vector3.Cross(points[22+i]-center, points[22+(i+1)%16]-center).magnitude;
-            Assert.Greater(area, .01f, "Canopy must not collapse along the sun axis");
+            Assert.Greater(points.Max(p => p.x) - points.Min(p => p.x), .1f);
+            Assert.Greater(points.Max(p => p.z) - points.Min(p => p.z), .1f,
+                "Canopy must not collapse along the sun axis");
         }
         var first = mesh.vertices;
         ForestClusterShadows.Update(tree, shadow, new Vector3(-.3f,-1,-.2f).normalized,
@@ -304,7 +305,33 @@ public class DistrictFloraBatchesTests
             }
         }
     }
-    [Test] public void LargeFamilyClusterShadowsUseNineGroundContacts()
+    [Test] public void DepthShadedFamilyClustersUseOneSharedFringeCutoff()
+    {
+        var apply = typeof(DistrictWorldController).GetMethod(
+            "ApplyForestSeasonCutoff",
+            System.Reflection.BindingFlags.Static |
+            System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(apply);
+        var tree = Tree(0);
+        var block = new MaterialPropertyBlock();
+
+        texture.name = "forest-deciduous-large-summer";
+        apply.Invoke(null, new object[] { tree });
+        tree.GetPropertyBlock(block);
+        Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.5f).Within(.001f));
+        Assert.True(ForestClusterCatalog.UsesDepthShadedCutout(texture.name));
+
+        texture.name = "forest-deciduous-large-winter";
+        apply.Invoke(null, new object[] { tree });
+        tree.GetPropertyBlock(block);
+        Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.12f).Within(.001f));
+
+        texture.name = "forest-cluster-01-summer";
+        apply.Invoke(null, new object[] { tree });
+        tree.GetPropertyBlock(block);
+        Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.02f).Within(.001f));
+    }
+    [Test] public void LargeFamilyClusterShadowUsesOneSharedGroundContact()
     {
         texture.name = "forest-deciduous-large-winter";
         var tree = Tree(0);
@@ -314,7 +341,8 @@ public class DistrictFloraBatchesTests
         int contacts = 0;
         Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, _ => 0,
             p => { contacts++; p.y = 0; return p; }));
-        Assert.AreEqual(9, contacts);
+        Assert.AreEqual(1, contacts);
+        Assert.AreEqual(42, shadow.GetComponent<MeshFilter>().sharedMesh.vertexCount);
     }
     [Test] public void WinterShadowsRetainFirButOpenDeciduousCanopies()
     {
@@ -324,14 +352,15 @@ public class DistrictFloraBatchesTests
         var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
         item.AddComponent<DistrictFloraShadowMesh>(); var shadow = item.AddComponent<MeshRenderer>();
         ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0, p => new Vector3(p.x, 0, p.z));
-        int summerVertices = mesh.vertexCount;
+        float summerOpacity = mesh.colors.Max(color => color.r);
         texture.name = "forest-cluster-01-winter";
         int contacts = 0;
         Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0,
             p => { contacts++; return new Vector3(p.x, 0, p.z); }));
-        Assert.AreEqual(5, contacts); Assert.Less(mesh.vertexCount, summerVertices);
-        Assert.True(mesh.colors.Any(c => c.r == .8f), "Fir retains opaque canopy proxy");
-        Assert.True(mesh.colors.Any(c => c.r == .1f), "Bare branches and light contact shade");
+        Assert.AreEqual(1, contacts);
+        Assert.AreEqual(42, mesh.vertexCount);
+        Assert.Less(mesh.colors.Max(color => color.r), summerOpacity,
+            "Leafless compositions retain a lighter shared footprint.");
     }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {

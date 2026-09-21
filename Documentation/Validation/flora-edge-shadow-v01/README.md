@@ -1,5 +1,11 @@
 # Flora edge and projected-shadow validation v01
 
+> Superseded September 21, 2026 by
+> `Documentation/Validation/flora-cluster-edge-shadow-v02/`. This fixture
+> exercised individual tree sprites, while the reported defect was in the V03
+> multi-tree cluster path. Its diagnosis and visual acceptance claim must not
+> be used as evidence for forest clusters.
+
 Date: September 21, 2026
 
 ## Cause

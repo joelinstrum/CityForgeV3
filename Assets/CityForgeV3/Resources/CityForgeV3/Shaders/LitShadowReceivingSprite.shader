@@ -9,7 +9,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
         [PerRendererData] _ForestPalette ("District Forest Palette", Float) = 0
         [PerRendererData] _DistrictFloraBatch ("Camera-Facing Flora Batch", Float) = 0
         _Color ("Tint", Color) = (1, 1, 1, 1)
-        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.08
+        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
         [PerRendererData] _GroundFadeEnabled ("Ground Fade Enabled", Float) = 0
         [PerRendererData] _GroundY ("Ground Height", Float) = 0.02
         [PerRendererData] _GroundFadeWidth ("Ground Fade Width", Float) = 0.42

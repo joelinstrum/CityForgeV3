@@ -194,3 +194,26 @@ single alpha sample toward authored silhouette detail. This changes no source
 art, materials per tree, lighting colors, or persistence. The cached batch and
 bounded time-transition paths remain intact. Evidence:
 `Documentation/Validation/flora-edge-shadow-v01/`.
+
+## Forest-cluster correction — September 21, 2026
+
+The preceding flora diagnosis is superseded. It validated individual tree
+sprites, not the V03 multi-tree composites in the reported screenshot. V03
+clusters use a separate procedural shadow mesh, so generic texture-shadow mip
+changes could not affect their detached dark rectangles.
+
+Forest clusters now cast one root-anchored, bounds-scaled, feathered canopy
+footprint. The stale V01 five/nine-trunk coordinate tables and their opaque
+trunk quads are gone. V03 family composites share a 0.50 alpha-coverage
+threshold to reject their chromatic antialias fringe; individual trees are
+restored to the established 0.02 contract and winter cluster art remains at
+0.12. This is a texture-family batch property, not a tree/Lot override.
+
+The clean isolated cluster suite passed 26/26, and a graphics render of all
+three actual V03 large-family composites showed clean edges and soft attached
+shade without rectangular bars. Each cluster now contributes 42 shadow
+vertices rather than roughly 270–486 and performs one terrain registration
+query rather than five/nine when its local shadow is updated. Cached cells,
+bounded time changes, ordinary non-emissive surfaces, and manual-only
+persistence are unchanged. Evidence:
+`Documentation/Validation/flora-cluster-edge-shadow-v02/`.

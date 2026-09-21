@@ -32,6 +32,11 @@ namespace CityForgeV3.World
         public static bool IsTexture(string name) => name != null &&
             IsCluster(FloraTreeRepairs.Identity(name)) &&
             (name.EndsWith("-summer") || name.EndsWith("-autumn") || name.EndsWith("-winter"));
+        public static bool UsesDepthShadedCutout(string name) => name != null &&
+            name.EndsWith("-summer") &&
+            (name.StartsWith("forest-deciduous-") ||
+             name.StartsWith("forest-mountain-") ||
+             name.StartsWith("forest-tropical-"));
         public static SeasonPreset SeasonForIndex(int index) => (Mathf.Max(0, index) % 4) switch
         {
             1 => SeasonPreset.Autumn, 2 => SeasonPreset.Winter,
