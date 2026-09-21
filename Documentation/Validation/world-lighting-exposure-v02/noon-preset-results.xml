@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.1515225">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.151523" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2326" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.129639" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="64163" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2327" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.109189" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2328" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.090265" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1339" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="590" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.070303" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1640" name="NoonUsesHighHardSunWithoutWashoutExposure" fullname="CityForgeV3.Tests.UiFoundationTests.NoonUsesHighHardSunWithoutWashoutExposure" methodname="NoonUsesHighHardSunWithoutWashoutExposure" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1410100328" result="Passed" start-time="2026-09-20 23:21:05Z" end-time="2026-09-20 23:21:05Z" duration="0.010938" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-noon-exposure-v02.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

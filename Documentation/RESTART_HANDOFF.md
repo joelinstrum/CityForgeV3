@@ -1749,3 +1749,18 @@ graphics-enabled isolated run. The initial headless attempt at that projection
 test could not initialize an Editor window and is superseded by the passing
 graphics-enabled result. The open V3 editor was not driven or restarted, and
 CityForge-Regions-Review was not touched.
+
+### September 20 — latest Main lighting and forest integration
+
+Merged `origin/main` through `08a1e45` into the square-region branch. Main's
+new V03 depth-shaded forest artwork and catalog routing are retained unchanged.
+Its newer shared morning/noon/afternoon sun calibration (`0.62`, `0.64`, and
+`0.675`) supersedes the earlier branch values, while the branch's shared 0.98
+white-point bound, hybrid daylight exposure, nighttime emitters, and square
+region presets remain intact.
+
+The two conflicts were limited to the shared district-lighting values and their
+contract documentation. An isolated Unity project passed 51/51 focused
+EditMode checks: 8 lighting-contract, 24 district-flora, 14 region-flora, and
+5 region-size/noon checks. No player content was loaded or saved, the open V3
+editor was not driven or restarted, and CityForge-Regions-Review was not used.

@@ -12,6 +12,10 @@ City Forge has one environment-lighting owner per rendered world.
   routed through emission to compensate for scene lighting.
 - Custom artwork shaders read `_CFWorldAmbientColor`, `_CFWorldSunColor`, and
   `_CFWorldLightDirection`, published once when the world time changes.
+- Camera-facing artwork receives ambient plus the full directional intensity
+  because its quad normal is not a physical surface normal. The calibrated
+  shared values retain highlight headroom; noon currently totals approximately
+  `(0.96, 0.970, 0.978)` before texture multiplication.
 - Custom artwork illumination is hue-preservingly scaled only when its brightest
   channel would exceed the shared 0.98 display-white point. The calibrated sun
   budget keeps native 3D lighting in the same range; it does not add emission.
