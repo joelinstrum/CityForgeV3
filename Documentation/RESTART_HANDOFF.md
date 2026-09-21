@@ -1828,3 +1828,24 @@ pending transition, then verifies a later Afternoon change remains staged. No
 player content was loaded or saved, and neither the open editor nor
 CityForge-Regions-Review was driven. Evidence:
 `Documentation/Validation/lighting-stability-v01/`.
+
+### September 21 — garden lighting corrected at the family boundary
+
+The near-white picket material edit from the preceding entry was rejected as an
+asset-specific workaround and reverted. The picket keeps its authored
+`(0.78, 0.76, 0.68)` material tint.
+
+All native garden meshes now share one daylight-only post-light exposure in
+`GardenPropPBR`, bounded by the world's hue-preserving 0.98 white-point
+shoulder. District and standalone Lot environments publish the same value once
+per environment transition. This applies uniformly to pickets, hedges, edging,
+fountains, and other native garden meshes without changing their materials;
+sprite flowers/grass, terrain, and buildings are unaffected. Evening/Night stay
+neutral, ordinary surfaces remain non-emissive, and no per-frame or per-Lot
+work was added.
+
+Isolated validation passed 43/43 focused checks. Multi-family graphics captures
+confirmed a coordinated garden-mesh lift without changing billboard planting
+or ground presentation. The separate saved-preset-before-first-paint fix for
+tree shadows remains in place. Evidence:
+`Documentation/Validation/garden-family-lighting-v02/`.

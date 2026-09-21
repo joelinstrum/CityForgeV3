@@ -2,20 +2,15 @@
 
 Date: September 21, 2026
 
-## White garden paint
+## Superseded white-paint experiment
 
-The aged-white fence texture already supplies wood grain, gray wear, and paint
-variation. Its cached material additionally multiplied every pixel by
-`(0.78, 0.76, 0.68)`, preventing nominally white paint from reading white in
-district shade even after the garden meshes joined the shared indirect-lighting
-path. The one family material now uses `(0.98, 0.97, 0.92)`. This affects every
-composed aged-picket garden and is not stored in, or selected by, an individual
-Lot.
+The near-white picket-material change recorded by the original validation was
+rejected as an asset-specific workaround and reverted. The source material is
+again `(0.78, 0.76, 0.68)`. The valid replacement operates in the shared garden
+lighting shader and is documented in
+`Documentation/Validation/garden-family-lighting-v02/`.
 
-A graphics-enabled isolated Noon capture used the production full-cottage
-picket composition and `GardenPropPBR`. The fence reads white/ivory while the
-source wear, flower colors, and grass remain visible. Unity reported no shader
-or compiler errors.
+The first-frame flora-shadow work below remains valid and unchanged.
 
 ## Stable first flora paint
 

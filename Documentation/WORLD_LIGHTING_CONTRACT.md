@@ -23,10 +23,11 @@ City Forge has one environment-lighting owner per rendered world.
   highlight shoulder. Their registered shade and genuine night-light overlays
   remain separate, and dusk/full-night artwork is not daylight-lifted.
 - Native 3D building and garden-prop materials use one shared daylight-only
-  indirect-diffuse scale. This keeps camera-facing shaded facades and small
-  garden meshes as readable and colorful as directional-render artwork without
-  changing source albedo, direct highlights, terrain, or billboard art.
-  Evening and night use the neutral scale.
+  indirect-diffuse scale. Garden meshes additionally share one family-wide
+  daylight exposure followed by the world's hue-preserving 0.98 white-point
+  shoulder. This keeps small shaded meshes readable and colorful without
+  changing any asset's source albedo, direct lighting, terrain, or billboard
+  art. Evening and night use neutral scales.
 - Roads, rivers, Lot ground, decals, flora, and garden artwork do not have local
   night tints, light floors, sun directions, or time-of-day brightness controls.
 - Emission and local lights are opt-in effects for actual emitters: windows,
@@ -41,7 +42,8 @@ incremental and do not rebuild a district.
 
 `DistrictWorldController.ApplyRegionEnvironment` republishes the contract when
 the district time changes or its environment is initialized. A standalone
-`LotWorldController` republishes it after updating its own preview sun. Loading,
+`LotWorldController` republishes the same representation-family values after
+updating its own preview sun. Loading,
 district entry, and editor preview construction already pass through one of
 those boundaries. District construction publishes the saved preset before any
 terrain, flora shadow, or Lot presentation derives lighting state; applying the

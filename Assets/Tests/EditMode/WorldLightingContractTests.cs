@@ -33,6 +33,9 @@ namespace CityForgeV3.Tests.EditMode
                     "_CFNativeSurfaceIndirectScale"),
                 Is.EqualTo(1f).Within(.001f),
                 "Night must not lift ordinary native-surface albedo.");
+            Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
+                Is.EqualTo(1f).Within(.001f),
+                "Night must not apply the daylight garden exposure.");
         }
 
         [Test]
@@ -107,12 +110,27 @@ namespace CityForgeV3.Tests.EditMode
                 TimeOfDayPreset.Evening), Is.EqualTo(1f));
             Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
                 TimeOfDayPreset.Night), Is.EqualTo(1f));
+            foreach (var preset in new[]
+                     {
+                         TimeOfDayPreset.Morning,
+                         TimeOfDayPreset.Noon,
+                         TimeOfDayPreset.Afternoon
+                     })
+                Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                    preset), Is.EqualTo(1.3f).Within(.001f),
+                    preset.ToString());
+            Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f).Within(.001f));
+            Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f).Within(.001f));
 
             DistrictWorldController.ApplyRegionEnvironment(
                 TimeOfDayPreset.Noon, null);
             Assert.That(Shader.GetGlobalFloat(
                     "_CFNativeSurfaceIndirectScale"),
                 Is.EqualTo(2.5f).Within(.001f));
+            Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
+                Is.EqualTo(1.3f).Within(.001f));
 
             var source = File.ReadAllText(Path.Combine(Application.dataPath,
                 "CityForgeV3/Resources/CityForgeV3/Shaders/" +
@@ -130,6 +148,8 @@ namespace CityForgeV3.Tests.EditMode
                 "CityForgeV3/Resources/CityForgeV3/Shaders/GardenPropPBR.shader"));
             StringAssert.Contains("LightingStandardGarden_GI", gardenSource);
             StringAssert.Contains("_CFNativeSurfaceIndirectScale", gardenSource);
+            StringAssert.Contains("_CFGardenSurfaceExposure", gardenSource);
+            StringAssert.Contains("_CFWorldWhitePoint", gardenSource);
             StringAssert.Contains("output.Emission = 0", gardenSource);
         }
 

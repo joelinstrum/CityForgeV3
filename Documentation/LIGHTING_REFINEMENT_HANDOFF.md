@@ -143,3 +143,25 @@ district-environment checks. The initial Morning shadow batch contains the exact
 Morning sun ray and has no pending transition. A graphics-enabled Noon capture
 confirmed white/ivory pickets with source grain and colorful planting intact.
 Evidence: `Documentation/Validation/lighting-stability-v01/`.
+
+## Garden-family correction — September 21, 2026
+
+The preceding picket material-tint change was rejected as an asset-specific
+lighting workaround and has been reverted. The aged-picket material is back to
+its authored `(0.78, 0.76, 0.68)` tint, and no garden asset receives a white or
+ivory override.
+
+Instead, every native garden mesh now receives one shared daylight exposure in
+`GardenPropPBR`, after Standard direct/indirect lighting and before a
+hue-preserving 0.98 display-white shoulder. The district and standalone Lot
+world owners publish the same cached value at environment changes. Pickets,
+hedges, edging, fountains, and other native garden meshes therefore share the
+correction; sprite flowers and grass, terrain, buildings, and source materials
+are untouched. Evening and Night remain at 1.0, and ordinary surfaces remain
+non-emissive.
+
+The isolated focused suite passed 43/43. A graphics comparison covered two
+picket compositions, boxwood, clipped hedges, and square/rectangular Georgian
+beds. Native garden colors lifted together while billboard planting and the
+ground stayed unchanged. Evidence:
+`Documentation/Validation/garden-family-lighting-v02/`.

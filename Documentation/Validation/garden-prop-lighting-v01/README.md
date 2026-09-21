@@ -36,7 +36,7 @@ unchanged. Unity reported no compiler or shader errors. The fixture did not load
 or save player Lot, district, or region content; the open editor was not driven,
 and CityForge-Regions-Review was not used.
 
-September 21 follow-up: the lighting path was correct, but the aged-picket
-material still applied a family-wide 0.78 gray tint on top of an already
-weathered texture. That tint is now near-white ivory. See
-`Documentation/Validation/lighting-stability-v01/`.
+September 21 correction: the attempted near-white picket-material tint was
+rejected and reverted because it treated one asset rather than the garden
+lighting family. The replacement is a shared garden-surface lighting response.
+See `Documentation/Validation/garden-family-lighting-v02/`.

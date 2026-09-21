@@ -6310,6 +6310,10 @@ namespace CityForgeV3.World
                     RenderSettings.ambientLight, _sun.color, _sun.intensity,
                     _sun.transform.rotation,
                     DistrictWorldController.HybridArtworkExposureFor(
+                        TimeOfDay),
+                    DistrictWorldController.NativeSurfaceIndirectScaleFor(
+                        TimeOfDay),
+                    DistrictWorldController.GardenSurfaceExposureFor(
                         TimeOfDay));
             }
 

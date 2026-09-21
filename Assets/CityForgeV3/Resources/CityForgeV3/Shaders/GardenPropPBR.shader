@@ -33,6 +33,8 @@ Shader "CityForgeV3/GardenPropPBR"
         half _Metallic;
         half _Glossiness;
         half _CFNativeSurfaceIndirectScale;
+        half _CFGardenSurfaceExposure;
+        half _CFWorldWhitePoint;
 
         struct Input
         {
@@ -43,7 +45,15 @@ Shader "CityForgeV3/GardenPropPBR"
         half4 LightingStandardGarden(SurfaceOutputStandard surface,
             half3 viewDirection, UnityGI lighting)
         {
-            return LightingStandard(surface, viewDirection, lighting);
+            half4 lit = LightingStandard(surface, viewDirection, lighting);
+            half exposure = max(1.0h, _CFGardenSurfaceExposure);
+            half3 exposed = max(0, lit.rgb * exposure);
+            half peak = max(exposed.r, max(exposed.g, exposed.b));
+            half whitePoint = _CFWorldWhitePoint > 0.01h
+                ? _CFWorldWhitePoint : 0.98h;
+            lit.rgb = exposed * min(1.0h,
+                whitePoint / max(peak, 0.0001h));
+            return lit;
         }
 
         void LightingStandardGarden_GI(SurfaceOutputStandard surface,

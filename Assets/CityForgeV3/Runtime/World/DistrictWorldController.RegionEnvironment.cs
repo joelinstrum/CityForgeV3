@@ -17,6 +17,8 @@ namespace CityForgeV3.World
             Shader.PropertyToID("_CFHybridArtworkExposure");
         private static readonly int NativeSurfaceIndirectScaleId =
             Shader.PropertyToID("_CFNativeSurfaceIndirectScale");
+        private static readonly int GardenSurfaceExposureId =
+            Shader.PropertyToID("_CFGardenSurfaceExposure");
 
         public const float WorldWhitePoint = .98f;
 
@@ -56,6 +58,18 @@ namespace CityForgeV3.World
             _ => 1f
         };
 
+        public static float GardenSurfaceExposureFor(
+            TimeOfDayPreset preset) => preset switch
+        {
+            // Native garden meshes share one post-light response so their
+            // authored pale and saturated colors survive district shade. The
+            // display-white shoulder prevents bright surfaces from clipping.
+            TimeOfDayPreset.Morning => 1.3f,
+            TimeOfDayPreset.Noon => 1.3f,
+            TimeOfDayPreset.Afternoon => 1.3f,
+            _ => 1f
+        };
+
         public static void ApplyRegionEnvironment(TimeOfDayPreset preset, Light sun)
         {
             var spec = TimeOfDayLighting.For(preset);
@@ -74,7 +88,8 @@ namespace CityForgeV3.World
             ApplyWorldShaderLighting(spec.AmbientColor, sunColor,
                 sunIntensity, sunRotation,
                 HybridArtworkExposureFor(preset),
-                NativeSurfaceIndirectScaleFor(preset));
+                NativeSurfaceIndirectScaleFor(preset),
+                GardenSurfaceExposureFor(preset));
             if (sun == null) return;
             sun.transform.rotation = sunRotation;
             sun.color = sunColor;
@@ -86,7 +101,8 @@ namespace CityForgeV3.World
         public static void ApplyWorldShaderLighting(Color ambientColor,
             Color sunColor, float sunIntensity, Quaternion sunRotation,
             float hybridArtworkExposure = 1f,
-            float nativeSurfaceIndirectScale = 1f)
+            float nativeSurfaceIndirectScale = 1f,
+            float gardenSurfaceExposure = 1f)
         {
             var directionToSun = -(sunRotation * Vector3.forward).normalized;
             Shader.SetGlobalColor(WorldAmbientColorId, ambientColor);
@@ -98,6 +114,8 @@ namespace CityForgeV3.World
                 Mathf.Max(0f, hybridArtworkExposure));
             Shader.SetGlobalFloat(NativeSurfaceIndirectScaleId,
                 Mathf.Max(0f, nativeSurfaceIndirectScale));
+            Shader.SetGlobalFloat(GardenSurfaceExposureId,
+                Mathf.Max(0f, gardenSurfaceExposure));
         }
 
         public static Color BoundWorldIllumination(Color illumination)
