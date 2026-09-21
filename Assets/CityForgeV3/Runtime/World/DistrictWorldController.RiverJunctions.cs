@@ -12,11 +12,29 @@ namespace CityForgeV3.World
         private void MergeRiverJunctions(RegionCityTile district)
         {
             var filters = _riverRoot.GetComponentsInChildren<MeshFilter>();
-            var waters = filters.Where(f => f.name.StartsWith("River Water — ")).ToArray();
+            var widths = district.Rivers
+                .Where(river => river != null &&
+                                !string.IsNullOrWhiteSpace(river.InstanceId))
+                .GroupBy(river => river.InstanceId)
+                .ToDictionary(group => group.Key,
+                    group => group.Max(river => river.WidthMeters));
+            string RiverId(MeshFilter filter) =>
+                filter.name.Substring("River Water — ".Length);
+            float RiverWidth(MeshFilter filter) =>
+                widths.TryGetValue(RiverId(filter), out var width)
+                    ? width
+                    : filter.sharedMesh.bounds.size.x;
+            // A wider river owns the shared water footprint. Tributaries are
+            // cut beneath it irrespective of serialization/generation order.
+            var waters = filters
+                .Where(f => f.name.StartsWith("River Water — "))
+                .OrderByDescending(RiverWidth)
+                .ThenBy(RiverId)
+                .ToArray();
             var footprints = waters.Select(f => RiverMeshUnion.Footprint(f.sharedMesh)).ToArray();
             for (int i = 0; i < waters.Length; i++)
             {
-                var suffix = waters[i].name.Substring("River Water — ".Length);
+                var suffix = RiverId(waters[i]);
                 var others = new List<RiverMeshUnion.Quad>();
                 var earlier = new List<RiverMeshUnion.Quad>();
                 for (int j = 0; j < waters.Length; j++)
@@ -25,7 +43,11 @@ namespace CityForgeV3.World
                     others.AddRange(footprints[j]);
                     if (j < i) earlier.AddRange(footprints[j]);
                 }
-                RiverMeshUnion.Subtract(waters[i].sharedMesh, earlier, others);
+                var junctionFade = earlier.Count == 0
+                    ? 0f
+                    : Mathf.Clamp(RiverWidth(waters[i]) * .65f, 6f, 18f);
+                RiverMeshUnion.Subtract(waters[i].sharedMesh, earlier, others,
+                    junctionFade);
                 foreach (var filter in filters)
                     if (filter != waters[i] && filter.name.EndsWith("— " + suffix)
                         && filter.sharedMesh.bounds.max.y >= waters[i].sharedMesh.bounds.center.y)
@@ -57,6 +79,19 @@ namespace CityForgeV3.World
                 float right=DistanceLine(p,Points[2],Points[3]);
                 return Mathf.Clamp01(2*Mathf.Min(left,right)/Mathf.Max(.001f,left+right));
             }
+            public float Distance(Vector2 p)
+            {
+                var inside = Bounds.Contains(p);
+                for (int i = 0; inside && i < 4; i++)
+                    inside = Cross(Points[(i + 1) % 4] - Points[i],
+                        p - Points[i]) >= 0;
+                if (inside) return 0f;
+                var distance = float.PositiveInfinity;
+                for (int i = 0; i < 4; i++)
+                    distance = Mathf.Min(distance, DistanceSegment(p,
+                        Points[i], Points[(i + 1) % 4]));
+                return distance;
+            }
         }
         sealed class SpatialIndex
         {
@@ -84,6 +119,15 @@ namespace CityForgeV3.World
                     foreach(var q in list)depth=Mathf.Max(depth,q.Depth(p));
                 return depth;
             }
+            public float Distance(Vector2 p,float maximum)
+            {
+                if(maximum<=0)return maximum;
+                float distance=maximum;
+                var extent=Vector2.one*maximum;
+                foreach(var q in Query(new Rect(p-extent,extent*2f)))
+                    distance=Mathf.Min(distance,q.Distance(p));
+                return distance;
+            }
         }
         struct Vertex
         {
@@ -93,6 +137,14 @@ namespace CityForgeV3.World
         static Vector2 XZ(Vector3 p)=>new(p.x,p.z);
         static float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
         static float DistanceLine(Vector2 p,Vector2 a,Vector2 b)=>Mathf.Abs(Cross(b-a,p-a))/Mathf.Max(.001f,(b-a).magnitude);
+        static float DistanceSegment(Vector2 p,Vector2 a,Vector2 b)
+        {
+            var segment=b-a;
+            var lengthSquared=segment.sqrMagnitude;
+            if(lengthSquared<.000001f)return Vector2.Distance(p,a);
+            var t=Mathf.Clamp01(Vector2.Dot(p-a,segment)/lengthSquared);
+            return Vector2.Distance(p,a+segment*t);
+        }
         public static List<Quad> Footprint(Mesh mesh)
         {
             var v=mesh.vertices;var result=new List<Quad>();
@@ -146,7 +198,8 @@ namespace CityForgeV3.World
             mesh.RecalculateNormals();mesh.RecalculateBounds();
         }
 
-        public static void Subtract(Mesh mesh,List<Quad> masks,List<Quad> depthMasks)
+        public static void Subtract(Mesh mesh,List<Quad> masks,
+            List<Quad> depthMasks,float fadeDistance=0f)
         {
             if(masks.Count==0&&(depthMasks==null||depthMasks.Count==0))return;
             var cutIndex=new SpatialIndex(masks);var depthIndex=new SpatialIndex(depthMasks);
@@ -187,6 +240,12 @@ namespace CityForgeV3.World
                         {
                             var color=v.C;
                             if(depthMasks!=null)color.r=Mathf.Max(color.r,depthIndex.Depth(XZ(v.P)));
+                            if(fadeDistance>0f&&masks.Count>0)
+                            {
+                                var distance=cutIndex.Distance(XZ(v.P),fadeDistance);
+                                var normalized=Mathf.Clamp01(distance/fadeDistance);
+                                color.a*=normalized*normalized*(3f-2f*normalized);
+                            }
                             vertices.Add(v.P);tex.Add(v.UV);flows.Add(v.Flow);tint.Add(color);
                         }
                         for(int k=1;k<fragment.Count-1;k++)

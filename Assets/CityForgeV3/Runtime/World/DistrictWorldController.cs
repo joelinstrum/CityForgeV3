@@ -92,15 +92,15 @@ namespace CityForgeV3.World
         [SerializeField, Range(0f, 1f), InspectorName("Center Opacity")]
         private float _waterOpacity = 0.72f;
         [SerializeField, Range(0f, 1f), InspectorName("Edge Opacity")]
-        private float _waterEdgeOpacity = 0.08f;
+        private float _waterEdgeOpacity = 0.28f;
         [SerializeField, Range(0.05f, 0.45f), InspectorName("Edge Fade Width")]
-        private float _waterEdgeFadeWidth = 0.22f;
+        private float _waterEdgeFadeWidth = 0.14f;
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Start")]
         private float _deepWaterStart = 0.24f;
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Strength")]
         private float _deepWaterStrength = 0.42f;
         [SerializeField, Range(0.02f, 1f), InspectorName("Depth Blend Softness")]
-        private float _depthBlendSoftness = 0.56f;
+        private float _depthBlendSoftness = 0.34f;
         [SerializeField, Min(0.25f), InspectorName("Water Texture Tiling")]
         private float _waterTextureTiling = 30f;
         [SerializeField, InspectorName("Water Tint")]

@@ -213,6 +213,9 @@ namespace CityForgeV3.Tests
                 Assert.That(world.WaterTextureTiling, Is.EqualTo(30f));
                 Assert.That(world.DeepWaterStrength, Is.EqualTo(.42f));
                 Assert.That(world.WaterBrightness, Is.EqualTo(1.16f));
+                Assert.That(world.WaterEdgeOpacity, Is.EqualTo(.28f));
+                Assert.That(world.WaterEdgeFadeWidth, Is.EqualTo(.14f));
+                Assert.That(world.DepthBlendSoftness, Is.EqualTo(.34f));
                 world.RebuildEntireDistrict(district,
                     DistrictBulkRebuildReason.TestFixture);
 
@@ -240,6 +243,57 @@ namespace CityForgeV3.Tests
                     Assert.That(material.GetFloat("_WhitecapCoverage"),
                         Is.EqualTo(.72f).Within(.0001f));
                 }
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void WiderRiverOwnsJunctionAndTributaryFadesRegardlessOfOrder()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "small-first",
+                Direction = DistrictRiverDirection.NorthToSouth,
+                Depth = DistrictRiverDepth.Shallow,
+                WidthMeters = 18f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(.5f, 1f), new(.5f, 0f)
+                }
+            });
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "major-second",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 54f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .5f), new(1f, .5f)
+                }
+            });
+            var host = new GameObject("Width-owned river junction test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var waters = host.GetComponentsInChildren<MeshFilter>()
+                    .Where(filter => filter.name.StartsWith("River Water — "))
+                    .ToArray();
+                var small = waters.Single(filter =>
+                    filter.name.EndsWith("small-first"));
+                var major = waters.Single(filter =>
+                    filter.name.EndsWith("major-second"));
+
+                Assert.That(small.sharedMesh.colors.Any(color => color.a < .99f),
+                    Is.True, "The smaller river must fade into the major.");
+                Assert.That(major.sharedMesh.colors.All(color => color.a > .999f),
+                    Is.True, "The widest river must retain junction ownership.");
             }
             finally
             {

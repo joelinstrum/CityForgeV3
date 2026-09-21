@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using CityForgeV3.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -72,6 +73,40 @@ namespace CityForgeV3.Tests
                     Assert.That(mesh.uv2[i].x, Is.EqualTo(mesh.vertices[i].x * .5f).Within(.00001f));
                     Assert.That(mesh.uv2[i].y, Is.EqualTo(mesh.vertices[i].z).Within(.00001f));
                 }
+            }
+            finally { Object.DestroyImmediate(mesh); }
+        }
+
+        [Test]
+        public void JunctionSubtractionFadesTributaryAlphaTowardOwner()
+        {
+            var mesh = new Mesh();
+            try
+            {
+                mesh.vertices = new[]
+                {
+                    new Vector3(-2, 0, -1), new Vector3(2, 0, -1),
+                    new Vector3(2, 0, 1), new Vector3(-2, 0, 1)
+                };
+                mesh.uv = new[] { Vector2.zero, Vector2.right,
+                    Vector2.one, Vector2.up };
+                mesh.uv2 = new[] { Vector2.right, Vector2.right,
+                    Vector2.right, Vector2.right };
+                mesh.colors = new[] { Color.white, Color.white,
+                    Color.white, Color.white };
+                mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+                RiverMeshUnion.Subtract(mesh, new()
+                {
+                    new(new(-.25f, -2), new(.25f, -2),
+                        new(.25f, 2), new(-.25f, 2))
+                }, null, 1f);
+
+                Assert.That(mesh.colors.Any(color => color.a < .001f),
+                    Is.True, "The clipped confluence edge must be transparent.");
+                Assert.That(mesh.colors.Any(color => color.a > .999f),
+                    Is.True, "Water beyond the fade must remain opaque.");
+                Assert.That(mesh.colors.All(color => color.r > .999f),
+                    Is.True, "Junction alpha must not overwrite depth red.");
             }
             finally { Object.DestroyImmediate(mesh); }
         }
