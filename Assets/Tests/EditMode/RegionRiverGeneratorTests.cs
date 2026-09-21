@@ -9,20 +9,36 @@ public class RegionRiverGeneratorTests
     static RegionSaveData Region() => new RegionSaveData { Width=8,Height=8,Tiles=new List<RegionCityTile> {
         new RegionCityTile{TileId="south",X=0,Y=0,Width=8,Height=4},
         new RegionCityTile{TileId="north",X=0,Y=4,Width=8,Height=4}}};
-    [Test] public void CountsSeedAndStreamJunctionsAreDeterministic()
+    [Test] public void CountsWidthsDirectionsAndSeedAreDeterministic()
     {
         var r=Region();var settings=new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Many};
         var paths=RegionRiverGenerator.Generate(r,settings,42);
-        Assert.That(paths.Count,Is.EqualTo(12));
+        Assert.That(paths.Count,Is.EqualTo(6));
+        Assert.That(paths.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
+        Assert.That(paths.Single(path=>path.Depth==DistrictRiverDepth.Deep).WidthMeters,Is.InRange(144f,228f));
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),Is.EqualTo(3));
+        Assert.That(paths.Count(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),Is.EqualTo(3));
+        AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.WestToEast),true);
+        AssertSeparated(paths.Where(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth),false);
         RegionRiverGenerator.Apply(r,paths);var before=JsonUtility.ToJson(r);
         RegionRiverGenerator.Apply(r,RegionRiverGenerator.Generate(r,settings,42));
         Assert.That(JsonUtility.ToJson(r),Is.EqualTo(before));
-        foreach(var stream in paths.Skip(2))
-        {
-            var end=stream.Points.Last();
-            Assert.That(paths.Where(main=>main!=stream).Any(main=>main.Points.Any(p=>Mathf.Abs(p.X-end.X)<.00001f&&Mathf.Abs(p.Z-end.Z)<.00001f)),Is.True);
-        }
-        Assert.That(RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Many,Streams=RegionWaterAmount.Few},42).Count,Is.EqualTo(9));
+        var legacyMany=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Many,Streams=RegionWaterAmount.Few},42);
+        Assert.That(legacyMany.Count,Is.EqualTo(3));
+        Assert.That(legacyMany.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
+    }
+    [Test] public void ThreeRiversUseSeparateCorridorsAndHitDistrictCenters()
+    {
+        var r=Region();var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Few},1785);
+        Assert.That(paths.Count,Is.EqualTo(3));
+        Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(DistrictRiverDirection.WestToEast));
+        Assert.That(RegionRiverGenerator.DirectionOf(paths[1]),Is.EqualTo(DistrictRiverDirection.WestToEast));
+        Assert.That(RegionRiverGenerator.DirectionOf(paths[2]),Is.EqualTo(DistrictRiverDirection.NorthToSouth));
+        Assert.That(paths[0].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.True);
+        Assert.That(paths[1].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-6)<.0001f),Is.True);
+        Assert.That(paths[2].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.True);
+        Assert.That(paths[2].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-6)<.0001f),Is.True);
+        Assert.That(paths[0].Points.Max(point=>point.Z),Is.LessThan(paths[1].Points.Min(point=>point.Z)));
     }
     [Test] public void SharedDistrictBoundaryMatchesAndReloadPreservesPaths()
     {
@@ -75,5 +91,12 @@ public class RegionRiverGeneratorTests
         var sections=RegionRiverGenerator.Sections(tile,new[]{path});
         Assert.That(sections.Count,Is.EqualTo(2));
         foreach(var section in sections)foreach(var p in section.Points){Assert.That(p.X,Is.InRange(0f,1f));Assert.That(p.Z,Is.InRange(0f,1f));}
+    }
+
+    static void AssertSeparated(IEnumerable<RegionRiverPath> paths,bool horizontal)
+    {
+        var ranges=paths.Select(path=>(Minimum:path.Points.Min(point=>horizontal?point.Z:point.X),Maximum:path.Points.Max(point=>horizontal?point.Z:point.X))).OrderBy(range=>range.Minimum).ToArray();
+        for(int index=1;index<ranges.Length;index++)
+            Assert.That(ranges[index-1].Maximum,Is.LessThan(ranges[index].Minimum),"Parallel river corridors must not intersect.");
     }
 }

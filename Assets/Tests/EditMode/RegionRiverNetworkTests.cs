@@ -8,17 +8,13 @@ public class RegionRiverNetworkTests
 {
     RegionSaveData Region()=>new RegionSaveData{Width=28,Height=20,Tiles=new List<RegionCityTile>{new(){TileId="south",Width=28,Height=10},new(){TileId="north",Y=10,Width=28,Height=10}}};
     [TestCase(1)][TestCase(1785)][TestCase(994)][TestCase(26)]
-    public void NetworkUsesRoundedCardinalStairsAndConnectedSegments(int seed)
+    public void NetworkUsesRoundedCenterSeekingRivers(int seed)
     {
         var r=Region();var settings=new RegionTerrainSettings{Streams=RegionWaterAmount.Few};
         var paths=RegionRiverGenerator.Generate(r,settings,seed);
-        Assert.That(paths.Count,Is.EqualTo(4));
-        for(int n=1;n<paths.Count;n++)
-        {
-            var end=paths[n].Points.Last();
-            Assert.That(paths.Take(n).Any(parent=>parent.Points.Any(p=>Mathf.Abs(p.X-end.X)<.0001f&&Mathf.Abs(p.Z-end.Z)<.0001f)),Is.True,"branch must terminate on earlier river");
-            Assert.That(paths[n].Points.Count,Is.GreaterThan(1));
-        }
+        Assert.That(paths.Count,Is.EqualTo(2));
+        Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(DistrictRiverDirection.WestToEast));
+        Assert.That(RegionRiverGenerator.DirectionOf(paths[1]),Is.EqualTo(DistrictRiverDirection.NorthToSouth));
         var lengths=paths.Select(p=>p.Points.Zip(p.Points.Skip(1),(a,b)=>Vector2.Distance(new(a.X,a.Z),new(b.X,b.Z))).Sum()).ToArray();
         Assert.That(lengths.Min(),Is.GreaterThan(.05f));
         Assert.That(lengths.Max()-lengths.Min(),Is.GreaterThan(1));
@@ -32,29 +28,32 @@ public class RegionRiverNetworkTests
         Assert.That(trunk.Points.Count,Is.GreaterThan(4));
         AssertRoundedTrunk(trunk);
     }
-    [TestCase(RegionRiverFlow.WestToEast,DistrictRiverDirection.WestToEast)]
-    [TestCase(RegionRiverFlow.EastToWest,DistrictRiverDirection.EastToWest)]
-    [TestCase(RegionRiverFlow.NorthToSouth,DistrictRiverDirection.NorthToSouth)]
-    [TestCase(RegionRiverFlow.SouthToNorth,DistrictRiverDirection.SouthToNorth)]
-    public void ExplicitDirectionMatchesCoordinatesAndDistrictMetadata(RegionRiverFlow flow,DistrictRiverDirection expected)
+    [TestCase(RegionRiverFlow.WestToEast)]
+    [TestCase(RegionRiverFlow.EastToWest)]
+    [TestCase(RegionRiverFlow.NorthToSouth)]
+    [TestCase(RegionRiverFlow.SouthToNorth)]
+    public void LegacyFlowChoiceDoesNotOverrideFixedDirections(RegionRiverFlow flow)
     {
-        var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Few,Flow=flow},3);
-        Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(expected));
+        var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Few,Flow=flow},3);
+        CollectionAssert.AreEqual(new[]{DistrictRiverDirection.WestToEast,DistrictRiverDirection.WestToEast,DistrictRiverDirection.NorthToSouth},paths.Select(RegionRiverGenerator.DirectionOf));
+        Assert.That(paths.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
+        Assert.That(paths[0].WidthMeters,Is.InRange(144f,228f));
         AssertRoundedTrunk(paths[0]);
         RegionRiverGenerator.Apply(r,paths);
-        foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==paths[0].Id))
+        foreach(var path in paths)foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==path.Id))
         {
-            Assert.That(section.Direction,Is.EqualTo(expected));
+            Assert.That(section.Direction,Is.EqualTo(RegionRiverGenerator.DirectionOf(path)));
             foreach(var pair in section.Points.Zip(section.Points.Skip(1),(a,b)=>(a,b)))
                 Assert.That(new Vector2(pair.a.X-pair.b.X,pair.a.Z-pair.b.Z).sqrMagnitude,Is.GreaterThan(.000000001f));
         }
     }
     [Test] public void BorderClippingDoesNotRotateTheRiver()
     {
-        var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Many,Flow=RegionRiverFlow.SouthToNorth},42);
+        var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Few},42);
+        var vertical=paths.Single(path=>RegionRiverGenerator.DirectionOf(path)==DistrictRiverDirection.NorthToSouth);
         RegionRiverGenerator.Apply(r,paths);
         int crossings=0;
-        foreach(var lower in r.Tiles[0].Rivers)foreach(var point in lower.Points.Where(p=>Mathf.Abs(p.Z-1)<.00001f))
+        foreach(var lower in r.Tiles[0].Rivers.Where(path=>path.RegionRiverId==vertical.Id))foreach(var point in lower.Points.Where(p=>Mathf.Abs(p.Z-1)<.00001f))
         {
             var matches=r.Tiles[1].Rivers.Where(p=>p.RegionRiverId==lower.RegionRiverId).SelectMany(p=>p.Points).Where(p=>Mathf.Abs(p.Z)<.00001f);
             Assert.That(matches.Any(p=>Mathf.Abs(p.X-point.X)<.00001f),Is.True);crossings++;

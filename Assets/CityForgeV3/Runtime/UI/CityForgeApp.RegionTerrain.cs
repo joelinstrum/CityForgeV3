@@ -18,6 +18,8 @@ namespace CityForgeV3.UI
             var saved = region.Terrain ?? new RegionTerrainSettings();
             var draft = saved.Copy();
             draft.Flow = RegionRiverFlow.Varied;
+            if (draft.DeepRivers != RegionWaterAmount.None)
+                draft.DeepRivers = RegionWaterAmount.Few;
             var category = initialCategory;
             bool busy = false, cancelled = false;
             var panel = CreateDocumentModal("REGION TERRAIN", "Choose terrain options for " + region.Name + ".");
@@ -184,10 +186,13 @@ namespace CityForgeV3.UI
                 {
                     content.Add(StyledLabel(category + " options will be added in a later pass.", "document-modal-copy")); return;
                 }
-                content.Add(StyledLabel("Choose one amount per type. Leave both unchecked for none.", "document-modal-copy"));
-                AddRegionWaterChoices(content, "deep-rivers", "A few deep rivers", "Many deep rivers", draft.DeepRivers, value => draft.DeepRivers = value);
-                AddRegionWaterChoices(content, "streams", "A few streams", "Many streams", draft.Streams, value => draft.Streams = value);
-                content.Add(StyledLabel("Few: 2 deep rivers or 4 streams. Many: 5 deep rivers or 10 streams. Rivers and streams form connected branches with varied bends. Generation replaces this tool’s rivers; manually placed rivers stay. Each generation chooses a fresh placement.", "inspector-note"));
+                content.Add(StyledLabel("Choose a major river and an amount of small rivers. Leave both unchecked for none.", "document-modal-copy"));
+                AddRegionWaterChoices(content, "deep-rivers", "One major river", "", draft.DeepRivers, value => draft.DeepRivers = value);
+                var legacyMajorChoice = content.Q<Toggle>("deep-rivers-many");
+                if (legacyMajorChoice != null)
+                    legacyMajorChoice.style.display = DisplayStyle.None;
+                AddRegionWaterChoices(content, "streams", "Two small rivers", "Five small rivers", draft.Streams, value => draft.Streams = value);
+                content.Add(StyledLabel("At most one major river is generated, at three times the former width. Two small rivers plus a major produce two west-to-east routes and one north-to-south route. Parallel rivers use separate corridors; routes favor district centers and gentle local bends. Generation replaces this tool’s rivers; manually placed rivers stay. Each generation chooses a fresh placement.", "inspector-note"));
             }
             foreach (var name in new[] { "Rivers", "Flora", "Climate", "Shorefront", "Roads", "Mountains", "Hills" })
             {

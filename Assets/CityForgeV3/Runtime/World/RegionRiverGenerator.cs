@@ -31,116 +31,122 @@ namespace CityForgeV3.World
             var random = new System.Random(seed);
             float Next(float a, float b) => Mathf.Lerp(a,b,(float)random.NextDouble());
             int Count(RegionWaterAmount value,int few,int many) => value==RegionWaterAmount.Few?few:value==RegionWaterAmount.Many?many:0;
-            int deep=Count(settings.DeepRivers,2,5), streams=Count(settings.Streams,4,10);
-            int total=deep+streams;
+            int major=settings.DeepRivers==RegionWaterAmount.None?0:1;
+            int streams=Count(settings.Streams,2,5);
+            int total=major+streams;
             if(total==0)return result;
-            var flow=settings.Flow==RegionRiverFlow.Varied ? (RegionRiverFlow)random.Next(1,5) : settings.Flow;
-            bool horizontal=flow==RegionRiverFlow.WestToEast||flow==RegionRiverFlow.EastToWest;
-            bool reversed=flow==RegionRiverFlow.EastToWest||flow==RegionRiverFlow.NorthToSouth;
-            // Deep rivers are full-span stair-step trunks. If only streams were
-            // requested, the first stream becomes the trunk. Remaining streams
-            // are exact perpendicular segments that terminate on a trunk.
-            int trunks=deep>0?deep:1;
+            int horizontalCount=(total+1)/2;
+            int verticalCount=total-horizontalCount;
+            int horizontalLane=0,verticalLane=0;
             for(int n=0;n<total;n++)
             {
+                bool horizontal=n<horizontalCount;
+                bool isMajor=n<major;
                 var path=new RegionRiverPath
                 {
                     Id=$"region-{seed}-{n}",
-                    Depth=n<deep?DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
-                    WidthMeters=n<deep?Next(48,76):Next(14,24)
+                    Depth=isMajor?DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
+                    WidthMeters=isMajor?Next(144,228):Next(14,24)
                 };
-                if(n<trunks)
-                {
-                    float slot=(n+1f)/(trunks+1f);
-                    float jitter=(Next(-.18f,.18f)/(trunks+1f));
-                    float cross=Mathf.Lerp(.08f,.92f,Mathf.Clamp01(slot+jitter));
-                    BuildStairTrunk(path,horizontal,reversed,
-                        horizontal?region.Width:region.Height,
-                        horizontal?region.Height:region.Width,cross,random);
-                }
-                else
-                {
-                    var parent=result[random.Next(trunks)];
-                    var primarySegments=new List<int>();
-                    for(int index=0;index<parent.Points.Count-1;index++)
-                    {
-                        var a=parent.Points[index];var b=parent.Points[index+1];
-                        if(horizontal?Mathf.Abs(a.X-b.X)>.000001f:
-                            Mathf.Abs(a.Z-b.Z)>.000001f)
-                            primarySegments.Add(index);
-                    }
-                    var segment=primarySegments[random.Next(primarySegments.Count)];
-                    var segmentStart=new Vector2(parent.Points[segment].X,
-                        parent.Points[segment].Z);
-                    var segmentEnd=new Vector2(parent.Points[segment+1].X,
-                        parent.Points[segment+1].Z);
-                    var join=Vector2.Lerp(segmentStart,segmentEnd,Next(.2f,.8f));
-                    bool lowSide=random.NextDouble()<.5;
-                    var start=horizontal
-                        ? new Vector2(join.x,lowSide?0:region.Height)
-                        : new Vector2(lowSide?0:region.Width,join.y);
-                    path.Points.Add(new DistrictRiverPoint(start.x,start.y));
-                    path.Points.Add(new DistrictRiverPoint(join.x,join.y));
-                    InsertPointOnSegment(parent,segment,join);
-                }
+                int lane=horizontal?horizontalLane++:verticalLane++;
+                int laneCount=horizontal?horizontalCount:verticalCount;
+                BuildCenterSeekingTrunk(region,path,horizontal,lane,laneCount,
+                    random);
                 result.Add(path);
             }
             return result;
         }
 
-        private static void BuildStairTrunk(RegionRiverPath path,
-            bool horizontal, bool reversed, int alongCells, int crossCells,
-            float normalizedCross, System.Random random)
+        private static void BuildCenterSeekingTrunk(RegionSaveData region,
+            RegionRiverPath path, bool horizontal, int lane, int laneCount,
+            System.Random random)
         {
-            var minimumCross=Mathf.Max(0,Mathf.CeilToInt(crossCells*.08f));
-            var maximumCross=Mathf.Min(crossCells,
-                Mathf.FloorToInt(crossCells*.92f));
-            var baseCross=Mathf.Clamp(Mathf.RoundToInt(
-                normalizedCross*crossCells),minimumCross,maximumCross);
-            var maximumOffset=Mathf.Max(1,Mathf.RoundToInt(crossCells*.20f));
-            var lowerCross=Mathf.Max(minimumCross,baseCross-maximumOffset);
-            var upperCross=Mathf.Min(maximumCross,baseCross+maximumOffset);
+            int alongCells=horizontal?region.Width:region.Height;
+            int crossCells=horizontal?region.Height:region.Width;
+            float bandWidth=crossCells/(float)laneCount;
+            float margin=Mathf.Min(.75f,bandWidth*.1f);
+            float lowerCross=lane*bandWidth+margin;
+            float upperCross=(lane+1)*bandWidth-margin;
+            float idealCross=(lowerCross+upperCross)*.5f;
+
+            var centers=new List<Vector2>();
+            foreach(var tile in region.Tiles??new List<RegionCityTile>())
+            {
+                if(tile==null)continue;
+                float along=horizontal?tile.X+tile.Width*.5f:
+                    tile.Y+tile.Height*.5f;
+                float cross=horizontal?tile.Y+tile.Height*.5f:
+                    tile.X+tile.Width*.5f;
+                if(cross>=lowerCross-.0001f&&cross<=upperCross+.0001f)
+                    centers.Add(new Vector2(along,cross));
+            }
+            float baseCross=idealCross;
+            float closest=float.PositiveInfinity;
+            foreach(var center in centers)
+            {
+                float distance=Mathf.Abs(center.y-idealCross);
+                if(distance>=closest)continue;
+                closest=distance;baseCross=center.y;
+            }
+
+            centers.Sort((a,b)=>a.x!=b.x?a.x.CompareTo(b.x):
+                Mathf.Abs(a.y-baseCross).CompareTo(Mathf.Abs(b.y-baseCross)));
+            var targets=new List<Vector2>();
+            float maximumCenterSwing=Mathf.Min(2.25f,bandWidth*.24f);
+            foreach(var center in centers)
+            {
+                if(center.x<=.0001f||center.x>=alongCells-.0001f||
+                    Mathf.Abs(center.y-baseCross)>maximumCenterSwing)continue;
+                if(targets.Count>0&&Mathf.Abs(targets[^1].x-center.x)<.0001f)
+                    continue;
+                targets.Add(center);
+            }
+
             var logical=new List<Vector2>();
-            void Add(int along,int cross)
+            void Add(float along,float cross)
             {
                 var point=horizontal?new Vector2(along,cross):
                     new Vector2(cross,along);
                 if(logical.Count==0||Vector2.Distance(logical[^1],point)>.000001f)
                     logical.Add(point);
             }
-
-            var currentAlong=0;var currentCross=baseCross;var previousRun=0;
+            float Next(float a,float b)=>Mathf.Lerp(a,b,
+                (float)random.NextDouble());
+            float currentAlong=0,currentCross=baseCross;
             Add(currentAlong,currentCross);
-            while(alongCells-currentAlong>1)
+            targets.Add(new Vector2(alongCells,baseCross));
+            foreach(var target in targets)
             {
-                var remaining=alongCells-currentAlong;
-                var maximumRun=Mathf.Min(remaining-1,
-                    Mathf.Max(2,Mathf.RoundToInt(alongCells*.34f)));
-                var run=random.Next(1,maximumRun+1);
-                if(maximumRun>1&&run==previousRun)run=run%maximumRun+1;
-                previousRun=run;currentAlong+=run;Add(currentAlong,currentCross);
-                if(alongCells-currentAlong<=1)break;
-                if(lowerCross==upperCross)continue;
-                var target=random.Next(lowerCross,upperCross+1);
-                if(target==currentCross)target=target==upperCross?lowerCross:target+1;
-                currentCross=target;Add(currentAlong,currentCross);
+                float span=target.x-currentAlong;
+                if(span<=.0001f)continue;
+                if(Mathf.Abs(target.y-currentCross)>.0001f)
+                {
+                    float turn=currentAlong+span*Next(.34f,.58f);
+                    Add(turn,currentCross);Add(turn,target.y);
+                }
+                else if(span>=4f)
+                {
+                    float bendAmount=Mathf.Min(1.25f,bandWidth*.12f);
+                    bool canRise=currentCross+bendAmount<=upperCross;
+                    bool canFall=currentCross-bendAmount>=lowerCross;
+                    float direction=canRise&&canFall?
+                        (random.NextDouble()<.5?-1f:1f):canRise?1f:-1f;
+                    float bendCross=Mathf.Clamp(currentCross+
+                        direction*bendAmount,lowerCross,upperCross);
+                    float entry=currentAlong+span*Next(.22f,.36f);
+                    float exit=currentAlong+span*Next(.64f,.78f);
+                    Add(entry,currentCross);Add(entry,bendCross);
+                    Add(exit,bendCross);Add(exit,currentCross);
+                }
+                Add(target.x,target.y);
+                currentAlong=target.x;currentCross=target.y;
             }
-            if(currentCross!=baseCross)Add(currentAlong,baseCross);
-            Add(alongCells,baseCross);
-            if(reversed)logical.Reverse();
+            // Region Z increases south-to-north, so reverse vertical point
+            // order to produce the requested north-to-south flow.
+            if(!horizontal)logical.Reverse();
             foreach(var point in RiverPathGeometry.RoundOrthogonalCorners(
                         logical,1.8f))
                 path.Points.Add(new DistrictRiverPoint(point.x,point.y));
-        }
-
-        private static void InsertPointOnSegment(RegionRiverPath path,
-            int segment, Vector2 point)
-        {
-            var a=new Vector2(path.Points[segment].X,path.Points[segment].Z);
-            var b=new Vector2(path.Points[segment+1].X,path.Points[segment+1].Z);
-            if(Vector2.Distance(a,point)<.000001f||
-                Vector2.Distance(b,point)<.000001f)return;
-            path.Points.Insert(segment+1,new DistrictRiverPoint(point.x,point.y));
         }
 
         // Clip exact shared segments rather than generating or snapping per district.

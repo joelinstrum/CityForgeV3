@@ -54,6 +54,16 @@ turns transition through four smooth centerline segments. The rounding radius
 is bounded by both neighboring runs so nearby corners cannot overlap.
 Hand-drawn and locally sculpted rivers are unchanged.
 
+Cardinal V04 gives procedural rivers fixed west-to-east and north-to-south
+flow, splitting odd totals toward west-to-east (three becomes two horizontal
+and one vertical). Parallel routes occupy disjoint corridors. At most one major
+is generated at 144–228 meters wide, three times the former range; Few and Many
+small-river settings now mean two and five. Routes preserve reachable district
+centers and add restrained rounded doglegs between them, avoiding both broad
+swings and long uninterrupted straight sections. The Rivers panel exposes one
+major toggle plus the two small-river amounts. Existing authored geometry is
+unchanged.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.
