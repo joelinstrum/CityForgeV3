@@ -181,6 +181,73 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void BothCardinalAxesUseTheBlueV02SurfaceCalibration()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "blue-v02-west-east",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 46f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .3f), new(1f, .3f)
+                }
+            });
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "blue-v02-north-south",
+                Direction = DistrictRiverDirection.NorthToSouth,
+                Depth = DistrictRiverDepth.Shallow,
+                WidthMeters = 18f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(.7f, 1f), new(.7f, 0f)
+                }
+            });
+            var host = new GameObject("Blue V02 cardinal river test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                Assert.That(world.WaterTextureTiling, Is.EqualTo(30f));
+                Assert.That(world.DeepWaterStrength, Is.EqualTo(.42f));
+                Assert.That(world.WaterBrightness, Is.EqualTo(1.16f));
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+
+                var expectedBase = Resources.Load<Texture2D>(
+                    DistrictWorldController.RiverWaterTextureResource);
+                var expectedCrests = Resources.Load<Texture2D>(
+                    DistrictWorldController.RiverWhitecapTextureResource);
+                var surfaces = host.GetComponentsInChildren<MeshRenderer>()
+                    .Where(renderer => renderer.name.StartsWith("River Water"))
+                    .ToArray();
+
+                Assert.That(surfaces, Has.Length.EqualTo(2));
+                foreach (var surface in surfaces)
+                {
+                    var material = surface.sharedMaterial;
+                    Assert.That(material.shader.name,
+                        Is.EqualTo("CityForgeV3/RiverWaterSurface"));
+                    Assert.That(material.mainTexture, Is.SameAs(expectedBase));
+                    Assert.That(material.GetTexture("_WhitecapTex"),
+                        Is.SameAs(expectedCrests));
+                    Assert.That(material.GetFloat("_DeepWaterStrength"),
+                        Is.EqualTo(.42f).Within(.0001f));
+                    Assert.That(material.GetFloat("_WhitecapStrength"),
+                        Is.EqualTo(.44f).Within(.0001f));
+                    Assert.That(material.GetFloat("_WhitecapCoverage"),
+                        Is.EqualTo(.72f).Within(.0001f));
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
         public void RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection()
         {
             var district = new RegionCityTile { Width = 4, Height = 4 };

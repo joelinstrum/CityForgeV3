@@ -83,7 +83,7 @@ namespace CityForgeV3.World
         public const float GrassTextureWorldSizeMeters = 5f;
         public const float DistrictGrassTextureWorldSizeMeters = 75f;
         public static readonly Color RiverWaterTint =
-            new(0.82f, 1.04f, 1.18f, 1f);
+            new(0.86f, 1.03f, 1.28f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;
 
         [Header("River Water")]
@@ -98,15 +98,15 @@ namespace CityForgeV3.World
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Start")]
         private float _deepWaterStart = 0.24f;
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Strength")]
-        private float _deepWaterStrength = 0.58f;
+        private float _deepWaterStrength = 0.42f;
         [SerializeField, Range(0.02f, 1f), InspectorName("Depth Blend Softness")]
         private float _depthBlendSoftness = 0.56f;
         [SerializeField, Min(0.25f), InspectorName("Water Texture Tiling")]
-        private float _waterTextureTiling = 18f;
+        private float _waterTextureTiling = 30f;
         [SerializeField, InspectorName("Water Tint")]
         private Color _waterTint = RiverWaterTint;
         [SerializeField, Range(0.1f, 2f), InspectorName("Brightness")]
-        private float _waterBrightness = 1.08f;
+        private float _waterBrightness = 1.16f;
         [SerializeField, Range(0f, 1f), InspectorName("Smoothness")]
         private float _waterSmoothness = 0.62f;
         [SerializeField, Range(-0.1f, 0.1f), InspectorName("Flow Speed")]
@@ -120,19 +120,19 @@ namespace CityForgeV3.World
         [SerializeField, Range(0f, 1f), InspectorName("Reflection Strength")]
         private float _waterReflectionStrength = 0.18f;
         [SerializeField, Range(0f, 1f), InspectorName("Shimmer Strength")]
-        private float _waterShimmerStrength = 0.24f;
+        private float _waterShimmerStrength = 0.32f;
         [SerializeField, Range(0f, 2f), InspectorName("Shimmer Speed")]
         private float _waterShimmerSpeed = 0.35f;
         [SerializeField, Range(0f, 1f), InspectorName("Whitecap Strength")]
-        private float _whitecapStrength = 0.32f;
+        private float _whitecapStrength = 0.44f;
         [SerializeField, Range(0.05f, 1f), InspectorName("Whitecap Coverage")]
-        private float _whitecapCoverage = 0.55f;
+        private float _whitecapCoverage = 0.72f;
         [SerializeField, Range(0.1f, 4f), InspectorName("Whitecap Tiling")]
-        private float _whitecapTiling = 0.85f;
+        private float _whitecapTiling = 0.95f;
         [SerializeField, Range(0.1f, 3f), InspectorName("Whitecap Speed")]
         private float _whitecapSpeed = 1.35f;
         [SerializeField, Range(0f, 2f), InspectorName("Whitecap Pulse Speed")]
-        private float _whitecapPulseSpeed = 0.12f;
+        private float _whitecapPulseSpeed = 0.08f;
         private readonly List<LotWorldController> _lots = new();
         private readonly Dictionary<string, LotWorldController> _lotsByInstance =
             new();
@@ -1524,7 +1524,7 @@ namespace CityForgeV3.World
             if (material.HasProperty("_DeepWaterStart"))
                 material.SetFloat("_DeepWaterStart", _deepWaterStart);
             if (material.HasProperty("_DeepWaterStrength"))
-                material.SetFloat("_DeepWaterStrength", Mathf.Lerp(_deepWaterStrength, 1f, .78f));
+                material.SetFloat("_DeepWaterStrength", _deepWaterStrength);
             if (material.HasProperty("_DepthBlendSoftness"))
                 material.SetFloat("_DepthBlendSoftness", _depthBlendSoftness);
             if (material.HasProperty("_FlowSpeed"))
