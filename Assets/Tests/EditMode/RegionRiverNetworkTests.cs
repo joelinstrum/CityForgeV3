@@ -8,7 +8,7 @@ public class RegionRiverNetworkTests
 {
     RegionSaveData Region()=>new RegionSaveData{Width=28,Height=20,Tiles=new List<RegionCityTile>{new(){TileId="south",Width=28,Height=10},new(){TileId="north",Y=10,Width=28,Height=10}}};
     [TestCase(1)][TestCase(1785)][TestCase(994)][TestCase(26)]
-    public void NetworkUsesStraightCardinalConnectedSegments(int seed)
+    public void NetworkUsesCardinalStairStepsAndConnectedSegments(int seed)
     {
         var r=Region();var settings=new RegionTerrainSettings{Streams=RegionWaterAmount.Few};
         var paths=RegionRiverGenerator.Generate(r,settings,seed);
@@ -30,6 +30,10 @@ public class RegionRiverNetworkTests
                     Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True,
                     "Every generated segment must follow one district-grid axis.");
         }
+        var trunk=paths[0];
+        Assert.That(trunk.Points.Count,Is.GreaterThan(4));
+        Assert.That(trunk.Points.Zip(trunk.Points.Skip(1),(a,b)=>Mathf.Abs(a.X-b.X)>.000001f).Any(value=>value),Is.True);
+        Assert.That(trunk.Points.Zip(trunk.Points.Skip(1),(a,b)=>Mathf.Abs(a.Z-b.Z)>.000001f).Any(value=>value),Is.True);
     }
     [TestCase(RegionRiverFlow.WestToEast,DistrictRiverDirection.WestToEast)]
     [TestCase(RegionRiverFlow.EastToWest,DistrictRiverDirection.EastToWest)]

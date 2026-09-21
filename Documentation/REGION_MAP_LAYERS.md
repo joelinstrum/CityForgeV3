@@ -41,6 +41,13 @@ district-shaped rivers keep their authored geometry. Controlled curves and
 additional generated variety are intentionally deferred until this alignment
 is accepted in the isolated Regions Review workspace.
 
+Cardinal V02 adds seeded stair-step variety while retaining those exact axes.
+Forward spans alternate among available random lengths; sharp cross-axis steps
+move the channel around its baseline before it resumes the overall flow
+direction. District points remain on the 10-meter lattice, and regional
+tributaries retain exact perpendicular junctions. Existing saved and authored
+river geometry is not rewritten.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.

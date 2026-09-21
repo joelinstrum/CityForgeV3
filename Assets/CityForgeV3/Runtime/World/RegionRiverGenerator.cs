@@ -37,7 +37,7 @@ namespace CityForgeV3.World
             var flow=settings.Flow==RegionRiverFlow.Varied ? (RegionRiverFlow)random.Next(1,5) : settings.Flow;
             bool horizontal=flow==RegionRiverFlow.WestToEast||flow==RegionRiverFlow.EastToWest;
             bool reversed=flow==RegionRiverFlow.EastToWest||flow==RegionRiverFlow.NorthToSouth;
-            // Deep rivers are parallel full-span trunks. If only streams were
+            // Deep rivers are full-span stair-step trunks. If only streams were
             // requested, the first stream becomes the trunk. Remaining streams
             // are exact perpendicular segments that terminate on a trunk.
             int trunks=deep>0?deep:1;
@@ -54,56 +54,91 @@ namespace CityForgeV3.World
                     float slot=(n+1f)/(trunks+1f);
                     float jitter=(Next(-.18f,.18f)/(trunks+1f));
                     float cross=Mathf.Lerp(.08f,.92f,Mathf.Clamp01(slot+jitter));
-                    var a=horizontal?new Vector2(0,cross*region.Height):new Vector2(cross*region.Width,0);
-                    var b=horizontal?new Vector2(region.Width,a.y):new Vector2(a.x,region.Height);
-                    if(reversed)(a,b)=(b,a);
-                    path.Points.Add(new DistrictRiverPoint(a.x,a.y));
-                    path.Points.Add(new DistrictRiverPoint(b.x,b.y));
+                    BuildStairTrunk(path,horizontal,reversed,
+                        horizontal?region.Width:region.Height,
+                        horizontal?region.Height:region.Width,cross,random);
                 }
                 else
                 {
                     var parent=result[random.Next(trunks)];
-                    float along=Next(.15f,.85f);
-                    var first=new Vector2(parent.Points[0].X,parent.Points[0].Z);
-                    var last=new Vector2(parent.Points[parent.Points.Count-1].X,
-                        parent.Points[parent.Points.Count-1].Z);
-                    var join=Vector2.Lerp(first,last,along);
+                    var primarySegments=new List<int>();
+                    for(int index=0;index<parent.Points.Count-1;index++)
+                    {
+                        var a=parent.Points[index];var b=parent.Points[index+1];
+                        if(horizontal?Mathf.Abs(a.X-b.X)>.000001f:
+                            Mathf.Abs(a.Z-b.Z)>.000001f)
+                            primarySegments.Add(index);
+                    }
+                    var segment=primarySegments[random.Next(primarySegments.Count)];
+                    var segmentStart=new Vector2(parent.Points[segment].X,
+                        parent.Points[segment].Z);
+                    var segmentEnd=new Vector2(parent.Points[segment+1].X,
+                        parent.Points[segment+1].Z);
+                    var join=Vector2.Lerp(segmentStart,segmentEnd,Next(.2f,.8f));
                     bool lowSide=random.NextDouble()<.5;
                     var start=horizontal
                         ? new Vector2(join.x,lowSide?0:region.Height)
                         : new Vector2(lowSide?0:region.Width,join.y);
                     path.Points.Add(new DistrictRiverPoint(start.x,start.y));
                     path.Points.Add(new DistrictRiverPoint(join.x,join.y));
-                    InsertCollinearPoint(parent,join);
+                    InsertPointOnSegment(parent,segment,join);
                 }
                 result.Add(path);
             }
             return result;
         }
 
-        private static void InsertCollinearPoint(RegionRiverPath path,
-            Vector2 point)
+        private static void BuildStairTrunk(RegionRiverPath path,
+            bool horizontal, bool reversed, int alongCells, int crossCells,
+            float normalizedCross, System.Random random)
         {
-            for(int index=0;index<path.Points.Count;index++)
+            var minimumCross=Mathf.Max(0,Mathf.CeilToInt(crossCells*.08f));
+            var maximumCross=Mathf.Min(crossCells,
+                Mathf.FloorToInt(crossCells*.92f));
+            var baseCross=Mathf.Clamp(Mathf.RoundToInt(
+                normalizedCross*crossCells),minimumCross,maximumCross);
+            var maximumOffset=Mathf.Max(1,Mathf.RoundToInt(crossCells*.20f));
+            var lowerCross=Mathf.Max(minimumCross,baseCross-maximumOffset);
+            var upperCross=Mathf.Min(maximumCross,baseCross+maximumOffset);
+            var logical=new List<Vector2>();
+            void Add(int along,int cross)
             {
-                var existing=new Vector2(path.Points[index].X,path.Points[index].Z);
-                if(Vector2.Distance(existing,point)<.000001f)return;
+                var point=horizontal?new Vector2(along,cross):
+                    new Vector2(cross,along);
+                if(logical.Count==0||Vector2.Distance(logical[^1],point)>.000001f)
+                    logical.Add(point);
             }
-            var origin=new Vector2(path.Points[0].X,path.Points[0].Z);
-            var end=new Vector2(path.Points[path.Points.Count-1].X,
-                path.Points[path.Points.Count-1].Z);
-            var direction=end-origin;
-            float position=Vector2.Dot(point-origin,direction);
-            for(int index=1;index<path.Points.Count;index++)
+
+            var currentAlong=0;var currentCross=baseCross;var previousRun=0;
+            Add(currentAlong,currentCross);
+            while(alongCells-currentAlong>1)
             {
-                var candidate=new Vector2(path.Points[index].X,path.Points[index].Z);
-                if(Vector2.Dot(candidate-origin,direction)>position)
-                {
-                    path.Points.Insert(index,new DistrictRiverPoint(point.x,point.y));
-                    return;
-                }
+                var remaining=alongCells-currentAlong;
+                var maximumRun=Mathf.Min(remaining-1,
+                    Mathf.Max(2,Mathf.RoundToInt(alongCells*.34f)));
+                var run=random.Next(1,maximumRun+1);
+                if(maximumRun>1&&run==previousRun)run=run%maximumRun+1;
+                previousRun=run;currentAlong+=run;Add(currentAlong,currentCross);
+                if(lowerCross==upperCross)continue;
+                var target=random.Next(lowerCross,upperCross+1);
+                if(target==currentCross)target=target==upperCross?lowerCross:target+1;
+                currentCross=target;Add(currentAlong,currentCross);
             }
-            path.Points.Add(new DistrictRiverPoint(point.x,point.y));
+            if(currentCross!=baseCross)Add(currentAlong,baseCross);
+            Add(alongCells,baseCross);
+            if(reversed)logical.Reverse();
+            foreach(var point in logical)
+                path.Points.Add(new DistrictRiverPoint(point.x,point.y));
+        }
+
+        private static void InsertPointOnSegment(RegionRiverPath path,
+            int segment, Vector2 point)
+        {
+            var a=new Vector2(path.Points[segment].X,path.Points[segment].Z);
+            var b=new Vector2(path.Points[segment+1].X,path.Points[segment+1].Z);
+            if(Vector2.Distance(a,point)<.000001f||
+                Vector2.Distance(b,point)<.000001f)return;
+            path.Points.Insert(segment+1,new DistrictRiverPoint(point.x,point.y));
         }
 
         // Clip exact shared segments rather than generating or snapping per district.

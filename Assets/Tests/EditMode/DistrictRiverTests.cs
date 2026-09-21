@@ -1,6 +1,7 @@
 using CityForgeV3.World;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace CityForgeV3.Tests
@@ -19,12 +20,10 @@ namespace CityForgeV3.Tests
             Assert.That(result, Is.Not.Null);
             Assert.That(result.River.Points[0].Z, Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].Z, Is.EqualTo(end).Within(0.001f));
-            Assert.That(result.River.Points, Has.Count.EqualTo(2));
-            Assert.That(LateralRange(result.River, true), Is.EqualTo(0f)
-                .Within(.000001f));
+            Assert.That(result.River.Points.Count, Is.GreaterThan(4));
+            Assert.That(LateralRange(result.River, true), Is.GreaterThan(0f));
             Assert.That(result.River.Curvature, Is.EqualTo(0f));
-            AssertGridAligned(result.River.Points[0].X,
-                DistrictScale.SizeMeters(4));
+            AssertCardinalGridStairs(result.River, 4, 4);
         }
 
         [TestCase(DistrictRiverDirection.WestToEast, 0f, 1f)]
@@ -40,12 +39,10 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].X,
                 Is.EqualTo(end).Within(0.001f));
-            Assert.That(result.River.Points, Has.Count.EqualTo(2));
-            Assert.That(LateralRange(result.River, false), Is.EqualTo(0f)
-                .Within(.000001f));
+            Assert.That(result.River.Points.Count, Is.GreaterThan(4));
+            Assert.That(LateralRange(result.River, false), Is.GreaterThan(0f));
             Assert.That(result.River.Curvature, Is.EqualTo(0f));
-            AssertGridAligned(result.River.Points[0].Z,
-                DistrictScale.SizeMeters(4));
+            AssertCardinalGridStairs(result.River, 4, 4);
         }
 
         [Test]
@@ -63,7 +60,25 @@ namespace CityForgeV3.Tests
             Assert.That(restored.Rivers[0].Depth, Is.EqualTo(DistrictRiverDepth.Deep));
             Assert.That(restored.Rivers[0].Direction,
                 Is.EqualTo(DistrictRiverDirection.EastToWest));
-            Assert.That(restored.Rivers[0].Points, Has.Count.EqualTo(2));
+            Assert.That(restored.Rivers[0].Points.Count,
+                Is.EqualTo(district.Rivers[0].Points.Count));
+            Assert.That(restored.Rivers[0].Points.Count, Is.GreaterThan(4));
+        }
+
+        [Test]
+        public void StairRunsUseSeededLongAndShortGridSpans()
+        {
+            var river = DistrictRiverGenerator.Generate(
+                new RegionCityTile { Width = 20, Height = 12 },
+                DistrictRiverDirection.WestToEast, .5f,
+                DistrictRiverDepth.Deep, 1785).River;
+            var runs = river.Points.Zip(river.Points.Skip(1), (a, b) =>
+                    Mathf.Abs(a.Z - b.Z) < .000001f
+                        ? Mathf.RoundToInt(Mathf.Abs(a.X - b.X) * 20f) : 0)
+                .Where(length => length > 0).ToArray();
+
+            Assert.That(runs.Length, Is.GreaterThan(2));
+            Assert.That(runs.Distinct().Count(), Is.GreaterThan(1));
         }
 
         [Test]
@@ -223,6 +238,32 @@ namespace CityForgeV3.Tests
             var meters = (normalized - .5f) * crossSize;
             var cells = meters / DistrictScale.CellSizeMeters;
             Assert.That(cells, Is.EqualTo(Mathf.Round(cells)).Within(.0001f));
+        }
+
+        private static void AssertCardinalGridStairs(PlacedDistrictRiver river,
+            int widthCells, int heightCells)
+        {
+            foreach (var point in river.Points)
+            {
+                AssertGridAligned(point.X,
+                    DistrictScale.SizeMeters(widthCells));
+                AssertGridAligned(point.Z,
+                    DistrictScale.SizeMeters(heightCells));
+            }
+            var horizontal = false;
+            var vertical = false;
+            foreach (var pair in river.Points.Zip(river.Points.Skip(1),
+                         (a, b) => (a, b)))
+            {
+                var x = Mathf.Abs(pair.a.X - pair.b.X);
+                var z = Mathf.Abs(pair.a.Z - pair.b.Z);
+                Assert.That((x < .000001f) ^ (z < .000001f), Is.True,
+                    "Every stair segment must follow exactly one grid axis.");
+                horizontal |= x > .000001f;
+                vertical |= z > .000001f;
+            }
+            Assert.That(horizontal && vertical, Is.True,
+                "A generated stair river must contain forward runs and steps.");
         }
     }
 }
