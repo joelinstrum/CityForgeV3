@@ -27,17 +27,17 @@ public class RegionRiverGeneratorTests
         Assert.That(legacyMany.Count,Is.EqualTo(3));
         Assert.That(legacyMany.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
     }
-    [Test] public void ThreeRiversUseSeparateCorridorsAndHitDistrictCenters()
+    [Test] public void ThreeRiversUseSeparateCorridorsAndFavorDistrictCenters()
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Few,Streams=RegionWaterAmount.Few},1785);
         Assert.That(paths.Count,Is.EqualTo(3));
         Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(DistrictRiverDirection.WestToEast));
         Assert.That(RegionRiverGenerator.DirectionOf(paths[1]),Is.EqualTo(DistrictRiverDirection.WestToEast));
         Assert.That(RegionRiverGenerator.DirectionOf(paths[2]),Is.EqualTo(DistrictRiverDirection.NorthToSouth));
-        Assert.That(paths[0].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.True);
-        Assert.That(paths[1].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-6)<.0001f),Is.True);
-        Assert.That(paths[2].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.True);
-        Assert.That(paths[2].Points.Any(point=>Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-6)<.0001f),Is.True);
+        Assert.That(DistanceToPath(paths[0],new Vector2(4,2)),Is.LessThan(1.25f));
+        Assert.That(DistanceToPath(paths[1],new Vector2(4,6)),Is.LessThan(1.25f));
+        Assert.That(DistanceToPath(paths[2],new Vector2(4,2)),Is.LessThan(1.25f));
+        Assert.That(DistanceToPath(paths[2],new Vector2(4,6)),Is.LessThan(1.25f));
         Assert.That(paths[0].Points.Max(point=>point.Z),Is.LessThan(paths[1].Points.Min(point=>point.Z)));
     }
     [Test] public void FourSmallRiversSplitEvenlyAcrossCardinalDirections()
@@ -93,6 +93,24 @@ public class RegionRiverGeneratorTests
                 $"{section.RegionRiverId} crossed {tile.Name} without two turns.");
         }
         Assert.That(checkedSections,Is.GreaterThan(12));
+    }
+    [Test] public void DistrictShiftsPersistAcrossBordersAndFormLongDrifts()
+    {
+        var r=RegionSaveStore.Create("Persistent drift",28,20);
+        var path=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
+            RiverCountsVersion=1,SmallRiverCount=1},7721).Single();
+        var crossings=path.Points
+            .Where(point=>point.X>0&&point.X<r.Width&&
+                Mathf.Abs(point.X/2f-Mathf.Round(point.X/2f))<.0001f)
+            .GroupBy(point=>Mathf.RoundToInt(point.X*1000))
+            .OrderBy(group=>group.Key)
+            .Select(group=>group.Average(point=>point.Z)).ToArray();
+        Assert.That(crossings.Length,Is.GreaterThan(4));
+        Assert.That(crossings.Max()-crossings.Min(),Is.GreaterThan(.35f));
+        var deltas=crossings.Zip(crossings.Skip(1),(a,b)=>b-a).ToArray();
+        Assert.That(deltas.Zip(deltas.Skip(1),(a,b)=>a*b)
+            .Any(product=>product>.0025f),Is.True,
+            "At least two consecutive districts should continue the same drift.");
     }
     [Test] public void SharedDistrictBoundaryMatchesAndReloadPreservesPaths()
     {
@@ -167,5 +185,19 @@ public class RegionRiverGeneratorTests
             if(Vector2.Angle(incoming,outgoing)>2f)count++;
         }
         return count;
+    }
+    static float DistanceToPath(RegionRiverPath path,Vector2 target)
+    {
+        var closest=float.PositiveInfinity;
+        for(var index=1;index<path.Points.Count;index++)
+        {
+            var a=new Vector2(path.Points[index-1].X,path.Points[index-1].Z);
+            var b=new Vector2(path.Points[index].X,path.Points[index].Z);
+            var delta=b-a;
+            var t=delta.sqrMagnitude<1e-10f?0:
+                Mathf.Clamp01(Vector2.Dot(target-a,delta)/delta.sqrMagnitude);
+            closest=Mathf.Min(closest,Vector2.Distance(target,a+delta*t));
+        }
+        return closest;
     }
 }

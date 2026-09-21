@@ -81,6 +81,15 @@ centerline before the border, and is rounded by the existing corner treatment.
 This adds local natural variation without changing cardinal flow, spacing,
 district-center targets, or saved geometry until the next explicit generation.
 
+Cardinal V07 supersedes V06's out-and-back district doglegs with persistent
+lateral drift. Each district contributes one two-corner shift and carries that
+new position across the border. Seeded drift continues for several districts
+before reversing, with longer, broader movement for Major rivers and quicker
+movement for Streams. Centers are now a soft attraction rather than exact
+waypoints. All logical segments remain cardinal, corridor spacing and exact
+border continuity remain intact, and each complete district crossing still has
+at least two turns.
+
 When a region has no saved procedural river selection, Regenerate Rivers now
 opens the Rivers panel with the intended one-major-plus-two-small defaults.
 Generate Rivers rejects an explicitly empty selection with visible guidance;
