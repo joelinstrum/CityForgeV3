@@ -128,7 +128,7 @@ namespace CityForgeV3.World
                 "NOON",
                 70f,
                 180f,
-                0.92f,
+                0.64f,
                 new Color(1f, 0.985f, 0.95f),
                 new Color(0.32f, 0.34f, 0.37f),
                 new Color(0.40f, 0.56f, 0.235f),
