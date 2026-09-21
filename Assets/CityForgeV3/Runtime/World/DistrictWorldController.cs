@@ -1065,12 +1065,16 @@ namespace CityForgeV3.World
                 .ToArray();
             if (edgeVariants.Length > 0) edgeTexture = edgeVariants[0];
             var dirtTexture = Resources.Load<Texture2D>(RiverBedDirtResource);
+            var proposedBankAppearance =
+                new RiverBankAppearance(centerline, river.WidthMeters);
             var bankTexture = Resources.Load<Texture2D>(
-                RiverBankAppearance.ShorelineResourceRoot +
-                "shoreline-light") ?? Resources.Load<Texture2D>(
-                RiverBankAppearance.ResourceRoot + "grass-pebbles");
+                proposedBankAppearance.ShorelineResource) ??
+                Resources.Load<Texture2D>(
+                    RiverBankAppearance.ResourceRoot + "grass-pebbles");
             var bankAppearance = bankTexture != null
-                ? new RiverBankAppearance(centerline, river.WidthMeters) { ShoreDistance = bedWidth * .5f } : null;
+                ? proposedBankAppearance : null;
+            if (bankAppearance != null)
+                bankAppearance.ShoreDistance = bedWidth * .5f;
             var halfWidth = bedWidth * 0.5f;
             var edgeWidth = Mathf.Min(
                 deep ? RiverBedTransitionWidthMeters * .55f
@@ -1788,9 +1792,9 @@ namespace CityForgeV3.World
                 {
                     material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
                     material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
-                        RiverBankAppearance.SubmergedGravelResource) ?? bandTexture);
+                        bankAppearance.SubmergedGravelTextureResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(
-                        RiverBankAppearance.OpenGravelResource) ?? bandTexture);
+                        bankAppearance.OpenGravelTextureResource) ?? bandTexture);
                 }
                 if (material.HasProperty("_DistrictHalfSize"))
                     material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));

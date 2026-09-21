@@ -137,7 +137,10 @@ namespace CityForgeV3.Tests
                          "BanksV2/shoreline", "BanksV2/shoreline-gravel",
                          "BanksV3/open-gravel", "BanksV4/shoreline-light",
                          "BanksV4/open-gravel-light",
-                         "BanksV4/submerged-gravel-light" })
+                         "BanksV4/submerged-gravel-light",
+                         "BanksV5Wide/shoreline-wide-muted",
+                         "BanksV5Wide/open-gravel-wide-muted",
+                         "BanksV5Wide/submerged-gravel-wide-muted" })
             {
                 var texture = Resources.Load<Texture2D>("CityForgeV3/Water/River/" + name);
                 Assert.That(texture, Is.Not.Null, name);
@@ -148,6 +151,28 @@ namespace CityForgeV3.Tests
             var shader = Shader.Find("CityForgeV3/RiverBankSurface");
             Assert.That(shader, Is.Not.Null);
             Assert.That(UnityEditor.ShaderUtil.ShaderHasError(shader), Is.False);
+        }
+
+        [Test]
+        public void WideBankSelectionPreservesV04ThroughMediumWidths()
+        {
+            var medium = new RiverBankAppearance(
+                new[] { Vector2.zero, Vector2.right }, 76f);
+            var major = new RiverBankAppearance(
+                new[] { Vector2.zero, Vector2.right }, 144f);
+
+            Assert.That(RiverBankAppearance.UsesWideRiverBank(76f), Is.False);
+            Assert.That(medium.ShorelineResource,
+                Is.EqualTo(RiverBankAppearance.ShorelineResourceRoot +
+                    "shoreline-light"));
+            Assert.That(RiverBankAppearance.UsesWideRiverBank(144f), Is.True);
+            Assert.That(major.ShorelineResource,
+                Is.EqualTo(RiverBankAppearance.WideShorelineResourceRoot +
+                    "shoreline-wide-muted"));
+            Assert.That(major.OpenGravelTextureResource,
+                Is.EqualTo(RiverBankAppearance.WideOpenGravelResource));
+            Assert.That(major.SubmergedGravelTextureResource,
+                Is.EqualTo(RiverBankAppearance.WideSubmergedGravelResource));
         }
 
         [Test]
@@ -199,6 +224,48 @@ namespace CityForgeV3.Tests
                 Assert.That(material.GetTexture("_GravelTex"),
                     Is.SameAs(Resources.Load<Texture2D>(
                         RiverBankAppearance.SubmergedGravelResource)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void MajorRiverMaterialBindsAllThreeMutedWideTextures()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "muted-wide-bank-test",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 144f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .5f), new(1f, .5f)
+                }
+            });
+            var host = new GameObject("Muted wide bank material test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var material = host.GetComponentsInChildren<MeshRenderer>()
+                    .Select(renderer => renderer.sharedMaterial)
+                    .First(candidate => candidate.shader.name ==
+                        "CityForgeV3/RiverBankSurface");
+
+                Assert.That(material.mainTexture, Is.SameAs(Resources.Load<Texture2D>(
+                    RiverBankAppearance.WideShorelineResourceRoot +
+                    "shoreline-wide-muted")));
+                Assert.That(material.GetTexture("_EarthTex"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.WideOpenGravelResource)));
+                Assert.That(material.GetTexture("_GravelTex"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.WideSubmergedGravelResource)));
             }
             finally
             {

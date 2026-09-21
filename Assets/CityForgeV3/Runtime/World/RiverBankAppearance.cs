@@ -13,12 +13,33 @@ namespace CityForgeV3.World
             "CityForgeV3/Water/River/BanksV4/submerged-gravel-light";
         public const string OpenGravelResource =
             "CityForgeV3/Water/River/BanksV4/open-gravel-light";
+        public const string WideShorelineResourceRoot =
+            "CityForgeV3/Water/River/BanksV5Wide/";
+        public const string WideSubmergedGravelResource =
+            "CityForgeV3/Water/River/BanksV5Wide/submerged-gravel-wide-muted";
+        public const string WideOpenGravelResource =
+            "CityForgeV3/Water/River/BanksV5Wide/open-gravel-wide-muted";
+        // Region generation reserves widths of 144 metres and above for major
+        // rivers. Keeping the cutoff between the 76 m medium maximum and the
+        // 144 m major minimum makes the art choice stable and size-driven.
+        public const float WideRiverMinimumWidthMeters = 100f;
         public const float DetailMeters = 48f;
         public readonly float[] Bend;
+        public readonly string ShorelineResource;
+        public readonly string SubmergedGravelTextureResource;
+        public readonly string OpenGravelTextureResource;
         public float ShoreDistance { get; set; }
 
         public RiverBankAppearance(IReadOnlyList<Vector2> points, float widthMeters)
         {
+            bool usesWideBank = UsesWideRiverBank(widthMeters);
+            ShorelineResource = (usesWideBank
+                ? WideShorelineResourceRoot : ShorelineResourceRoot) +
+                (usesWideBank ? "shoreline-wide-muted" : "shoreline-light");
+            SubmergedGravelTextureResource = usesWideBank
+                ? WideSubmergedGravelResource : SubmergedGravelResource;
+            OpenGravelTextureResource = usesWideBank
+                ? WideOpenGravelResource : OpenGravelResource;
             Bend = new float[points.Count];
             if (points.Count < 3) return;
             var distances = new float[points.Count];
@@ -39,6 +60,9 @@ namespace CityForgeV3.World
                 Bend[i] = Mathf.Clamp(angle * widthMeters / Mathf.Max(1f, span), -1f, 1f);
             }
         }
+
+        public static bool UsesWideRiverBank(float widthMeters) =>
+            widthMeters >= WideRiverMinimumWidthMeters;
 
         static Vector2 AtDistance(IReadOnlyList<Vector2> points, float[] distances, float distance)
         {

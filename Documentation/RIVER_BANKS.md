@@ -1,3 +1,23 @@
+# V5 wide-river bank split
+
+Major rivers (generated at 144–228 metres) now use the versioned
+`BanksV5Wide` set. Its pale gravel remains related to V04, while submerged
+stones use a restrained slate blue-gray/green-gray wash instead of the bright
+cyan shallows that became a conspicuous rim at major-river scale. Selection is
+based only on channel width: 100 metres and above uses V05 Wide.
+
+Streams and medium rivers (up to 76 metres) deliberately retain the approved
+V04 resources unchanged. This preserves their clear mountain-stream character
+and keeps that brighter art available for a future tropical climate treatment.
+The split adds no draw calls, no additional material per river, and no
+per-frame work; the three resource paths are selected once during river mesh
+rebuild. V1–V04 remain present and unchanged.
+
+Exact prompts and source identifiers are in
+`Documentation/ArtStudies/RiverBanksV05Wide/README.md`.
+
+---
+
 # V4 approved light shoreline
 
 On September 21 the user approved a shoreline direction in which deep blue
