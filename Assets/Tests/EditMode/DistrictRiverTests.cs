@@ -19,7 +19,12 @@ namespace CityForgeV3.Tests
             Assert.That(result, Is.Not.Null);
             Assert.That(result.River.Points[0].Z, Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].Z, Is.EqualTo(end).Within(0.001f));
-            Assert.That(LateralRange(result.River, true), Is.GreaterThan(0.01f));
+            Assert.That(result.River.Points, Has.Count.EqualTo(2));
+            Assert.That(LateralRange(result.River, true), Is.EqualTo(0f)
+                .Within(.000001f));
+            Assert.That(result.River.Curvature, Is.EqualTo(0f));
+            AssertGridAligned(result.River.Points[0].X,
+                DistrictScale.SizeMeters(4));
         }
 
         [TestCase(DistrictRiverDirection.WestToEast, 0f, 1f)]
@@ -35,8 +40,12 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].X,
                 Is.EqualTo(end).Within(0.001f));
-            Assert.That(LateralRange(result.River, false), Is.GreaterThan(0.005f),
-                "Even minimum curvature must not produce a road-straight river.");
+            Assert.That(result.River.Points, Has.Count.EqualTo(2));
+            Assert.That(LateralRange(result.River, false), Is.EqualTo(0f)
+                .Within(.000001f));
+            Assert.That(result.River.Curvature, Is.EqualTo(0f));
+            AssertGridAligned(result.River.Points[0].Z,
+                DistrictScale.SizeMeters(4));
         }
 
         [Test]
@@ -54,7 +63,7 @@ namespace CityForgeV3.Tests
             Assert.That(restored.Rivers[0].Depth, Is.EqualTo(DistrictRiverDepth.Deep));
             Assert.That(restored.Rivers[0].Direction,
                 Is.EqualTo(DistrictRiverDirection.EastToWest));
-            Assert.That(restored.Rivers[0].Points, Has.Count.EqualTo(33));
+            Assert.That(restored.Rivers[0].Points, Has.Count.EqualTo(2));
         }
 
         [Test]
@@ -206,6 +215,14 @@ namespace CityForgeV3.Tests
             foreach (var point in river.Points)
                 values.Add(vertical ? point.X : point.Z);
             return Mathf.Max(values.ToArray()) - Mathf.Min(values.ToArray());
+        }
+
+        private static void AssertGridAligned(float normalized,
+            float crossSize)
+        {
+            var meters = (normalized - .5f) * crossSize;
+            var cells = meters / DistrictScale.CellSizeMeters;
+            Assert.That(cells, Is.EqualTo(Mathf.Round(cells)).Within(.0001f));
         }
     }
 }

@@ -185,7 +185,7 @@ public class DistrictRiverSculptTests
                 float distance=Vector2.Distance(point,points[i-1]+delta*t);
                 if(distance<best){best=distance;along=total+length*t;}total+=length;
             }
-            var hit=query.Invoke(instance,new object[]{point});var result=hit.GetType();
+            var hit=query.Invoke(instance,new object[]{point,0f});var result=hit.GetType();
             float actual=(float)result.GetField("AbsoluteLateral").GetValue(hit);
             if(best<=64){Assert.AreEqual(best,actual,.001f);Assert.AreEqual(along,(float)result.GetField("DistanceAlong").GetValue(hit),.001f);}
             else Assert.Greater(actual,64,"Dry ground must not become a river");

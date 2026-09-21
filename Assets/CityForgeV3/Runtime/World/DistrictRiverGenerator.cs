@@ -13,21 +13,18 @@ namespace CityForgeV3.World
     public static class DistrictRiverGenerator
     {
         private const int CandidateCount = 24;
-        private const int PointCount = 33;
 
         public static DistrictRiverGenerationResult Generate(
             RegionCityTile district, DistrictRiverDirection direction,
             float curvature, DistrictRiverDepth depth, int seed)
         {
             if (district == null) return null;
-            curvature = Mathf.Clamp01(curvature);
             DistrictRiverGenerationResult best = null;
             var bestScore = float.PositiveInfinity;
             var random = new System.Random(seed);
             for (var candidate = 0; candidate < CandidateCount; candidate++)
             {
-                var river = BuildCandidate(district, direction, curvature,
-                    depth, random);
+                var river = BuildCandidate(district, direction, depth, random);
                 var result = new DistrictRiverGenerationResult { River = river };
                 var score = ScoreCandidate(district, river,
                     result.IntersectedLotInstanceIds);
@@ -42,7 +39,7 @@ namespace CityForgeV3.World
 
         private static PlacedDistrictRiver BuildCandidate(
             RegionCityTile district, DistrictRiverDirection direction,
-            float curvature, DistrictRiverDepth depth, System.Random random)
+            DistrictRiverDepth depth, System.Random random)
         {
             var vertical = direction is DistrictRiverDirection.SouthToNorth or
                 DistrictRiverDirection.NorthToSouth;
@@ -51,43 +48,29 @@ namespace CityForgeV3.World
             var crossSize = DistrictScale.SizeMeters(
                 vertical ? district.Width : district.Height);
             var width = depth == DistrictRiverDepth.Shallow ? 72f : 46f;
-            var minimumAmplitude = crossSize * 0.025f;
-            var amplitude = Mathf.Lerp(minimumAmplitude,
-                crossSize * 0.20f, curvature);
             var center = Mathf.Lerp(0.28f, 0.72f, (float)random.NextDouble());
-            var phase = (float)random.NextDouble() * Mathf.PI * 2f;
-            var harmonic = Mathf.Lerp(0.55f, 1.25f,
-                (float)random.NextDouble());
+            // The first cardinal prototype is an exact grid-axis line. Keep
+            // its cross-axis origin on the authored 10 m district lattice.
+            var centerMeters = (center - .5f) * crossSize;
+            centerMeters = Mathf.Round(centerMeters /
+                DistrictScale.CellSizeMeters) * DistrictScale.CellSizeMeters;
+            center = Mathf.Clamp(centerMeters / crossSize + .5f, .06f, .94f);
             var river = new PlacedDistrictRiver
             {
                 InstanceId = Guid.NewGuid().ToString("N"),
                 Direction = direction,
                 Depth = depth,
-                Curvature = curvature,
+                Curvature = 0f,
                 WidthMeters = width
             };
-            for (var index = 0; index < PointCount; index++)
-            {
-                var t = index / (float)(PointCount - 1);
-                var envelope = Mathf.Sin(Mathf.PI * t);
-                var lateralMeters = amplitude * envelope *
-                    (0.72f * Mathf.Sin(t * Mathf.PI * 2f + phase) +
-                     0.28f * Mathf.Sin(t * Mathf.PI * 4f * harmonic - phase));
-                var lateral = Mathf.Clamp(center + lateralMeters / crossSize,
-                    0.06f, 0.94f);
-                // Keep the procedural channel tied to the district's authored
-                // 10 m grid. The polyline still curves between samples, but its
-                // control points no longer drift at arbitrary sub-grid angles.
-                var lateralFromCenter = (lateral - .5f) * crossSize;
-                lateralFromCenter = Mathf.Round(lateralFromCenter /
-                    DistrictScale.CellSizeMeters) * DistrictScale.CellSizeMeters;
-                lateral = Mathf.Clamp(lateralFromCenter / crossSize + .5f,
-                    0.06f, 0.94f);
-                var along = reversed ? 1f - t : t;
-                river.Points.Add(vertical
-                    ? new DistrictRiverPoint(lateral, along)
-                    : new DistrictRiverPoint(along, lateral));
-            }
+            var start = reversed ? 1f : 0f;
+            var end = 1f - start;
+            river.Points.Add(vertical
+                ? new DistrictRiverPoint(center, start)
+                : new DistrictRiverPoint(start, center));
+            river.Points.Add(vertical
+                ? new DistrictRiverPoint(center, end)
+                : new DistrictRiverPoint(end, center));
             return river;
         }
 

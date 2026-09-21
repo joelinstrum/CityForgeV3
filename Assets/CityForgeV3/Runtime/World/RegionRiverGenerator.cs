@@ -32,171 +32,78 @@ namespace CityForgeV3.World
             float Next(float a, float b) => Mathf.Lerp(a,b,(float)random.NextDouble());
             int Count(RegionWaterAmount value,int few,int many) => value==RegionWaterAmount.Few?few:value==RegionWaterAmount.Many?many:0;
             int deep=Count(settings.DeepRivers,2,5), streams=Count(settings.Streams,4,10);
+            int total=deep+streams;
+            if(total==0)return result;
             var flow=settings.Flow==RegionRiverFlow.Varied ? (RegionRiverFlow)random.Next(1,5) : settings.Flow;
-            // Construct drainage in a canonical downstream axis, then rotate the whole
-            // network. Every branch terminates at its first encounter with older water.
-            Vector2 Orient(Vector2 p) => flow switch
+            bool horizontal=flow==RegionRiverFlow.WestToEast||flow==RegionRiverFlow.EastToWest;
+            bool reversed=flow==RegionRiverFlow.EastToWest||flow==RegionRiverFlow.NorthToSouth;
+            // Deep rivers are parallel full-span trunks. If only streams were
+            // requested, the first stream becomes the trunk. Remaining streams
+            // are exact perpendicular segments that terminate on a trunk.
+            int trunks=deep>0?deep:1;
+            for(int n=0;n<total;n++)
             {
-                RegionRiverFlow.WestToEast => new Vector2(p.y*region.Width,p.x*region.Height),
-                RegionRiverFlow.EastToWest => new Vector2((1-p.y)*region.Width,p.x*region.Height),
-                RegionRiverFlow.NorthToSouth => new Vector2(p.x*region.Width,(1-p.y)*region.Height),
-                _ => new Vector2(p.x*region.Width,p.y*region.Height)
-            };
-            var canonical=new List<List<Vector2>>();
-            int attempts = 0;
-            for(int n=0;n<deep+streams;n++)
-            {
-                var anchors=new List<Vector2>();
-                if(n==0)
+                var path=new RegionRiverPath
                 {
-                    var count=random.Next(7,11);
-                    var x=Next(.18f,.82f);
-                    for(int i=0;i<count;i++)
-                    {
-                        if(i>0)x=Mathf.Clamp(x+Next(-.30f,.30f),.08f,.92f);
-                        anchors.Add(new Vector2(x,i/(float)(count-1)));
-                    }
+                    Id=$"region-{seed}-{n}",
+                    Depth=n<deep?DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
+                    WidthMeters=n<deep?Next(48,76):Next(14,24)
+                };
+                if(n<trunks)
+                {
+                    float slot=(n+1f)/(trunks+1f);
+                    float jitter=(Next(-.18f,.18f)/(trunks+1f));
+                    float cross=Mathf.Lerp(.08f,.92f,Mathf.Clamp01(slot+jitter));
+                    var a=horizontal?new Vector2(0,cross*region.Height):new Vector2(cross*region.Width,0);
+                    var b=horizontal?new Vector2(region.Width,a.y):new Vector2(a.x,region.Height);
+                    if(reversed)(a,b)=(b,a);
+                    path.Points.Add(new DistrictRiverPoint(a.x,a.y));
+                    path.Points.Add(new DistrictRiverPoint(b.x,b.y));
                 }
                 else
                 {
-                    // Choose from existing branches too, producing tributaries of
-                    // tributaries instead of a row of independent parallel channels.
-                    var parent=canonical[random.Next(canonical.Count)];
-                    int join=random.Next(Mathf.Max(1,parent.Count/3),Mathf.Max(2,parent.Count-2));
-                    var end=parent[join];
-                    bool left=random.NextDouble()<.5;
-                    var start=new Vector2(left?0:1,Mathf.Clamp(end.y-Next(.16f,.60f),.02f,.85f));
-                    int count=random.Next(4,8);
-                    for(int i=0;i<count;i++)
-                    {
-                        float t=i/(float)(count-1);var p=Vector2.Lerp(start,end,t);
-                        if(i>0&&i<count-1)
-                        {
-                            p.x+=Next(-.12f,.12f)*Mathf.Sin(t*Mathf.PI);
-                            p.y+=Next(-.12f,.12f)*Mathf.Sin(t*Mathf.PI);
-                        }
-                        anchors.Add(new Vector2(Mathf.Clamp01(p.x),Mathf.Clamp01(p.y)));
-                    }
+                    var parent=result[random.Next(trunks)];
+                    float along=Next(.15f,.85f);
+                    var first=new Vector2(parent.Points[0].X,parent.Points[0].Z);
+                    var last=new Vector2(parent.Points[parent.Points.Count-1].X,
+                        parent.Points[parent.Points.Count-1].Z);
+                    var join=Vector2.Lerp(first,last,along);
+                    bool lowSide=random.NextDouble()<.5;
+                    var start=horizontal
+                        ? new Vector2(join.x,lowSide?0:region.Height)
+                        : new Vector2(lowSide?0:region.Width,join.y);
+                    path.Points.Add(new DistrictRiverPoint(start.x,start.y));
+                    path.Points.Add(new DistrictRiverPoint(join.x,join.y));
+                    InsertCollinearPoint(parent,join);
                 }
-                var points=new List<Vector2>();
-                // Corner cutting retains irregular large bends without sharp mesh
-                // mitres or a repeated sinusoid. Endpoints stay exact.
-                points.AddRange(anchors);
-                for(int pass=0;pass<3;pass++)
-                {
-                    var smooth=new List<Vector2>{points[0]};
-                    for(int i=1;i<points.Count;i++)
-                    {smooth.Add(Vector2.Lerp(points[i-1],points[i],.25f));smooth.Add(Vector2.Lerp(points[i-1],points[i],.75f));}
-                    smooth.Add(points[points.Count-1]);points=smooth;
-                }
-                bool horizontal = flow == RegionRiverFlow.WestToEast || flow == RegionRiverFlow.EastToWest;
-                points = AddShortMeanders(points, new Vector2(
-                    DistrictScale.SizeMeters(horizontal ? region.Height : region.Width),
-                    DistrictScale.SizeMeters(horizontal ? region.Width : region.Height)), random, n < deep);
-                if(n>0)
-                {
-                    var trial = new List<List<Vector2>>();
-                    foreach(var existing in canonical)trial.Add(new List<Vector2>(existing));
-                    JoinFirstRiver(points,trial);
-                    float length=0;
-                    for(int i=1;i<points.Count;i++)length+=Vector2.Distance(points[i-1],points[i]);
-                    if(length<.10f)
-                    {
-                        if(++attempts>128)throw new InvalidOperationException("Could not find enough distinct tributaries. Try another river seed.");
-                        n--;continue;
-                    }
-                    canonical=trial;
-                }
-                attempts=0;
-                canonical.Add(points);
-                var path=new RegionRiverPath{Id=$"region-{seed}-{n}",Depth=n<deep?DistrictRiverDepth.Deep:DistrictRiverDepth.Shallow,
-                    WidthMeters=n<deep?Next(48,76):Next(14,24)};
-                foreach(var point in points){var p=Orient(point);path.Points.Add(new DistrictRiverPoint(p.x,p.y));}
                 result.Add(path);
-                // Joining inserts an exact shared point into the parent; synchronize
-                // its master geometry before districts are clipped.
-                for(int j=0;j<n;j++)
-                {
-                    result[j].Points.Clear();
-                    foreach(var point in canonical[j]){var p=Orient(point);result[j].Points.Add(new DistrictRiverPoint(p.x,p.y));}
-                }
             }
             return result;
         }
 
-        private static List<Vector2> AddShortMeanders(List<Vector2> route, Vector2 scale, System.Random random, bool deep)
+        private static void InsertCollinearPoint(RegionRiverPath path,
+            Vector2 point)
         {
-            float wavelength = (deep ? 480f : 300f) * Mathf.Lerp(.85f,1.25f,(float)random.NextDouble());
-            float amplitude = deep ? 65f : 38f;
-            float phase = (float)random.NextDouble()*Mathf.PI*2;
-            float total=0;
-            for(int i=1;i<route.Count;i++)total+=Vector2.Scale(route[i]-route[i-1],scale).magnitude;
-            var result=new List<Vector2>();float distance=0;
-            for(int i=1;i<route.Count;i++)
+            for(int index=0;index<path.Points.Count;index++)
             {
-                var a=Vector2.Scale(route[i-1],scale);var b=Vector2.Scale(route[i],scale);
-                var tangent=(b-a).normalized;var normal=new Vector2(-tangent.y,tangent.x);
-                float length=Vector2.Distance(a,b);int steps=Mathf.Max(1,Mathf.CeilToInt(length/30f));
-                for(int j=0;j<steps;j++)
+                var existing=new Vector2(path.Points[index].X,path.Points[index].Z);
+                if(Vector2.Distance(existing,point)<.000001f)return;
+            }
+            var origin=new Vector2(path.Points[0].X,path.Points[0].Z);
+            var end=new Vector2(path.Points[path.Points.Count-1].X,
+                path.Points[path.Points.Count-1].Z);
+            var direction=end-origin;
+            float position=Vector2.Dot(point-origin,direction);
+            for(int index=1;index<path.Points.Count;index++)
+            {
+                var candidate=new Vector2(path.Points[index].X,path.Points[index].Z);
+                if(Vector2.Dot(candidate-origin,direction)>position)
                 {
-                    float t=j/(float)steps;float along=distance+length*t;
-                    float envelope=Mathf.SmoothStep(0,1,Mathf.Min(along,total-along)/150f);
-                    float angle=along/wavelength*Mathf.PI*2;
-                    float offset=amplitude*envelope*(Mathf.Sin(angle+phase+.35f*Mathf.Sin(angle*.27f))+.18f*Mathf.Sin(angle*1.73f-phase));
-                    var p=Vector2.Lerp(a,b,t)+normal*offset;
-                    result.Add(new Vector2(Mathf.Clamp01(p.x/scale.x),Mathf.Clamp01(p.y/scale.y)));
+                    path.Points.Insert(index,new DistrictRiverPoint(point.x,point.y));
+                    return;
                 }
-                distance+=length;
             }
-            result.Add(route[route.Count-1]);
-            for(int pass=0;pass<2;pass++)
-            {
-                var smooth=new List<Vector2>{result[0]};
-                for(int i=1;i<result.Count;i++){smooth.Add(Vector2.Lerp(result[i-1],result[i],.25f));smooth.Add(Vector2.Lerp(result[i-1],result[i],.75f));}
-                smooth.Add(result[result.Count-1]);result=smooth;
-            }
-            // Retain the smoothed bends without paying for nearly collinear samples
-            // in terrain carving, water sampling and junction processing.
-            var keep=new bool[result.Count];keep[0]=keep[result.Count-1]=true;
-            void Simplify(int first,int last)
-            {
-                var a=Vector2.Scale(result[first],scale);var b=Vector2.Scale(result[last],scale);var delta=b-a;
-                float farthest=2f;int chosen=-1;
-                for(int i=first+1;i<last;i++)
-                {
-                    var p=Vector2.Scale(result[i],scale);var t=delta.sqrMagnitude<.001f?0:Mathf.Clamp01(Vector2.Dot(p-a,delta)/delta.sqrMagnitude);
-                    float distance=Vector2.Distance(p,a+delta*t);if(distance>farthest){farthest=distance;chosen=i;}
-                }
-                if(chosen<0)return;keep[chosen]=true;Simplify(first,chosen);Simplify(chosen,last);
-            }
-            Simplify(0,result.Count-1);
-            var compact=new List<Vector2>();for(int i=0;i<result.Count;i++)if(keep[i])compact.Add(result[i]);
-            return compact;
-        }
-
-        private static void JoinFirstRiver(List<Vector2> branch,List<List<Vector2>> rivers)
-        {
-            for(int i=1;i<branch.Count;i++)
-            {
-                var a=branch[i-1];var d=branch[i]-a;
-                var best=2f;List<Vector2> hitRiver=null;int hitIndex=0;Vector2 hit=default;
-                foreach(var river in rivers)for(int j=1;j<river.Count;j++)
-                {
-                    var b=river[j-1];var e=river[j]-b;
-                    float cross=d.x*e.y-d.y*e.x;
-                    if(Mathf.Abs(cross)<1e-10f)continue;
-                    var delta=b-a;
-                    float t=(delta.x*e.y-delta.y*e.x)/cross;
-                    float u=(delta.x*d.y-delta.y*d.x)/cross;
-                    if(t<-.00001f||t>1.00001f||u<-.00001f||u>1.00001f||t>=best)continue;
-                    best=t;hitRiver=river;hitIndex=j;hit=a+d*Mathf.Clamp01(t);
-                }
-                if(hitRiver==null)continue;
-                branch.RemoveRange(i,branch.Count-i);
-                if(Vector2.Distance(branch[branch.Count-1],hit)>1e-6f)branch.Add(hit);
-                hitRiver.Insert(hitIndex,hit);
-                return;
-            }
+            path.Points.Add(new DistrictRiverPoint(point.x,point.y));
         }
 
         // Clip exact shared segments rather than generating or snapping per district.

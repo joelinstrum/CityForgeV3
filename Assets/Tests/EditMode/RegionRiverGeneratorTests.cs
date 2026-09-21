@@ -52,9 +52,10 @@ public class RegionRiverGeneratorTests
     [Test] public void ChangingDistrictBordersReclipsTheSameRegionalPaths()
     {
         var r=Region();RegionRiverGenerator.Apply(r,RegionRiverGenerator.Generate(r,new RegionTerrainSettings{DeepRivers=RegionWaterAmount.Few},3));
-        var original=r.RiverPaths;
+        var original=r.RiverPaths.ToArray();var geometry=original.Select(JsonUtility.ToJson).ToArray();
         RegionSaveStore.RegenerateTiles(r);
-        Assert.That(r.RiverPaths,Is.SameAs(original));
+        CollectionAssert.AreEqual(original,r.RiverPaths);
+        CollectionAssert.AreEqual(geometry,r.RiverPaths.Select(JsonUtility.ToJson));
         foreach(var tile in r.Tiles)
             Assert.That(tile.Rivers.Count,Is.EqualTo(RegionRiverGenerator.Sections(tile,original).Count));
         Assert.That(r.Tiles.Sum(t=>t.Rivers.Count),Is.GreaterThan(0));

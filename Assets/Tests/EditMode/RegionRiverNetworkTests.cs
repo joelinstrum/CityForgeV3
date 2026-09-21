@@ -8,7 +8,7 @@ public class RegionRiverNetworkTests
 {
     RegionSaveData Region()=>new RegionSaveData{Width=28,Height=20,Tiles=new List<RegionCityTile>{new(){TileId="south",Width=28,Height=10},new(){TileId="north",Y=10,Width=28,Height=10}}};
     [TestCase(1)][TestCase(1785)][TestCase(994)][TestCase(26)]
-    public void NetworkHasVariedConnectedNonzeroBranches(int seed)
+    public void NetworkUsesStraightCardinalConnectedSegments(int seed)
     {
         var r=Region();var settings=new RegionTerrainSettings{Streams=RegionWaterAmount.Few};
         var paths=RegionRiverGenerator.Generate(r,settings,seed);
@@ -22,7 +22,14 @@ public class RegionRiverNetworkTests
         var lengths=paths.Select(p=>p.Points.Zip(p.Points.Skip(1),(a,b)=>Vector2.Distance(new(a.X,a.Z),new(b.X,b.Z))).Sum()).ToArray();
         Assert.That(lengths.Min(),Is.GreaterThan(.05f));
         Assert.That(lengths.Max()-lengths.Min(),Is.GreaterThan(1));
-        foreach(var path in paths)foreach(var p in path.Points){Assert.That(p.X,Is.InRange(0,28));Assert.That(p.Z,Is.InRange(0,20));}
+        foreach(var path in paths)
+        {
+            foreach(var p in path.Points){Assert.That(p.X,Is.InRange(0,28));Assert.That(p.Z,Is.InRange(0,20));}
+            foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
+                Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||
+                    Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True,
+                    "Every generated segment must follow one district-grid axis.");
+        }
     }
     [TestCase(RegionRiverFlow.WestToEast,DistrictRiverDirection.WestToEast)]
     [TestCase(RegionRiverFlow.EastToWest,DistrictRiverDirection.EastToWest)]
@@ -32,8 +39,15 @@ public class RegionRiverNetworkTests
     {
         var r=Region();var paths=RegionRiverGenerator.Generate(r,new(){DeepRivers=RegionWaterAmount.Few,Flow=flow},3);
         Assert.That(RegionRiverGenerator.DirectionOf(paths[0]),Is.EqualTo(expected));
+        foreach(var path in paths)foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
+            Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True);
         RegionRiverGenerator.Apply(r,paths);
-        foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==paths[0].Id))Assert.That(section.Direction,Is.EqualTo(expected));
+        foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==paths[0].Id))
+        {
+            Assert.That(section.Direction,Is.EqualTo(expected));
+            foreach(var pair in section.Points.Zip(section.Points.Skip(1),(a,b)=>(a,b)))
+                Assert.That(Mathf.Abs(pair.a.X-pair.b.X)<.000001f||Mathf.Abs(pair.a.Z-pair.b.Z)<.000001f,Is.True);
+        }
     }
     [Test] public void BorderClippingDoesNotRotateTheRiver()
     {
@@ -55,7 +69,7 @@ public class RegionRiverNetworkTests
         {
             RenderSettings.ambientSkyColor=Color.red;
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Noon,light);
-            Assert.That(light.intensity,Is.EqualTo(1.05f));Assert.That(RenderSettings.ambientSkyColor.r,Is.EqualTo(.42f).Within(.001f));
+            Assert.That(light.intensity,Is.EqualTo(.64f));Assert.That(RenderSettings.ambientSkyColor.r,Is.EqualTo(.42f).Within(.001f));
             var expected=RenderSettings.ambientSkyColor;
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Night,light);
             DistrictWorldController.ApplyRegionEnvironment(TimeOfDayPreset.Noon,light);

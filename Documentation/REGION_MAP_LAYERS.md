@@ -32,6 +32,15 @@ The shared pencil commits only after release. River paths are stored in region c
 
 Validation: 37 targeted Unity tests passed, including profiles, clipping, regeneration preservation, persistence, map orientation and road behavior. Live isolated-fixture checks passed for both river buttons, pointer input and save/reload, followed by the road pencil regression check.
 
+Automatic river generation now has a cardinal V01 baseline: district rivers
+are straight two-point channels on the 10-meter district lattice, while region
+trunks and tributaries use only the north/south and east/west grid axes.
+Tributaries meet trunks at exact right angles. Flow direction, river amounts,
+width/depth, clipping and persistence remain intact. Hand-drawn and
+district-shaped rivers keep their authored geometry. Controlled curves and
+additional generated variety are intentionally deferred until this alignment
+is accepted in the isolated Regions Review workspace.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.
