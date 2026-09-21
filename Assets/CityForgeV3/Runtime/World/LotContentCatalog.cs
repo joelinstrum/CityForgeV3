@@ -33,6 +33,7 @@ namespace CityForgeV3.World
         public string id;
         public string lotResourcePath;
         public string previewResourcePath;
+        public bool hidden;
     }
 
     /// <summary>
@@ -151,7 +152,8 @@ namespace CityForgeV3.World
                             $"Bundled Lot '{entry.id}' does not match its payload ID.");
                     var summary = Summary(data, $"resource:{entry.lotResourcePath}");
                     Add(summary, null, null, manifestPath, false, false,
-                        entry.lotResourcePath, entry.previewResourcePath);
+                        entry.lotResourcePath, entry.previewResourcePath,
+                        !entry.hidden);
                 }
             }
             catch (Exception exception)
@@ -196,7 +198,8 @@ namespace CityForgeV3.World
 
         private static void Add(LotSaveSummary summary, string jsonPath,
             string previewPath, string sourceName, bool mod, bool useSaveStore,
-            string jsonResourcePath = null, string previewResourcePath = null)
+            string jsonResourcePath = null, string previewResourcePath = null,
+            bool publish = true)
         {
             if (summary == null || string.IsNullOrWhiteSpace(summary.LotId)) return;
             if (_byId.ContainsKey(summary.LotId))
@@ -214,7 +217,7 @@ namespace CityForgeV3.World
                 PreviewResourcePath = previewResourcePath,
                 UseSaveStore = useSaveStore
             });
-            _all.Add(summary);
+            if (publish) _all.Add(summary);
         }
 
         private static LotSaveSummary Summary(LotSaveData data, string path) => new()

@@ -27,8 +27,9 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         LOD 300
 
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows vertex:vert
+        #pragma surface surf StandardBuilding fullforwardshadows vertex:vert
         #pragma target 3.0
+        #include "UnityPBSLighting.cginc"
 
         sampler2D _MainTex;
         sampler2D _BumpMap;
@@ -43,6 +44,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _Saturation;
         half _Vibrance;
         half _AlbedoBoost;
+        half _CFNativeBuildingIndirectScale;
         sampler2D _NightEmissionMask;
         fixed4 _NightEmissionColor;
         half _NightEmissionIntensity;
@@ -76,6 +78,22 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
                 (source - fixed3(0.5, 0.5, 0.5)) * _Contrast +
                 fixed3(0.5, 0.5, 0.5));
             return contrasted;
+        }
+
+        half4 LightingStandardBuilding(SurfaceOutputStandard surface,
+            half3 viewDirection, UnityGI lighting)
+        {
+            return LightingStandard(surface, viewDirection, lighting);
+        }
+
+        void LightingStandardBuilding_GI(SurfaceOutputStandard surface,
+            UnityGIInput input, inout UnityGI lighting)
+        {
+            LightingStandard_GI(surface, input, lighting);
+            // Keep an uninitialized preview on the neutral path until its
+            // environment owner publishes the shared daylight scale.
+            lighting.indirect.diffuse *= max(1.0h,
+                _CFNativeBuildingIndirectScale);
         }
 
         void surf(Input input, inout SurfaceOutputStandard output)

@@ -29,6 +29,10 @@ namespace CityForgeV3.Tests.EditMode
                 Is.GreaterThan(nightSun.maxColorComponent * 10f));
             Assert.That(Shader.GetGlobalFloat("_CFWorldWhitePoint"),
                 Is.EqualTo(DistrictWorldController.WorldWhitePoint).Within(.001f));
+            Assert.That(Shader.GetGlobalFloat(
+                    "_CFNativeBuildingIndirectScale"),
+                Is.EqualTo(1f).Within(.001f),
+                "Night must not lift ordinary building albedo.");
         }
 
         [Test]
@@ -85,6 +89,41 @@ namespace CityForgeV3.Tests.EditMode
             StringAssert.Contains("_HybridBaseLayer", source);
             StringAssert.Contains("CalibrateHybridBase", source);
             StringAssert.Contains("shoulderStart", source);
+        }
+
+        [Test]
+        public void DistrictNativeBuildingsUseOneNonEmissiveDaylightLift()
+        {
+            foreach (var preset in new[]
+                     {
+                         TimeOfDayPreset.Morning,
+                         TimeOfDayPreset.Noon,
+                         TimeOfDayPreset.Afternoon
+                     })
+                Assert.That(DistrictWorldController
+                        .NativeBuildingIndirectScaleFor(preset),
+                    Is.EqualTo(2.5f), preset.ToString());
+            Assert.That(DistrictWorldController.NativeBuildingIndirectScaleFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeBuildingIndirectScaleFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f));
+
+            DistrictWorldController.ApplyRegionEnvironment(
+                TimeOfDayPreset.Noon, null);
+            Assert.That(Shader.GetGlobalFloat(
+                    "_CFNativeBuildingIndirectScale"),
+                Is.EqualTo(2.5f).Within(.001f));
+
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "Experimental3DBuildingPBR.shader"));
+            StringAssert.Contains("LightingStandardBuilding_GI", source);
+            StringAssert.Contains("lighting.indirect.diffuse *=", source);
+            StringAssert.Contains("max(1.0h,", source);
+            StringAssert.Contains("output.Albedo = preserved", source);
+            StringAssert.Contains("output.Emission = nightEmission", source);
+            StringAssert.DoesNotContain(
+                "output.Emission = lighting.indirect.diffuse", source);
         }
 
         [Test]

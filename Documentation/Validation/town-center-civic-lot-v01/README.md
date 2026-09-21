@@ -1,4 +1,4 @@
-# Town Center bundled Civics Lot validation
+# Town Center bundled Civics Lot validation (historical)
 
 `town-center-civic-v01` is a read-only project resource, not a file in the
 player's `CityForge/Lots` directory. It composes `town-center-v01` at the center
@@ -18,3 +18,9 @@ identity, Civic classification, thumbnail resolution, cost and requirements,
 runtime Lot composition, the normal Civic browser, the founder card, founder
 food behavior, and the earlier Town Center lighting/LOD checks. Results are in
 `tests.xml`. The fixture never invoked Lot, district, or region Save.
+
+Superseded September 20: this bundled definition is now a hidden compatibility
+source. It remains readable by stable ID for existing placements but is omitted
+from all player-facing Lot summaries and creation cards. The authored player Lot
+is the visible District Town Center. See
+`Documentation/Validation/hosted-lot-lighting-v01/`.

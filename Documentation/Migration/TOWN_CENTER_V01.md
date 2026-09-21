@@ -65,12 +65,11 @@ and sprite caches are reused with the existing outdoor player, without changing
 outdoor animation behavior. No district scan, redraw, navigation change, worker
 optimization change or progress save was added.
 
-The read-only bundled Lot `town-center-civic-v01` composes this building on a
-2 × 2 District Town Center Lot. It appears under **Civic → Browse Civic Lots**,
-requires a road, costs $2,500, contributes no population, and also supplies a
-founder choice. Its zero population is authored in the Lot rather than imposed
-by founder placement. It is a project resource rather than a player save;
-placement still uses the normal explicit district action and manual persistence
-contract.
+The read-only bundled Lot `town-center-civic-v01` originally published this
+building as a 2 × 2 District Town Center choice. As of September 20 it is hidden
+from the Civic and founder catalogs because the user-authored Town Center Lot is
+the authoritative player-facing definition. The bundled resource remains
+readable only for compatibility with districts that already reference its stable
+ID. This does not migrate, rewrite, or save those districts.
 
 Validation and measured limits: `Documentation/Validation/town-center-v01/README.md`.

@@ -4,7 +4,8 @@
     {
       "id": "town-center-civic-v01",
       "lotResourcePath": "CityForgeV3/Lots/TownCenter/town-center-civic-v01",
-      "previewResourcePath": "CityForgeV3/Buildings3D/TownCenterV01/thumbnail"
+      "previewResourcePath": "CityForgeV3/Buildings3D/TownCenterV01/thumbnail",
+      "hidden": true
     }
   ]
 }

@@ -87,3 +87,20 @@ persistence path was added. Isolated Unity validation passed 7/7 contract tests,
 8/8 focused regressions, and 10/10 river/environment regressions. Before/after
 and five-preset captures plus numeric measurements are in
 `Documentation/Validation/lighting-refinement-v01/`.
+
+## Hosted native-building follow-up — September 20, 2026
+
+District-hosted native buildings now receive one shared 2.5 indirect-diffuse
+scale in Morning, Noon, and Afternoon. Evening and Night remain at 1.0. The
+scale affects only the native building shader's indirect diffuse contribution;
+source albedo, direct sunlight, specular highlights, terrain and artwork remain
+unchanged, and ordinary surfaces remain non-emissive. It is published once at
+the existing environment transition boundary, with no Lot iteration or material
+walk.
+
+The obsolete bundled Town Center remains readable only as a hidden compatibility
+source for already-placed `town-center-civic-v01` instances. It is no longer
+published to the founder or Civic creation catalogs; the authored player Lot is
+the visible Town Center. No player file was loaded into the test fixture,
+rewritten, or saved. Evidence is in
+`Documentation/Validation/hosted-lot-lighting-v01/`.

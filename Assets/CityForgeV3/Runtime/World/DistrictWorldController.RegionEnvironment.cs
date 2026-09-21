@@ -15,6 +15,8 @@ namespace CityForgeV3.World
             Shader.PropertyToID("_CFWorldWhitePoint");
         private static readonly int HybridArtworkExposureId =
             Shader.PropertyToID("_CFHybridArtworkExposure");
+        private static readonly int NativeBuildingIndirectScaleId =
+            Shader.PropertyToID("_CFNativeBuildingIndirectScale");
 
         public const float WorldWhitePoint = .98f;
 
@@ -42,6 +44,18 @@ namespace CityForgeV3.World
             _ => 1f
         };
 
+        public static float NativeBuildingIndirectScaleFor(
+            TimeOfDayPreset preset) => preset switch
+        {
+            // A rotated district Lot can present a shaded facade to the fixed
+            // camera. Strengthen only the native-building family's indirect
+            // diffuse response, leaving direct highlights and albedo intact.
+            TimeOfDayPreset.Morning => 2.5f,
+            TimeOfDayPreset.Noon => 2.5f,
+            TimeOfDayPreset.Afternoon => 2.5f,
+            _ => 1f
+        };
+
         public static void ApplyRegionEnvironment(TimeOfDayPreset preset, Light sun)
         {
             var spec = TimeOfDayLighting.For(preset);
@@ -59,7 +73,8 @@ namespace CityForgeV3.World
             var sunIntensity = RegionSunIntensity(preset);
             ApplyWorldShaderLighting(spec.AmbientColor, sunColor,
                 sunIntensity, sunRotation,
-                HybridArtworkExposureFor(preset));
+                HybridArtworkExposureFor(preset),
+                NativeBuildingIndirectScaleFor(preset));
             if (sun == null) return;
             sun.transform.rotation = sunRotation;
             sun.color = sunColor;
@@ -70,7 +85,8 @@ namespace CityForgeV3.World
 
         public static void ApplyWorldShaderLighting(Color ambientColor,
             Color sunColor, float sunIntensity, Quaternion sunRotation,
-            float hybridArtworkExposure = 1f)
+            float hybridArtworkExposure = 1f,
+            float nativeBuildingIndirectScale = 1f)
         {
             var directionToSun = -(sunRotation * Vector3.forward).normalized;
             Shader.SetGlobalColor(WorldAmbientColorId, ambientColor);
@@ -80,6 +96,8 @@ namespace CityForgeV3.World
             Shader.SetGlobalFloat(WorldWhitePointId, WorldWhitePoint);
             Shader.SetGlobalFloat(HybridArtworkExposureId,
                 Mathf.Max(0f, hybridArtworkExposure));
+            Shader.SetGlobalFloat(NativeBuildingIndirectScaleId,
+                Mathf.Max(0f, nativeBuildingIndirectScale));
         }
 
         public static Color BoundWorldIllumination(Color illumination)

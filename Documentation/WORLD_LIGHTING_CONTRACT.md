@@ -22,6 +22,10 @@ City Forge has one environment-lighting owner per rendered world.
 - Hybrid directional building bases use one shared daylight exposure with a
   highlight shoulder. Their registered shade and genuine night-light overlays
   remain separate, and dusk/full-night artwork is not daylight-lifted.
+- Native 3D building materials use one shared daylight-only indirect-diffuse
+  scale. This keeps camera-facing shaded facades as readable and colorful as
+  directional-render buildings without changing source albedo, direct
+  highlights, terrain, or artwork. Evening and night use the neutral scale.
 - Roads, rivers, Lot ground, decals, flora, and garden artwork do not have local
   night tints, light floors, sun directions, or time-of-day brightness controls.
 - Emission and local lights are opt-in effects for actual emitters: windows,

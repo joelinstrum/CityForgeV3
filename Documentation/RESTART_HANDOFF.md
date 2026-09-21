@@ -1764,3 +1764,26 @@ contract documentation. An isolated Unity project passed 51/51 focused
 EditMode checks: 8 lighting-contract, 24 district-flora, 14 region-flora, and
 5 region-size/noon checks. No player content was loaded or saved, the open V3
 editor was not driven or restarted, and CityForge-Regions-Review was not used.
+
+### September 20 — hosted Lot vibrancy and single Town Center choice
+
+District-hosted native 3D buildings now use one shared 2.5 indirect-diffuse
+scale during Morning, Noon, and Afternoon. This closes the orientation-dependent
+gap where a Lot's shaded facade looked dull beside its standalone Lot Editor
+view. Evening and Night remain at the neutral 1.0 scale. The shader leaves
+source albedo and direct/specular light untouched, does not use emission for
+ordinary surfaces, and does not affect terrain or artwork. Genuine window and
+lamp emission remains unchanged.
+
+The obsolete bundled `town-center-civic-v01` is hidden from the cached published
+Lot list, so it no longer creates a second Town Center card beside the authored
+player Lot. Its resource stays resolvable by stable ID strictly so an older
+district placement can still load. No player Lot or district was migrated,
+rewritten, deleted, or saved.
+
+Both changes occur at existing cached boundaries: one global uniform write per
+environment transition and one catalog decision during cache construction.
+There is no per-frame district scan, Lot walk, material update, redraw, or
+rebuild. The final isolated suite passed 32/32 checks, and five
+graphics-enabled preset captures were inspected without shader errors. Details
+are recorded in `Documentation/Validation/hosted-lot-lighting-v01/`.

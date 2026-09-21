@@ -478,7 +478,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void TownCenterFounderCardUsesTheBundledCivicLot()
+        public void TownCenterFounderCardsMatchTheAuthoredLotCatalog()
         {
             var go = new GameObject("Isolated Town Center founder card");
             go.SetActive(false);
@@ -491,12 +491,16 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeFounderBuildingModal", flags)
                     .Invoke(app, null);
-                var card = root.Q<Button>(
-                    "founder-lot-town-center-civic-v01");
-                Assert.That(card, Is.Not.Null);
-                Assert.That(card.enabledSelf, Is.True);
-                Assert.That(card.Query<Label>().ToList().Any(label =>
-                    label.text == "Town Center"), Is.True);
+                var summaries = LotContentCatalog.All.Where(entry =>
+                    entry.LotType == LotType.DistrictTownCenter).ToList();
+                foreach (var summary in summaries)
+                {
+                    var card = root.Q<Button>("founder-lot-" + summary.LotId);
+                    Assert.That(card, Is.Not.Null, summary.LotId);
+                    Assert.That(card.enabledSelf, Is.True, summary.LotId);
+                }
+                Assert.That(root.Q<Button>(
+                    "founder-lot-town-center-civic-v01"), Is.Null);
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -515,12 +519,16 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeDistrictLotBrowser", flags)
                     .Invoke(app, new object[] { LotType.Civics, false });
-                var card = root.Q<Button>(
-                    "district-lot-town-center-civic-v01");
-                Assert.That(card, Is.Not.Null);
-                Assert.That(card.enabledSelf, Is.True);
-                Assert.That(card.tooltip,
-                    Does.Contain("district town center lot"));
+                var summaries = LotContentCatalog.All.Where(entry =>
+                    entry.LotType == LotType.DistrictTownCenter).ToList();
+                foreach (var summary in summaries)
+                {
+                    var card = root.Q<Button>("district-lot-" + summary.LotId);
+                    Assert.That(card, Is.Not.Null, summary.LotId);
+                    Assert.That(card.enabledSelf, Is.True, summary.LotId);
+                }
+                Assert.That(root.Q<Button>(
+                    "district-lot-town-center-civic-v01"), Is.Null);
             }
             finally { Object.DestroyImmediate(go); }
         }
