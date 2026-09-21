@@ -146,6 +146,29 @@ namespace CityForgeV3.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+        [Test] public void RiverGenerationDefaultsAndEmptySelectionAreVisible()
+        {
+            var go = Fixture(out var app, out var root, out var region);
+            try
+            {
+                Call(app, "RegenerateRegionRivers");
+                Assert.That(root.Q("region-terrain-modal"), Is.Not.Null);
+                Assert.That(root.Q<Toggle>("deep-rivers-few").value, Is.True);
+                Assert.That(root.Q<Toggle>("deep-rivers-many").style.display.value,
+                    Is.EqualTo(DisplayStyle.None));
+                Assert.That(root.Q<Toggle>("streams-few").value, Is.True);
+                var error = (string)Call(app, "GenerateFreshRegionRivers",
+                    region, new RegionTerrainSettings());
+                Assert.That(error, Does.Contain("Choose one major river"));
+                Assert.That(region.RiverPaths, Is.Empty);
+                var generate = root.Q<Button>("generate-region-rivers");
+                typeof(Clickable).GetMethod("SimulateSingleClick", Private)
+                    .Invoke(generate.clickable, new object[] { null, 0 });
+                Assert.That(region.RiverPaths, Has.Count.EqualTo(3));
+                Assert.That(root.Q("region-terrain-modal"), Is.Null);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
         [Test] public void CaptionUpdatesPreserveIconAndUseSeparateLabel()
         {
             var chrome = typeof(CityForgeApp).Assembly.GetType("CityForgeV3.UI.CfMapChrome");

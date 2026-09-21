@@ -64,6 +64,12 @@ swings and long uninterrupted straight sections. The Rivers panel exposes one
 major toggle plus the two small-river amounts. Existing authored geometry is
 unchanged.
 
+When a region has no saved procedural river selection, Regenerate Rivers now
+opens the Rivers panel with the intended one-major-plus-two-small defaults.
+Generate Rivers rejects an explicitly empty selection with visible guidance;
+Remove Rivers is the deliberate clear action. This prevents the former silent
+empty-layout no-op.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.

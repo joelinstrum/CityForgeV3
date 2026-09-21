@@ -20,6 +20,12 @@ namespace CityForgeV3.UI
             draft.Flow = RegionRiverFlow.Varied;
             if (draft.DeepRivers != RegionWaterAmount.None)
                 draft.DeepRivers = RegionWaterAmount.Few;
+            if (draft.DeepRivers == RegionWaterAmount.None &&
+                draft.Streams == RegionWaterAmount.None)
+            {
+                draft.DeepRivers = RegionWaterAmount.Few;
+                draft.Streams = RegionWaterAmount.Few;
+            }
             var category = initialCategory;
             bool busy = false, cancelled = false;
             var panel = CreateDocumentModal("REGION TERRAIN", "Choose terrain options for " + region.Name + ".");
@@ -186,7 +192,7 @@ namespace CityForgeV3.UI
                 {
                     content.Add(StyledLabel(category + " options will be added in a later pass.", "document-modal-copy")); return;
                 }
-                content.Add(StyledLabel("Choose a major river and an amount of small rivers. Leave both unchecked for none.", "document-modal-copy"));
+                content.Add(StyledLabel("Choose a major river and an amount of small rivers. Use Remove Rivers to clear the current layout.", "document-modal-copy"));
                 AddRegionWaterChoices(content, "deep-rivers", "One major river", "", draft.DeepRivers, value => draft.DeepRivers = value);
                 var legacyMajorChoice = content.Q<Toggle>("deep-rivers-many");
                 if (legacyMajorChoice != null)
@@ -232,6 +238,9 @@ namespace CityForgeV3.UI
 
         private string GenerateFreshRegionRivers(RegionSaveData region, RegionTerrainSettings draft)
         {
+            if (draft == null || draft.DeepRivers == RegionWaterAmount.None &&
+                draft.Streams == RegionWaterAmount.None)
+                return "Choose one major river or a small-river amount before generating.";
             var newSeed = RegionRiverGenerator.FreshSeed(region.RiverSeed);
             var previous = region.Terrain;
             var previousPaths = region.RiverPaths;
@@ -272,6 +281,12 @@ namespace CityForgeV3.UI
         {
             if (_openRegion == null) return;
             var saved = _openRegion.Terrain ?? new RegionTerrainSettings();
+            if (saved.DeepRivers == RegionWaterAmount.None &&
+                saved.Streams == RegionWaterAmount.None)
+            {
+                ComposeRegionTerrainCategory("Rivers");
+                return;
+            }
             var error = GenerateFreshRegionRivers(_openRegion, saved.Copy());
             if (error == null) return;
             var panel = CreateDocumentModal("RIVER LAYOUT", error);
