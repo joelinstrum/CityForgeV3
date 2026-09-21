@@ -19,6 +19,18 @@ public class RegionRiverDrawingTests
         stroke.Points.Clear();Assert.AreEqual(2,major.Points.Count);
         Assert.IsNull(RegionRiverDrawing.Create(stroke,RegionRiverSize.Large));
     }
+    [Test] public void AuthoringMarkersDistinguishMajorMediumAndStreamWithoutChangingSavedWidths()
+    {
+        Assert.AreEqual(28f,RegionRiverDrawing.MarkerWidthPoints(RegionRiverSize.Major));
+        Assert.AreEqual(7f,RegionRiverDrawing.MarkerWidthPoints(RegionRiverSize.Large));
+        Assert.AreEqual(2f,RegionRiverDrawing.MarkerWidthPoints(RegionRiverSize.Small));
+        Assert.AreEqual("MAJOR",RegionRiverDrawing.DisplayName(RegionRiverSize.Major));
+        Assert.AreEqual("MEDIUM",RegionRiverDrawing.DisplayName(RegionRiverSize.Large));
+        Assert.AreEqual("STREAM",RegionRiverDrawing.DisplayName(RegionRiverSize.Small));
+        Assert.AreEqual(128f,RegionRiverDrawing.WidthMeters(RegionRiverSize.Major));
+        Assert.AreEqual(64f,RegionRiverDrawing.WidthMeters(RegionRiverSize.Large));
+        Assert.AreEqual(18f,RegionRiverDrawing.WidthMeters(RegionRiverSize.Small));
+    }
     [Test] public void RiverInputRejectsJitterAndBacktrackingButKeepsBroadBends()
     {
         var stroke=new RegionPikeStroke(12,8);

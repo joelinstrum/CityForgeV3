@@ -9,6 +9,14 @@ namespace CityForgeV3.World
     public static class RegionRiverDrawing
     {
         public static float WidthMeters(RegionRiverSize size) => size==RegionRiverSize.Major?128:size==RegionRiverSize.Large?64:18;
+        // Marker width is an authoring aid, independent of saved channel width.
+        // Preserve enum values for existing saves while presenting clearer names.
+        public static float MarkerWidthPoints(RegionRiverSize size) =>
+            size == RegionRiverSize.Major ? 28f :
+            size == RegionRiverSize.Large ? 7f : 2f;
+        public static string DisplayName(RegionRiverSize size) =>
+            size == RegionRiverSize.Major ? "MAJOR" :
+            size == RegionRiverSize.Large ? "MEDIUM" : "STREAM";
 
         // Filter only river input; road drawing keeps its existing freehand behavior.
         public static void AddPoint(RegionPikeStroke stroke, RegionRiverSize size, Vector2 point, bool final=false)

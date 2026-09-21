@@ -57,9 +57,9 @@ namespace CityForgeV3.UI
             drawingActions.style.flexWrap = Wrap.Wrap;
             var major = CfButton.Create("CREATE MAJOR RIVER", () => BeginRegionRiver(RegionRiverSize.Major), true, "primary");
             major.name = "create-major-river"; drawingActions.Add(major);
-            var large = CfButton.Create("CREATE LARGE RIVER", () => BeginRegionRiver(RegionRiverSize.Large), true, "primary");
+            var large = CfButton.Create("CREATE MEDIUM RIVER", () => BeginRegionRiver(RegionRiverSize.Large), true, "primary");
             large.name = "create-large-river"; large.style.marginLeft = 12; drawingActions.Add(large);
-            var small = CfButton.Create("CREATE SMALL RIVER", () => BeginRegionRiver(RegionRiverSize.Small), true, "primary");
+            var small = CfButton.Create("CREATE STREAM", () => BeginRegionRiver(RegionRiverSize.Small), true, "primary");
             small.name = "create-small-river"; small.style.marginLeft = 12; drawingActions.Add(small);
             var remove = CfButton.Create("REMOVE RIVERS", () =>
             {
