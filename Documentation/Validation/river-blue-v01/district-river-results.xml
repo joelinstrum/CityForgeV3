@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="10" result="Passed" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.1809472">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.180947" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2326" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1152" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.172425" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="86679" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2327" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.169941" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2328" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1006" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.169368" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1234" name="DistrictRiverTests" fullname="CityForgeV3.Tests.DistrictRiverTests" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.151463" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1242" name="DistrictFloraSurvivesRegionSerialization" fullname="CityForgeV3.Tests.DistrictRiverTests.DistrictFloraSurvivesRegionSerialization" methodname="DistrictFloraSurvivesRegionSerialization" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="919698602" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.012451" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1240" name="HorizontalRiverCrossesOppositeDistrictEdges" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.004516" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1238" name="HorizontalRiverCrossesOppositeDistrictEdges(WestToEast,0.0f,1.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges(WestToEast,0.0f,1.0f)" methodname="HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1397841167" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.003168" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1239" name="HorizontalRiverCrossesOppositeDistrictEdges(EastToWest,1.0f,0.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges(EastToWest,1.0f,0.0f)" methodname="HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="489422643" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.000082" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1245" name="RiverBedTextureIsAvailableToRuntimeRendering" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverBedTextureIsAvailableToRuntimeRendering" methodname="RiverBedTextureIsAvailableToRuntimeRendering" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="676684449" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.017251" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1241" name="RiverDataSurvivesRegionSerialization" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverDataSurvivesRegionSerialization" methodname="RiverDataSurvivesRegionSerialization" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="136456779" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:16Z" duration="0.003148" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1246" name="RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" methodname="RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="306920766" result="Passed" start-time="2026-09-21 00:25:16Z" end-time="2026-09-21 00:25:17Z" duration="1.094342" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=46ms terrain=1ms decals=201ms total=248ms
+]]></output>
+            </test-case>
+            <test-case id="1243" name="ShallowRiverIsBroaderThanDeepRiver" fullname="CityForgeV3.Tests.DistrictRiverTests.ShallowRiverIsBroaderThanDeepRiver" methodname="ShallowRiverIsBroaderThanDeepRiver" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1065240434" result="Passed" start-time="2026-09-21 00:25:17Z" end-time="2026-09-21 00:25:17Z" duration="0.000321" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1237" name="VerticalRiverCrossesOppositeDistrictEdges" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-21 00:25:17Z" end-time="2026-09-21 00:25:17Z" duration="0.009792" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1235" name="VerticalRiverCrossesOppositeDistrictEdges(SouthToNorth,0.0f,1.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges(SouthToNorth,0.0f,1.0f)" methodname="VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1194896681" result="Passed" start-time="2026-09-21 00:25:17Z" end-time="2026-09-21 00:25:17Z" duration="0.000341" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1236" name="VerticalRiverCrossesOppositeDistrictEdges(NorthToSouth,1.0f,0.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges(NorthToSouth,1.0f,0.0f)" methodname="VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1099257179" result="Passed" start-time="2026-09-21 00:25:17Z" end-time="2026-09-21 00:25:17Z" duration="0.000082" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1244" name="WaterSelectionFindsAndMovesOnlyTheRiver" fullname="CityForgeV3.Tests.DistrictRiverTests.WaterSelectionFindsAndMovesOnlyTheRiver" methodname="WaterSelectionFindsAndMovesOnlyTheRiver" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1901754131" result="Passed" start-time="2026-09-21 00:25:17Z" end-time="2026-09-21 00:25:17Z" duration="0.001489" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /tmp/cityforge-river-blue-v01-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

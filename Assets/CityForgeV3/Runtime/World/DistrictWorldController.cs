@@ -75,9 +75,9 @@ namespace CityForgeV3.World
         public const string RiverBedDirtResource =
             "CityForgeV3/Water/River/02-river-bed-dirt";
         public const string RiverWaterTextureResource =
-            "CityForgeV3/Water/River/river-texture";
+            "CityForgeV3/Water/River/RiverBlueV01/river-texture";
         public const string RiverWhitecapTextureResource =
-            "CityForgeV3/Water/River/white-cap-river";
+            "CityForgeV3/Water/River/RiverBlueV01/white-cap-river";
         private const float RiverBedTextureWorldSizeMeters = 48f;
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;

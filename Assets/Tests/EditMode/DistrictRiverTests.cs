@@ -148,6 +148,12 @@ namespace CityForgeV3.Tests
                 DistrictWorldController.RiverBedDirtResource), Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(
                 DistrictWorldController.RiverWaterTextureResource), Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(
+                DistrictWorldController.RiverWhitecapTextureResource), Is.Not.Null);
+            StringAssert.Contains("/RiverBlueV01/",
+                DistrictWorldController.RiverWaterTextureResource);
+            StringAssert.Contains("/RiverBlueV01/",
+                DistrictWorldController.RiverWhitecapTextureResource);
         }
 
         [Test]
