@@ -30,9 +30,9 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(Shader.GetGlobalFloat("_CFWorldWhitePoint"),
                 Is.EqualTo(DistrictWorldController.WorldWhitePoint).Within(.001f));
             Assert.That(Shader.GetGlobalFloat(
-                    "_CFNativeBuildingIndirectScale"),
+                    "_CFNativeSurfaceIndirectScale"),
                 Is.EqualTo(1f).Within(.001f),
-                "Night must not lift ordinary building albedo.");
+                "Night must not lift ordinary native-surface albedo.");
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
-        public void DistrictNativeBuildingsUseOneNonEmissiveDaylightLift()
+        public void DistrictNativeSurfacesUseOneNonEmissiveDaylightLift()
         {
             foreach (var preset in new[]
                      {
@@ -101,17 +101,17 @@ namespace CityForgeV3.Tests.EditMode
                          TimeOfDayPreset.Afternoon
                      })
                 Assert.That(DistrictWorldController
-                        .NativeBuildingIndirectScaleFor(preset),
+                        .NativeSurfaceIndirectScaleFor(preset),
                     Is.EqualTo(2.5f), preset.ToString());
-            Assert.That(DistrictWorldController.NativeBuildingIndirectScaleFor(
+            Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
                 TimeOfDayPreset.Evening), Is.EqualTo(1f));
-            Assert.That(DistrictWorldController.NativeBuildingIndirectScaleFor(
+            Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
                 TimeOfDayPreset.Night), Is.EqualTo(1f));
 
             DistrictWorldController.ApplyRegionEnvironment(
                 TimeOfDayPreset.Noon, null);
             Assert.That(Shader.GetGlobalFloat(
-                    "_CFNativeBuildingIndirectScale"),
+                    "_CFNativeSurfaceIndirectScale"),
                 Is.EqualTo(2.5f).Within(.001f));
 
             var source = File.ReadAllText(Path.Combine(Application.dataPath,
@@ -124,6 +124,13 @@ namespace CityForgeV3.Tests.EditMode
             StringAssert.Contains("output.Emission = nightEmission", source);
             StringAssert.DoesNotContain(
                 "output.Emission = lighting.indirect.diffuse", source);
+
+            var gardenSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/GardenPropPBR.shader"));
+            StringAssert.Contains("LightingStandardGarden_GI", gardenSource);
+            StringAssert.Contains("_CFNativeSurfaceIndirectScale", gardenSource);
+            StringAssert.Contains("output.Emission = 0", gardenSource);
         }
 
         [Test]

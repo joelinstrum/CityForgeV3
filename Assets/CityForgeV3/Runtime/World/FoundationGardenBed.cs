@@ -165,7 +165,8 @@ namespace CityForgeV3.World
 
         private static Material MakeGround(string name, Color color)
         {
-            var material = new Material(Shader.Find("Standard"))
+            var material = new Material(Shader.Find(
+                "CityForgeV3/GardenPropPBR"))
             {
                 name = name, color = color, enableInstancing = true
             };

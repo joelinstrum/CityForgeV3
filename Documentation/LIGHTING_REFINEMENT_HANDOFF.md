@@ -104,3 +104,21 @@ published to the founder or Civic creation catalogs; the authored player Lot is
 the visible Town Center. No player file was loaded into the test fixture,
 rewritten, or saved. Evidence is in
 `Documentation/Validation/hosted-lot-lighting-v01/`.
+
+## Garden-prop follow-up — September 20, 2026
+
+Garden billboard art already consumed the shared world-lighting uniforms, but
+native meshes within the same compositions still used Unity's uncalibrated
+Standard path. The aged picket fence therefore became gray when it stood in a
+building's directional shadow. Native garden meshes now use the shared
+`GardenPropPBR` shader and the same daylight indirect-diffuse uniform as native
+buildings. Direct light, shadows, albedo, billboard art, grass, and night
+lighting remain unchanged; ordinary garden surfaces remain non-emissive.
+
+Shader assignment is a bounded local walk when one garden presentation is
+created or loaded. Materials stay shared, and time changes remain one global
+uniform write with no district scan or material walk. An isolated fixture passed
+20/20 focused lighting and garden checks. A graphics-enabled neutral-versus-
+district comparison verified that the fence returns to aged ivory while flowers
+and grass remain stable. Evidence:
+`Documentation/Validation/garden-prop-lighting-v01/`.

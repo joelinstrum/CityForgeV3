@@ -8,7 +8,7 @@ version can rotate a native building so its visible facade receives mostly
 indirect light. Validation therefore exercises a shared building-family
 indirect-diffuse calibration, not a Town Center or per-Lot override.
 
-The final contract publishes `_CFNativeBuildingIndirectScale` once through
+The final contract publishes `_CFNativeSurfaceIndirectScale` once through
 `ApplyRegionEnvironment`: 2.5 for Morning, Noon, and Afternoon, and 1.0 for
 Evening and Night. The native building shader scales only `UnityGI` indirect
 diffuse. Direct light, specular highlights, source albedo, terrain, hybrid

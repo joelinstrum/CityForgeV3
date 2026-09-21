@@ -44,7 +44,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _Saturation;
         half _Vibrance;
         half _AlbedoBoost;
-        half _CFNativeBuildingIndirectScale;
+        half _CFNativeSurfaceIndirectScale;
         sampler2D _NightEmissionMask;
         fixed4 _NightEmissionColor;
         half _NightEmissionIntensity;
@@ -93,7 +93,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
             // Keep an uninitialized preview on the neutral path until its
             // environment owner publishes the shared daylight scale.
             lighting.indirect.diffuse *= max(1.0h,
-                _CFNativeBuildingIndirectScale);
+                _CFNativeSurfaceIndirectScale);
         }
 
         void surf(Input input, inout SurfaceOutputStandard output)

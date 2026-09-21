@@ -160,7 +160,8 @@ namespace CityForgeV3.World
             block.transform.localScale = scale;
             block.GetComponent<Collider>().enabled = false;
             if (_rimMaterial == null)
-                _rimMaterial = new Material(Shader.Find("Standard"))
+                _rimMaterial = new Material(Shader.Find(
+                    "CityForgeV3/GardenPropPBR"))
                 {
                     color = new Color(0.26f, 0.25f, 0.21f)
                 };

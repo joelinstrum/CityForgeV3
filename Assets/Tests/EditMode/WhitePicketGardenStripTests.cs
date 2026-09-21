@@ -69,6 +69,8 @@ public class WhitePicketGardenStripTests
                     Assert.NotNull(fence, id);
                     var renderer = fence.GetComponentInChildren<MeshRenderer>();
                     Assert.NotNull(renderer);
+                    Assert.That(renderer.sharedMaterial.shader.name,
+                        Is.EqualTo("CityForgeV3/GardenPropPBR"));
                     Assert.That(renderer.bounds.size.x, Is.EqualTo(2f).Within(.04f));
                     Assert.That(renderer.bounds.size.y,
                         Is.GreaterThan(.9f).And.LessThan(1.2f));
@@ -133,6 +135,8 @@ public class WhitePicketGardenStripTests
                     .GetComponentInChildren<MeshRenderer>();
                 Assert.That(renderer.sharedMaterial.renderQueue,
                     Is.GreaterThanOrEqualTo(3000));
+                Assert.That(renderer.sharedMaterial.shader.name,
+                    Is.EqualTo("CityForgeV3/GardenPropPBR"));
             }
             finally { if (root != null) Object.DestroyImmediate(root.gameObject); }
         }

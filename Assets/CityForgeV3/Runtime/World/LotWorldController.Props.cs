@@ -226,6 +226,7 @@ namespace CityForgeV3.World
         private readonly List<Transform> _propPresentations = new();
         private readonly List<Renderer> _propProjectedShadowRenderers = new();
         private readonly List<Material> _propProjectedShadowMaterials = new();
+        private static Shader _gardenPropShader;
         private readonly Dictionary<string, float> _characterBusinessAsUsualUntil =
             new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, float> _characterManualOverrideUntil =
@@ -1835,48 +1836,54 @@ namespace CityForgeV3.World
         public Transform CreatePropPresentation(string propId, string name, float alpha)
         {
             if (FoundationGardenBed.TryStyle(propId, out var foundationStyle))
-                return ApplyWorldLightingToGardenSprites(
+                return ApplyWorldLightingToGardenPresentation(
                     FoundationGardenBed.Create(name, foundationStyle,
                         alpha, Season));
             if (WhitePicketGardenStrip.TryStyle(propId, out var picketStyle))
-                return ApplyWorldLightingToGardenSprites(
+                return ApplyWorldLightingToGardenPresentation(
                     WhitePicketGardenStrip.Create(name, picketStyle,
                         alpha, Season, TimeOfDay, NaturalGrassSunDirection()));
             if (string.Equals(propId, LowPolyBoxwoodHedgePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return LowPolyBoxwoodHedge.Create(name, alpha);
+                return ApplyWorldLightingToGardenPresentation(
+                    LowPolyBoxwoodHedge.Create(name, alpha));
             if (string.Equals(propId, StoneGardenFountainPropId,
                     StringComparison.OrdinalIgnoreCase))
-                return StoneGardenFountain.Create(name, alpha);
+                return ApplyWorldLightingToGardenPresentation(
+                    StoneGardenFountain.Create(name, alpha));
             if (string.Equals(propId, GeorgianGardenBorderPropId,
                     StringComparison.OrdinalIgnoreCase))
-                return ApplyWorldLightingToGardenSprites(
+                return ApplyWorldLightingToGardenPresentation(
                     GeorgianGardenBorder.Create(name, alpha, Season));
             if (string.Equals(propId, GeorgianGardenSquarePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return ApplyWorldLightingToGardenSprites(
+                return ApplyWorldLightingToGardenPresentation(
                     GeorgianGardenBed.Create(name, false, alpha, Season));
             if (string.Equals(propId, GeorgianGardenRectanglePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return ApplyWorldLightingToGardenSprites(
+                return ApplyWorldLightingToGardenPresentation(
                     GeorgianGardenBed.Create(name, true, alpha, Season));
             if (string.Equals(propId, GeorgianHedgeSquarePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return GeorgianClippedHedgeGarden.Create(name, false, alpha, Season);
+                return ApplyWorldLightingToGardenPresentation(
+                    GeorgianClippedHedgeGarden.Create(name, false, alpha, Season));
             if (string.Equals(propId, GeorgianHedgeRectanglePropId,
                     StringComparison.OrdinalIgnoreCase))
-                return GeorgianClippedHedgeGarden.Create(name, true, alpha, Season);
+                return ApplyWorldLightingToGardenPresentation(
+                    GeorgianClippedHedgeGarden.Create(name, true, alpha, Season));
             if (HedgeBorderedGrassPatch.TryDimensions(propId,
                     out var hedgedWidth, out var hedgedDepth))
-                return HedgeBorderedGrassPatch.Create(name, hedgedWidth,
-                    hedgedDepth, HedgeBorderedGrassPatch.IsCircle(propId),
-                    alpha, Season, TimeOfDay, NaturalGrassSunDirection());
+                return ApplyWorldLightingToGardenPresentation(
+                    HedgeBorderedGrassPatch.Create(name, hedgedWidth,
+                        hedgedDepth, HedgeBorderedGrassPatch.IsCircle(propId),
+                        alpha, Season, TimeOfDay, NaturalGrassSunDirection()));
             if (NaturalGrassGardenPatch.TryDimensions(propId,
                     out var grassWidth, out var grassDepth))
-                return NaturalGrassGardenPatch.Create(name, grassWidth,
-                    grassDepth, alpha, Season, TimeOfDay,
-                    NaturalGrassSunDirection(),
-                    NaturalGrassGardenPatch.IsCircle(propId));
+                return ApplyWorldLightingToGardenPresentation(
+                    NaturalGrassGardenPatch.Create(name, grassWidth,
+                        grassDepth, alpha, Season, TimeOfDay,
+                        NaturalGrassSunDirection(),
+                        NaturalGrassGardenPatch.IsCircle(propId)));
             var boat = BoatCatalog.Find(propId);
             if (boat != null) return CreateBoatPresentation(boat, name, alpha);
             if (IsHorseWagon(propId)) return CreateHorseCarriagePresentation(name, alpha, propId);
@@ -2142,12 +2149,27 @@ namespace CityForgeV3.World
             return root;
         }
 
-        private Transform ApplyWorldLightingToGardenSprites(Transform root)
+        private Transform ApplyWorldLightingToGardenPresentation(Transform root)
         {
             if (root == null) return null;
-            var material = FloraLitShadowReceiverMaterial();
+            var spriteMaterial = FloraLitShadowReceiverMaterial();
             foreach (var renderer in root.GetComponentsInChildren<SpriteRenderer>(true))
-                renderer.sharedMaterial = material;
+                renderer.sharedMaterial = spriteMaterial;
+
+            var gardenShader = _gardenPropShader ??=
+                Shader.Find("CityForgeV3/GardenPropPBR");
+            if (gardenShader == null)
+                throw new MissingReferenceException(
+                    "City Forge V3 garden prop shader is required.");
+            // This is a bounded, creation-time walk over one garden root.
+            // Materials remain shared and consume the world uniform directly.
+            foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var material = renderer.sharedMaterial;
+                if (material != null && material.shader != null &&
+                    material.shader.name == "Standard")
+                    material.shader = gardenShader;
+            }
             return root;
         }
 

@@ -1787,3 +1787,22 @@ There is no per-frame district scan, Lot walk, material update, redraw, or
 rebuild. The final isolated suite passed 32/32 checks, and five
 graphics-enabled preset captures were inspected without shader errors. Details
 are recorded in `Documentation/Validation/hosted-lot-lighting-v01/`.
+
+### September 20 — garden props join the native-surface lighting contract
+
+The native meshes inside garden compositions now use one shared
+`GardenPropPBR` shader. This brings pickets, edging, formal hedges, and fountain
+stone onto the same daylight indirect-diffuse contract as native buildings,
+while their sprite flowers and grass retain the existing district-artwork path.
+The user-reported aged white fence consequently remains ivory in building shade
+instead of turning charcoal-gray. Garden materials stay non-emissive, and
+Evening/Night retain the neutral indirect scale.
+
+Each garden root receives one bounded local renderer/material pass only when it
+is created or loaded. Materials are shared afterward; environment changes still
+publish one uniform and do not scan Lots, gardens, renderers, or materials. An
+isolated 20/20 suite passed, including white-picket seasons and transparent
+placement previews. A graphics-enabled comparison verified the fence lift while
+flowers and grass remained unchanged and reported no shader errors. No player
+content was saved, and the open editor and CityForge-Regions-Review were not
+driven. Evidence: `Documentation/Validation/garden-prop-lighting-v01/`.

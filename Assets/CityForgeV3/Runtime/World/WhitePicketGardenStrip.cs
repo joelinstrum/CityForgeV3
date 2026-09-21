@@ -111,7 +111,8 @@ namespace CityForgeV3.World
             var albedo = Resources.Load<Texture2D>(
                 AgedFenceArt + "aged-painted-wood");
             if (albedo == null) return false;
-            _fenceMaterial = new Material(Shader.Find("Standard"))
+            _fenceMaterial = new Material(Shader.Find(
+                "CityForgeV3/GardenPropPBR"))
             {
                 name = "Garden aged ivory picket fence",
                 mainTexture = albedo,
