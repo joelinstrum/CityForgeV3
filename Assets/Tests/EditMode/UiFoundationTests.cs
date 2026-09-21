@@ -5526,7 +5526,7 @@ namespace CityForgeV3.Tests
                 Assert.That(tree.sharedMaterial.shader.name,
                     Is.EqualTo("CityForgeV3/LitShadowReceivingSprite"));
                 Assert.That(tree.sharedMaterial.GetFloat("_Cutoff"),
-                    Is.EqualTo(0.02f).Within(0.001f));
+                    Is.EqualTo(0.08f).Within(0.001f));
                 Assert.That(tree.receiveShadows, Is.True);
                 Assert.That(tree.shadowCastingMode,
                     Is.EqualTo(UnityEngine.Rendering.ShadowCastingMode.Off));

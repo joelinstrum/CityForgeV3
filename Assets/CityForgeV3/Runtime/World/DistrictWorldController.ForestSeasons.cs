@@ -72,7 +72,7 @@ namespace CityForgeV3.World
             var properties = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(properties);
             // Remove faint residual canopy alpha while keeping opaque winter wood.
-            properties.SetFloat("_Cutoff", renderer.sprite.texture.name.EndsWith("-winter") ? .12f : .02f);
+            properties.SetFloat("_Cutoff", renderer.sprite.texture.name.EndsWith("-winter") ? .12f : .08f);
             renderer.SetPropertyBlock(properties);
         }
 

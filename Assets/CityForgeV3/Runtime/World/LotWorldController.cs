@@ -2002,7 +2002,7 @@ namespace CityForgeV3.World
                 // that ground shadow from darkening the billboard itself.
                 renderQueue = 3001
             };
-            _floraLitShadowReceiverMaterial.SetFloat("_Cutoff", 0.02f);
+            _floraLitShadowReceiverMaterial.SetFloat("_Cutoff", 0.08f);
             _floraLitShadowReceiverMaterial.SetFloat("_ZTest",
                 (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             return _floraLitShadowReceiverMaterial;
@@ -2034,7 +2034,7 @@ namespace CityForgeV3.World
                     $"{reference3}-{reference4} Recovery",
                 renderQueue = 3001
             };
-            material.SetFloat("_Cutoff", 0.02f);
+            material.SetFloat("_Cutoff", 0.08f);
             material.SetFloat("_ZTest",
                 (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             material.SetFloat("_BuildingHostStencilRef", reference1);

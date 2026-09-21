@@ -181,6 +181,37 @@ public class DistrictFloraBatchesTests
         return r;
     }
     MeshRenderer[] Batches() => root.GetComponentsInChildren<MeshRenderer>().Where(r => r.name == "Flora batch").ToArray();
+    [Test] public void SharedFloraAndShadowCoverageRejectTransparentSourceCards()
+    {
+        var district = new RegionCityTile
+        {
+            TileId = "flora-alpha-coverage", Width = 1, Height = 1,
+            Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+        };
+        district.Flora.Add(new PlacedDistrictFlora
+        {
+            InstanceId = "coverage-tree", FloraId = "mature-oak",
+            NormalizedX = .5f, NormalizedZ = .5f
+        });
+        var world = root.AddComponent<DistrictWorldController>();
+        world.RebuildEntireDistrict(district,
+            DistrictBulkRebuildReason.TestFixture);
+        var flora = root.GetComponentsInChildren<MeshRenderer>(true)
+            .Single(renderer => renderer.name == "Flora batch");
+        var shadow = root.GetComponentsInChildren<MeshRenderer>(true)
+            .Single(renderer => renderer.name == "Flora shadow batch");
+        Assert.That(flora.sharedMaterial.GetFloat("_Cutoff"),
+            Is.EqualTo(.08f).Within(.001f));
+        Assert.That(shadow.sharedMaterial.GetFloat("_Cutoff"),
+            Is.EqualTo(.12f).Within(.001f));
+        var properties = new MaterialPropertyBlock();
+        shadow.GetPropertyBlock(properties);
+        var source = root.GetComponentsInChildren<SpriteRenderer>(true)
+            .Single(renderer => renderer.name.StartsWith("District Flora —"));
+        Assert.AreSame(source.sprite.texture,
+            properties.GetTexture("_MainTex"),
+            "The batched projection must sample the tree cutout, not a white card.");
+    }
     [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(4)]
     public void ClusterShadowsUseFiveDistinctGroundContactsAndSoftEdges(int variant)
     {

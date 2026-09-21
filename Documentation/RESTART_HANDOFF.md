@@ -1873,3 +1873,22 @@ save. Isolated Town Center tests passed 7/7 and world-lighting contracts passed
 unrelated existing NY Brownstone evaluation ground-offset mismatch. Graphics
 captures and details are in
 `Documentation/Validation/town-center-lod-window-v01/`.
+
+### September 21 — clean flora edges and aligned projected silhouettes
+
+The close-zoom green tree fringe and dark rectangular shadow cards came from
+the same shared alpha-coverage problem. Both flora and projected shadows were
+retaining pixels at only two-percent alpha; foreshortened shadow sampling could
+then average the transparent source card into a visible rectangle.
+
+All district and standalone Lot tree billboards now use one 0.08 family-wide
+cutout threshold. District ground shadows use a shared 0.12 threshold and a
+sharper mip selection for their existing silhouette sample. Fine leaves remain
+visible, and projected shadows retain the source texture shape at the trunk
+anchor. No tree asset, species, placement, or player content was modified.
+
+The cached materials, spatial cells, and staged time-of-day update path are
+unchanged. There are no extra samples, draw calls, meshes, allocations, scans,
+redraws, or rebuilds. An isolated focused suite passed 40/40 and a
+graphics-enabled six-family grove was inspected without shader errors.
+Evidence: `Documentation/Validation/flora-edge-shadow-v01/`.

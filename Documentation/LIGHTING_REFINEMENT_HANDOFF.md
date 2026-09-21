@@ -180,3 +180,17 @@ interior actor card also remains parallel to the facade rather than copying the
 pitched camera rotation, preventing the room clip from reducing it to a thin
 slice. No per-frame district work or per-building material mutation was added.
 Evidence: `Documentation/Validation/town-center-lod-window-v01/`.
+
+## Flora edge and projected-shadow correction — September 21, 2026
+
+The tree-edge fringe was low-alpha green texture padding surviving the shared
+two-percent cutout. The same low coverage combined with coarse implicit mip
+selection on strongly foreshortened ground projections, revealing dark source
+rectangles instead of aligned silhouettes.
+
+District and standalone Lot flora now share an 0.08 coverage threshold.
+District projected shadows share an 0.12 threshold and bias their existing
+single alpha sample toward authored silhouette detail. This changes no source
+art, materials per tree, lighting colors, or persistence. The cached batch and
+bounded time-transition paths remain intact. Evidence:
+`Documentation/Validation/flora-edge-shadow-v01/`.

@@ -848,7 +848,10 @@ namespace CityForgeV3.World
                 // stones visibly submerged instead of pasted over the river.
                 renderQueue = (int)RenderQueue.AlphaTest
             };
-            _districtFloraMaterial.SetFloat("_Cutoff", 0.02f);
+            // A two-percent cutout admitted the green RGB padding around
+            // transparent tree pixels. Keep antialiasing, but reject the
+            // low-coverage fringe for every district flora billboard.
+            _districtFloraMaterial.SetFloat("_Cutoff", 0.08f);
             _districtFloraMaterial.SetFloat("_ZTest",
                 (float)CompareFunction.LessEqual);
             return _districtFloraMaterial;
@@ -862,6 +865,10 @@ namespace CityForgeV3.World
                 _districtFloraShadowMaterial = new Material(shader)
                 { name = "District Projected Flora Shadow" };
             _districtFloraShadowMaterial.shader = shader;
+            // Ground projections are strongly foreshortened. A firmer shared
+            // alpha threshold prevents coarse transparent mip coverage from
+            // turning a tree silhouette back into its rectangular source card.
+            _districtFloraShadowMaterial.SetFloat("_Cutoff", .12f);
             var shadowObject = new GameObject("District Flora Shadow");
             shadowObject.transform.SetParent(flora, false);
             var filter = shadowObject.AddComponent<MeshFilter>();
