@@ -83,6 +83,8 @@ namespace CityForgeV3.World
         private readonly List<GameObject> _experimentalBuilding3DVisibleRoots = new();
         private readonly List<FarZoomBuildingBillboard> _farBuildingBillboards = new();
         private readonly List<Material> _experimentalBuilding3DMaterials = new();
+        private readonly Dictionary<Material, Material>
+            _preparedImportedBuildingMaterials = new();
         private readonly Dictionary<GameObject, GameObject>
             _experimentalBuilding3DGroundShadows = new();
         private readonly Dictionary<GameObject, List<Vector2>>
@@ -810,6 +812,7 @@ namespace CityForgeV3.World
                     else DestroyImmediate(material);
                 }
             _experimentalBuilding3DMaterials.Clear();
+            _preparedImportedBuildingMaterials.Clear();
             if (_session?.Data?.Buildings3D == null) return;
 
             foreach (var placed in _session.Data.Buildings3D)
@@ -1147,15 +1150,17 @@ namespace CityForgeV3.World
 
             // Native building imports use the shared, source-color-preserving
             // matte contract automatically on placement and saved-lot reload.
-            // Authored packages and explicitly authored materials own their look.
+            // Explicitly authored materials own their look. Ordinary packaged
+            // buildings still participate in the shared native-lighting contract.
             if (string.Equals(content.materialMode, "embedded",
                     System.StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(content.runtimeProfile, "authored-materials",
                     System.StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(content.runtimeProfile, "opaque-prop",
-                    System.StringComparison.OrdinalIgnoreCase) &&
-                root.GetComponent<Building3DPackageInstance>() == null)
-                ImportedBuildingMaterials.Prepare(root, _experimentalBuilding3DMaterials);
+                    System.StringComparison.OrdinalIgnoreCase))
+                ImportedBuildingMaterials.Prepare(root,
+                    _experimentalBuilding3DMaterials,
+                    _preparedImportedBuildingMaterials);
 
             if (string.Equals(content.materialMode, "pbr",
                     System.StringComparison.OrdinalIgnoreCase))

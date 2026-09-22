@@ -31,18 +31,18 @@ public static class ImportedBuildingMaterialQa
                 if(before==after)throw new Exception("Shared material mutated instead of cloned");
                 if(before.color!=after.color || before.mainTexture!=after.mainTexture ||
                     before.mainTextureScale!=after.mainTextureScale || before.mainTextureOffset!=after.mainTextureOffset ||
-                    before.GetTexture("_BumpMap")!=after.GetTexture("_BumpMap") ||
-                    before.GetColor("_EmissionColor")!=after.GetColor("_EmissionColor"))
-                    throw new Exception("Source texture/UV/normal/emission contract changed");
-                if(after.GetFloat("_Metallic")!=0 || after.GetFloat("_SpecularHighlights")!=0 ||
-                    after.GetFloat("_GlossyReflections")!=0 || !after.IsKeywordEnabled("_SPECULARHIGHLIGHTS_OFF") ||
-                    !after.IsKeywordEnabled("_GLOSSYREFLECTIONS_OFF") || after.IsKeywordEnabled("_METALLICGLOSSMAP"))
-                    throw new Exception("Matte defaults missing");
+                    before.GetTexture("_BumpMap")!=after.GetTexture("_BumpMap"))
+                    throw new Exception("Source texture/UV/normal contract changed");
+                if(after.shader.name!="CityForgeV3/Experimental3DBuildingPBR" ||
+                    after.GetFloat("_Metallic")!=0 || after.GetFloat("_GlossMapScale")!=.1f ||
+                    after.GetFloat("_Contrast")!=1 || after.GetFloat("_Saturation")!=1 ||
+                    after.GetFloat("_NightEmissionIntensity")!=0 || after.IsKeywordEnabled("_METALLICGLOSSMAP"))
+                    throw new Exception("Shared native-building defaults missing");
                 checkedSlots++;
             }
             for(int i=0;i<materials.Length;i++)if(EditorJsonUtility.ToJson(materials[i])!=snapshots[i])throw new Exception("Source asset modified");
             if(checkedSlots==0)throw new Exception("No Standard material checked");
-            var report=$"PASS: {checkedSlots} cottage material slots; cloned materials; original color/UV/normal/emission preserved; source assets unchanged; metallic/highlights/reflections disabled.\n";
+            var report=$"PASS: {checkedSlots} cottage material slots; shared native shader; original color/UV/normal preserved; source assets unchanged; neutral non-emissive material tuning.\n";
             File.WriteAllText("/Users/joelinstrum/dev/CityForgeMCP/artifacts/buildings/wooden-cottage/v02-shared-materials/validation.txt",report);
             Debug.Log(report);
         }

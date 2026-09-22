@@ -22,7 +22,8 @@
       "thumbnailResourcePath": "CityForgeV3/Buildings3D/DryGoodsV06/thumbnail",
       "pitchDegrees": 0,
       "baseYawDegrees": 90,
-      "materialMode": "embedded"
+      "materialMode": "embedded",
+      "runtimeProfile": "authored-materials"
     },
     {
       "id": "founders-farm-cabin-v01",
@@ -162,7 +163,8 @@
       "thumbnailResourcePath": "CityForgeV3/Buildings3D/SaltboxV05/thumbnail",
       "pitchDegrees": 0,
       "baseYawDegrees": 90,
-      "materialMode": "embedded"
+      "materialMode": "embedded",
+      "runtimeProfile": "authored-materials"
     },
     {
       "id": "ivy-townhouse-white-production-v01",

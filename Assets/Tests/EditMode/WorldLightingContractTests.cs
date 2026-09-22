@@ -1,5 +1,7 @@
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using CityForgeV3.Buildings3D;
 using CityForgeV3.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -8,6 +10,136 @@ namespace CityForgeV3.Tests.EditMode
 {
     public sealed class WorldLightingContractTests
     {
+        [Test]
+        public void ImportedMaterialsUseSharedNativeShaderAndCachedCopies()
+        {
+            var standard = Shader.Find("Standard");
+            var shared = Shader.Find(
+                "CityForgeV3/Experimental3DBuildingPBR");
+            Assert.That(standard, Is.Not.Null);
+            Assert.That(shared, Is.Not.Null);
+
+            var texture = new Texture2D(2, 2);
+            var source = new Material(standard)
+            {
+                color = new Color(.42f, .31f, .2f, 1f),
+                mainTexture = texture,
+                mainTextureScale = new Vector2(1.5f, .75f),
+                mainTextureOffset = new Vector2(.1f, .2f)
+            };
+            var first = new GameObject("First imported building");
+            var second = new GameObject("Second imported building");
+            first.AddComponent<MeshRenderer>().sharedMaterial = source;
+            second.AddComponent<MeshRenderer>().sharedMaterial = source;
+            var owned = new List<Material>();
+            var cache = new Dictionary<Material, Material>();
+
+            try
+            {
+                ImportedBuildingMaterials.Prepare(first.transform, owned, cache);
+                ImportedBuildingMaterials.Prepare(second.transform, owned, cache);
+
+                var firstPrepared = first.GetComponent<MeshRenderer>()
+                    .sharedMaterial;
+                var secondPrepared = second.GetComponent<MeshRenderer>()
+                    .sharedMaterial;
+                Assert.That(firstPrepared, Is.SameAs(secondPrepared));
+                Assert.That(firstPrepared, Is.Not.SameAs(source));
+                Assert.That(owned, Has.Count.EqualTo(1));
+                Assert.That(cache, Has.Count.EqualTo(1));
+                Assert.That(firstPrepared.shader, Is.EqualTo(shared));
+                Assert.That(firstPrepared.color, Is.EqualTo(source.color));
+                Assert.That(firstPrepared.mainTexture, Is.SameAs(texture));
+                Assert.That(firstPrepared.mainTextureScale,
+                    Is.EqualTo(source.mainTextureScale));
+                Assert.That(firstPrepared.mainTextureOffset,
+                    Is.EqualTo(source.mainTextureOffset));
+                Assert.That(firstPrepared.GetFloat("_GlossMapScale"),
+                    Is.EqualTo(.1f).Within(.001f));
+                Assert.That(firstPrepared.GetFloat("_Contrast"), Is.EqualTo(1f));
+                Assert.That(firstPrepared.GetFloat("_Saturation"), Is.EqualTo(1f));
+                Assert.That(firstPrepared.GetFloat("_NightEmissionIntensity"),
+                    Is.Zero);
+                Assert.That(firstPrepared.enableInstancing, Is.True);
+                Assert.That(source.shader, Is.EqualTo(standard),
+                    "Preparing runtime copies must not mutate source assets.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(first);
+                Object.DestroyImmediate(second);
+                foreach (var material in owned)
+                    Object.DestroyImmediate(material);
+                Object.DestroyImmediate(source);
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        [Test]
+        public void ImportedMaterialPreparationPreservesGlassAndNightEmitters()
+        {
+            var standard = Shader.Find("Standard");
+            var glass = new Material(standard) { renderQueue = 3000 };
+            glass.SetFloat("_Mode", 3f);
+            var emitter = new Material(standard);
+            emitter.EnableKeyword("_EMISSION");
+            emitter.SetColor("_EmissionColor", Color.yellow);
+            var root = new GameObject("Authored Standard surfaces");
+            var glassRenderer = root.AddComponent<MeshRenderer>();
+            glassRenderer.sharedMaterials = new[] { glass, emitter };
+            var owned = new List<Material>();
+
+            try
+            {
+                ImportedBuildingMaterials.Prepare(root.transform, owned);
+                Assert.That(glassRenderer.sharedMaterials[0], Is.SameAs(glass));
+                Assert.That(glassRenderer.sharedMaterials[1], Is.SameAs(emitter));
+                Assert.That(owned, Is.Empty);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(glass);
+                Object.DestroyImmediate(emitter);
+            }
+        }
+
+        [TestCase("CityForgeV3/Buildings3D/LumberMillV03/Prefabs/LumberMillV03")]
+        [TestCase("CityForgeV3/Buildings3D/WorkTentV01/Source/" +
+            "tripo_convert_d9f9e5b8-49ea-4d0c-b7fd-c97e8321421a")]
+        public void CurrentIndustrialBuildingsAcceptSharedNativeMaterialContract(
+            string resourcePath)
+        {
+            var source = Resources.Load<GameObject>(resourcePath);
+            Assert.That(source, Is.Not.Null, resourcePath);
+            var instance = Object.Instantiate(source);
+            var owned = new List<Material>();
+            var cache = new Dictionary<Material, Material>();
+            try
+            {
+                var standardBefore = instance.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(renderer => renderer.sharedMaterials)
+                    .Count(material => material != null &&
+                        material.shader.name == "Standard");
+                Assert.That(standardBefore, Is.GreaterThan(0), resourcePath);
+
+                ImportedBuildingMaterials.Prepare(instance.transform, owned, cache);
+
+                var sharedAfter = instance.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(renderer => renderer.sharedMaterials)
+                    .Count(material => material != null && material.shader.name ==
+                        "CityForgeV3/Experimental3DBuildingPBR");
+                Assert.That(sharedAfter, Is.GreaterThan(0), resourcePath);
+                Assert.That(owned, Has.Count.EqualTo(cache.Count), resourcePath);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+                foreach (var material in owned)
+                    Object.DestroyImmediate(material);
+            }
+        }
+
         [Test]
         public void DistrictPublishesOneSharedEnvironmentForCustomShaders()
         {
