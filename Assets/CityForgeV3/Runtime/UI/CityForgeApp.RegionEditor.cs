@@ -2282,7 +2282,6 @@ namespace CityForgeV3.UI
     private int _pendingDistrictLotRotation;
     private string _districtLotWaterHint = "";
     private bool _pendingDistrictLotIsTest;
-    private const int TestLotPopulation = 100;
     private static bool TestLotToolsAvailable
     {
       get
@@ -2296,15 +2295,6 @@ namespace CityForgeV3.UI
     }
     private bool IsTestLotPlacement => TestLotToolsAvailable &&
         _pendingDistrictLotIsTest && !string.IsNullOrWhiteSpace(_pendingDistrictLotId);
-
-    private static void ApplyTestLotPopulation(PlacedDistrictLot placement,
-        LotSaveData lot, bool testPlacement)
-    {
-      if (placement == null || !testPlacement ||
-          (lot?.Stats?.Residents ?? 0) != 0) return;
-      placement.HasPopulationOverride = true;
-      placement.PopulationOverride = TestLotPopulation;
-    }
 
     public static int DistrictLotRotationFromSavedView(LotSaveData lot)
     {
@@ -2511,10 +2501,6 @@ namespace CityForgeV3.UI
         BoatMooringLocalZ = _pendingDistrictLotBoatMooringLocal.y,
         BoatDockContractVersion = _pendingDistrictLotHasBoatDockOverride ? 2 : 0
       };
-      // Testing Lots are commonly legacy or visual-only assets with no
-      // authored residents. Give those a visible population contribution so
-      // growth thresholds can be exercised without changing the Lot asset.
-      ApplyTestLotPopulation(placement, lot, testPlacement);
       district.Lots.Add(placement);
       if (_districtWorld != null &&
           !_districtWorld.AddPlacedLot(district, placement, testPlacement))

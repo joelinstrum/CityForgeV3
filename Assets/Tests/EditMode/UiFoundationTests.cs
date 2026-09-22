@@ -409,26 +409,6 @@ namespace CityForgeV3.Tests
             finally { Object.DestroyImmediate(go); }
         }
 
-        [TestCase(0, true, 100)]
-        [TestCase(23, true, 0)]
-        [TestCase(0, false, 0)]
-        public void TestingLotsSupplyPopulationOnlyWhenTheLotHasNone(
-            int authoredResidents, bool testing, int expectedOverride)
-        {
-            var placement = new PlacedDistrictLot();
-            var lot = new LotSaveData
-            {
-                Stats = new LotStats { Residents = authoredResidents }
-            };
-            typeof(CityForgeApp).GetMethod("ApplyTestLotPopulation",
-                    BindingFlags.Static | BindingFlags.NonPublic)
-                .Invoke(null, new object[] { placement, lot, testing });
-            Assert.That(placement.HasPopulationOverride,
-                Is.EqualTo(expectedOverride > 0));
-            Assert.That(placement.PopulationOverride,
-                Is.EqualTo(expectedOverride));
-        }
-
         [TestCase(false)]
         [TestCase(true)]
         public void DistrictStartNamingRequiresOkAndUpdatesExistingHeading(bool town)
