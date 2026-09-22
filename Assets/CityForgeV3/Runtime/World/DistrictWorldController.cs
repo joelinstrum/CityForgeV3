@@ -566,6 +566,7 @@ namespace CityForgeV3.World
             _floraBatches?.BeginChanges();
             try
             {
+                var added = new List<SpriteRenderer>(additions.Count);
                 foreach (var placed in additions)
                 {
                     if (placed == null || _districtFloraPresentations.ContainsKey(
@@ -573,8 +574,13 @@ namespace CityForgeV3.World
                     AddDistrictFloraPresentation(placed);
                     if (_districtFloraPresentations.TryGetValue(
                             placed.InstanceId, out var renderer))
-                        _floraBatches?.Add(renderer);
+                        added.Add(renderer);
                 }
+                // A shadow mesh starts as an upright copy of its sprite. Project
+                // newly added flora before batching it so a planted tree never
+                // shows that copy as a translucent halo for its first frame.
+                UpdateDistrictFloraShadowsFor(added);
+                foreach (var renderer in added) _floraBatches?.Add(renderer);
             }
             finally { _floraBatches?.EndChanges(); }
             BuildDistrictFloraSelection(selectedInstanceId);
@@ -2142,7 +2148,9 @@ namespace CityForgeV3.World
             var center = DistrictLotCenterMeters(district, placement, data);
             var cleared = DistrictHarvestIndex.For(district).ClearFootprint(new Rect(center - size * .5f, size));
             RemoveFloraPresentations(cleared);
-            DistrictLotSimulation.For(district).Add(placement.InstanceId, data);
+            DistrictLotSimulation.For(district).Add(placement.InstanceId, data,
+                placement.HasPopulationOverride,
+                placement.PopulationOverride);
             lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);

@@ -110,6 +110,11 @@ public class DistrictFloraBatchesTests
             Assert.That(root.GetComponentsInChildren<SpriteRenderer>(true)
                 .Count(renderer => renderer.name.StartsWith(
                     "District Flora —")), Is.EqualTo(412));
+            Assert.That(root.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.name == "Flora shadow batch")
+                .All(renderer => renderer.GetComponent<MeshFilter>()
+                    .sharedMesh.bounds.size.y < .1f), Is.True,
+                "Incremental shadows must be projected onto the ground before batching.");
         }
         finally { Object.DestroyImmediate(root); }
     }

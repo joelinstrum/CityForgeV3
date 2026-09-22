@@ -830,13 +830,10 @@ namespace CityForgeV3.UI
           return;
         }
 
-        if (DistrictMoveToolActive())
+        if (_districtSelectionDragActive)
         {
-          if (_districtSelectionDragActive)
-          {
-            MoveDistrictSelection(district, normalized);
-            return;
-          }
+          MoveDistrictSelection(district, normalized);
+          return;
         }
 
         if (DistrictWaterSelectToolActive())
@@ -1043,6 +1040,13 @@ namespace CityForgeV3.UI
         { ReturnToQuietDistrict(); evt.StopImmediatePropagation(); return; }
         if (DistrictSelectToolActive())
         {
+          if (_districtWorld != null && _districtWorld.TryGroundPoint(
+                  DistrictCameraPoint(evt.position), out var selectedPoint) &&
+              BeginDistrictMovePointer(district, selectedPoint, evt.position))
+          {
+            evt.StopImmediatePropagation();
+            return;
+          }
           BeginDistrictSelectionPointer(district, evt.position,
                     screen, evt.pointerId);
           evt.StopImmediatePropagation();
@@ -2278,6 +2282,7 @@ namespace CityForgeV3.UI
     private int _pendingDistrictLotRotation;
     private string _districtLotWaterHint = "";
     private bool _pendingDistrictLotIsTest;
+    private const int TestLotPopulation = 100;
     private static bool TestLotToolsAvailable
     {
       get
@@ -2291,6 +2296,15 @@ namespace CityForgeV3.UI
     }
     private bool IsTestLotPlacement => TestLotToolsAvailable &&
         _pendingDistrictLotIsTest && !string.IsNullOrWhiteSpace(_pendingDistrictLotId);
+
+    private static void ApplyTestLotPopulation(PlacedDistrictLot placement,
+        LotSaveData lot, bool testPlacement)
+    {
+      if (placement == null || !testPlacement ||
+          (lot?.Stats?.Residents ?? 0) != 0) return;
+      placement.HasPopulationOverride = true;
+      placement.PopulationOverride = TestLotPopulation;
+    }
 
     public static int DistrictLotRotationFromSavedView(LotSaveData lot)
     {
@@ -2470,6 +2484,7 @@ namespace CityForgeV3.UI
     {
       var lot = LotContentCatalog.Read(_pendingDistrictLotId);
       if (district == null || lot == null) return;
+      var testPlacement = IsTestLotPlacement;
       if (!TryDistrictLotFootprint(district, x, y, out var gridX,
               out var gridZ, out var footprintWidth, out var footprintDepth, out var placeable) ||
           !placeable) return;
@@ -2496,16 +2511,21 @@ namespace CityForgeV3.UI
         BoatMooringLocalZ = _pendingDistrictLotBoatMooringLocal.y,
         BoatDockContractVersion = _pendingDistrictLotHasBoatDockOverride ? 2 : 0
       };
+      // Testing Lots are commonly legacy or visual-only assets with no
+      // authored residents. Give those a visible population contribution so
+      // growth thresholds can be exercised without changing the Lot asset.
+      ApplyTestLotPopulation(placement, lot, testPlacement);
       district.Lots.Add(placement);
       if (_districtWorld != null &&
-          !_districtWorld.AddPlacedLot(district, placement, IsTestLotPlacement))
+          !_districtWorld.AddPlacedLot(district, placement, testPlacement))
       {
         district.Lots.Remove(placement);
         return;
       }
       district.Treasury -= plopCost;
       DistrictLotRequirements.Consume(district, constructionResources);
-      DistrictLotSimulation.For(district).Add(instanceId, lot);
+      DistrictLotSimulation.For(district).Add(instanceId, lot,
+          placement.HasPopulationOverride, placement.PopulationOverride);
       _districtWorld?.HideLotPlacementGuide();
       _pendingDistrictLotId = "";
       _pendingDistrictLotIsTest = false;
@@ -3663,25 +3683,26 @@ namespace CityForgeV3.UI
       UpdateDistrictSelectionMarquee(panelPosition);
     }
 
-    private void BeginDistrictMovePointer(RegionCityTile district,
+    private bool BeginDistrictMovePointer(RegionCityTile district,
         Vector2 normalized, Vector2 panelPosition)
     {
       if (_districtSelection.Any(item => item.Kind == DistrictSelectionKind.Entity && _districtWorld?.ResolveSelectable(item)?.DeleteBuilding == null))
       {
         ShowDistrictNotice("This object's placement is fixed. Select it to see its supported actions.");
-        return;
+        return false;
       }
       var pixel = DistrictCameraPoint(panelPosition);
       var hits = _districtWorld.CollectDistrictSelectionInScreenRect(district,
           new Rect(pixel.x - 4f, pixel.y - 4f, 8f, 8f));
       if (!_districtSelection.Any(selected => hits.Any(hit =>
-              hit.Kind == selected.Kind && hit.Id == selected.Id))) return;
+              hit.Kind == selected.Kind && hit.Id == selected.Id))) return false;
       _districtSelectionStart = _districtSelectionLast = normalized;
       _districtSelectionGridRemainder = Vector2.zero;
       _districtSelectionMovedRiver = false;
       _districtSelectionMovedRoad = false;
       _districtSelectionMovedLot = false;
       _districtSelectionDragActive = true;
+      return true;
     }
 
     private void UpdateDistrictSelectionMarquee(Vector2 panelPosition)

@@ -190,13 +190,15 @@ namespace CityForgeV3.Tests
             Assert.That(major.OuterBlendMeters,
                 Is.EqualTo(RiverBankAppearance.WideOuterBlendMeters));
             Assert.That(major.OuterFadeEnd,
-                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd +
+                    RiverBankAppearance.WideOuterBlendMeters / 16f)
                     .Within(.00001f));
             Assert.That(medium.OuterFadeNoise, Is.Zero);
             Assert.That(medium.TerrainBlendStrength, Is.Zero);
             Assert.That(major.OuterFadeNoise,
                 Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
-            Assert.That(major.TerrainBlendStrength, Is.EqualTo(1f));
+            Assert.That(major.TerrainBlendStrength,
+                Is.EqualTo(RiverBankAppearance.WideTerrainBlendStrength));
             Assert.That(medium.SubmergedBedBrightness,
                 Is.EqualTo(RiverBankAppearance.DefaultSubmergedBedBrightness));
             Assert.That(medium.SubmergedBlendStart,
@@ -313,12 +315,13 @@ namespace CityForgeV3.Tests
                 Assert.That(material.GetFloat("_BankPatternOffset"),
                     Is.GreaterThanOrEqualTo(0f));
                 Assert.That(material.GetFloat("_OuterFadeEnd"),
-                    Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                    Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd +
+                        RiverBankAppearance.WideOuterBlendMeters / 16f)
                         .Within(.00001f));
                 Assert.That(material.GetFloat("_OuterFadeNoise"),
                     Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
                 Assert.That(material.GetFloat("_TerrainBlendStrength"),
-                    Is.EqualTo(1f));
+                    Is.EqualTo(RiverBankAppearance.WideTerrainBlendStrength));
                 Assert.That(material.GetFloat("_SubmergedBedBrightness"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedBedBrightness));
                 Assert.That(material.GetFloat("_SubmergedBlendStart"),
