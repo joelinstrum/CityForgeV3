@@ -344,6 +344,12 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideDepthBlendSoftness));
                 Assert.That(waterMaterial.GetFloat("_SubmergedOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedWaterOpacity));
+                Assert.That(RiverBankAppearance.WideWaterEdgeOpacity,
+                    Is.LessThan(.05f),
+                    "Wide water must begin nearly clear at the mesh edge.");
+                Assert.That(RiverBankAppearance.WideDepthBlendSoftness,
+                    Is.GreaterThan(.75f),
+                    "Wide water must feather gradually into deep blue.");
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

@@ -99,7 +99,7 @@ namespace CityForgeV3.World
         // (or vice versa) after zooming and gives every stop the same perceived
         // screen-space motion.
         public static float EdgePanSpeedMetersPerSecond(float orthographicSize) =>
-            Mathf.Max(0f, orthographicSize) * .08f;
+            Mathf.Max(0f, orthographicSize) * .24f;
 
         public static int GridInterval(DistrictZoomLevel level) => level switch
         {

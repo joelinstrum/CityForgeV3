@@ -35,8 +35,9 @@ driven or restarted.
   is softened and ambient fill is 25% higher. Afternoon ambient fill is 25%
   higher. Evening retains a visible blue-green ambient/background floor.
 - Edge panning now uses 12.5% horizontal activation bands (half the prior 25%)
-  and derives motion from the actual camera orthographic size at 8% of visible
-  half-height per second. It no longer depends on stale zoom-step state.
+  and derives motion from the actual camera orthographic size at 24% of visible
+  half-height per second. This is three times the first camera-relative
+  calibration and no longer depends on stale zoom-step state.
 - Calendar tests verify Winter to Spring increments the displayed year, a year
   click performs four normal season boundaries, and the clock follows the
   five-preset sequence.

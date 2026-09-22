@@ -81,9 +81,9 @@ namespace CityForgeV3.Tests
         public void DistrictEdgePanSpeedTracksCurrentCameraZoom()
         {
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(600f),
-                Is.EqualTo(48f).Within(.001f));
+                Is.EqualTo(144f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(60f),
-                Is.EqualTo(4.8f).Within(.001f));
+                Is.EqualTo(14.4f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(-1f), Is.Zero);
         }
 

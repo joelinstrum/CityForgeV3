@@ -37,10 +37,13 @@ namespace CityForgeV3.World
         public const float DefaultSubmergedBlendEnd = 0.13f;
         public const float WideSubmergedBlendStart = -0.15f;
         public const float WideSubmergedBlendEnd = 0.38f;
-        public const float WideWaterEdgeOpacity = 0.42f;
-        public const float WideDeepWaterStart = 0.34f;
-        public const float WideDepthBlendSoftness = 0.58f;
-        public const float WideSubmergedWaterOpacity = 0.82f;
+        // Major-river water must begin almost clear at the outer mesh edge.
+        // Starting at 42% opacity made the blue tint appear as a hard painted
+        // band even though the remaining depth ramp was smooth.
+        public const float WideWaterEdgeOpacity = 0.03f;
+        public const float WideDeepWaterStart = 0.46f;
+        public const float WideDepthBlendSoftness = 0.82f;
+        public const float WideSubmergedWaterOpacity = 0.62f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
