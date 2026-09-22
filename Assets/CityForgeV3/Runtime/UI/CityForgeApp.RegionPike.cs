@@ -32,7 +32,7 @@ namespace CityForgeV3.UI
             var toggle=screen.Q<Toggle>(river?"region-layer-rivers":"region-layer-transportation");
             toggle?.SetValueWithoutNotify(true);
             var glyph=toggle?.Q<Label>("check-glyph");if(glyph!=null)glyph.text="✓";
-            string drawingHint=river?(size.ToString().ToUpperInvariant()+" RIVER")+" · Click and drag. Release to apply. Keep drawing to add or connect rivers. Esc to finish.":"NATIONAL PIKE · Click and drag to draw. Release to name your road.";
+            string drawingHint=river?RegionRiverDrawing.DisplayName(size)+" · Click and drag. Release to apply. Keep drawing to add or connect rivers. Esc to finish.":"NATIONAL PIKE · Click and drag to draw. Release to name your road.";
             ApplyRegionMapLayers(screen,_openRegion.MapLayers);
             _drawingNationalPike=true;_pikeStroke=new RegionPikeStroke(_openRegion.Width,_openRegion.Height);
             _pikeOverlay=new VisualElement{name="region-pike-drawing",focusable=true};
@@ -43,7 +43,7 @@ namespace CityForgeV3.UI
                 if(_pikeStroke==null||_pikeStroke.Points.Count<2)return;
                 var points=river?_riverPreview:_pikeStroke.Points;
                 if(points.Count<2)return;
-                var painter=context.painter2D;painter.strokeColor=river?new Color(.20f,.63f,.93f):new Color(1,.78f,.32f);painter.lineWidth=river?(size==RegionRiverSize.Major?14:size==RegionRiverSize.Large?7:3):5;painter.lineCap=LineCap.Round;painter.lineJoin=LineJoin.Round;
+                var painter=context.painter2D;painter.strokeColor=river?new Color(.20f,.63f,.93f):new Color(1,.78f,.32f);painter.lineWidth=river?RegionRiverDrawing.MarkerWidthPoints(size):5;painter.lineCap=LineCap.Round;painter.lineJoin=LineJoin.Round;
                 painter.BeginPath();painter.MoveTo(points[0]*RegionMapUnitPixels);
                 for(int i=1;i<points.Count;i++)painter.LineTo(points[i]*RegionMapUnitPixels);
                 painter.Stroke();

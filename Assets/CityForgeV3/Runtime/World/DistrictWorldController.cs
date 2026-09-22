@@ -75,15 +75,15 @@ namespace CityForgeV3.World
         public const string RiverBedDirtResource =
             "CityForgeV3/Water/River/02-river-bed-dirt";
         public const string RiverWaterTextureResource =
-            "CityForgeV3/Water/River/river-texture";
+            "CityForgeV3/Water/River/RiverBlueV01/river-texture";
         public const string RiverWhitecapTextureResource =
-            "CityForgeV3/Water/River/white-cap-river";
+            "CityForgeV3/Water/River/RiverBlueV01/white-cap-river";
         private const float RiverBedTextureWorldSizeMeters = 48f;
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
         public const float DistrictGrassTextureWorldSizeMeters = 75f;
         public static readonly Color RiverWaterTint =
-            new(0.82f, 1.04f, 1.18f, 1f);
+            new(0.86f, 1.03f, 1.28f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;
 
         [Header("River Water")]
@@ -92,21 +92,21 @@ namespace CityForgeV3.World
         [SerializeField, Range(0f, 1f), InspectorName("Center Opacity")]
         private float _waterOpacity = 0.72f;
         [SerializeField, Range(0f, 1f), InspectorName("Edge Opacity")]
-        private float _waterEdgeOpacity = 0.08f;
+        private float _waterEdgeOpacity = 0.28f;
         [SerializeField, Range(0.05f, 0.45f), InspectorName("Edge Fade Width")]
-        private float _waterEdgeFadeWidth = 0.22f;
+        private float _waterEdgeFadeWidth = 0.14f;
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Start")]
         private float _deepWaterStart = 0.24f;
         [SerializeField, Range(0f, 1f), InspectorName("Deep Water Strength")]
-        private float _deepWaterStrength = 0.58f;
+        private float _deepWaterStrength = 0.42f;
         [SerializeField, Range(0.02f, 1f), InspectorName("Depth Blend Softness")]
-        private float _depthBlendSoftness = 0.56f;
+        private float _depthBlendSoftness = 0.34f;
         [SerializeField, Min(0.25f), InspectorName("Water Texture Tiling")]
-        private float _waterTextureTiling = 18f;
+        private float _waterTextureTiling = 30f;
         [SerializeField, InspectorName("Water Tint")]
         private Color _waterTint = RiverWaterTint;
         [SerializeField, Range(0.1f, 2f), InspectorName("Brightness")]
-        private float _waterBrightness = 1.08f;
+        private float _waterBrightness = 1.16f;
         [SerializeField, Range(0f, 1f), InspectorName("Smoothness")]
         private float _waterSmoothness = 0.62f;
         [SerializeField, Range(-0.1f, 0.1f), InspectorName("Flow Speed")]
@@ -120,19 +120,19 @@ namespace CityForgeV3.World
         [SerializeField, Range(0f, 1f), InspectorName("Reflection Strength")]
         private float _waterReflectionStrength = 0.18f;
         [SerializeField, Range(0f, 1f), InspectorName("Shimmer Strength")]
-        private float _waterShimmerStrength = 0.24f;
+        private float _waterShimmerStrength = 0.32f;
         [SerializeField, Range(0f, 2f), InspectorName("Shimmer Speed")]
         private float _waterShimmerSpeed = 0.35f;
         [SerializeField, Range(0f, 1f), InspectorName("Whitecap Strength")]
-        private float _whitecapStrength = 0.32f;
+        private float _whitecapStrength = 0.44f;
         [SerializeField, Range(0.05f, 1f), InspectorName("Whitecap Coverage")]
-        private float _whitecapCoverage = 0.55f;
+        private float _whitecapCoverage = 0.72f;
         [SerializeField, Range(0.1f, 4f), InspectorName("Whitecap Tiling")]
-        private float _whitecapTiling = 0.85f;
+        private float _whitecapTiling = 0.95f;
         [SerializeField, Range(0.1f, 3f), InspectorName("Whitecap Speed")]
         private float _whitecapSpeed = 1.35f;
         [SerializeField, Range(0f, 2f), InspectorName("Whitecap Pulse Speed")]
-        private float _whitecapPulseSpeed = 0.12f;
+        private float _whitecapPulseSpeed = 0.08f;
         private readonly List<LotWorldController> _lots = new();
         private readonly Dictionary<string, LotWorldController> _lotsByInstance =
             new();
@@ -1072,10 +1072,25 @@ namespace CityForgeV3.World
                 .ToArray();
             if (edgeVariants.Length > 0) edgeTexture = edgeVariants[0];
             var dirtTexture = Resources.Load<Texture2D>(RiverBedDirtResource);
-            var bankTexture = Resources.Load<Texture2D>(RiverBankAppearance.ShorelineResourceRoot + "shoreline") ?? Resources.Load<Texture2D>(RiverBankAppearance.ResourceRoot + "grass-pebbles");
+            var proposedBankAppearance =
+                new RiverBankAppearance(centerline, river.WidthMeters);
+            var bankTexture = Resources.Load<Texture2D>(
+                proposedBankAppearance.ShorelineResource) ??
+                Resources.Load<Texture2D>(
+                    RiverBankAppearance.ResourceRoot + "grass-pebbles");
             var bankAppearance = bankTexture != null
-                ? new RiverBankAppearance(centerline, river.WidthMeters) { ShoreDistance = bedWidth * .5f } : null;
+                ? proposedBankAppearance : null;
+            if (bankAppearance != null)
+            {
+                bankAppearance.ShoreDistance = bedWidth * .5f;
+                var patternId = string.IsNullOrEmpty(river.RegionRiverId)
+                    ? river.InstanceId : river.RegionRiverId;
+                bankAppearance.PatternOffset =
+                    (uint)StableStringHash(patternId) % 4096 / 37f;
+            }
             var halfWidth = bedWidth * 0.5f;
+            var bankOuterDistance = halfWidth +
+                (bankAppearance?.OuterBlendMeters ?? 0f);
             var edgeWidth = Mathf.Min(
                 deep ? RiverBedTransitionWidthMeters * .55f
                      : RiverBedTransitionWidthMeters,
@@ -1128,7 +1143,7 @@ namespace CityForgeV3.World
                     1f, 1f, 0,
                     $"Riverbed {sideName} Upper Bank — {river.InstanceId}",
                     bankAppearance: bankAppearance);
-                AddRiverBand(centerline, upperBankEnd, halfWidth,
+                AddRiverBand(centerline, upperBankEnd, bankOuterDistance,
                     RiverElevation(0.20f), terrainSurface + 0.002f, side,
                     bankTexture != null ? bankTexture : edgeTexture,
                     0.04f, 0.96f, 24f,
@@ -1499,6 +1514,11 @@ namespace CityForgeV3.World
                 mainTexture = texture,
                 renderQueue = (int)RenderQueue.Transparent
             };
+            // Wide rivers expose much more of the submerged bank in screen
+            // space. Feather their animated blue farther across the neutral
+            // bed so the bank does not terminate as a dark ruled ribbon.
+            var wideRiver = deepRiver &&
+                RiverBankAppearance.UsesWideRiverBank(width);
             texture.wrapMode = TextureWrapMode.Repeat;
             var whitecapTexture = Resources.Load<Texture2D>(
                 RiverWhitecapTextureResource);
@@ -1527,13 +1547,22 @@ namespace CityForgeV3.World
             if (material.HasProperty("_CenterOpacity"))
                 material.SetFloat("_CenterOpacity", 1f - (1f - _waterOpacity) * .12f);
             if (material.HasProperty("_EdgeOpacity"))
-                material.SetFloat("_EdgeOpacity", _waterEdgeOpacity);
+                material.SetFloat("_EdgeOpacity", wideRiver
+                    ? RiverBankAppearance.WideWaterEdgeOpacity
+                    : _waterEdgeOpacity);
             if (material.HasProperty("_DeepWaterStart"))
-                material.SetFloat("_DeepWaterStart", _deepWaterStart);
+                material.SetFloat("_DeepWaterStart", wideRiver
+                    ? RiverBankAppearance.WideDeepWaterStart
+                    : _deepWaterStart);
             if (material.HasProperty("_DeepWaterStrength"))
-                material.SetFloat("_DeepWaterStrength", Mathf.Lerp(_deepWaterStrength, 1f, .78f));
+                material.SetFloat("_DeepWaterStrength", _deepWaterStrength);
             if (material.HasProperty("_DepthBlendSoftness"))
-                material.SetFloat("_DepthBlendSoftness", _depthBlendSoftness);
+                material.SetFloat("_DepthBlendSoftness", wideRiver
+                    ? RiverBankAppearance.WideDepthBlendSoftness
+                    : _depthBlendSoftness);
+            if (material.HasProperty("_SubmergedOpacity") && wideRiver)
+                material.SetFloat("_SubmergedOpacity",
+                    RiverBankAppearance.WideSubmergedWaterOpacity);
             if (material.HasProperty("_FlowSpeed"))
                 material.SetFloat("_FlowSpeed", _waterFlowSpeed);
             if (material.HasProperty("_WaveDistortion"))
@@ -1791,10 +1820,42 @@ namespace CityForgeV3.World
                 if (bankAppearance != null)
                 {
                     material.SetFloat("_DetailMeters", RiverBankAppearance.DetailMeters);
+                    material.SetFloat("_OuterFadeEnd",
+                        bankAppearance.OuterFadeEnd);
+                    material.SetFloat("_OuterFadeNoise",
+                        bankAppearance.OuterFadeNoise);
+                    material.SetFloat("_TerrainBlendStrength",
+                        bankAppearance.TerrainBlendStrength);
+                    material.SetFloat("_SubmergedBedBrightness",
+                        bankAppearance.SubmergedBedBrightness);
+                    material.SetFloat("_SubmergedBlendStart",
+                        bankAppearance.SubmergedBlendStart);
+                    material.SetFloat("_SubmergedBlendEnd",
+                        bankAppearance.SubmergedBlendEnd);
+                    bool mountainGround =
+                        _terrainDistrict?.Hills?.Mountains == true;
+                    var terrainTexture = Resources.Load<Texture2D>(
+                        mountainGround ? DefaultGrassResource :
+                            DistrictGrassResource);
+                    material.SetTexture("_TerrainTex",
+                        terrainTexture ?? bandTexture);
+                    material.SetFloat("_TerrainWorldSize", mountainGround
+                        ? GrassTextureWorldSizeMeters
+                        : DistrictGrassTextureWorldSizeMeters);
                     material.SetTexture("_GravelTex", Resources.Load<Texture2D>(
-                        RiverBankAppearance.ResourceRoot + "inside-gravel") ?? bandTexture);
+                        bankAppearance.SubmergedGravelTextureResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(
-                        "CityForgeV3/Water/River/BanksV3/open-gravel") ?? bandTexture);
+                        bankAppearance.OpenGravelTextureResource) ?? bandTexture);
+                    material.SetTexture("_BankTex2", Resources.Load<Texture2D>(
+                        bankAppearance.BankVariantThreeTextureResource) ??
+                        bandTexture);
+                    material.SetTexture("_BankTex3", Resources.Load<Texture2D>(
+                        bankAppearance.BankVariantFourTextureResource) ??
+                        bandTexture);
+                    material.SetFloat("_BankVariantCount",
+                        bankAppearance.BankVariantCount);
+                    material.SetFloat("_BankPatternOffset",
+                        bankAppearance.PatternOffset);
                 }
                 if (material.HasProperty("_DistrictHalfSize"))
                     material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.6273123">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1153" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.627312" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2328" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-Regions-Review/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1153" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.614824" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="95372" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2329" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1007" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.607104" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2330" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1007" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.600955" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1333" name="RiverBlueScreenshotTests" fullname="CityForgeV3.Tests.RiverBlueScreenshotTests" classname="CityForgeV3.Tests.RiverBlueScreenshotTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.584830" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1334" name="RenderActiveAndPreviousRiverArtwork" fullname="CityForgeV3.Tests.RiverBlueScreenshotTests.RenderActiveAndPreviousRiverArtwork" methodname="RenderActiveAndPreviousRiverArtwork" classname="CityForgeV3.Tests.RiverBlueScreenshotTests" runstate="Runnable" seed="1155090387" result="Passed" start-time="2026-09-21 00:54:53Z" end-time="2026-09-21 00:54:54Z" duration="0.576236" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=53ms terrain=1ms decals=44ms total=98ms
+Saving results to: /tmp/cityforge-river-blue-screenshot-tests.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

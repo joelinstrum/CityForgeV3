@@ -44,5 +44,9 @@ namespace CityForgeV3.World
         public RegionRiverFlow Flow = RegionRiverFlow.Varied;
         public RegionWaterAmount DeepRivers = RegionWaterAmount.None;
         public RegionWaterAmount Streams = RegionWaterAmount.None;
+        public int RiverCountsVersion;
+        public int MediumRiverCount;
+        public int SmallRiverCount;
+        public int StreamCount;
     }
 }

@@ -32,6 +32,80 @@ The shared pencil commits only after release. River paths are stored in region c
 
 Validation: 37 targeted Unity tests passed, including profiles, clipping, regeneration preservation, persistence, map orientation and road behavior. Live isolated-fixture checks passed for both river buttons, pointer input and save/reload, followed by the road pencil regression check.
 
+Automatic river generation now has a cardinal V01 baseline: district rivers
+are straight two-point channels on the 10-meter district lattice, while region
+trunks and tributaries use only the north/south and east/west grid axes.
+Tributaries meet trunks at exact right angles. Flow direction, river amounts,
+width/depth, clipping and persistence remain intact. Hand-drawn and
+district-shaped rivers keep their authored geometry. Controlled curves and
+additional generated variety are intentionally deferred until this alignment
+is accepted in the isolated Regions Review workspace.
+
+Cardinal V02 adds seeded stair-step variety while retaining those exact axes.
+Forward spans alternate among available random lengths; sharp cross-axis steps
+move the channel around its baseline before it resumes the overall flow
+direction. District points remain on the 10-meter lattice, and regional
+tributaries retain exact perpendicular junctions. Existing saved and authored
+river geometry is not rewritten.
+
+Cardinal V03 rounds each generated stair corner with a short tangent curve.
+Long sections remain parallel to the district axes, while the former hard L
+turns transition through four smooth centerline segments. The rounding radius
+is bounded by both neighboring runs so nearby corners cannot overlap.
+Hand-drawn and locally sculpted rivers are unchanged.
+
+Cardinal V04 gives procedural rivers fixed west-to-east and north-to-south
+flow, splitting odd totals toward west-to-east (three becomes two horizontal
+and one vertical). Parallel routes occupy disjoint corridors. At most one major
+is generated at 144–228 meters wide, three times the former range; Few and Many
+small-river settings now mean two and five. Routes preserve reachable district
+centers and add restrained rounded doglegs between them, avoiding both broad
+swings and long uninterrupted straight sections. The Rivers panel exposes one
+major toggle plus the two small-river amounts. Existing authored geometry is
+unchanged.
+
+Cardinal V05 replaces the two/five small-river toggles with explicit counts:
+zero or one Major, zero through three Medium, and zero through five each for
+Small and Stream. Even groups split evenly by direction (four Small produces
+two west-to-east and two north-to-south), while odd remainders keep the whole
+layout as balanced as possible. Occupied districts are excluded from preferred
+center targets, and Generate Rivers tries up to 24 fresh candidates before
+reporting that no building-safe layout was found. Legacy Few/Many saves migrate
+to two/five Small rivers without rewriting existing geometry.
+
+Cardinal V06 prevents ruler-straight generated crossings. Each district keeps
+an existing route when it already has at least two turns; otherwise one compact
+seeded dogleg is added to its longest forward run. The dogleg stays inside both
+the district and the river's disjoint corridor, returns to the original
+centerline before the border, and is rounded by the existing corner treatment.
+This adds local natural variation without changing cardinal flow, spacing,
+district-center targets, or saved geometry until the next explicit generation.
+
+Cardinal V07 supersedes V06's out-and-back district doglegs with persistent
+lateral drift. Each district contributes one two-corner shift and carries that
+new position across the border. Seeded drift continues for several districts
+before reversing, with longer, broader movement for Major rivers and quicker
+movement for Streams. Centers are now a soft attraction rather than exact
+waypoints. All logical segments remain cardinal, corridor spacing and exact
+border continuity remain intact, and each complete district crossing still has
+at least two turns.
+
+Cardinal V08 keeps the grid-angle contract but removes exact direction balance,
+equal spacing, district-center attraction, and mandatory per-district turns.
+Seeded minimum-clearance entry positions create irregular non-crossing route
+envelopes, while size-specific maximum run lengths, shift amplitudes, and corner
+radii give Major rivers broad slow meanders and Streams a quicker cadence.
+Smaller watercourses may begin inland. Paths generate largest-first and stop at
+their first encounter with an earlier river, recording a parent and forming a
+confluence instead of crossing through. Straight cardinal reaches remain long
+enough for bridges and riverside construction.
+
+When a region has no saved procedural river selection, Regenerate Rivers now
+opens the Rivers panel with the intended one-major-plus-two-small defaults.
+Generate Rivers rejects an explicitly empty selection with visible guidance;
+Remove Rivers is the deliberate clear action. This prevents the former silent
+empty-layout no-op.
+
 Remove Rivers sits beside the two drawing buttons. It clears all generated, hand-drawn, and district-local rivers across the region and saves immediately. Both region paths and district sections are cleared so reload cannot recreate them. Failed saves restore the original lists.
 
 River sizes now include Small (18m, shallow), Large (64m, deep), and Major (128m, deep). The former Major button is now Large; the new Major is twice its width. The blue-pencil preview and saved map line both show Major at twice the Large width. Existing saved rivers retain their widths.
