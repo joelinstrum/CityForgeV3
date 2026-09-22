@@ -344,12 +344,10 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideDepthBlendSoftness));
                 Assert.That(waterMaterial.GetFloat("_SubmergedOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedWaterOpacity));
-                var waterColors = waterRenderer.GetComponent<MeshFilter>()
-                    .sharedMesh.colors;
-                // District-bound clipping can insert interpolated vertices, so
-                // validate the retained feather endpoints rather than row count.
-                Assert.That(waterColors.Any(color => color.b < .05f), Is.True);
-                Assert.That(waterColors.Any(color => color.b > .95f), Is.True);
+                Assert.That(waterMaterial.GetFloat("_EdgeFeatherMeters"),
+                    Is.EqualTo(RiverBankAppearance.WideWaterEdgeFeatherMeters));
+                Assert.That(waterMaterial.GetFloat("_WaterHalfWidth"),
+                    Is.GreaterThan(1f));
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

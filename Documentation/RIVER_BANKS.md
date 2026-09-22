@@ -21,12 +21,12 @@ opacity across a correspondingly broader depth interval (0.42 edge opacity,
 0.34 deep-water start and 0.58 softness), with an 0.82 near-submerged opacity.
 Those values remain intact after a rejected broad-transparency experiment
 restored the unwanted purple-brown shallow band. Instead, the visual water mesh
-now reaches the calculated waterline and only its final 1.2 metres feather to
-transparent. Blue shallow water therefore remains visible while its outermost
-edge no longer ends as a hard geometric cutoff. Navigation retains its existing
-0.10-metre inset.
+now reaches the calculated waterline and applies a smooth, world-scaled opacity
+gradient across its final 6 metres on major rivers. Blue shallow water therefore
+remains visible before easing continuously into the bank rather than ending as
+a hard geometric cutoff. Navigation retains its existing 0.10-metre inset.
 Medium rivers and streams retain their existing sharper mountain-water
-calibration.
+calibration and use a proportionate 1.5-metre final-edge gradient.
 
 Exact prompts, generated-source identifiers, processing and hashes are in
 `Documentation/ArtStudies/RiverBanksV06Varied/README.md`.

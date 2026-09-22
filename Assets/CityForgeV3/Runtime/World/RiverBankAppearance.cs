@@ -41,6 +41,8 @@ namespace CityForgeV3.World
         public const float WideDeepWaterStart = 0.34f;
         public const float WideDepthBlendSoftness = 0.58f;
         public const float WideSubmergedWaterOpacity = 0.82f;
+        public const float WideWaterEdgeFeatherMeters = 6f;
+        public const float DefaultWaterEdgeFeatherMeters = 1.5f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;

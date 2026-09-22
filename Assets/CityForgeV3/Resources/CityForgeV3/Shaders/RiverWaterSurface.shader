@@ -13,6 +13,8 @@ Shader "CityForgeV3/RiverWaterSurface"
         _DeepWaterStrength ("Deep Water Strength", Range(0,1)) = 0.58
         _DepthBlendSoftness ("Depth Blend Softness", Range(0.02,1)) = 0.56
         _SubmergedOpacity ("Near Submerged Opacity", Range(0,1)) = 0.60
+        _WaterHalfWidth ("Water Half Width", Float) = 1
+        _EdgeFeatherMeters ("Edge Feather Metres", Float) = 1.5
         _SubmergedFadeStart ("Submerged Fade Start", Range(0,4)) = 0.12
         _SubmergedFadeEnd ("Submerged Fade End", Range(0.2,12)) = 2.2
         _FlowSpeed ("Flow Speed", Range(-0.1,0.1)) = 0.06
@@ -80,6 +82,8 @@ Shader "CityForgeV3/RiverWaterSurface"
             float _DeepWaterStrength;
             float _DepthBlendSoftness;
             float _SubmergedOpacity;
+            float _WaterHalfWidth;
+            float _EdgeFeatherMeters;
             float _SubmergedFadeStart;
             float _SubmergedFadeEnd;
             float _FlowSpeed;
@@ -215,10 +219,13 @@ Shader "CityForgeV3/RiverWaterSurface"
                     max(_SubmergedFadeStart + 0.01, _SubmergedFadeEnd),
                     submergedDepth);
                 water.a *= lerp(_SubmergedOpacity, 1.0, submergedFade);
-                // Vertex blue is a fixed-width coverage feather authored by
-                // the water mesh. It affects only the final bank edge, leaving
-                // the established shallow-water color and opacity intact.
-                water.a *= input.color.b;
+                // Fade only the final physical metres at the bank. Measuring
+                // in world scale avoids a huge translucent band on wide rivers
+                // while retaining established blue shallow water farther in.
+                float edgeDistanceMeters = depthCoordinate *
+                    max(0.01, _WaterHalfWidth);
+                water.a *= smoothstep(0.0,
+                    max(0.01, _EdgeFeatherMeters), edgeDistanceMeters);
                 // Junction processing writes a longitudinal fade into vertex
                 // alpha so tributaries dissolve cleanly into wider rivers.
                 // Red remains reserved for the cross-channel depth profile.
