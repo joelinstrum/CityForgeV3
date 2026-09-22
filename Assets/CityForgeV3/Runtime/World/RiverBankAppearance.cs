@@ -31,6 +31,16 @@ namespace CityForgeV3.World
         public const float DefaultOuterFadeEnd = 0.833333f;
         public const float WideOuterFadeNoise = 0.18f;
         public const float DetailMeters = 48f;
+        public const float DefaultSubmergedBedBrightness = 0.8f;
+        public const float WideSubmergedBedBrightness = 0.94f;
+        public const float DefaultSubmergedBlendStart = 0.015f;
+        public const float DefaultSubmergedBlendEnd = 0.13f;
+        public const float WideSubmergedBlendStart = -0.15f;
+        public const float WideSubmergedBlendEnd = 0.38f;
+        public const float WideWaterEdgeOpacity = 0.42f;
+        public const float WideDeepWaterStart = 0.34f;
+        public const float WideDepthBlendSoftness = 0.58f;
+        public const float WideSubmergedWaterOpacity = 0.82f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
@@ -42,6 +52,9 @@ namespace CityForgeV3.World
         public readonly float OuterFadeEnd;
         public readonly float OuterFadeNoise;
         public readonly float TerrainBlendStrength;
+        public readonly float SubmergedBedBrightness;
+        public readonly float SubmergedBlendStart;
+        public readonly float SubmergedBlendEnd;
         public float ShoreDistance { get; set; }
         public float PatternOffset { get; set; }
 
@@ -64,6 +77,12 @@ namespace CityForgeV3.World
             OuterFadeEnd = DefaultOuterFadeEnd + OuterBlendMeters / 16f;
             OuterFadeNoise = usesWideBank ? WideOuterFadeNoise : 0f;
             TerrainBlendStrength = usesWideBank ? 1f : 0f;
+            SubmergedBedBrightness = usesWideBank
+                ? WideSubmergedBedBrightness : DefaultSubmergedBedBrightness;
+            SubmergedBlendStart = usesWideBank
+                ? WideSubmergedBlendStart : DefaultSubmergedBlendStart;
+            SubmergedBlendEnd = usesWideBank
+                ? WideSubmergedBlendEnd : DefaultSubmergedBlendEnd;
             Bend = new float[points.Count];
             if (points.Count < 3) return;
             var distances = new float[points.Count];

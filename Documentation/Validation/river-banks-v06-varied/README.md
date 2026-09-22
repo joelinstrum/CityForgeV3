@@ -45,3 +45,17 @@ The full river regression passed 82/82 EditMode tests:
 
 Interactive visual acceptance remains in the isolated
 `CityForge-Regions-Review` workspace after repository sync.
+
+## Submerged-edge follow-up
+
+The major-river bank shader now lifts the neutral bed multiplier from `0.80`
+to `0.94` and broadens its cross-bank blend from `0.015–0.13` to
+`-0.15–0.38`. At the shader's 16-metre cross-bank scale, the transition grows
+from `1.84 m` to `8.48 m`. Major-river water uses `0.42` edge opacity, `0.34`
+deep-water start, `0.58` depth softness and `0.82` near-submerged opacity so
+blue water progressively dominates that overlap. V04 values remain unchanged
+for medium rivers and streams.
+
+Fresh validation passed 25/25 focused bank and district-river tests and 82/82
+full river-regression tests with graphics enabled. Unity compilation and the
+`RiverBankSurface` shader completed without errors.

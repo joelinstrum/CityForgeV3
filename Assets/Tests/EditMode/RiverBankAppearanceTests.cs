@@ -197,6 +197,18 @@ namespace CityForgeV3.Tests
             Assert.That(major.OuterFadeNoise,
                 Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
             Assert.That(major.TerrainBlendStrength, Is.EqualTo(1f));
+            Assert.That(medium.SubmergedBedBrightness,
+                Is.EqualTo(RiverBankAppearance.DefaultSubmergedBedBrightness));
+            Assert.That(medium.SubmergedBlendStart,
+                Is.EqualTo(RiverBankAppearance.DefaultSubmergedBlendStart));
+            Assert.That(medium.SubmergedBlendEnd,
+                Is.EqualTo(RiverBankAppearance.DefaultSubmergedBlendEnd));
+            Assert.That(major.SubmergedBedBrightness,
+                Is.EqualTo(RiverBankAppearance.WideSubmergedBedBrightness));
+            Assert.That(major.SubmergedBlendStart,
+                Is.EqualTo(RiverBankAppearance.WideSubmergedBlendStart));
+            Assert.That(major.SubmergedBlendEnd,
+                Is.EqualTo(RiverBankAppearance.WideSubmergedBlendEnd));
         }
 
         [Test]
@@ -307,12 +319,31 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
                 Assert.That(material.GetFloat("_TerrainBlendStrength"),
                     Is.EqualTo(1f));
+                Assert.That(material.GetFloat("_SubmergedBedBrightness"),
+                    Is.EqualTo(RiverBankAppearance.WideSubmergedBedBrightness));
+                Assert.That(material.GetFloat("_SubmergedBlendStart"),
+                    Is.EqualTo(RiverBankAppearance.WideSubmergedBlendStart));
+                Assert.That(material.GetFloat("_SubmergedBlendEnd"),
+                    Is.EqualTo(RiverBankAppearance.WideSubmergedBlendEnd));
                 Assert.That(material.GetFloat("_TerrainWorldSize"),
                     Is.EqualTo(DistrictWorldController.
                         DistrictGrassTextureWorldSizeMeters));
                 Assert.That(material.GetTexture("_TerrainTex"),
                     Is.SameAs(Resources.Load<Texture2D>(
                         DistrictWorldController.DistrictGrassResource)));
+
+                var waterMaterial = host.GetComponentsInChildren<MeshRenderer>()
+                    .Select(renderer => renderer.sharedMaterial)
+                    .First(candidate => candidate.shader.name ==
+                        "CityForgeV3/RiverWaterSurface");
+                Assert.That(waterMaterial.GetFloat("_EdgeOpacity"),
+                    Is.EqualTo(RiverBankAppearance.WideWaterEdgeOpacity));
+                Assert.That(waterMaterial.GetFloat("_DeepWaterStart"),
+                    Is.EqualTo(RiverBankAppearance.WideDeepWaterStart));
+                Assert.That(waterMaterial.GetFloat("_DepthBlendSoftness"),
+                    Is.EqualTo(RiverBankAppearance.WideDepthBlendSoftness));
+                Assert.That(waterMaterial.GetFloat("_SubmergedOpacity"),
+                    Is.EqualTo(RiverBankAppearance.WideSubmergedWaterOpacity));
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

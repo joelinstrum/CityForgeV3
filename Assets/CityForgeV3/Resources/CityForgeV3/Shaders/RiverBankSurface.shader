@@ -19,6 +19,9 @@ Shader "CityForgeV3/RiverBankSurface"
         _OuterFadeNoise ("Outer fade irregularity", Float) = 0
         _TerrainBlendStrength ("Terrain match strength", Float) = 0
         _TerrainWorldSize ("Terrain texture metres", Float) = 75
+        _SubmergedBedBrightness ("Submerged bed brightness", Range(0,2)) = 0.8
+        _SubmergedBlendStart ("Submerged blend start", Range(-1,1)) = 0.015
+        _SubmergedBlendEnd ("Submerged blend end", Range(-1,1)) = 0.13
     }
     SubShader
     {
@@ -62,6 +65,8 @@ Shader "CityForgeV3/RiverBankSurface"
             float4 _DistrictHalfSize;
             float _RiverWaterLevel, _BankTop, _DetailMeters, _OuterFadeEnd;
             float _OuterFadeNoise, _TerrainBlendStrength, _TerrainWorldSize;
+            float _SubmergedBedBrightness, _SubmergedBlendStart,
+                _SubmergedBlendEnd;
             float _BankVariantCount;
             float _BankPatternOffset;
             Varyings vert(AppData input)
@@ -167,8 +172,10 @@ Shader "CityForgeV3/RiverBankSurface"
                 // the last image row, which would extrude pixels into streaks.
                 float2 bedUv = input.localPosition.xz / 9;
                 bedUv.y = .025 + frac(bedUv.y) * .15;
-                fixed3 bed = Strip(_GravelTex, bedUv) * .8;
-                albedo = lerp(bed, albedo, smoothstep(.015, .13, across));
+                fixed3 bed = Strip(_GravelTex, bedUv) *
+                    _SubmergedBedBrightness;
+                albedo = lerp(bed, albedo, smoothstep(
+                    _SubmergedBlendStart, _SubmergedBlendEnd, across));
                 float3 normal = normalize(input.worldNormal);
                 fixed3 lighting = CityForgeWorldLighting(normal,
                     SHADOW_ATTENUATION(input));

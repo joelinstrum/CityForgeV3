@@ -14,6 +14,16 @@ texture samples on V06 major banks but no additional material or draw call.
 Medium and smaller rivers retain V04. V05 and all earlier source art remain
 unchanged for rollback.
 
+Major-river V06 also uses a width-specific submerged handoff. The neutral bed
+is no longer darkened to 80%; it renders at 94%, while the shoreline-to-bed
+crossfade expands from 1.84 metres to 8.48 metres. The animated water gains
+opacity across a correspondingly broader depth interval (0.42 edge opacity,
+0.34 deep-water start and 0.58 softness), with an 0.82 near-submerged opacity.
+Together these overlapping fades replace the purple-gray inner ribbon and its
+hard cutoff with pale submerged stone that gradually yields to deep blue.
+Medium rivers and streams retain their existing sharper mountain-water
+calibration.
+
 Exact prompts, generated-source identifiers, processing and hashes are in
 `Documentation/ArtStudies/RiverBanksV06Varied/README.md`.
 

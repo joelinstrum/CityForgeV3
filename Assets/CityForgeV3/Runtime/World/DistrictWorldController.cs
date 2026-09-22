@@ -1507,6 +1507,11 @@ namespace CityForgeV3.World
                 mainTexture = texture,
                 renderQueue = (int)RenderQueue.Transparent
             };
+            // Wide rivers expose much more of the submerged bank in screen
+            // space. Feather their animated blue farther across the neutral
+            // bed so the bank does not terminate as a dark ruled ribbon.
+            var wideRiver = deepRiver &&
+                RiverBankAppearance.UsesWideRiverBank(width);
             texture.wrapMode = TextureWrapMode.Repeat;
             var whitecapTexture = Resources.Load<Texture2D>(
                 RiverWhitecapTextureResource);
@@ -1535,13 +1540,22 @@ namespace CityForgeV3.World
             if (material.HasProperty("_CenterOpacity"))
                 material.SetFloat("_CenterOpacity", 1f - (1f - _waterOpacity) * .12f);
             if (material.HasProperty("_EdgeOpacity"))
-                material.SetFloat("_EdgeOpacity", _waterEdgeOpacity);
+                material.SetFloat("_EdgeOpacity", wideRiver
+                    ? RiverBankAppearance.WideWaterEdgeOpacity
+                    : _waterEdgeOpacity);
             if (material.HasProperty("_DeepWaterStart"))
-                material.SetFloat("_DeepWaterStart", _deepWaterStart);
+                material.SetFloat("_DeepWaterStart", wideRiver
+                    ? RiverBankAppearance.WideDeepWaterStart
+                    : _deepWaterStart);
             if (material.HasProperty("_DeepWaterStrength"))
                 material.SetFloat("_DeepWaterStrength", _deepWaterStrength);
             if (material.HasProperty("_DepthBlendSoftness"))
-                material.SetFloat("_DepthBlendSoftness", _depthBlendSoftness);
+                material.SetFloat("_DepthBlendSoftness", wideRiver
+                    ? RiverBankAppearance.WideDepthBlendSoftness
+                    : _depthBlendSoftness);
+            if (material.HasProperty("_SubmergedOpacity") && wideRiver)
+                material.SetFloat("_SubmergedOpacity",
+                    RiverBankAppearance.WideSubmergedWaterOpacity);
             if (material.HasProperty("_FlowSpeed"))
                 material.SetFloat("_FlowSpeed", _waterFlowSpeed);
             if (material.HasProperty("_WaveDistortion"))
@@ -1805,6 +1819,12 @@ namespace CityForgeV3.World
                         bankAppearance.OuterFadeNoise);
                     material.SetFloat("_TerrainBlendStrength",
                         bankAppearance.TerrainBlendStrength);
+                    material.SetFloat("_SubmergedBedBrightness",
+                        bankAppearance.SubmergedBedBrightness);
+                    material.SetFloat("_SubmergedBlendStart",
+                        bankAppearance.SubmergedBlendStart);
+                    material.SetFloat("_SubmergedBlendEnd",
+                        bankAppearance.SubmergedBlendEnd);
                     bool mountainGround =
                         _terrainDistrict?.Hills?.Mountains == true;
                     var terrainTexture = Resources.Load<Texture2D>(
