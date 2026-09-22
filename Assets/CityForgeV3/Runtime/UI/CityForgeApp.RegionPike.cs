@@ -17,8 +17,16 @@ namespace CityForgeV3.UI
         VisualElement _pikeOverlay,_pikeToolbar;
         Label _pikePencil,_pikeHint;
 
-        void BeginNationalPike() => BeginRegionStroke(false,RegionRiverSize.Small);
-        void BeginRegionRiver(RegionRiverSize size) => BeginRegionStroke(true,size);
+        void BeginNationalPike()
+        {
+            _lastRegionRepeatAction = RegionRepeatAction.None;
+            BeginRegionStroke(false,RegionRiverSize.Small);
+        }
+        void BeginRegionRiver(RegionRiverSize size)
+        {
+            _lastRegionRepeatAction = RegionRepeatAction.None;
+            BeginRegionStroke(true,size);
+        }
 
         void BeginRegionStroke(bool river, RegionRiverSize size)
         {

@@ -6,11 +6,18 @@ namespace CityForgeV3.UI
 {
     public sealed partial class CityForgeApp
     {
+        private enum RegionRepeatAction
+        {
+            None,
+            Rivers
+        }
+
         // Rebound only when composing a new district HUD; local palette/selection changes retain these widgets.
         readonly System.Collections.Generic.Dictionary<string, (Label value, Button button)> _mapMetrics = new();
         Label _mapSeasonLabel;
         bool _districtPaletteOpen;
         bool _districtPaletteCategoryOpen;
+        RegionRepeatAction _lastRegionRepeatAction;
 
         void ToggleDistrictPalette(DistrictEditorMode mode)
         {
@@ -77,12 +84,11 @@ namespace CityForgeV3.UI
             rail.style.display = DisplayStyle.None;
             screen.Add(rail);
             var dock = CfMapChrome.Panel("region-intent-dock", "cf-quiet-dock");
-            dock.Add(CfMapChrome.Action("Enter selected district", "Build", () =>
+            if (_lastRegionRepeatAction == RegionRepeatAction.Rivers)
             {
-                var selected = FindSelectedRegionTile();
-                if (selected != null) SelectRegionTile(selected.TileId);
-                else ShowMapNotice("ENTER DISTRICT", "Select a district first.");
-            }, "region-build"));
+                dock.Add(CfMapChrome.Action("Regenerate Rivers", "Rivers",
+                    RegenerateRegionRivers, "region-repeat-action"));
+            }
             dock.Add(CfMapChrome.Action("Terrain", "TerrainAction", () =>
                 rail.style.display = rail.style.display.value == DisplayStyle.None ? DisplayStyle.Flex : DisplayStyle.None,
                 "region-terrain"));
@@ -301,6 +307,7 @@ namespace CityForgeV3.UI
                     panel.Add(CfMapChrome.Action("Regenerate District Layout", "Terrain", () =>
                     {
                         RegionSaveStore.RegenerateTiles(_openRegion); _selectedRegionTileId = "";
+                        _lastRegionRepeatAction = RegionRepeatAction.None;
                         _regionMapScrollOffset = Vector2.zero; _regionMapScrollInitialized = false;
                         RemoveDocumentModal(); Show(AppScreen.RegionEditor);
                     }));

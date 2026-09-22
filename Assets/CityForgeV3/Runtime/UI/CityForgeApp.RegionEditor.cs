@@ -233,6 +233,7 @@ namespace CityForgeV3.UI
       {
         _openRegion = RegionSaveStore.Create(nameField.value);
         _selectedRegionTileId = "";
+        _lastRegionRepeatAction = RegionRepeatAction.None;
         _regionMapScrollOffset = Vector2.zero;
         _regionMapScrollInitialized = false;
         _openRegionWasCreatedThisSession = true;
@@ -292,6 +293,7 @@ namespace CityForgeV3.UI
             _openRegion = RegionSaveStore.Load(captured.RegionId);
             if (_openRegion == null) return;
             _selectedRegionTileId = "";
+            _lastRegionRepeatAction = RegionRepeatAction.None;
             _regionMapScrollOffset = Vector2.zero;
             _regionMapScrollInitialized = false;
             _openRegionWasCreatedThisSession = false;
@@ -365,6 +367,7 @@ namespace CityForgeV3.UI
         {
           _openRegion = null;
           _selectedRegionTileId = "";
+          _lastRegionRepeatAction = RegionRepeatAction.None;
           _openRegionWasCreatedThisSession = false;
           _regionMapScrollOffset = Vector2.zero;
           _regionMapScrollInitialized = false;
