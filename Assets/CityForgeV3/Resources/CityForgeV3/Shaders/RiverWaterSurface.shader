@@ -215,6 +215,10 @@ Shader "CityForgeV3/RiverWaterSurface"
                     max(_SubmergedFadeStart + 0.01, _SubmergedFadeEnd),
                     submergedDepth);
                 water.a *= lerp(_SubmergedOpacity, 1.0, submergedFade);
+                // Vertex blue is a fixed-width coverage feather authored by
+                // the water mesh. It affects only the final bank edge, leaving
+                // the established shallow-water color and opacity intact.
+                water.a *= input.color.b;
                 // Junction processing writes a longitudinal fade into vertex
                 // alpha so tributaries dissolve cleanly into wider rivers.
                 // Red remains reserved for the cross-channel depth profile.

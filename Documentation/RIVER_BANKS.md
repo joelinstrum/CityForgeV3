@@ -17,11 +17,14 @@ unchanged for rollback.
 Major-river V06 also uses a width-specific submerged handoff. The neutral bed
 is no longer darkened to 80%; it renders at 94%, while the shoreline-to-bed
 crossfade expands from 1.84 metres to 8.48 metres. The animated water gains
-opacity across a correspondingly broader depth interval. Following close-view
-review, it begins almost clear at the mesh edge and gains blue later (0.03 edge
-opacity, 0.46 deep-water start and 0.82 softness), with 0.62 near-submerged
-opacity. Together these overlapping fades remove the remaining blue cutoff so
-pale submerged stone gradually yields to deep blue.
+opacity across a correspondingly broader depth interval (0.42 edge opacity,
+0.34 deep-water start and 0.58 softness), with an 0.82 near-submerged opacity.
+Those values remain intact after a rejected broad-transparency experiment
+restored the unwanted purple-brown shallow band. Instead, the visual water mesh
+now reaches the calculated waterline and only its final 1.2 metres feather to
+transparent. Blue shallow water therefore remains visible while its outermost
+edge no longer ends as a hard geometric cutoff. Navigation retains its existing
+0.10-metre inset.
 Medium rivers and streams retain their existing sharper mountain-water
 calibration.
 

@@ -6,23 +6,26 @@ Date: September 22, 2026
 
 - Camera-relative edge panning is three times the preceding calibration: 24%
   of the current orthographic half-height per second instead of 8%.
-- Major-river water begins nearly clear at its outer mesh edge. Its opacity and
-  blue color build across a wider, later depth ramp so neutral submerged gravel
-  is visible before it gradually yields to deep water.
-- Medium rivers and streams retain their existing mountain-water calibration.
+- The rejected broad-transparency calibration was reverted completely. Existing
+  major-river blue, shallow opacity, deep-water start, blend softness, and
+  submerged opacity are restored.
+- Visual water now reaches the calculated bank waterline and uses two additional
+  mesh rows to feather only the final 1.2 metres. The established shallow water
+  remains visible immediately inside that narrow coverage edge.
 
-This is a shared presentation calibration only. River geometry, collision,
+This is a shared presentation adjustment only. Navigation/collision width,
 editing, persistence, textures, bank materials, and surface-cache behavior are
-unchanged. No per-frame scans, material walks, extra draw calls, or autosaves
+unchanged. The existing water mesh has two more cross-channel rows but remains
+one material and one draw call. No per-frame scans, material walks, or autosaves
 were added.
 
 ## Validation
 
-The supplied close-view screenshot was inspected as the visual reference. Its
-hard blue boundary corresponds to the previous 0.42 opacity at the major-river
-water mesh edge; the new value is 0.03, with deep-water start moved from 0.34
-to 0.46, blend softness increased from 0.58 to 0.82, and shallow submerged
-opacity reduced from 0.82 to 0.62.
+The second supplied close-view screenshot was inspected as the visual reference.
+It confirmed that broad low-opacity water mixed blue with the neutral dark bed,
+recreating the rejected purple-brown shallow band. The 0.42 edge opacity, 0.34
+deep-water start, 0.58 softness, and 0.82 near-submerged opacity are restored.
+The new coverage feather is independent of those color/depth values.
 
 Thirteen focused EditMode tests passed in the isolated fixture
 `/tmp/cityforge-time-light-qa.CsqOcO`: the complete riverbank appearance suite

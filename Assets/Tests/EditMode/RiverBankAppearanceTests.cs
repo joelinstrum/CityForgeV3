@@ -332,10 +332,10 @@ namespace CityForgeV3.Tests
                     Is.SameAs(Resources.Load<Texture2D>(
                         DistrictWorldController.DistrictGrassResource)));
 
-                var waterMaterial = host.GetComponentsInChildren<MeshRenderer>()
-                    .Select(renderer => renderer.sharedMaterial)
-                    .First(candidate => candidate.shader.name ==
+                var waterRenderer = host.GetComponentsInChildren<MeshRenderer>()
+                    .First(renderer => renderer.sharedMaterial.shader.name ==
                         "CityForgeV3/RiverWaterSurface");
+                var waterMaterial = waterRenderer.sharedMaterial;
                 Assert.That(waterMaterial.GetFloat("_EdgeOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideWaterEdgeOpacity));
                 Assert.That(waterMaterial.GetFloat("_DeepWaterStart"),
@@ -344,12 +344,12 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideDepthBlendSoftness));
                 Assert.That(waterMaterial.GetFloat("_SubmergedOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedWaterOpacity));
-                Assert.That(RiverBankAppearance.WideWaterEdgeOpacity,
-                    Is.LessThan(.05f),
-                    "Wide water must begin nearly clear at the mesh edge.");
-                Assert.That(RiverBankAppearance.WideDepthBlendSoftness,
-                    Is.GreaterThan(.75f),
-                    "Wide water must feather gradually into deep blue.");
+                var waterColors = waterRenderer.GetComponent<MeshFilter>()
+                    .sharedMesh.colors;
+                // District-bound clipping can insert interpolated vertices, so
+                // validate the retained feather endpoints rather than row count.
+                Assert.That(waterColors.Any(color => color.b < .05f), Is.True);
+                Assert.That(waterColors.Any(color => color.b > .95f), Is.True);
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

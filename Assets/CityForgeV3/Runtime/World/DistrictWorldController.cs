@@ -1174,6 +1174,10 @@ namespace CityForgeV3.World
                     Mathf.InverseLerp(bankElevations[band - 1], bankElevations[band], waterElevation));
                 break;
             }
+            // Navigation remains slightly inset from the bank intersection.
+            // The visual surface reaches the true waterline and uses a narrow
+            // physical feather there, allowing blue shallow water to remain
+            // visible without ending on a hard mesh boundary.
             var waterWidth = Mathf.Max(.01f, waterHalfWidth - .10f) * 2f;
             var runtimeSurface = new RuntimeRiverSurface(centerline, halfWidth,
                 dirtOuterDistance, waterWidth * .5f, waterElevation,
@@ -1185,7 +1189,8 @@ namespace CityForgeV3.World
                 var max=Vector2.Max(centerline[i-1],centerline[i])+Vector2.one*halfWidth;
                 _riverSurfaceIndex.Add(Rect.MinMaxRect(min.x,min.y,max.x,max.y),runtimeSurface,true);
             }
-            AddRiverWaterSurface(centerline, waterWidth, waterElevation,
+            var visualWaterWidth = Mathf.Max(.01f, waterHalfWidth) * 2f;
+            AddRiverWaterSurface(centerline, visualWaterWidth, waterElevation,
                 waterTexture, $"River Water — {river.InstanceId}", deep);
         }
 
@@ -1429,12 +1434,16 @@ namespace CityForgeV3.World
             centers.Add(centerline[centerline.Count - 1]);
             normals.Add(BankNormal(centerline.Count - 1));
             distances.Add(traveled);
-            const int rows = 5;
+            // Two additional rows carry a fixed-width edge feather. Keeping
+            // this in metres avoids turning the shallow transition into a
+            // huge translucent band on major rivers.
+            const int rows = 7;
+            const float edgeFeatherMeters = 1.2f;
             var vertices = new Vector3[centers.Count * rows];
             var uv = new Vector2[centers.Count * rows];
             var flow = new Vector2[centers.Count * rows];
             var colors = new Color[centers.Count * rows];
-            var triangles = new int[(centers.Count - 1) * 24];
+            var triangles = new int[(centers.Count - 1) * (rows - 1) * 6];
             var halfWidth = width * 0.5f;
             var fadeScale = 1f - Mathf.Clamp(_waterEdgeFadeWidth, 0.05f, 0.45f);
             var worldTileSize = Mathf.Max(0.25f, _waterTextureTiling);
@@ -1444,19 +1453,31 @@ namespace CityForgeV3.World
                 var leftWidth = halfWidth * RiverShoreWidthScale(distances[index], width, true);
                 var rightWidth = halfWidth * RiverShoreWidthScale(distances[index], width, false);
                 var left = centers[index] + normal * leftWidth;
+                var leftFeather = Mathf.Min(edgeFeatherMeters,
+                    leftWidth * .5f);
+                var leftFeatherPoint = centers[index] + normal *
+                    (leftWidth - leftFeather);
                 var leftCenter = centers[index] + normal * (leftWidth * fadeScale);
                 var rightCenter = centers[index] - normal * (rightWidth * fadeScale);
+                var rightFeather = Mathf.Min(edgeFeatherMeters,
+                    rightWidth * .5f);
+                var rightFeatherPoint = centers[index] - normal *
+                    (rightWidth - rightFeather);
                 var right = centers[index] - normal * rightWidth;
                 var center = centers[index];
                 var row = index * rows;
                 vertices[row] = new Vector3(left.x, elevation, left.y);
                 vertices[row + 1] = new Vector3(
-                    leftCenter.x, elevation, leftCenter.y);
+                    leftFeatherPoint.x, elevation, leftFeatherPoint.y);
                 vertices[row + 2] = new Vector3(
-                    center.x, elevation, center.y);
+                    leftCenter.x, elevation, leftCenter.y);
                 vertices[row + 3] = new Vector3(
+                    center.x, elevation, center.y);
+                vertices[row + 4] = new Vector3(
                     rightCenter.x, elevation, rightCenter.y);
-                vertices[row + 4] = new Vector3(right.x, elevation, right.y);
+                vertices[row + 5] = new Vector3(
+                    rightFeatherPoint.x, elevation, rightFeatherPoint.y);
+                vertices[row + 6] = new Vector3(right.x, elevation, right.y);
                 // District-space mapping stays continuous across bends, clipped
                 // triangles and separate river reaches, regardless of point density.
                 for (int column = 0; column < rows; column++)
@@ -1467,18 +1488,27 @@ namespace CityForgeV3.World
                 }
                 var fadeCoordinate = Mathf.Clamp(_waterEdgeFadeWidth,
                     0.05f, 0.45f);
+                var leftFeatherCoordinate = Mathf.Min(fadeCoordinate,
+                    leftFeather / Mathf.Max(.01f, leftWidth));
+                var rightFeatherCoordinate = Mathf.Min(fadeCoordinate,
+                    rightFeather / Mathf.Max(.01f, rightWidth));
                 // Red stores continuous normalized depth: zero at either bank,
                 // one at the centerline. The shader turns this into one smooth
                 // opacity/color gradient with no shallow/deep mesh boundary.
-                colors[row] = new Color(0f, 1f, 1f, 1f);
-                colors[row + 1] = new Color(fadeCoordinate, 1f, 1f, 1f);
-                colors[row + 2] = new Color(1f, 1f, 1f, 1f);
-                colors[row + 3] = new Color(fadeCoordinate, 1f, 1f, 1f);
-                colors[row + 4] = new Color(0f, 1f, 1f, 1f);
+                // Blue stores only the narrow final-edge coverage feather.
+                colors[row] = new Color(0f, 1f, 0f, 1f);
+                colors[row + 1] = new Color(
+                    leftFeatherCoordinate, 1f, 1f, 1f);
+                colors[row + 2] = new Color(fadeCoordinate, 1f, 1f, 1f);
+                colors[row + 3] = new Color(1f, 1f, 1f, 1f);
+                colors[row + 4] = new Color(fadeCoordinate, 1f, 1f, 1f);
+                colors[row + 5] = new Color(
+                    rightFeatherCoordinate, 1f, 1f, 1f);
+                colors[row + 6] = new Color(0f, 1f, 0f, 1f);
                 if (index >= centers.Count - 1) continue;
                 for (var band = 0; band < rows - 1; band++)
                 {
-                    var triangle = index * 24 + band * 6;
+                    var triangle = index * (rows - 1) * 6 + band * 6;
                     var vertex = row + band;
                     triangles[triangle] = vertex;
                     triangles[triangle + 1] = vertex + rows;
