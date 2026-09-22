@@ -4,6 +4,8 @@ Shader "CityForgeV3/RiverWaterSurface"
     {
         _MainTex ("Water Texture", 2D) = "white" {}
         _WhitecapTex ("Whitecap Texture", 2D) = "black" {}
+        // Temporary review switch: set to 1 to restore visual river water.
+        _WaterVisible ("Water Visible (Riverbed Review)", Float) = 0
         _Color ("Water Tint", Color) = (0.94,1.02,1.06,1)
         _Brightness ("Brightness", Range(0.1,2)) = 1.08
         _Smoothness ("Smoothness", Range(0,1)) = 0.62
@@ -98,6 +100,7 @@ Shader "CityForgeV3/RiverWaterSurface"
             float _WhitecapTiling;
             float _WhitecapSpeed;
             float _WhitecapPulseSpeed;
+            float _WaterVisible;
 
             Varyings vert(AppData input)
             {
@@ -115,6 +118,9 @@ Shader "CityForgeV3/RiverWaterSurface"
 
             fixed4 frag(Varyings input) : SV_Target
             {
+                // Hide presentation only for the requested riverbed review.
+                // River geometry, surface sampling and gameplay remain active.
+                clip(_WaterVisible - 0.5);
                 // Keep metre-scaled district UVs; advect along the local river
                 // tangent. Two fading phases prevent unlimited bend distortion.
                 float2 flow = input.flow / max(length(input.flow), 0.0001);

@@ -336,6 +336,8 @@ namespace CityForgeV3.Tests
                     .First(renderer => renderer.sharedMaterial.shader.name ==
                         "CityForgeV3/RiverWaterSurface");
                 var waterMaterial = waterRenderer.sharedMaterial;
+                Assert.That(waterMaterial.GetFloat("_WaterVisible"), Is.Zero,
+                    "River water should be hidden for the riverbed review.");
                 Assert.That(waterMaterial.GetFloat("_EdgeOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideWaterEdgeOpacity));
                 Assert.That(waterMaterial.GetFloat("_DeepWaterStart"),
