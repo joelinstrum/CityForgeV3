@@ -13,21 +13,18 @@ namespace CityForgeV3.World
     public static class DistrictRiverGenerator
     {
         private const int CandidateCount = 24;
-        private const int PointCount = 33;
 
         public static DistrictRiverGenerationResult Generate(
             RegionCityTile district, DistrictRiverDirection direction,
             float curvature, DistrictRiverDepth depth, int seed)
         {
             if (district == null) return null;
-            curvature = Mathf.Clamp01(curvature);
             DistrictRiverGenerationResult best = null;
             var bestScore = float.PositiveInfinity;
             var random = new System.Random(seed);
             for (var candidate = 0; candidate < CandidateCount; candidate++)
             {
-                var river = BuildCandidate(district, direction, curvature,
-                    depth, random);
+                var river = BuildCandidate(district, direction, depth, random);
                 var result = new DistrictRiverGenerationResult { River = river };
                 var score = ScoreCandidate(district, river,
                     result.IntersectedLotInstanceIds);
@@ -42,52 +39,91 @@ namespace CityForgeV3.World
 
         private static PlacedDistrictRiver BuildCandidate(
             RegionCityTile district, DistrictRiverDirection direction,
-            float curvature, DistrictRiverDepth depth, System.Random random)
+            DistrictRiverDepth depth, System.Random random)
         {
             var vertical = direction is DistrictRiverDirection.SouthToNorth or
                 DistrictRiverDirection.NorthToSouth;
             var reversed = direction is DistrictRiverDirection.NorthToSouth or
                 DistrictRiverDirection.EastToWest;
+            var alongCells = vertical ? district.Height : district.Width;
+            var crossCells = vertical ? district.Width : district.Height;
             var crossSize = DistrictScale.SizeMeters(
-                vertical ? district.Width : district.Height);
+                crossCells);
             var width = depth == DistrictRiverDepth.Shallow ? 72f : 46f;
-            var minimumAmplitude = crossSize * 0.025f;
-            var amplitude = Mathf.Lerp(minimumAmplitude,
-                crossSize * 0.20f, curvature);
             var center = Mathf.Lerp(0.28f, 0.72f, (float)random.NextDouble());
-            var phase = (float)random.NextDouble() * Mathf.PI * 2f;
-            var harmonic = Mathf.Lerp(0.55f, 1.25f,
-                (float)random.NextDouble());
+            var centerMeters = (center - .5f) * crossSize;
+            var baseCrossCell = Mathf.RoundToInt(centerMeters /
+                DistrictScale.CellSizeMeters);
+            var minimumCrossCell = Mathf.CeilToInt(-crossCells * .44f);
+            var maximumCrossCell = Mathf.FloorToInt(crossCells * .44f);
+            baseCrossCell = Mathf.Clamp(baseCrossCell, minimumCrossCell,
+                maximumCrossCell);
             var river = new PlacedDistrictRiver
             {
                 InstanceId = Guid.NewGuid().ToString("N"),
                 Direction = direction,
                 Depth = depth,
-                Curvature = curvature,
+                Curvature = 0f,
                 WidthMeters = width
             };
-            for (var index = 0; index < PointCount; index++)
+            var logical = new List<DistrictRiverPoint>();
+            void AddPoint(int alongCell, int crossCell)
             {
-                var t = index / (float)(PointCount - 1);
-                var envelope = Mathf.Sin(Mathf.PI * t);
-                var lateralMeters = amplitude * envelope *
-                    (0.72f * Mathf.Sin(t * Mathf.PI * 2f + phase) +
-                     0.28f * Mathf.Sin(t * Mathf.PI * 4f * harmonic - phase));
-                var lateral = Mathf.Clamp(center + lateralMeters / crossSize,
-                    0.06f, 0.94f);
-                // Keep the procedural channel tied to the district's authored
-                // 10 m grid. The polyline still curves between samples, but its
-                // control points no longer drift at arbitrary sub-grid angles.
-                var lateralFromCenter = (lateral - .5f) * crossSize;
-                lateralFromCenter = Mathf.Round(lateralFromCenter /
-                    DistrictScale.CellSizeMeters) * DistrictScale.CellSizeMeters;
-                lateral = Mathf.Clamp(lateralFromCenter / crossSize + .5f,
-                    0.06f, 0.94f);
-                var along = reversed ? 1f - t : t;
-                river.Points.Add(vertical
-                    ? new DistrictRiverPoint(lateral, along)
-                    : new DistrictRiverPoint(along, lateral));
+                var along = alongCell / (float)alongCells;
+                var cross = crossCell / (float)crossCells + .5f;
+                var point = vertical
+                    ? new DistrictRiverPoint(cross, along)
+                    : new DistrictRiverPoint(along, cross);
+                if (logical.Count == 0 ||
+                    Mathf.Abs(logical[^1].X - point.X) > .000001f ||
+                    Mathf.Abs(logical[^1].Z - point.Z) > .000001f)
+                    logical.Add(point);
             }
+
+            // V02 retains exact grid-axis segments, but varies the forward
+            // runs and cross-axis steps to form a seeded stair-step channel.
+            var maximumOffset = Mathf.Max(1,
+                Mathf.RoundToInt(crossCells * .22f));
+            var lowerCross = Mathf.Max(minimumCrossCell,
+                baseCrossCell - maximumOffset);
+            var upperCross = Mathf.Min(maximumCrossCell,
+                baseCrossCell + maximumOffset);
+            var currentAlong = 0;
+            var currentCross = baseCrossCell;
+            var previousRun = 0;
+            AddPoint(currentAlong, currentCross);
+            while (alongCells - currentAlong > 1)
+            {
+                var remaining = alongCells - currentAlong;
+                var maximumRun = Mathf.Min(remaining - 1, Mathf.Max(2,
+                    Mathf.RoundToInt(alongCells * .38f)));
+                var run = random.Next(1, maximumRun + 1);
+                if (maximumRun > 1 && run == previousRun)
+                    run = run % maximumRun + 1;
+                previousRun = run;
+                currentAlong += run;
+                AddPoint(currentAlong, currentCross);
+                if (alongCells - currentAlong <= 1) break;
+                if (lowerCross == upperCross) continue;
+                var targetCross = random.Next(lowerCross, upperCross + 1);
+                if (targetCross == currentCross)
+                    targetCross = targetCross == upperCross
+                        ? lowerCross : targetCross + 1;
+                currentCross = targetCross;
+                AddPoint(currentAlong, currentCross);
+            }
+            if (currentCross != baseCrossCell)
+                AddPoint(currentAlong, baseCrossCell);
+            AddPoint(alongCells, baseCrossCell);
+            if (reversed) logical.Reverse();
+            var cellPoints = new List<Vector2>();
+            foreach (var point in logical)
+                cellPoints.Add(new Vector2(point.X * district.Width,
+                    point.Z * district.Height));
+            foreach (var point in RiverPathGeometry.RoundOrthogonalCorners(
+                         cellPoints, 1.8f))
+                river.Points.Add(new DistrictRiverPoint(
+                    point.x / district.Width, point.y / district.Height));
             return river;
         }
 

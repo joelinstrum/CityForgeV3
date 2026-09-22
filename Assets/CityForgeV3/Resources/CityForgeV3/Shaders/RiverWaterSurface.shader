@@ -215,6 +215,10 @@ Shader "CityForgeV3/RiverWaterSurface"
                     max(_SubmergedFadeStart + 0.01, _SubmergedFadeEnd),
                     submergedDepth);
                 water.a *= lerp(_SubmergedOpacity, 1.0, submergedFade);
+                // Junction processing writes a longitudinal fade into vertex
+                // alpha so tributaries dissolve cleanly into wider rivers.
+                // Red remains reserved for the cross-channel depth profile.
+                water.a *= input.color.a;
                 return water;
             }
             ENDCG

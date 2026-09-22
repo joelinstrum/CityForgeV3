@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="25" result="Passed" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:06Z" duration="5.8956091">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1168" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:06Z" duration="5.895609" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2342" name="CityForgeV3.Tests.EditMode.dll" fullname="/Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1168" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:06Z" duration="5.882446" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="3827" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2343" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1015" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:06Z" duration="5.864861" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2344" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1015" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:06Z" duration="5.858151" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1241" name="DistrictRiverTests" fullname="CityForgeV3.Tests.DistrictRiverTests" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:04Z" duration="3.782148" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1254" name="BothCardinalAxesUseTheBlueV02SurfaceCalibration" fullname="CityForgeV3.Tests.DistrictRiverTests.BothCardinalAxesUseTheBlueV02SurfaceCalibration" methodname="BothCardinalAxesUseTheBlueV02SurfaceCalibration" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1747300303" result="Passed" start-time="2026-09-21 21:09:00Z" end-time="2026-09-21 21:09:01Z" duration="1.404239" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=284ms terrain=1ms decals=228ms total=513ms
+]]></output>
+            </test-case>
+            <test-case id="1250" name="DistrictFloraSurvivesRegionSerialization" fullname="CityForgeV3.Tests.DistrictRiverTests.DistrictFloraSurvivesRegionSerialization" methodname="DistrictFloraSurvivesRegionSerialization" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="191385425" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.001979" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1247" name="HorizontalRiverCrossesOppositeDistrictEdges" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.019032" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1245" name="HorizontalRiverCrossesOppositeDistrictEdges(WestToEast,0.0f,1.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges(WestToEast,0.0f,1.0f)" methodname="HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="480580161" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.006170" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1246" name="HorizontalRiverCrossesOppositeDistrictEdges(EastToWest,1.0f,0.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.HorizontalRiverCrossesOppositeDistrictEdges(EastToWest,1.0f,0.0f)" methodname="HorizontalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="602743615" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.000250" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1253" name="RiverBedTextureIsAvailableToRuntimeRendering" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverBedTextureIsAvailableToRuntimeRendering" methodname="RiverBedTextureIsAvailableToRuntimeRendering" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1778192011" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.016695" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1248" name="RiverDataSurvivesRegionSerialization" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverDataSurvivesRegionSerialization" methodname="RiverDataSurvivesRegionSerialization" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1410523370" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:01Z" duration="0.001732" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1256" name="RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" fullname="CityForgeV3.Tests.DistrictRiverTests.RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" methodname="RiverSurfaceSamplerReturnsBedWaterAndDownstreamDirection" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1493993171" result="Passed" start-time="2026-09-21 21:09:01Z" end-time="2026-09-21 21:09:03Z" duration="1.071583" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=29ms terrain=0ms decals=206ms total=235ms
+]]></output>
+            </test-case>
+            <test-case id="1251" name="ShallowRiverIsBroaderThanDeepRiver" fullname="CityForgeV3.Tests.DistrictRiverTests.ShallowRiverIsBroaderThanDeepRiver" methodname="ShallowRiverIsBroaderThanDeepRiver" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="244720801" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.000212" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1249" name="StairRunsUseSeededLongAndShortGridSpans" fullname="CityForgeV3.Tests.DistrictRiverTests.StairRunsUseSeededLongAndShortGridSpans" methodname="StairRunsUseSeededLongAndShortGridSpans" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="2043641416" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.002467" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1244" name="VerticalRiverCrossesOppositeDistrictEdges" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.001848" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1242" name="VerticalRiverCrossesOppositeDistrictEdges(SouthToNorth,0.0f,1.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges(SouthToNorth,0.0f,1.0f)" methodname="VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="45194912" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.000497" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1243" name="VerticalRiverCrossesOppositeDistrictEdges(NorthToSouth,1.0f,0.0f)" fullname="CityForgeV3.Tests.DistrictRiverTests.VerticalRiverCrossesOppositeDistrictEdges(NorthToSouth,1.0f,0.0f)" methodname="VerticalRiverCrossesOppositeDistrictEdges" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="1856660056" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1252" name="WaterSelectionFindsAndMovesOnlyTheRiver" fullname="CityForgeV3.Tests.DistrictRiverTests.WaterSelectionFindsAndMovesOnlyTheRiver" methodname="WaterSelectionFindsAndMovesOnlyTheRiver" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="734177884" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:03Z" duration="0.001708" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1255" name="WiderRiverOwnsJunctionAndTributaryFadesRegardlessOfOrder" fullname="CityForgeV3.Tests.DistrictRiverTests.WiderRiverOwnsJunctionAndTributaryFadesRegardlessOfOrder" methodname="WiderRiverOwnsJunctionAndTributaryFadesRegardlessOfOrder" classname="CityForgeV3.Tests.DistrictRiverTests" runstate="Runnable" seed="52664950" result="Passed" start-time="2026-09-21 21:09:03Z" end-time="2026-09-21 21:09:04Z" duration="1.249606" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=212ms terrain=0ms decals=207ms total=419ms
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1336" name="RiverBankAppearanceTests" fullname="CityForgeV3.Tests.RiverBankAppearanceTests" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:06Z" duration="2.039514" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1344" name="BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" methodname="BankMaterialsLoadWithHorizontalRepeatAndVerticalClamp" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1927567571" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.024558" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1341" name="ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" methodname="ClippingAndJunctionSubtractionRetainInterpolatedSignedBankWeights" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1332950630" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.001065" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1343" name="HillMeadowAssetsSupportContinuousTerrainBlending" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.HillMeadowAssetsSupportContinuousTerrainBlending" methodname="HillMeadowAssetsSupportContinuousTerrainBlending" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1469610776" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.000458" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1337" name="InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" methodname="InsertingCollinearSamplesDoesNotChangeBendAtExistingPoints" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="371753347" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.000631" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1342" name="JunctionSubtractionFadesTributaryAlphaTowardOwner" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.JunctionSubtractionFadesTributaryAlphaTowardOwner" methodname="JunctionSubtractionFadesTributaryAlphaTowardOwner" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1042254032" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.000949" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1346" name="LightV04BanksAreTheActiveRuntimeResources" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.LightV04BanksAreTheActiveRuntimeResources" methodname="LightV04BanksAreTheActiveRuntimeResources" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="751075068" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:04Z" duration="0.000337" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1348" name="MajorRiverMaterialBindsAllThreeMutedWideTextures" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.MajorRiverMaterialBindsAllThreeMutedWideTextures" methodname="MajorRiverMaterialBindsAllThreeMutedWideTextures" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="2042019910" result="Passed" start-time="2026-09-21 21:09:04Z" end-time="2026-09-21 21:09:05Z" duration="1.019830" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=13ms terrain=0ms decals=207ms total=220ms
+]]></output>
+            </test-case>
+            <test-case id="1340" name="MirroringBendSwapsGravelAndEarthAndBoundsHairpins" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.MirroringBendSwapsGravelAndEarthAndBoundsHairpins" methodname="MirroringBendSwapsGravelAndEarthAndBoundsHairpins" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="558750702" result="Passed" start-time="2026-09-21 21:09:05Z" end-time="2026-09-21 21:09:05Z" duration="0.000610" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1338" name="ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" methodname="ReversingPointOrderSwapsBankSidesWithoutChangingPhysicalBend" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1260919024" result="Passed" start-time="2026-09-21 21:09:05Z" end-time="2026-09-21 21:09:05Z" duration="0.000339" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1347" name="RiverBankMaterialBindsAllThreeLightV04Textures" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.RiverBankMaterialBindsAllThreeLightV04Textures" methodname="RiverBankMaterialBindsAllThreeLightV04Textures" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="570467661" result="Passed" start-time="2026-09-21 21:09:05Z" end-time="2026-09-21 21:09:06Z" duration="0.987337" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=18ms terrain=0ms decals=190ms total=208ms
+]]></output>
+            </test-case>
+            <test-case id="1339" name="StraightAndDegeneratePathsStayNeutralAndFinite" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.StraightAndDegeneratePathsStayNeutralAndFinite" methodname="StraightAndDegeneratePathsStayNeutralAndFinite" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="1992883940" result="Passed" start-time="2026-09-21 21:09:06Z" end-time="2026-09-21 21:09:06Z" duration="0.000405" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1345" name="WideBankSelectionPreservesV04ThroughMediumWidths" fullname="CityForgeV3.Tests.RiverBankAppearanceTests.WideBankSelectionPreservesV04ThroughMediumWidths" methodname="WideBankSelectionPreservesV04ThroughMediumWidths" classname="CityForgeV3.Tests.RiverBankAppearanceTests" runstate="Runnable" seed="772550749" result="Passed" start-time="2026-09-21 21:09:06Z" end-time="2026-09-21 21:09:06Z" duration="0.000362" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: /Users/joelinstrum/dev/CityForge-workspaces/texture-refinements/Documentation/Validation/river-banks-v05-wide/editmode-results.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

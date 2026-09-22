@@ -1,3 +1,76 @@
+# V6 varied neutral wide-river banks
+
+Major rivers now use the versioned `BanksV6Varied` family: four distinct
+shoreline compositions and one neutral submerged-gravel texture. Blue is no
+longer baked into the bank artwork; the animated water surface supplies the
+river color. The four compositions vary gravel-bar width, grass intrusion,
+stone density and larger-rock placement.
+
+The bank shader chooses seeded neighboring variants over irregular physical
+reaches, smoothly crossfades between them, and samples each with a different
+phase, direction and slight longitudinal scale. The result is stable across
+reloads and district clipping without a hard texture switch. This adds two
+texture samples on V06 major banks but no additional material or draw call.
+Medium and smaller rivers retain V04. V05 and all earlier source art remain
+unchanged for rollback.
+
+Major-river V06 also uses a width-specific submerged handoff. The neutral bed
+is no longer darkened to 80%; it renders at 94%, while the shoreline-to-bed
+crossfade expands from 1.84 metres to 8.48 metres. The animated water gains
+opacity across a correspondingly broader depth interval (0.42 edge opacity,
+0.34 deep-water start and 0.58 softness), with an 0.82 near-submerged opacity.
+Together these overlapping fades replace the purple-gray inner ribbon and its
+hard cutoff with pale submerged stone that gradually yields to deep blue.
+Medium rivers and streams retain their existing sharper mountain-water
+calibration.
+
+Exact prompts, generated-source identifiers, processing and hashes are in
+`Documentation/ArtStudies/RiverBanksV06Varied/README.md`.
+
+---
+
+# V5 wide-river bank split
+
+Major rivers (generated at 144–228 metres) now use the versioned
+`BanksV5Wide` set. Its pale gravel remains related to V04, while submerged
+stones use a restrained slate blue-gray/green-gray wash instead of the bright
+cyan shallows that became a conspicuous rim at major-river scale. Selection is
+based only on channel width: 100 metres and above uses V05 Wide.
+
+Streams and medium rivers (up to 76 metres) deliberately retain the approved
+V04 resources unchanged. This preserves their clear mountain-stream character
+and keeps that brighter art available for a future tropical climate treatment.
+The split adds no draw calls, no additional material per river, and no
+per-frame work; the three resource paths are selected once during river mesh
+rebuild. Major-river bank presentation also extends eight metres beyond the
+physical channel and fades through that shoulder into the underlying terrain.
+The shoulder samples the same world-anchored V05 terrain grass before its
+opacity reaches zero, and multi-scale noise breaks up the fade contour. This
+removes the differently tinted straight ribbon without changing channel
+width, collision, construction clearance or simulation. V1–V04 remain
+present and unchanged.
+
+Exact prompts and source identifiers are in
+`Documentation/ArtStudies/RiverBanksV05Wide/README.md`.
+
+---
+
+# V4 approved light shoreline
+
+On September 21 the user approved a shoreline direction in which deep blue
+water is the darkest value, clear cyan-blue shallows are lighter, and pale
+silver-gray gravel forms the dry bank without a brown or dark wet outline.
+`BanksV4` supplies three new, versioned derivatives: a natural shoreline, a
+sparser open-gravel alternate, and a uniform pale submerged-gravel bed. Runtime
+mapping, shader blending, bend variation, mesh geometry and water animation are
+unchanged. V1–V3 remain available for rollback.
+
+Exact generation prompts, output identifiers and mechanical processing are in
+`Documentation/ArtStudies/RiverBanksV04/README.md`. The approved concept is
+preserved beside that document.
+
+---
+
 # V3 refinement — less grass in the gravel
 
 The user endorsed the V2 direction, then requested fewer grass fingers and less grass/rock repetition. V3 retains the continuous 48m mapping and existing geometry. Its dominant alternate artwork is now `BanksV3/open-gravel.png`, an imagegen edit of `BanksV2/shoreline-gravel.png` that removes the three conspicuous sedge tufts and most descending grass. V2 sources are preserved.

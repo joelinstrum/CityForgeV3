@@ -1,6 +1,7 @@
 using CityForgeV3.World;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace CityForgeV3.Tests
@@ -19,7 +20,10 @@ namespace CityForgeV3.Tests
             Assert.That(result, Is.Not.Null);
             Assert.That(result.River.Points[0].Z, Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].Z, Is.EqualTo(end).Within(0.001f));
-            Assert.That(LateralRange(result.River, true), Is.GreaterThan(0.01f));
+            Assert.That(result.River.Points.Count, Is.GreaterThan(4));
+            Assert.That(LateralRange(result.River, true), Is.GreaterThan(0f));
+            Assert.That(result.River.Curvature, Is.EqualTo(0f));
+            AssertRoundedStairs(result.River);
         }
 
         [TestCase(DistrictRiverDirection.WestToEast, 0f, 1f)]
@@ -35,8 +39,10 @@ namespace CityForgeV3.Tests
                 Is.EqualTo(start).Within(0.001f));
             Assert.That(result.River.Points[^1].X,
                 Is.EqualTo(end).Within(0.001f));
-            Assert.That(LateralRange(result.River, false), Is.GreaterThan(0.005f),
-                "Even minimum curvature must not produce a road-straight river.");
+            Assert.That(result.River.Points.Count, Is.GreaterThan(4));
+            Assert.That(LateralRange(result.River, false), Is.GreaterThan(0f));
+            Assert.That(result.River.Curvature, Is.EqualTo(0f));
+            AssertRoundedStairs(result.River);
         }
 
         [Test]
@@ -54,7 +60,25 @@ namespace CityForgeV3.Tests
             Assert.That(restored.Rivers[0].Depth, Is.EqualTo(DistrictRiverDepth.Deep));
             Assert.That(restored.Rivers[0].Direction,
                 Is.EqualTo(DistrictRiverDirection.EastToWest));
-            Assert.That(restored.Rivers[0].Points, Has.Count.EqualTo(33));
+            Assert.That(restored.Rivers[0].Points.Count,
+                Is.EqualTo(district.Rivers[0].Points.Count));
+            Assert.That(restored.Rivers[0].Points.Count, Is.GreaterThan(4));
+        }
+
+        [Test]
+        public void StairRunsUseSeededLongAndShortGridSpans()
+        {
+            var river = DistrictRiverGenerator.Generate(
+                new RegionCityTile { Width = 20, Height = 12 },
+                DistrictRiverDirection.WestToEast, .5f,
+                DistrictRiverDepth.Deep, 1785).River;
+            var runs = river.Points.Zip(river.Points.Skip(1), (a, b) =>
+                    Mathf.Abs(a.Z - b.Z) < .000001f
+                        ? Mathf.RoundToInt(Mathf.Abs(a.X - b.X) * 20f) : 0)
+                .Where(length => length > 0).ToArray();
+
+            Assert.That(runs.Length, Is.GreaterThan(2));
+            Assert.That(runs.Distinct().Count(), Is.GreaterThan(1));
         }
 
         [Test]
@@ -148,6 +172,133 @@ namespace CityForgeV3.Tests
                 DistrictWorldController.RiverBedDirtResource), Is.Not.Null);
             Assert.That(Resources.Load<Texture2D>(
                 DistrictWorldController.RiverWaterTextureResource), Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>(
+                DistrictWorldController.RiverWhitecapTextureResource), Is.Not.Null);
+            StringAssert.Contains("/RiverBlueV01/",
+                DistrictWorldController.RiverWaterTextureResource);
+            StringAssert.Contains("/RiverBlueV01/",
+                DistrictWorldController.RiverWhitecapTextureResource);
+        }
+
+        [Test]
+        public void BothCardinalAxesUseTheBlueV02SurfaceCalibration()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "blue-v02-west-east",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 46f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .3f), new(1f, .3f)
+                }
+            });
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "blue-v02-north-south",
+                Direction = DistrictRiverDirection.NorthToSouth,
+                Depth = DistrictRiverDepth.Shallow,
+                WidthMeters = 18f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(.7f, 1f), new(.7f, 0f)
+                }
+            });
+            var host = new GameObject("Blue V02 cardinal river test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                Assert.That(world.WaterTextureTiling, Is.EqualTo(30f));
+                Assert.That(world.DeepWaterStrength, Is.EqualTo(.42f));
+                Assert.That(world.WaterBrightness, Is.EqualTo(1.16f));
+                Assert.That(world.WaterEdgeOpacity, Is.EqualTo(.28f));
+                Assert.That(world.WaterEdgeFadeWidth, Is.EqualTo(.14f));
+                Assert.That(world.DepthBlendSoftness, Is.EqualTo(.34f));
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+
+                var expectedBase = Resources.Load<Texture2D>(
+                    DistrictWorldController.RiverWaterTextureResource);
+                var expectedCrests = Resources.Load<Texture2D>(
+                    DistrictWorldController.RiverWhitecapTextureResource);
+                var surfaces = host.GetComponentsInChildren<MeshRenderer>()
+                    .Where(renderer => renderer.name.StartsWith("River Water"))
+                    .ToArray();
+
+                Assert.That(surfaces, Has.Length.EqualTo(2));
+                foreach (var surface in surfaces)
+                {
+                    var material = surface.sharedMaterial;
+                    Assert.That(material.shader.name,
+                        Is.EqualTo("CityForgeV3/RiverWaterSurface"));
+                    Assert.That(material.mainTexture, Is.SameAs(expectedBase));
+                    Assert.That(material.GetTexture("_WhitecapTex"),
+                        Is.SameAs(expectedCrests));
+                    Assert.That(material.GetFloat("_DeepWaterStrength"),
+                        Is.EqualTo(.42f).Within(.0001f));
+                    Assert.That(material.GetFloat("_WhitecapStrength"),
+                        Is.EqualTo(.44f).Within(.0001f));
+                    Assert.That(material.GetFloat("_WhitecapCoverage"),
+                        Is.EqualTo(.72f).Within(.0001f));
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void WiderRiverOwnsJunctionAndTributaryFadesRegardlessOfOrder()
+        {
+            var district = new RegionCityTile { Width = 4, Height = 4 };
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "small-first",
+                Direction = DistrictRiverDirection.NorthToSouth,
+                Depth = DistrictRiverDepth.Shallow,
+                WidthMeters = 18f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(.5f, 1f), new(.5f, 0f)
+                }
+            });
+            district.Rivers.Add(new PlacedDistrictRiver
+            {
+                InstanceId = "major-second",
+                Direction = DistrictRiverDirection.WestToEast,
+                Depth = DistrictRiverDepth.Deep,
+                WidthMeters = 54f,
+                Points = new List<DistrictRiverPoint>
+                {
+                    new(0f, .5f), new(1f, .5f)
+                }
+            });
+            var host = new GameObject("Width-owned river junction test");
+            try
+            {
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var waters = host.GetComponentsInChildren<MeshFilter>()
+                    .Where(filter => filter.name.StartsWith("River Water — "))
+                    .ToArray();
+                var small = waters.Single(filter =>
+                    filter.name.EndsWith("small-first"));
+                var major = waters.Single(filter =>
+                    filter.name.EndsWith("major-second"));
+
+                Assert.That(small.sharedMesh.colors.Any(color => color.a < .99f),
+                    Is.True, "The smaller river must fade into the major.");
+                Assert.That(major.sharedMesh.colors.All(color => color.a > .999f),
+                    Is.True, "The widest river must retain junction ownership.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
         }
 
         [Test]
@@ -200,6 +351,34 @@ namespace CityForgeV3.Tests
             foreach (var point in river.Points)
                 values.Add(vertical ? point.X : point.Z);
             return Mathf.Max(values.ToArray()) - Mathf.Min(values.ToArray());
+        }
+
+        private static void AssertRoundedStairs(PlacedDistrictRiver river)
+        {
+            var horizontal = false;
+            var vertical = false;
+            var curved = false;
+            var hasPrior = false;
+            var prior = Vector2.zero;
+            foreach (var pair in river.Points.Zip(river.Points.Skip(1),
+                         (a, b) => (a, b)))
+            {
+                var x = Mathf.Abs(pair.a.X - pair.b.X);
+                var z = Mathf.Abs(pair.a.Z - pair.b.Z);
+                var delta = new Vector2(pair.b.X - pair.a.X,
+                    pair.b.Z - pair.a.Z);
+                Assert.That(delta.sqrMagnitude, Is.GreaterThan(.000000001f));
+                horizontal |= x > .000001f && z < .000001f;
+                vertical |= z > .000001f && x < .000001f;
+                curved |= x > .000001f && z > .000001f;
+                if (hasPrior)
+                    Assert.That(Vector2.Angle(prior, delta), Is.LessThan(50f),
+                        "Rounded stairs must not retain a hard 90-degree turn.");
+                prior = delta;
+                hasPrior = true;
+            }
+            Assert.That(horizontal && vertical && curved, Is.True,
+                "A rounded stair river needs straight runs, steps, and curves.");
         }
     }
 }
