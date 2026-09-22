@@ -71,18 +71,16 @@ public class RegionRiverGeneratorTests
         Assert.That(paths.Single().Points.Any(point=>
             Mathf.Abs(point.X-4)<.0001f&&Mathf.Abs(point.Z-2)<.0001f),Is.False);
     }
-    [Test] public void SmallRiverStraightRunsAreBoundedWithoutForcedDistrictTurns()
+    [Test] public void GeneratedRiversKeepWanderingThroughDistricts()
     {
         var r=RegionSaveStore.Create("Meander coverage",28,20);
         var paths=RegionRiverGenerator.Generate(r,new RegionTerrainSettings{
             RiverCountsVersion=1,SmallRiverCount=4},7721);
-        var foundStraightDistrict=false;
         foreach(var path in paths)
-        foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
         {
-            var delta=new Vector2(pair.b.X-pair.a.X,pair.b.Z-pair.a.Z);
-            if(Mathf.Abs(delta.x)<.0001f||Mathf.Abs(delta.y)<.0001f)
-                Assert.That(delta.magnitude,Is.LessThanOrEqualTo(4.21f));
+            Assert.That(CountTurns(path.Points),Is.GreaterThanOrEqualTo(8));
+            Assert.That(LongestNearlyStraightRun(path.Points),
+                Is.LessThanOrEqualTo(1.35f));
         }
         foreach(var tile in r.Tiles)
         foreach(var section in RegionRiverGenerator.Sections(tile,paths))
@@ -93,9 +91,9 @@ public class RegionRiverGeneratorTests
                 first.X<.001f&&last.X>.999f:
                 first.Z>.999f&&last.Z<.001f;
             if(!full)continue;
-            if(CountTurns(section.Points)==0)foundStraightDistrict=true;
+            Assert.That(CountTurns(section.Points),Is.GreaterThan(0),
+                "A river crossing a full district must not be straight.");
         }
-        Assert.That(foundStraightDistrict,Is.True);
     }
     [Test] public void SmallerWatercoursesCreateInteriorHeadsAndConfluences()
     {
@@ -228,6 +226,22 @@ public class RegionRiverGeneratorTests
             if(Vector2.Angle(incoming,outgoing)>2f)count++;
         }
         return count;
+    }
+    static float LongestNearlyStraightRun(
+        IReadOnlyList<DistrictRiverPoint> points)
+    {
+        if(points.Count<2)return 0;
+        var longest=0f;var current=0f;var prior=Vector2.zero;
+        for(var index=1;index<points.Count;index++)
+        {
+            var delta=new Vector2(points[index].X-points[index-1].X,
+                points[index].Z-points[index-1].Z);
+            if(delta.sqrMagnitude<1e-10f)continue;
+            if(index>1&&Vector2.Angle(prior,delta)>1f)current=0;
+            current+=delta.magnitude;
+            longest=Mathf.Max(longest,current);prior=delta;
+        }
+        return longest;
     }
     static float DistanceToPath(RegionRiverPath path,Vector2 target)
     {

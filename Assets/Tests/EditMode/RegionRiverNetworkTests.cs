@@ -8,7 +8,7 @@ public class RegionRiverNetworkTests
 {
     RegionSaveData Region()=>new RegionSaveData{Width=28,Height=20,Tiles=new List<RegionCityTile>{new(){TileId="south",Width=28,Height=10},new(){TileId="north",Y=10,Width=28,Height=10}}};
     [TestCase(1)][TestCase(1785)][TestCase(994)][TestCase(26)]
-    public void NetworkUsesRoundedCenterSeekingRivers(int seed)
+    public void NetworkUsesNaturalGridOrientedRivers(int seed)
     {
         var r=Region();var settings=new RegionTerrainSettings{Streams=RegionWaterAmount.Few};
         var paths=RegionRiverGenerator.Generate(r,settings,seed);
@@ -26,7 +26,7 @@ public class RegionRiverNetworkTests
         }
         var trunk=paths[0];
         Assert.That(trunk.Points.Count,Is.GreaterThan(4));
-        AssertRoundedTrunk(trunk);
+        AssertNaturalTrunk(trunk);
     }
     [TestCase(RegionRiverFlow.WestToEast)]
     [TestCase(RegionRiverFlow.EastToWest)]
@@ -40,7 +40,7 @@ public class RegionRiverNetworkTests
             DistrictRiverDirection.WestToEast or DistrictRiverDirection.NorthToSouth),Is.True);
         Assert.That(paths.Count(path=>path.Depth==DistrictRiverDepth.Deep),Is.EqualTo(1));
         Assert.That(paths[0].WidthMeters,Is.InRange(144f,228f));
-        AssertRoundedTrunk(paths[0]);
+        AssertNaturalTrunk(paths[0]);
         RegionRiverGenerator.Apply(r,paths);
         foreach(var path in paths)foreach(var section in r.Tiles.SelectMany(t=>t.Rivers).Where(p=>p.RegionRiverId==path.Id))
         {
@@ -79,20 +79,25 @@ public class RegionRiverNetworkTests
         finally{UnityEngine.Object.DestroyImmediate(go);RenderSettings.ambientMode=mode;RenderSettings.ambientLight=ambient;RenderSettings.ambientSkyColor=sky;RenderSettings.ambientEquatorColor=eq;RenderSettings.ambientGroundColor=ground;}
     }
 
-    static void AssertRoundedTrunk(RegionRiverPath path)
+    static void AssertNaturalTrunk(RegionRiverPath path)
     {
-        bool horizontal=false,vertical=false,curved=false,hasPrior=false;
+        bool curved=false,hasPrior=false;
+        var changes=0;
         var prior=Vector2.zero;
         foreach(var pair in path.Points.Zip(path.Points.Skip(1),(a,b)=>(a,b)))
         {
             var delta=new Vector2(pair.b.X-pair.a.X,pair.b.Z-pair.a.Z);
             var x=Mathf.Abs(delta.x);var z=Mathf.Abs(delta.y);
-            horizontal|=x>.000001f&&z<.000001f;
-            vertical|=z>.000001f&&x<.000001f;
             curved|=x>.000001f&&z>.000001f;
-            if(hasPrior)Assert.That(Vector2.Angle(prior,delta),Is.LessThan(50f));
+            if(hasPrior)
+            {
+                var angle=Vector2.Angle(prior,delta);
+                Assert.That(angle,Is.LessThan(50f));
+                if(angle>1f)changes++;
+            }
             prior=delta;hasPrior=true;
         }
-        Assert.That(horizontal&&vertical&&curved,Is.True);
+        Assert.That(curved,Is.True);
+        Assert.That(changes,Is.GreaterThanOrEqualTo(4));
     }
 }

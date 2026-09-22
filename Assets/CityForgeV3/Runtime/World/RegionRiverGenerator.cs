@@ -165,20 +165,20 @@ namespace CityForgeV3.World
             var logical=new List<Vector2>();
             void Add(float along,float cross)
             {
-                var point=horizontal?new Vector2(along,cross):
-                    new Vector2(cross,along);
+                var point=new Vector2(along,cross);
                 if(logical.Count==0||Vector2.Distance(logical[^1],point)>.000001f)
                     logical.Add(point);
             }
             float Next(float a,float b)=>Mathf.Lerp(a,b,
                 (float)random.NextDouble());
-            (float Minimum,float Maximum,float Shift,float Radius) Shape()=>
+            (float Minimum,float Maximum,float Shift,float SampleSpacing,
+                float Undulation) Shape()=>
                 path.GeneratedSize switch
             {
-                GeneratedRegionRiverSize.Major=>(3.6f,7.2f,2.3f,2.4f),
-                GeneratedRegionRiverSize.Medium=>(2.6f,5.6f,1.7f,1.9f),
-                GeneratedRegionRiverSize.Small=>(1.7f,4.2f,1.2f,1.35f),
-                _=>(1.15f,3.1f,.8f,.9f)
+                GeneratedRegionRiverSize.Major=>(1.45f,3.2f,2.3f,.42f,.24f),
+                GeneratedRegionRiverSize.Medium=>(1.15f,2.65f,1.7f,.34f,.19f),
+                GeneratedRegionRiverSize.Small=>(.9f,2.15f,1.2f,.28f,.14f),
+                _=>(.65f,1.65f,.8f,.22f,.1f)
             };
             var shape=Shape();
             var inset=Mathf.Min(.18f,(upperCross-lowerCross)*.12f);
@@ -188,26 +188,27 @@ namespace CityForgeV3.World
             var exitCross=Next(lowerCross,upperCross);
             float currentAlong=0,currentCross=startCross;
             int driftDirection=random.NextDouble()<.5?-1:1;
-            int driftRemaining=random.Next(2,5);
+            int driftRemaining=random.Next(1,4);
             Add(currentAlong,currentCross);
             var guard=0;
             while(alongCells-currentAlong>shape.Maximum&&guard++<64)
             {
                 var turn=currentAlong+Next(shape.Minimum,shape.Maximum);
-                Add(turn,currentCross);
                 var room=driftDirection>0?upperCross-currentCross:
                     currentCross-lowerCross;
                 if(room<.28f)
                 {
                     driftDirection=-driftDirection;
-                    driftRemaining=random.Next(2,5);
+                    driftRemaining=random.Next(1,4);
                     room=driftDirection>0?upperCross-currentCross:
                         currentCross-lowerCross;
                 }
-                var shift=Mathf.Min(shape.Shift,room*.78f)*Next(.48f,1f);
+                var reach=turn-currentAlong;
+                var shift=Mathf.Min(shape.Shift,
+                    Mathf.Min(room*.78f,reach*.62f))*Next(.42f,1f);
                 var nextCross=currentCross+driftDirection*shift;
                 var progress=turn/alongCells;
-                nextCross=Mathf.Lerp(nextCross,exitCross,.1f+progress*.16f);
+                nextCross=Mathf.Lerp(nextCross,exitCross,.06f+progress*.12f);
                 nextCross=Mathf.Clamp(nextCross,lowerCross,upperCross);
                 Add(turn,nextCross);
                 currentAlong=turn;currentCross=nextCross;
@@ -215,22 +216,53 @@ namespace CityForgeV3.World
                 if(driftRemaining<=0)
                 {
                     driftDirection=-driftDirection;
-                    driftRemaining=random.Next(2,5);
+                    driftRemaining=random.Next(1,4);
                 }
             }
-            var remaining=alongCells-currentAlong;
-            if(remaining>shape.Minimum*1.35f&&
-                Mathf.Abs(exitCross-currentCross)>.14f)
+            Add(alongCells,exitCross);
+
+            // The anchors retain a clear west-east or north-south structure,
+            // but every reach wanders gently between them. This keeps bridge
+            // and waterfront planning legible without drawing ruler-straight
+            // stair steps across the region.
+            var natural=new List<Vector2>();
+            natural.Add(logical[0]);
+            for(var index=1;index<logical.Count;index++)
             {
-                var finalTurn=currentAlong+remaining*Next(.28f,.62f);
-                Add(finalTurn,currentCross);Add(finalTurn,exitCross);
-                currentCross=exitCross;
+                var prior=logical[index-1];
+                var next=logical[index];
+                var length=next.x-prior.x;
+                var samples=Mathf.Max(2,
+                    Mathf.CeilToInt(length/shape.SampleSpacing));
+                var available=Mathf.Max(0,
+                    Mathf.Min(prior.y-lowerCross,upperCross-prior.y));
+                available=Mathf.Min(available,Mathf.Max(0,
+                    Mathf.Min(next.y-lowerCross,upperCross-next.y)));
+                var amplitude=Mathf.Min(shape.Undulation,available*.72f)*
+                    Next(.38f,1f)*(random.NextDouble()<.5?-1:1);
+                for(var sample=1;sample<=samples;sample++)
+                {
+                    var t=sample/(float)samples;
+                    var smooth=t*t*(3f-2f*t);
+                    var cross=Mathf.Lerp(prior.y,next.y,smooth)+
+                        amplitude*Mathf.Pow(Mathf.Sin(Mathf.PI*t),2f);
+                    cross=Mathf.Clamp(cross,lowerCross,upperCross);
+                    AddNatural(natural,new Vector2(
+                        Mathf.Lerp(prior.x,next.x,t),cross));
+                }
             }
-            Add(alongCells,currentCross);
-            if(!horizontal)logical.Reverse();
-            foreach(var point in RiverPathGeometry.RoundOrthogonalCorners(
-                        logical,shape.Radius))
-                path.Points.Add(new DistrictRiverPoint(point.x,point.y));
+            if(!horizontal)natural.Reverse();
+            foreach(var point in natural)
+            {
+                var mapped=horizontal?point:new Vector2(point.y,point.x);
+                path.Points.Add(new DistrictRiverPoint(mapped.x,mapped.y));
+            }
+
+            static void AddNatural(List<Vector2> points,Vector2 point)
+            {
+                if(points.Count==0||Vector2.Distance(points[^1],point)>.000001f)
+                    points.Add(point);
+            }
         }
 
         private static void TrimInteriorHeadwater(RegionRiverPath path,
