@@ -103,7 +103,13 @@ namespace CityForgeV3.UI
                             panel.schedule.Execute(() =>
                             {
                                 if (cancelled || panel.panel == null || _openRegion != region) return;
-                                try { generation.Commit(_ => { }); Finish(); }
+                                try
+                                {
+                                    generation.Commit(_ => { });
+                                    _lastRegionRepeatAction =
+                                        RegionRepeatAction.None;
+                                    Finish();
+                                }
                                 catch (Exception e) { SetBusy(false); notice.text = "Could not apply tree coverage: " + e.Message; }
                             }).ExecuteLater(20);
                         }
@@ -140,7 +146,9 @@ namespace CityForgeV3.UI
                     {
                         region.Terrain = saved.Copy(); region.Terrain.Climate = draft.Climate;
                         if (!RegionClimateRules.AllowsForest(draft.Climate)) region.Terrain.TreeCoverage = RegionTreeCoverage.None;
-                        RegionClimateRules.Apply(region); Finish();
+                        RegionClimateRules.Apply(region);
+                        _lastRegionRepeatAction = RegionRepeatAction.None;
+                        Finish();
                     }
                     catch (Exception e)
                     {
@@ -245,6 +253,7 @@ namespace CityForgeV3.UI
                 return "Could not remove rivers: " + exception.Message;
             }
             _districtWorldCompositionKey = "";
+            _lastRegionRepeatAction = RegionRepeatAction.None;
             var scroll = _root.Q<ScrollView>("region-map-scroll");
             if (scroll != null) { _regionMapScrollOffset = scroll.scrollOffset; _regionMapScrollInitialized = true; }
             RemoveDocumentModal();
@@ -294,6 +303,7 @@ namespace CityForgeV3.UI
                 return "Could not generate rivers: " + exception.Message;
             }
             _districtWorldCompositionKey = "";
+            _lastRegionRepeatAction = RegionRepeatAction.Rivers;
             var scroll = _root.Q<ScrollView>("region-map-scroll");
             if (scroll != null) _regionMapScrollOffset = scroll.scrollOffset;
             RemoveDocumentModal();

@@ -44,6 +44,25 @@ namespace CityForgeV3.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+        [Test] public void RegionTileClickEntersDistrictWithoutRedundantDockAction()
+        {
+            var go = Fixture(out var app, out var root, out var region);
+            try
+            {
+                Call(app, "ComposeRegionEditor");
+                Assert.That(root.Q<Button>("region-build"), Is.Null);
+                var tile = root.Q<Button>("region-tile-a");
+                Assert.That(tile, Is.Not.Null);
+                typeof(Clickable).GetMethod("SimulateSingleClick", Private)
+                    .Invoke(tile.clickable, new object[] { null, 0 });
+                Assert.That(root.Q(className: "district-terraform-screen"),
+                    Is.Not.Null);
+                Assert.That(typeof(CityForgeApp)
+                    .GetField("_selectedRegionTileId", Private).GetValue(app),
+                    Is.EqualTo("a"));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
         [Test] public void PaletteSwitchPreservesHeaderAndWorldViewport()
         {
             var go = Fixture(out var app, out var root, out var region);
@@ -166,6 +185,15 @@ namespace CityForgeV3.Tests
                     .Invoke(generate.clickable, new object[] { null, 0 });
                 Assert.That(region.RiverPaths, Has.Count.EqualTo(3));
                 Assert.That(root.Q("region-terrain-modal"), Is.Null);
+                var repeat = root.Q<Button>("region-repeat-action");
+                Assert.That(repeat, Is.Not.Null);
+                Assert.That(repeat.Q<Label>("map-caption").text,
+                    Is.EqualTo("Regenerate Rivers"));
+                var previousSeed = region.RiverSeed;
+                typeof(Clickable).GetMethod("SimulateSingleClick", Private)
+                    .Invoke(repeat.clickable, new object[] { null, 0 });
+                Assert.That(region.RiverSeed, Is.Not.EqualTo(previousSeed));
+                Assert.That(root.Q<Button>("region-repeat-action"), Is.Not.Null);
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
