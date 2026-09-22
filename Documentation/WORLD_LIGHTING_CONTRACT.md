@@ -32,7 +32,10 @@ City Forge has one environment-lighting owner per rendered world.
   daylight exposure followed by the world's hue-preserving 0.98 white-point
   shoulder. This keeps small shaded meshes readable and colorful without
   changing any asset's source albedo, direct lighting, terrain, or billboard
-  art. Evening and night use neutral scales.
+  art. Evening and night use neutral indirect scales. Native building shells
+  additionally share a dusk/night reflected-light response (0.8/0.45), so
+  pale siding and roofs do not appear self-illuminated against dark terrain.
+  This multiplies lit albedo, not authored window emission.
 - Roads, rivers, Lot ground, decals, flora, and garden artwork do not have local
   night tints, light floors, sun directions, or time-of-day brightness controls.
 - Emission and local lights are opt-in effects for actual emitters: windows,

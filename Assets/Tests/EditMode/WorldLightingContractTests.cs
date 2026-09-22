@@ -165,6 +165,10 @@ namespace CityForgeV3.Tests.EditMode
                     "_CFNativeSurfaceIndirectScale"),
                 Is.EqualTo(1f).Within(.001f),
                 "Night must not lift ordinary native-surface albedo.");
+            Assert.That(Shader.GetGlobalFloat(
+                    "_CFNativeBuildingNightDimming"),
+                Is.EqualTo(.55f).Within(.001f),
+                "Night should darken building shells without changing emission.");
             Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
                 Is.EqualTo(1f).Within(.001f),
                 "Night must not apply the daylight garden exposure.");
@@ -242,6 +246,16 @@ namespace CityForgeV3.Tests.EditMode
                 TimeOfDayPreset.Evening), Is.EqualTo(1f));
             Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
                 TimeOfDayPreset.Night), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
+                TimeOfDayPreset.Morning), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
+                TimeOfDayPreset.Noon), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
+                TimeOfDayPreset.Afternoon), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(.8f));
+            Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
+                TimeOfDayPreset.Night), Is.EqualTo(.45f));
             foreach (var preset in new[]
                      {
                          TimeOfDayPreset.Morning,
@@ -270,7 +284,9 @@ namespace CityForgeV3.Tests.EditMode
             StringAssert.Contains("LightingStandardBuilding_GI", source);
             StringAssert.Contains("lighting.indirect.diffuse *=", source);
             StringAssert.Contains("max(1.0h,", source);
-            StringAssert.Contains("output.Albedo = preserved", source);
+            StringAssert.Contains(
+                "output.Albedo = preserved * (1.0h - _CFNativeBuildingNightDimming)",
+                source);
             StringAssert.Contains("output.Emission = nightEmission", source);
             StringAssert.DoesNotContain(
                 "output.Emission = lighting.indirect.diffuse", source);
@@ -371,7 +387,9 @@ namespace CityForgeV3.Tests.EditMode
             var source = File.ReadAllText(Path.Combine(Application.dataPath,
                 "CityForgeV3/Resources/CityForgeV3/Shaders/" +
                 "Experimental3DBuildingPBR.shader"));
-            StringAssert.Contains("output.Albedo = preserved", source);
+            StringAssert.Contains(
+                "output.Albedo = preserved * (1.0h - _CFNativeBuildingNightDimming)",
+                source);
             StringAssert.Contains("output.Emission = nightEmission", source);
             StringAssert.DoesNotContain("output.Albedo = fixed3(0, 0, 0)", source);
         }

@@ -6308,6 +6308,8 @@ namespace CityForgeV3.World
                     DistrictWorldController.NativeSurfaceIndirectScaleFor(
                         TimeOfDay),
                     DistrictWorldController.GardenSurfaceExposureFor(
+                        TimeOfDay),
+                    DistrictWorldController.NativeBuildingNightResponseFor(
                         TimeOfDay));
             }
 

@@ -45,6 +45,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
         half _Vibrance;
         half _AlbedoBoost;
         half _CFNativeSurfaceIndirectScale;
+        half _CFNativeBuildingNightDimming;
         sampler2D _NightEmissionMask;
         fixed4 _NightEmissionColor;
         half _NightEmissionIntensity;
@@ -125,7 +126,7 @@ Shader "CityForgeV3/Experimental3DBuildingPBR"
                 1.0h + vibrance));
             // Ordinary building surfaces use Unity's Standard lighting path.
             // Only the authored night mask is emissive.
-            output.Albedo = preserved;
+            output.Albedo = preserved * (1.0h - _CFNativeBuildingNightDimming);
             fixed mask = tex2D(_NightEmissionMask, input.uv_MainTex).r;
             fixed3 nightEmission = albedo.rgb * _NightEmissionColor.rgb *
                 (mask * _NightEmissionIntensity);
