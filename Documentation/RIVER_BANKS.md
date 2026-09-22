@@ -22,9 +22,13 @@ opacity across a correspondingly broader depth interval (0.42 edge opacity,
 Those values remain intact after a rejected broad-transparency experiment
 restored the unwanted purple-brown shallow band. Instead, the visual water mesh
 now reaches the calculated waterline and applies a smooth, world-scaled opacity
-gradient across its final 6 metres on major rivers. Blue shallow water therefore
-remains visible before easing continuously into the bank rather than ending as
-a hard geometric cutoff. Navigation retains its existing 0.10-metre inset.
+gradient across its final 6 metres on major rivers. Close inspection showed the
+remaining line was the literal end of the water mesh: no shader gradient can
+draw beyond geometry. Major-river presentation now extends up to 12 metres
+beyond the calculated gameplay waterline, bounded by the existing bank edge, so
+the shallow opacity ramp has a real surface on which to progress through roughly
+80%, 60%, 40%, and 30% before its final feather. Navigation and surface sampling
+retain their existing 0.10-metre inset and do not use this visual shoulder.
 Medium rivers and streams retain their existing sharper mountain-water
 calibration and use a proportionate 1.5-metre final-edge gradient.
 

@@ -4,8 +4,7 @@ Shader "CityForgeV3/RiverWaterSurface"
     {
         _MainTex ("Water Texture", 2D) = "white" {}
         _WhitecapTex ("Whitecap Texture", 2D) = "black" {}
-        // Temporary review switch: set to 1 to restore visual river water.
-        _WaterVisible ("Water Visible (Riverbed Review)", Float) = 0
+        _WaterVisible ("Water Visible (Riverbed Review)", Float) = 1
         _Color ("Water Tint", Color) = (0.94,1.02,1.06,1)
         _Brightness ("Brightness", Range(0.1,2)) = 1.08
         _Smoothness ("Smoothness", Range(0,1)) = 0.62

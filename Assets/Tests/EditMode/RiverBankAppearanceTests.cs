@@ -336,8 +336,8 @@ namespace CityForgeV3.Tests
                     .First(renderer => renderer.sharedMaterial.shader.name ==
                         "CityForgeV3/RiverWaterSurface");
                 var waterMaterial = waterRenderer.sharedMaterial;
-                Assert.That(waterMaterial.GetFloat("_WaterVisible"), Is.Zero,
-                    "River water should be hidden for the riverbed review.");
+                Assert.That(waterMaterial.GetFloat("_WaterVisible"),
+                    Is.EqualTo(1f));
                 Assert.That(waterMaterial.GetFloat("_EdgeOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideWaterEdgeOpacity));
                 Assert.That(waterMaterial.GetFloat("_DeepWaterStart"),
@@ -350,6 +350,12 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideWaterEdgeFeatherMeters));
                 Assert.That(waterMaterial.GetFloat("_WaterHalfWidth"),
                     Is.GreaterThan(1f));
+                Assert.That(RiverBankAppearance.VisualWaterHalfWidth(
+                        60f, 78f, 144f),
+                    Is.EqualTo(72f));
+                Assert.That(RiverBankAppearance.VisualWaterHalfWidth(
+                        30f, 40f, 76f),
+                    Is.EqualTo(30f));
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

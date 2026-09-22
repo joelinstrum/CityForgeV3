@@ -43,6 +43,9 @@ namespace CityForgeV3.World
         public const float WideSubmergedWaterOpacity = 0.82f;
         public const float WideWaterEdgeFeatherMeters = 6f;
         public const float DefaultWaterEdgeFeatherMeters = 1.5f;
+        // Presentation-only shoulder beyond the calculated gameplay waterline.
+        // It gives the shader real geometry on which to show shallow opacity.
+        public const float WideVisualWaterShoulderMeters = 12f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
@@ -108,6 +111,12 @@ namespace CityForgeV3.World
 
         public static bool UsesWideRiverBank(float widthMeters) =>
             widthMeters >= WideRiverMinimumWidthMeters;
+
+        public static float VisualWaterHalfWidth(float waterlineHalfWidth,
+            float bankHalfWidth, float riverWidthMeters) =>
+            Mathf.Min(bankHalfWidth, waterlineHalfWidth +
+                (UsesWideRiverBank(riverWidthMeters)
+                    ? WideVisualWaterShoulderMeters : 0f));
 
         static Vector2 AtDistance(IReadOnlyList<Vector2> points, float[] distances, float distance)
         {

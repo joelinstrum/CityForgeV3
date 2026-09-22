@@ -13,6 +13,10 @@ Date: September 22, 2026
   world-scaled opacity gradient across the final 6 metres of a major river
   (1.5 metres for smaller rivers). The established shallow water remains visible
   immediately inside that controlled edge gradient.
+- Major-river visual water has up to a 12-metre presentation-only shoulder
+  beyond the calculated gameplay waterline, capped at the existing bank edge.
+  This supplies actual geometry for the gradient shown in the user's opacity
+  mock; navigation and water-surface sampling retain the original width.
 
 This is a shared presentation adjustment only. Navigation/collision width,
 editing, persistence, textures, bank materials, and surface-cache behavior are

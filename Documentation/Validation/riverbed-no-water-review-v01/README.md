@@ -2,10 +2,10 @@
 
 Date: September 22, 2026
 
-The river-water shader's `_WaterVisible` review switch is temporarily set to
-zero so the user can inspect the complete authored riverbeds without animated
-blue water or whitecaps. Restoring its default to one re-enables water in one
-line.
+The river-water shader's `_WaterVisible` review switch was temporarily set to
+zero so the user could inspect the complete authored riverbeds without animated
+blue water or whitecaps. The review is complete and its default is restored to
+one.
 
 This does not remove or alter river geometry, banks, riverbed artwork, water
 surface sampling, navigation, collision, editing, saved data, flow direction,

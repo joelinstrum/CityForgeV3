@@ -1189,7 +1189,12 @@ namespace CityForgeV3.World
                 var max=Vector2.Max(centerline[i-1],centerline[i])+Vector2.one*halfWidth;
                 _riverSurfaceIndex.Add(Rect.MinMaxRect(min.x,min.y,max.x,max.y),runtimeSurface,true);
             }
-            var visualWaterWidth = Mathf.Max(.01f, waterHalfWidth) * 2f;
+            // The calculated waterline remains authoritative for navigation.
+            // Major-river presentation extends into the shallow bank so the
+            // shader has geometry across which to express its opacity ramp.
+            var visualWaterHalfWidth = RiverBankAppearance.VisualWaterHalfWidth(
+                waterHalfWidth, halfWidth, river.WidthMeters);
+            var visualWaterWidth = Mathf.Max(.01f, visualWaterHalfWidth) * 2f;
             AddRiverWaterSurface(centerline, visualWaterWidth, waterElevation,
                 waterTexture, $"River Water — {river.InstanceId}", deep);
         }
