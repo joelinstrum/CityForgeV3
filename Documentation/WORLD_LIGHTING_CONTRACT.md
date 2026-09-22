@@ -16,6 +16,11 @@ City Forge has one environment-lighting owner per rendered world.
   because its quad normal is not a physical surface normal. The calibrated
   shared values retain highlight headroom; noon currently totals approximately
   `(0.96, 0.970, 0.978)` before texture multiplication.
+- Morning uses a higher 36-degree sun with a softer key and 25-percent stronger
+  ambient fill, shortening tree shadows and reducing bright-side contrast.
+  Afternoon uses the same 25-percent ambient-fill increase. Evening retains a
+  visible cool fill and restrained directional light rather than presenting as
+  full night; Night remains the distinct darkest preset.
 - Custom artwork illumination is hue-preservingly scaled only when its brightest
   channel would exceed the shared 0.98 display-white point. The calibrated sun
   budget keeps native 3D lighting in the same range; it does not add emission.

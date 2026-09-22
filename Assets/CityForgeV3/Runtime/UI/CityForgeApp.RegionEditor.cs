@@ -1571,6 +1571,7 @@ namespace CityForgeV3.UI
       helpPanel.Add(helpText);
       helpLayer.Add(helpPanel);
 
+      var helpRevision = 0;
       // Delegate hover/focus so locally replaced tool palettes keep working.
       void ShowHelp(VisualElement target)
       {
@@ -1588,11 +1589,19 @@ namespace CityForgeV3.UI
         }
         helpPanel.style.display = DisplayStyle.Flex;
         helpLayer.BringToFront();
+        var shownRevision = ++helpRevision;
+        helpPanel.schedule.Execute(() =>
+        {
+          if (shownRevision == helpRevision)
+            helpPanel.style.display = DisplayStyle.None;
+        }).ExecuteLater(3000);
       }
       screen.RegisterCallback<PointerOverEvent>(evt => ShowHelp(evt.target as VisualElement));
-      screen.RegisterCallback<PointerOutEvent>(_ => helpPanel.style.display = DisplayStyle.None);
+      screen.RegisterCallback<PointerOutEvent>(_ =>
+      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
       screen.RegisterCallback<FocusInEvent>(evt => ShowHelp(evt.target as VisualElement));
-      screen.RegisterCallback<FocusOutEvent>(_ => helpPanel.style.display = DisplayStyle.None);
+      screen.RegisterCallback<FocusOutEvent>(_ =>
+      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
 
       screen.Add(helpLayer);
       helpLayer.BringToFront();
@@ -2884,7 +2893,11 @@ namespace CityForgeV3.UI
 
       if (_districtEdgePanDirection != Vector2Int.zero)
       {
-        var continuousStep = panStep * 2.4f * Time.unscaledDeltaTime;
+        var continuousSpeed = _districtWorld?.WorldCamera != null
+            ? DistrictZoom.EdgePanSpeedMetersPerSecond(
+                _districtWorld.WorldCamera.orthographicSize)
+            : panStep * 2.4f;
+        var continuousStep = continuousSpeed * Time.unscaledDeltaTime;
         _terraformPanOffset += DistrictZoom.PanOffsetForWorldMotion(
             _districtEdgePanDirection.x,
             _districtEdgePanDirection.y, continuousStep);

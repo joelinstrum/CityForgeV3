@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reflection;
 using CityForgeV3.UI;
 using CityForgeV3.World;
@@ -134,6 +135,83 @@ namespace CityForgeV3.Tests
                 Assert.That(metric.Q<Image>(), Is.SameAs(icon));
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+        [Test] public void CalendarControlsAdvanceYearSeasonAndClock()
+        {
+            var go = Fixture(out var app, out var root, out var region);
+            try
+            {
+                var screen = new VisualElement(); root.Add(screen);
+                var district = region.Tiles[0];
+                district.Founded = true; district.FoundingYear = 1747;
+                district.Labor = new DistrictLaborState { SeasonIndex = 2 };
+                Set(app, "_selectedRegionTileId", district.TileId);
+                Call(app, "ComposeDistrictChrome", screen, district);
+
+                Assert.That(screen.Q<Button>("district-calendar-year").Q<Label>().text,
+                    Is.EqualTo("Year 1747"));
+                Assert.That(screen.Q<Label>("district-labor-season").text,
+                    Is.EqualTo("Winter"));
+                Assert.That(screen.Q<Button>("district-calendar-clock").Q<Label>().text,
+                    Is.EqualTo("🕛"));
+
+                void Click(string name) => typeof(Clickable)
+                    .GetMethod("SimulateSingleClick", Private)
+                    .Invoke(screen.Q<Button>(name).clickable,
+                        new object[] { null, 0 });
+                Click("district-calendar-season");
+                Assert.That(district.Labor.SeasonIndex, Is.EqualTo(3));
+                Assert.That(screen.Q<Button>("district-calendar-year").Q<Label>().text,
+                    Is.EqualTo("Year 1748"));
+                Assert.That(screen.Q<Label>("district-labor-season").text,
+                    Is.EqualTo("Spring"));
+
+                Click("district-calendar-clock");
+                Assert.That(district.TimeOfDay,
+                    Is.EqualTo(TimeOfDayPreset.Afternoon));
+                Assert.That(screen.Q<Button>("district-calendar-clock").Q<Label>().text,
+                    Is.EqualTo("🕔"));
+
+                Click("district-calendar-year");
+                Assert.That(district.Labor.SeasonIndex, Is.EqualTo(7));
+                Assert.That(screen.Q<Button>("district-calendar-year").Q<Label>().text,
+                    Is.EqualTo("Year 1749"));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+        [Test] public void DistrictSaveShowsVisibleConfirmationNotice()
+        {
+            var folder = Path.Combine(Path.GetTempPath(),
+                "cityforge-map-save-" + Guid.NewGuid().ToString("N"));
+            var go = Fixture(out var app, out var root, out var region);
+            try
+            {
+                var screen = new VisualElement();
+                screen.AddToClassList("district-terraform-screen");
+                root.Add(screen);
+                var district = region.Tiles[0];
+                Set(app, "_selectedRegionTileId", district.TileId);
+                Set(app, "_districtUndoQaSaveRoot", folder);
+                Call(app, "ComposeDistrictChrome", screen, district);
+                typeof(Clickable).GetMethod("SimulateSingleClick", Private)
+                    .Invoke(screen.Q<Button>("district-save-button").clickable,
+                        new object[] { null, 0 });
+                Assert.That(screen.Q<Label>("district-notice").text,
+                    Is.EqualTo("District Saved"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+                if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            }
+        }
+        [Test] public void RuntimeHoverHelpExpiresAfterThreeSeconds()
+        {
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Runtime/UI/CityForgeApp.RegionEditor.cs"));
+            StringAssert.Contains("helpPanel.schedule.Execute", source);
+            StringAssert.Contains("ExecuteLater(3000)", source);
+            StringAssert.Contains("shownRevision == helpRevision", source);
         }
         [Test] public void QuietTerrainPaletteRetainsMergedWeatherCommands()
         {

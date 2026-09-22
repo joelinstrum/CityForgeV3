@@ -33,7 +33,7 @@ namespace CityForgeV3.World
             IsCluster(FloraTreeRepairs.Identity(name)) &&
             (name.EndsWith("-summer") || name.EndsWith("-autumn") || name.EndsWith("-winter"));
         public static bool UsesDepthShadedCutout(string name) => name != null &&
-            name.EndsWith("-summer") &&
+            (name.EndsWith("-summer") || name.EndsWith("-autumn")) &&
             (name.StartsWith("forest-deciduous-") ||
              name.StartsWith("forest-mountain-") ||
              name.StartsWith("forest-tropical-"));
@@ -51,13 +51,12 @@ namespace CityForgeV3.World
                 string familySuffix = id.StartsWith("forest-tropical-") ? "summer" :
                     season == SeasonPreset.Autumn ? "autumn" :
                     season == SeasonPreset.Winter ? "winter" : "summer";
-                // Preview the stronger depth-shaded family compositions in
-                // summer (and spring, which shares summer artwork). Autumn and
-                // winter remain on approved V01 until matching derivatives of
-                // the accepted V03 silhouettes are ready.
+                // Summer/spring use the accepted V03 depth-staggered art.
+                // Autumn/winter use seasonal derivatives of those same
+                // silhouettes so trunks never fall back to the old V01 row.
                 string collection = familySuffix == "summer"
                     ? "ForestClustersFamilyMixV03"
-                    : "ForestClustersFamilyMixV01";
+                    : "ForestClustersFamilyMixV04";
                 return "CityForgeV3/Flora/" + collection + "/" + id + "-" + familySuffix;
             }
             string palette = (id[16] - '1') % 2 == 0 ? "01" : "02";

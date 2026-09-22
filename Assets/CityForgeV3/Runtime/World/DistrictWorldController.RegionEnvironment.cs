@@ -24,13 +24,15 @@ namespace CityForgeV3.World
 
         public static float RegionSunIntensity(TimeOfDayPreset preset) => preset switch
         {
-            TimeOfDayPreset.Morning => .62f,
+            // Morning uses a softer key and stronger fill so lit faces are not
+            // blown out while the shaded side remains readable.
+            TimeOfDayPreset.Morning => .52f,
             // Ambient plus the full artwork sun must remain below display
             // white. The former 1.05 intensity produced about 1.37 at noon,
             // clipping texture highlights and flattening baked contrast.
             TimeOfDayPreset.Noon => .64f,
             TimeOfDayPreset.Afternoon => .675f,
-            TimeOfDayPreset.Evening => .14f,
+            TimeOfDayPreset.Evening => .18f,
             _ => .035f
         };
 

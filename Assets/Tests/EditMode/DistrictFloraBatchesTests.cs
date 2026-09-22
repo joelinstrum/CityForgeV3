@@ -286,7 +286,7 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Summer),
             ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Winter));
     }
-    [Test] public void FamilySummerUsesDepthShadedV03PreviewOnly()
+    [Test] public void FamilySeasonsUseDepthStaggeredV03AndV04Artwork()
     {
         foreach (var family in FloraFamilies.Names)
         foreach (var large in new[] { false, true })
@@ -298,9 +298,9 @@ public class DistrictFloraBatchesTests
                 ForestClusterCatalog.ResourcePath(id, SeasonPreset.Spring));
             if (family != FloraFamilies.Tropical)
             {
-                StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                StringAssert.Contains("/ForestClustersFamilyMixV04/",
                     ForestClusterCatalog.ResourcePath(id, SeasonPreset.Autumn));
-                StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                StringAssert.Contains("/ForestClustersFamilyMixV04/",
                     ForestClusterCatalog.ResourcePath(id, SeasonPreset.Winter));
             }
         }
@@ -316,6 +316,12 @@ public class DistrictFloraBatchesTests
         var block = new MaterialPropertyBlock();
 
         texture.name = "forest-deciduous-large-summer";
+        apply.Invoke(null, new object[] { tree });
+        tree.GetPropertyBlock(block);
+        Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.5f).Within(.001f));
+        Assert.True(ForestClusterCatalog.UsesDepthShadedCutout(texture.name));
+
+        texture.name = "forest-deciduous-large-autumn";
         apply.Invoke(null, new object[] { tree });
         tree.GetPropertyBlock(block);
         Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.5f).Within(.001f));

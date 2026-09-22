@@ -79,18 +79,27 @@ namespace CityForgeV3.World
             level == DistrictZoomLevel.LOD5Billboard;
 
         // Normalized screen coordinates, with Y increasing downwards.
-        // Intersections of the outer quarter strips are reserved for corner menus.
+        // Horizontal edge bands are intentionally half as wide as the vertical
+        // bands so they do not claim a large part of the playable viewport.
+        // Intersections are reserved for corner menus.
         public static Vector2Int EdgePanWorldMotion(Vector2 position)
         {
             if (!float.IsFinite(position.x) || !float.IsFinite(position.y) ||
                 position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1)
                 return Vector2Int.zero;
-            bool horizontal = position.x <= .25f || position.x >= .75f;
+            bool horizontal = position.x <= .125f || position.x >= .875f;
             bool vertical = position.y <= .25f || position.y >= .75f;
             if (horizontal == vertical) return Vector2Int.zero;
-            if (horizontal) return new Vector2Int(position.x <= .25f ? 1 : -1, 0);
+            if (horizontal) return new Vector2Int(position.x <= .125f ? 1 : -1, 0);
             return new Vector2Int(0, position.y <= .25f ? -1 : 1);
         }
+
+        // Keep edge-pan travel proportional to the camera's current visible
+        // height. This avoids carrying a close-view speed into a distant view
+        // (or vice versa) after zooming and gives every stop the same perceived
+        // screen-space motion.
+        public static float EdgePanSpeedMetersPerSecond(float orthographicSize) =>
+            Mathf.Max(0f, orthographicSize) * .08f;
 
         public static int GridInterval(DistrictZoomLevel level) => level switch
         {

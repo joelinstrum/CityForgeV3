@@ -54,8 +54,10 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(.1f, .5f, 1, 0)]
-        [TestCase(.25f, .5f, 1, 0)]
-        [TestCase(.75f, .5f, -1, 0)]
+        [TestCase(.125f, .5f, 1, 0)]
+        [TestCase(.2f, .5f, 0, 0)]
+        [TestCase(.8f, .5f, 0, 0)]
+        [TestCase(.875f, .5f, -1, 0)]
         [TestCase(.9f, .5f, -1, 0)]
         [TestCase(.5f, .1f, 0, -1)]
         [TestCase(.5f, .25f, 0, -1)]
@@ -70,9 +72,19 @@ namespace CityForgeV3.Tests
         [TestCase(1.1f, .5f, 0, 0)]
         [TestCase(.5f, -.1f, 0, 0)]
         [TestCase(.5f, 1.1f, 0, 0)]
-        public void DistrictQuarterEdgePanExcludesCornersAndOutside(float x, float y, int dx, int dy)
+        public void DistrictEdgePanUsesNarrowHorizontalBandsAndExcludesCorners(float x, float y, int dx, int dy)
         {
             Assert.That(DistrictZoom.EdgePanWorldMotion(new Vector2(x, y)), Is.EqualTo(new Vector2Int(dx, dy)));
+        }
+
+        [Test]
+        public void DistrictEdgePanSpeedTracksCurrentCameraZoom()
+        {
+            Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(600f),
+                Is.EqualTo(48f).Within(.001f));
+            Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(60f),
+                Is.EqualTo(4.8f).Within(.001f));
+            Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(-1f), Is.Zero);
         }
 
         [TestCase("document-modal")]
@@ -3797,7 +3809,7 @@ namespace CityForgeV3.Tests
                 Assert.That(Mathf.Asin(-morningRay.y) * Mathf.Rad2Deg,
                     Is.EqualTo(48f).Within(0.1f),
                     "The 3D pilot uses a higher morning sun to avoid oversized native shadows.");
-                Assert.That(sun.intensity, Is.EqualTo(0.62f).Within(0.001f));
+                Assert.That(sun.intensity, Is.EqualTo(0.52f).Within(0.001f));
                 Assert.That(RenderSettings.ambientMode,
                     Is.EqualTo(UnityEngine.Rendering.AmbientMode.Skybox));
                 Assert.That(RenderSettings.ambientIntensity,
@@ -4014,7 +4026,7 @@ namespace CityForgeV3.Tests
             }
         }
 
-        [TestCase(TimeOfDayPreset.Morning, "MORNING", 24f, 90f)]
+        [TestCase(TimeOfDayPreset.Morning, "MORNING", 36f, 90f)]
         [TestCase(TimeOfDayPreset.Noon, "NOON", 70f, 180f)]
         [TestCase(TimeOfDayPreset.Afternoon, "AFTERNOON", 34f, 270f)]
         [TestCase(TimeOfDayPreset.Evening, "EVENING", 8f, 272f)]
@@ -4032,7 +4044,11 @@ namespace CityForgeV3.Tests
             Assert.That(spec.SunElevation, Is.EqualTo(elevation));
             Assert.That(spec.SunAzimuth, Is.EqualTo(azimuth));
             Assert.That(spec.SunIntensity, Is.GreaterThan(0f));
-            Assert.That(spec.ScreenTint.a, Is.GreaterThan(0f));
+            if (preset == TimeOfDayPreset.Afternoon)
+                Assert.That(spec.ScreenTint.a, Is.Zero,
+                    "Afternoon keeps the neutral ungraded screen presentation.");
+            else
+                Assert.That(spec.ScreenTint.a, Is.GreaterThan(0f));
         }
 
         [Test]
@@ -4333,20 +4349,20 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void EveningAndNightUseTheApprovedHalfExposureCalibration()
+        public void EveningRemainsReadableWhileNightStaysDistinct()
         {
             var evening = TimeOfDayLighting.For(TimeOfDayPreset.Evening);
             var night = TimeOfDayLighting.For(TimeOfDayPreset.Night);
 
             Assert.That(evening.SunIntensity, Is.EqualTo(0.19f));
-            Assert.That(evening.AmbientColor, Is.EqualTo(new Color(0.09f, 0.105f, 0.15f)));
-            Assert.That(evening.GroundColor, Is.EqualTo(new Color(0.09f, 0.12f, 0.105f)));
-            Assert.That(evening.NeutralArtworkTint, Is.EqualTo(new Color(0.23f, 0.26f, 0.34f)));
+            Assert.That(evening.AmbientColor, Is.EqualTo(new Color(0.14f, 0.155f, 0.20f)));
+            Assert.That(evening.GroundColor, Is.EqualTo(new Color(0.13f, 0.16f, 0.145f)));
+            Assert.That(evening.NeutralArtworkTint, Is.EqualTo(new Color(0.31f, 0.34f, 0.42f)));
             Assert.That(evening.ScreenTint.a, Is.LessThanOrEqualTo(0.15f));
             Assert.That(night.SunIntensity, Is.EqualTo(0.05f));
-            Assert.That(night.AmbientColor, Is.EqualTo(new Color(0.05f, 0.065f, 0.11f)));
-            Assert.That(night.GroundColor, Is.EqualTo(new Color(0.055f, 0.08f, 0.075f)));
-            Assert.That(night.NeutralArtworkTint, Is.EqualTo(new Color(0.14f, 0.17f, 0.26f)));
+            Assert.That(night.AmbientColor, Is.EqualTo(new Color(0.056f, 0.073f, 0.123f)));
+            Assert.That(night.GroundColor, Is.EqualTo(new Color(0.062f, 0.09f, 0.084f)));
+            Assert.That(night.NeutralArtworkTint, Is.EqualTo(new Color(0.157f, 0.19f, 0.291f)));
         }
 
         [Test]

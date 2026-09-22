@@ -77,3 +77,15 @@ walks, full redraws, or save writes. Record evidence under `Documentation/Valida
 
 Commit validated work locally on `feature/time-and-light-adjustments`. Do not
 push, merge, or create a PR unless explicitly requested.
+
+## September 22 implementation
+
+The requested adjustment pass is implemented on this branch. It includes
+camera-relative edge-pan speed, narrower horizontal edge bands, clickable
+year/season/time controls, Winter-to-Spring year rollover, explicit save
+confirmation, expiring hover help, shared lighting refinements, and V04
+depth-staggered autumn/winter forest art.
+
+Implementation and validation details are recorded in
+`Documentation/Validation/time-light-adjustments-v01/README.md`; seasonal art
+lineage is recorded in `Documentation/Migration/FOREST_FAMILY_MIX_V04.md`.
