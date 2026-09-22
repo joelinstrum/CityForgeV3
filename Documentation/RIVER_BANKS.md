@@ -1,3 +1,24 @@
+# V6 varied neutral wide-river banks
+
+Major rivers now use the versioned `BanksV6Varied` family: four distinct
+shoreline compositions and one neutral submerged-gravel texture. Blue is no
+longer baked into the bank artwork; the animated water surface supplies the
+river color. The four compositions vary gravel-bar width, grass intrusion,
+stone density and larger-rock placement.
+
+The bank shader chooses seeded neighboring variants over irregular physical
+reaches, smoothly crossfades between them, and samples each with a different
+phase, direction and slight longitudinal scale. The result is stable across
+reloads and district clipping without a hard texture switch. This adds two
+texture samples on V06 major banks but no additional material or draw call.
+Medium and smaller rivers retain V04. V05 and all earlier source art remain
+unchanged for rollback.
+
+Exact prompts, generated-source identifiers, processing and hashes are in
+`Documentation/ArtStudies/RiverBanksV06Varied/README.md`.
+
+---
+
 # V5 wide-river bank split
 
 Major rivers (generated at 144–228 metres) now use the versioned

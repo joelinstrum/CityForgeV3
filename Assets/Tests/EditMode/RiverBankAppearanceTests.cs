@@ -140,7 +140,12 @@ namespace CityForgeV3.Tests
                          "BanksV4/submerged-gravel-light",
                          "BanksV5Wide/shoreline-wide-muted",
                          "BanksV5Wide/open-gravel-wide-muted",
-                         "BanksV5Wide/submerged-gravel-wide-muted" })
+                         "BanksV5Wide/submerged-gravel-wide-muted",
+                         "BanksV6Varied/bank-01-neutral",
+                         "BanksV6Varied/bank-02-bars",
+                         "BanksV6Varied/bank-03-open",
+                         "BanksV6Varied/bank-04-cobbles",
+                         "BanksV6Varied/submerged-neutral" })
             {
                 var texture = Resources.Load<Texture2D>("CityForgeV3/Water/River/" + name);
                 Assert.That(texture, Is.Not.Null, name);
@@ -168,11 +173,17 @@ namespace CityForgeV3.Tests
             Assert.That(RiverBankAppearance.UsesWideRiverBank(144f), Is.True);
             Assert.That(major.ShorelineResource,
                 Is.EqualTo(RiverBankAppearance.WideShorelineResourceRoot +
-                    "shoreline-wide-muted"));
+                    "bank-01-neutral"));
             Assert.That(major.OpenGravelTextureResource,
                 Is.EqualTo(RiverBankAppearance.WideOpenGravelResource));
             Assert.That(major.SubmergedGravelTextureResource,
                 Is.EqualTo(RiverBankAppearance.WideSubmergedGravelResource));
+            Assert.That(major.BankVariantThreeTextureResource,
+                Is.EqualTo(RiverBankAppearance.WideBankVariantThreeResource));
+            Assert.That(major.BankVariantFourTextureResource,
+                Is.EqualTo(RiverBankAppearance.WideBankVariantFourResource));
+            Assert.That(major.BankVariantCount, Is.EqualTo(4));
+            Assert.That(medium.BankVariantCount, Is.EqualTo(2));
             Assert.That(medium.OuterBlendMeters, Is.Zero);
             Assert.That(medium.OuterFadeEnd,
                 Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd));
@@ -245,7 +256,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void MajorRiverMaterialBindsAllThreeMutedWideTextures()
+        public void MajorRiverMaterialBindsFourVariedBanksAndNeutralBed()
         {
             var district = new RegionCityTile { Width = 4, Height = 4 };
             district.Rivers.Add(new PlacedDistrictRiver
@@ -272,13 +283,23 @@ namespace CityForgeV3.Tests
 
                 Assert.That(material.mainTexture, Is.SameAs(Resources.Load<Texture2D>(
                     RiverBankAppearance.WideShorelineResourceRoot +
-                    "shoreline-wide-muted")));
+                    "bank-01-neutral")));
                 Assert.That(material.GetTexture("_EarthTex"),
                     Is.SameAs(Resources.Load<Texture2D>(
                         RiverBankAppearance.WideOpenGravelResource)));
                 Assert.That(material.GetTexture("_GravelTex"),
                     Is.SameAs(Resources.Load<Texture2D>(
                         RiverBankAppearance.WideSubmergedGravelResource)));
+                Assert.That(material.GetTexture("_BankTex2"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.WideBankVariantThreeResource)));
+                Assert.That(material.GetTexture("_BankTex3"),
+                    Is.SameAs(Resources.Load<Texture2D>(
+                        RiverBankAppearance.WideBankVariantFourResource)));
+                Assert.That(material.GetFloat("_BankVariantCount"),
+                    Is.EqualTo(4f));
+                Assert.That(material.GetFloat("_BankPatternOffset"),
+                    Is.GreaterThanOrEqualTo(0f));
                 Assert.That(material.GetFloat("_OuterFadeEnd"),
                     Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
                         .Within(.00001f));

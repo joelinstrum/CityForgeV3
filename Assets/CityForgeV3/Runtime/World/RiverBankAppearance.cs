@@ -14,11 +14,15 @@ namespace CityForgeV3.World
         public const string OpenGravelResource =
             "CityForgeV3/Water/River/BanksV4/open-gravel-light";
         public const string WideShorelineResourceRoot =
-            "CityForgeV3/Water/River/BanksV5Wide/";
+            "CityForgeV3/Water/River/BanksV6Varied/";
         public const string WideSubmergedGravelResource =
-            "CityForgeV3/Water/River/BanksV5Wide/submerged-gravel-wide-muted";
+            "CityForgeV3/Water/River/BanksV6Varied/submerged-neutral";
         public const string WideOpenGravelResource =
-            "CityForgeV3/Water/River/BanksV5Wide/open-gravel-wide-muted";
+            "CityForgeV3/Water/River/BanksV6Varied/bank-02-bars";
+        public const string WideBankVariantThreeResource =
+            "CityForgeV3/Water/River/BanksV6Varied/bank-03-open";
+        public const string WideBankVariantFourResource =
+            "CityForgeV3/Water/River/BanksV6Varied/bank-04-cobbles";
         // Region generation reserves widths of 144 metres and above for major
         // rivers. Keeping the cutoff between the 76 m medium maximum and the
         // 144 m major minimum makes the art choice stable and size-driven.
@@ -31,22 +35,31 @@ namespace CityForgeV3.World
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
         public readonly string OpenGravelTextureResource;
+        public readonly string BankVariantThreeTextureResource;
+        public readonly string BankVariantFourTextureResource;
+        public readonly int BankVariantCount;
         public readonly float OuterBlendMeters;
         public readonly float OuterFadeEnd;
         public readonly float OuterFadeNoise;
         public readonly float TerrainBlendStrength;
         public float ShoreDistance { get; set; }
+        public float PatternOffset { get; set; }
 
         public RiverBankAppearance(IReadOnlyList<Vector2> points, float widthMeters)
         {
             bool usesWideBank = UsesWideRiverBank(widthMeters);
             ShorelineResource = (usesWideBank
                 ? WideShorelineResourceRoot : ShorelineResourceRoot) +
-                (usesWideBank ? "shoreline-wide-muted" : "shoreline-light");
+                (usesWideBank ? "bank-01-neutral" : "shoreline-light");
             SubmergedGravelTextureResource = usesWideBank
                 ? WideSubmergedGravelResource : SubmergedGravelResource;
             OpenGravelTextureResource = usesWideBank
                 ? WideOpenGravelResource : OpenGravelResource;
+            BankVariantThreeTextureResource = usesWideBank
+                ? WideBankVariantThreeResource : ShorelineResource;
+            BankVariantFourTextureResource = usesWideBank
+                ? WideBankVariantFourResource : OpenGravelTextureResource;
+            BankVariantCount = usesWideBank ? 4 : 2;
             OuterBlendMeters = usesWideBank ? WideOuterBlendMeters : 0f;
             OuterFadeEnd = DefaultOuterFadeEnd + OuterBlendMeters / 16f;
             OuterFadeNoise = usesWideBank ? WideOuterFadeNoise : 0f;

@@ -1074,7 +1074,13 @@ namespace CityForgeV3.World
             var bankAppearance = bankTexture != null
                 ? proposedBankAppearance : null;
             if (bankAppearance != null)
+            {
                 bankAppearance.ShoreDistance = bedWidth * .5f;
+                var patternId = string.IsNullOrEmpty(river.RegionRiverId)
+                    ? river.InstanceId : river.RegionRiverId;
+                bankAppearance.PatternOffset =
+                    (uint)StableStringHash(patternId) % 4096 / 37f;
+            }
             var halfWidth = bedWidth * 0.5f;
             var bankOuterDistance = halfWidth +
                 (bankAppearance?.OuterBlendMeters ?? 0f);
@@ -1813,6 +1819,16 @@ namespace CityForgeV3.World
                         bankAppearance.SubmergedGravelTextureResource) ?? bandTexture);
                     material.SetTexture("_EarthTex", Resources.Load<Texture2D>(
                         bankAppearance.OpenGravelTextureResource) ?? bandTexture);
+                    material.SetTexture("_BankTex2", Resources.Load<Texture2D>(
+                        bankAppearance.BankVariantThreeTextureResource) ??
+                        bandTexture);
+                    material.SetTexture("_BankTex3", Resources.Load<Texture2D>(
+                        bankAppearance.BankVariantFourTextureResource) ??
+                        bandTexture);
+                    material.SetFloat("_BankVariantCount",
+                        bankAppearance.BankVariantCount);
+                    material.SetFloat("_BankPatternOffset",
+                        bankAppearance.PatternOffset);
                 }
                 if (material.HasProperty("_DistrictHalfSize"))
                     material.SetVector("_DistrictHalfSize", new Vector4(_widthMeters*.5f, _depthMeters*.5f, 0, 0));
