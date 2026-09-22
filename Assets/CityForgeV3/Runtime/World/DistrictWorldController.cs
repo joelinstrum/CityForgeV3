@@ -296,6 +296,12 @@ namespace CityForgeV3.World
             // viewing pose first, including when reloading a saved district.
             ApplyCameraPose();
             BuildSun();
+            // Establish the saved environment before any presentation derives
+            // lighting or projected-shadow geometry. Otherwise flora paints
+            // once with the temporary construction sun, then visibly changes
+            // as the saved preset is staged after the first frame.
+            TimeOfDay = district.TimeOfDay;
+            ApplyRegionEnvironment(TimeOfDay, _sun);
             _terrainDistrict = district;
             _surfaceCache=new DistrictSurfaceCache();_surfaceChanges=_surfaceCache.Update(district);
             _elevation = new DistrictElevation(district);
@@ -856,6 +862,7 @@ namespace CityForgeV3.World
                 _districtFloraShadowMaterial = new Material(shader)
                 { name = "District Projected Flora Shadow" };
             _districtFloraShadowMaterial.shader = shader;
+            _districtFloraShadowMaterial.SetFloat("_Cutoff", .02f);
             var shadowObject = new GameObject("District Flora Shadow");
             shadowObject.transform.SetParent(flora, false);
             var filter = shadowObject.AddComponent<MeshFilter>();
@@ -936,9 +943,9 @@ namespace CityForgeV3.World
                     return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
                 }, foot =>
                 {
-                    // Five bounded collider queries per cluster at build/update,
-                    // never per frame. Follow the camera ray through each trunk
-                    // so steep terrain cannot detach its shadow contact.
+                    // One bounded collider query per cluster at build/update,
+                    // never per frame. Register the composition's shared root
+                    // to the receiver so steep terrain cannot detach it.
                     var direction = visibleRenderer.transform.forward;
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
@@ -2469,6 +2476,7 @@ namespace CityForgeV3.World
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
+            var changed = TimeOfDay != preset;
             TimeOfDay = preset;
             ApplyAfternoonSceneLights(preset);
             // The district is the sole owner of the shared environment. Publish
@@ -2484,7 +2492,7 @@ namespace CityForgeV3.World
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
             _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
-            PrepareTimeOfDayPresentation();
+            if (changed) PrepareTimeOfDayPresentation();
         }
 
         public static Vector2 DistrictLotCenterMeters(RegionCityTile district,

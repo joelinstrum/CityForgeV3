@@ -478,7 +478,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void TownCenterFounderCardUsesTheBundledCivicLot()
+        public void TownCenterFounderCardsMatchTheAuthoredLotCatalog()
         {
             var go = new GameObject("Isolated Town Center founder card");
             go.SetActive(false);
@@ -491,12 +491,16 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeFounderBuildingModal", flags)
                     .Invoke(app, null);
-                var card = root.Q<Button>(
-                    "founder-lot-town-center-civic-v01");
-                Assert.That(card, Is.Not.Null);
-                Assert.That(card.enabledSelf, Is.True);
-                Assert.That(card.Query<Label>().ToList().Any(label =>
-                    label.text == "Town Center"), Is.True);
+                var summaries = LotContentCatalog.All.Where(entry =>
+                    entry.LotType == LotType.DistrictTownCenter).ToList();
+                foreach (var summary in summaries)
+                {
+                    var card = root.Q<Button>("founder-lot-" + summary.LotId);
+                    Assert.That(card, Is.Not.Null, summary.LotId);
+                    Assert.That(card.enabledSelf, Is.True, summary.LotId);
+                }
+                Assert.That(root.Q<Button>(
+                    "founder-lot-town-center-civic-v01"), Is.Null);
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -515,12 +519,16 @@ namespace CityForgeV3.Tests
                 typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
                 typeof(CityForgeApp).GetMethod("ComposeDistrictLotBrowser", flags)
                     .Invoke(app, new object[] { LotType.Civics, false });
-                var card = root.Q<Button>(
-                    "district-lot-town-center-civic-v01");
-                Assert.That(card, Is.Not.Null);
-                Assert.That(card.enabledSelf, Is.True);
-                Assert.That(card.tooltip,
-                    Does.Contain("district town center lot"));
+                var summaries = LotContentCatalog.All.Where(entry =>
+                    entry.LotType == LotType.DistrictTownCenter).ToList();
+                foreach (var summary in summaries)
+                {
+                    var card = root.Q<Button>("district-lot-" + summary.LotId);
+                    Assert.That(card, Is.Not.Null, summary.LotId);
+                    Assert.That(card.enabledSelf, Is.True, summary.LotId);
+                }
+                Assert.That(root.Q<Button>(
+                    "district-lot-town-center-civic-v01"), Is.Null);
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -1723,6 +1731,65 @@ namespace CityForgeV3.Tests
             Assert.That(occupied.Cast<bool>(), Has.All.True);
             Assert.That(region.Tiles.Select(tile => (tile.Width, tile.Height))
                 .Distinct().Count(), Is.GreaterThan(1));
+        }
+
+        [TestCase(RegionSizePreset.Small, 12)]
+        [TestCase(RegionSizePreset.Medium, 20)]
+        [TestCase(RegionSizePreset.Large, 28)]
+        public void RegionSizePresetsCreateSquareFootprints(
+            RegionSizePreset preset, int sideLength)
+        {
+            var region = RegionSaveStore.Create("Preset Region", preset);
+
+            Assert.That(region.Width, Is.EqualTo(sideLength));
+            Assert.That(region.Height, Is.EqualTo(sideLength));
+            Assert.That(region.Tiles.Sum(tile => tile.Width * tile.Height),
+                Is.EqualTo(sideLength * sideLength));
+        }
+
+        [Test]
+        public void NewRegionDialogOffersThreeSizesAndDefaultsToMedium()
+        {
+            var go = new GameObject("Isolated New Region dialog");
+            go.SetActive(false);
+            try
+            {
+                var app = go.AddComponent<CityForgeApp>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var root = new VisualElement();
+                typeof(CityForgeApp).GetField("_root", flags).SetValue(app, root);
+                typeof(CityForgeApp).GetMethod(
+                    "ComposeCreateRegionDialog", flags).Invoke(app, null);
+
+                var small = root.Q<Button>("region-size-small");
+                var medium = root.Q<Button>("region-size-medium");
+                var large = root.Q<Button>("region-size-large");
+                Assert.That(small, Is.Not.Null);
+                Assert.That(medium, Is.Not.Null);
+                Assert.That(large, Is.Not.Null);
+                Assert.That(medium.ClassListContains("is-selected"), Is.True);
+                Assert.That(root.Q<Label>("region-size-summary").text,
+                    Does.Contain("20 × 20"));
+
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(large.clickable, new object[] { null, 0 });
+                Assert.That(large.ClassListContains("is-selected"), Is.True);
+                Assert.That(medium.ClassListContains("is-selected"), Is.False);
+                Assert.That(root.Q<Label>("region-size-summary").text,
+                    Does.Contain("28 × 28"));
+
+                var create = root.Q<Button>("create-region-confirm");
+                typeof(Clickable).GetMethod("SimulateSingleClick", flags)
+                    .Invoke(create.clickable, new object[] { null, 0 });
+                var region = (RegionSaveData)typeof(CityForgeApp).GetField(
+                    "_openRegion", flags).GetValue(app);
+                Assert.That(region.Width, Is.EqualTo(28));
+                Assert.That(region.Height, Is.EqualTo(28));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
         }
 
         [Test]
@@ -4235,7 +4302,7 @@ namespace CityForgeV3.Tests
             Assert.That(noon.ScreenTint.a, Is.EqualTo(0.008f));
             Assert.That(
                 HybridBuildingPresentation.DirectionalShadeOpacityFor(
-                    TimeOfDayPreset.Noon), Is.EqualTo(0.42f));
+                    TimeOfDayPreset.Noon), Is.EqualTo(0.24f));
         }
 
         [Test]

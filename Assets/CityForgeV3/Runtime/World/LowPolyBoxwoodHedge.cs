@@ -22,7 +22,8 @@ namespace CityForgeV3.World
             if (_opaqueMaterial != null && _previewMaterial != null) return true;
             var foliage = Resources.Load<Texture2D>(FoliageResource);
             if (foliage == null) return false;
-            _opaqueMaterial = new Material(Shader.Find("Standard"))
+            _opaqueMaterial = new Material(Shader.Find(
+                "CityForgeV3/GardenPropPBR"))
             {
                 name = "CF Low-Poly Boxwood Hedge",
                 mainTexture = foliage,

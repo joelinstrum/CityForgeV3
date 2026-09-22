@@ -217,7 +217,7 @@ namespace CityForgeV3.UI
     {
       var panel = CreateDocumentModal(
           "CREATE REGION",
-          "Name a new large region. City boundaries are generated immediately; detailed map tools can be added later.");
+          "Name your region and choose its footprint. City boundaries are generated immediately; detailed map tools can be added later.");
       var nameField = new TextField("REGION NAME")
       {
         value = "New Region"
@@ -225,20 +225,62 @@ namespace CityForgeV3.UI
       nameField.name = "region-name-field";
       nameField.AddToClassList("document-field");
       panel.Add(nameField);
-      panel.Add(StyledLabel(
-          "LARGE REGION  •  28 × 20 MAP UNITS  •  MIXED CITY SIZES",
-          "inspector-note"));
-      var actions = DocumentModalActions();
-      actions.Add(CfButton.Create("CREATE REGION", () =>
+
+      var selectedSize = RegionSizePreset.Medium;
+      var sizeButtons = new List<Button>();
+      var sizeChoices = new VisualElement { name = "region-size-choices" };
+      sizeChoices.AddToClassList("region-size-choices");
+      var sizeSummary = StyledLabel("", "inspector-note");
+      sizeSummary.name = "region-size-summary";
+
+      void SelectSize(RegionSizePreset size)
       {
-        _openRegion = RegionSaveStore.Create(nameField.value);
+        selectedSize = size;
+        foreach (var choice in sizeButtons)
+          choice.EnableInClassList("is-selected",
+              choice.name == "region-size-" + size.ToString().ToLowerInvariant());
+        var dimensions = RegionSizeCatalog.Dimensions(size);
+        sizeSummary.text =
+            $"{size.ToString().ToUpperInvariant()}  •  {dimensions.x} × {dimensions.y} MAP UNITS  •  MIXED CITY SIZES";
+      }
+
+      foreach (var size in new[]
+               {
+                 RegionSizePreset.Small,
+                 RegionSizePreset.Medium,
+                 RegionSizePreset.Large
+               })
+      {
+        var capturedSize = size;
+        var dimensions = RegionSizeCatalog.Dimensions(size);
+        var choice = CfButton.Create(
+            $"{size.ToString().ToUpperInvariant()}\n{dimensions.x} × {dimensions.y}",
+            () => SelectSize(capturedSize), true, "secondary");
+        choice.name = "region-size-" + size.ToString().ToLowerInvariant();
+        choice.AddToClassList("region-size-choice");
+        if (size == RegionSizePreset.Large)
+          choice.AddToClassList("region-size-choice--last");
+        choice.tooltip = $"Create a {size.ToString().ToLowerInvariant()} {dimensions.x} by {dimensions.y} region";
+        sizeButtons.Add(choice);
+        sizeChoices.Add(choice);
+      }
+      panel.Add(sizeChoices);
+      panel.Add(sizeSummary);
+      SelectSize(selectedSize);
+
+      var actions = DocumentModalActions();
+      var create = CfButton.Create("CREATE REGION", () =>
+      {
+        _openRegion = RegionSaveStore.Create(nameField.value, selectedSize);
         _selectedRegionTileId = "";
         _regionMapScrollOffset = Vector2.zero;
         _regionMapScrollInitialized = false;
         _openRegionWasCreatedThisSession = true;
         RemoveDocumentModal();
         Show(AppScreen.RegionEditor);
-      }, true, "primary"));
+      }, true, "primary");
+      create.name = "create-region-confirm";
+      actions.Add(create);
       actions.Add(CfButton.Create("CANCEL", RemoveDocumentModal,
           true, "quiet"));
       panel.Add(actions);

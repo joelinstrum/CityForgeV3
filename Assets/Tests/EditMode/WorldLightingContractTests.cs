@@ -27,6 +27,141 @@ namespace CityForgeV3.Tests.EditMode
                 Is.GreaterThan(nightAmbient.maxColorComponent));
             Assert.That(noonSun.maxColorComponent,
                 Is.GreaterThan(nightSun.maxColorComponent * 10f));
+            Assert.That(Shader.GetGlobalFloat("_CFWorldWhitePoint"),
+                Is.EqualTo(DistrictWorldController.WorldWhitePoint).Within(.001f));
+            Assert.That(Shader.GetGlobalFloat(
+                    "_CFNativeSurfaceIndirectScale"),
+                Is.EqualTo(1f).Within(.001f),
+                "Night must not lift ordinary native-surface albedo.");
+            Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
+                Is.EqualTo(1f).Within(.001f),
+                "Night must not apply the daylight garden exposure.");
+        }
+
+        [Test]
+        public void EveryPresetKeepsArtworkWithinTheSharedWhitePoint()
+        {
+            foreach (TimeOfDayPreset preset in
+                     System.Enum.GetValues(typeof(TimeOfDayPreset)))
+            {
+                var illumination =
+                    DistrictWorldController.RegionArtworkIllumination(preset);
+                Assert.That(illumination.maxColorComponent,
+                    Is.LessThanOrEqualTo(
+                        DistrictWorldController.WorldWhitePoint + .001f),
+                    preset.ToString());
+            }
+
+            var morning = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Morning).grayscale;
+            var noon = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Noon).grayscale;
+            var afternoon = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Afternoon).grayscale;
+            var evening = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Evening).grayscale;
+            var night = DistrictWorldController.RegionArtworkIllumination(
+                TimeOfDayPreset.Night).grayscale;
+
+            Assert.That(noon, Is.GreaterThan(morning));
+            Assert.That(noon, Is.GreaterThan(afternoon));
+            Assert.That(Mathf.Abs(morning - afternoon), Is.GreaterThan(.005f));
+            Assert.That(afternoon, Is.GreaterThan(evening));
+            Assert.That(evening, Is.GreaterThan(night));
+        }
+
+        [Test]
+        public void HybridArtworkUsesOneDaylightExposureAndGentlerNoonShade()
+        {
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Morning), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Noon), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Afternoon), Is.EqualTo(1.5f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.HybridArtworkExposureFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f));
+            Assert.That(HybridBuildingPresentation.DirectionalShadeOpacityFor(
+                TimeOfDayPreset.Noon), Is.EqualTo(.24f));
+
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "AlwaysVisibleBuildingSprite.shader"));
+            StringAssert.Contains("_HybridBaseLayer", source);
+            StringAssert.Contains("CalibrateHybridBase", source);
+            StringAssert.Contains("shoulderStart", source);
+        }
+
+        [Test]
+        public void DistrictNativeSurfacesUseOneNonEmissiveDaylightLift()
+        {
+            foreach (var preset in new[]
+                     {
+                         TimeOfDayPreset.Morning,
+                         TimeOfDayPreset.Noon,
+                         TimeOfDayPreset.Afternoon
+                     })
+                Assert.That(DistrictWorldController
+                        .NativeSurfaceIndirectScaleFor(preset),
+                    Is.EqualTo(2.5f), preset.ToString());
+            Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f));
+            Assert.That(DistrictWorldController.NativeSurfaceIndirectScaleFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f));
+            foreach (var preset in new[]
+                     {
+                         TimeOfDayPreset.Morning,
+                         TimeOfDayPreset.Noon,
+                         TimeOfDayPreset.Afternoon
+                     })
+                Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                    preset), Is.EqualTo(1.3f).Within(.001f),
+                    preset.ToString());
+            Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                TimeOfDayPreset.Evening), Is.EqualTo(1f).Within(.001f));
+            Assert.That(DistrictWorldController.GardenSurfaceExposureFor(
+                TimeOfDayPreset.Night), Is.EqualTo(1f).Within(.001f));
+
+            DistrictWorldController.ApplyRegionEnvironment(
+                TimeOfDayPreset.Noon, null);
+            Assert.That(Shader.GetGlobalFloat(
+                    "_CFNativeSurfaceIndirectScale"),
+                Is.EqualTo(2.5f).Within(.001f));
+            Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
+                Is.EqualTo(1.3f).Within(.001f));
+
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "Experimental3DBuildingPBR.shader"));
+            StringAssert.Contains("LightingStandardBuilding_GI", source);
+            StringAssert.Contains("lighting.indirect.diffuse *=", source);
+            StringAssert.Contains("max(1.0h,", source);
+            StringAssert.Contains("output.Albedo = preserved", source);
+            StringAssert.Contains("output.Emission = nightEmission", source);
+            StringAssert.DoesNotContain(
+                "output.Emission = lighting.indirect.diffuse", source);
+
+            var gardenSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/GardenPropPBR.shader"));
+            StringAssert.Contains("LightingStandardGarden_GI", gardenSource);
+            StringAssert.Contains("_CFNativeSurfaceIndirectScale", gardenSource);
+            StringAssert.Contains("_CFGardenSurfaceExposure", gardenSource);
+            StringAssert.Contains("_CFWorldWhitePoint", gardenSource);
+            StringAssert.Contains("output.Emission = 0", gardenSource);
+        }
+
+        [Test]
+        public void SharedArtworkLightingUsesHuePreservingWhitePointBound()
+        {
+            var source = File.ReadAllText(Path.Combine(Application.dataPath,
+                "CityForgeV3/Resources/CityForgeV3/Shaders/" +
+                "CityForgeWorldLighting.cginc"));
+            StringAssert.Contains("CityForgeBoundWorldIllumination", source);
+            StringAssert.Contains("_CFWorldWhitePoint", source);
+            StringAssert.DoesNotContain("saturate(illumination)", source);
         }
 
         [Test]

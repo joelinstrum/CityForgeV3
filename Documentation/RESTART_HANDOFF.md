@@ -1707,3 +1707,214 @@ suite passed 11/11 and Unity completed the full-Lot graphics capture without
 compiler or shader errors. No district scan, redraw, rebuild, persistence, or
 worker/labor change was added. Evidence:
 `Documentation/Validation/town-center-facing-pan-v02/`.
+
+### September 20 — coherent global exposure and color
+
+Custom-lit terrain, flora, roads, water and props now share a hue-preserving
+0.98 display-white bound instead of allowing raw ambient-plus-sun values to
+clip. The district sun intensities are calibrated to the same range used by
+native Standard-lit buildings. Hybrid directional building bases use one
+shared 1.5 daylight exposure with a soft highlight shoulder, and the global
+noon registered-shade opacity is 0.24 instead of 0.42. There are no per-Lot or
+per-building exceptions. Dusk/night base treatment, full-night images, window
+overlays, lamps and other genuine emitters are unchanged.
+
+The change adds two global uniform writes at the existing environment-change
+boundary and no per-frame scan, material walk, draw, rebuild or persistence
+work. An isolated Unity fixture passed 7/7 contract tests, 8/8 focused
+hybrid/native/terrain tests, and 10/10 river/environment regressions. It
+captured real meadow, road, river-water, flora, hybrid artwork and the native
+Town Center across all five presets without loading or saving player content.
+Evidence and measurements:
+`Documentation/Validation/lighting-refinement-v01/`. The open City Forge V3
+editor imported the code without a new compile or shader error;
+CityForge-Regions-Review was not touched.
+
+### September 20 — square Small, Medium, and Large regions
+
+Create Region now offers three square model footprints: Small 12 × 12,
+Medium 20 × 20, and Large 28 × 28 map units. Medium is selected by default.
+The former 28 × 20 footprint is not migrated or rewritten; Large extends its
+short axis to 28 units so the existing physically proportional isometric
+projection presents an even diamond. Existing saved-region dimensions and the
+general width/height generator contract remain compatible.
+
+Selection updates only the open creation modal, and the chosen dimensions are
+used once during explicit in-memory creation. No player content is saved, no
+per-frame district work or presentation rebuild was added, and persistence
+remains manual. An isolated Unity project passed 7/7 focused generation,
+selection, creation, regeneration, and save-round-trip checks. The existing
+graphics-dependent projection-orientation check passed 1/1 in a separate
+graphics-enabled isolated run. The initial headless attempt at that projection
+test could not initialize an Editor window and is superseded by the passing
+graphics-enabled result. The open V3 editor was not driven or restarted, and
+CityForge-Regions-Review was not touched.
+
+### September 20 — latest Main lighting and forest integration
+
+Merged `origin/main` through `08a1e45` into the square-region branch. Main's
+new V03 depth-shaded forest artwork and catalog routing are retained unchanged.
+Its newer shared morning/noon/afternoon sun calibration (`0.62`, `0.64`, and
+`0.675`) supersedes the earlier branch values, while the branch's shared 0.98
+white-point bound, hybrid daylight exposure, nighttime emitters, and square
+region presets remain intact.
+
+The two conflicts were limited to the shared district-lighting values and their
+contract documentation. An isolated Unity project passed 51/51 focused
+EditMode checks: 8 lighting-contract, 24 district-flora, 14 region-flora, and
+5 region-size/noon checks. No player content was loaded or saved, the open V3
+editor was not driven or restarted, and CityForge-Regions-Review was not used.
+
+### September 20 — hosted Lot vibrancy and single Town Center choice
+
+District-hosted native 3D buildings now use one shared 2.5 indirect-diffuse
+scale during Morning, Noon, and Afternoon. This closes the orientation-dependent
+gap where a Lot's shaded facade looked dull beside its standalone Lot Editor
+view. Evening and Night remain at the neutral 1.0 scale. The shader leaves
+source albedo and direct/specular light untouched, does not use emission for
+ordinary surfaces, and does not affect terrain or artwork. Genuine window and
+lamp emission remains unchanged.
+
+The obsolete bundled `town-center-civic-v01` is hidden from the cached published
+Lot list, so it no longer creates a second Town Center card beside the authored
+player Lot. Its resource stays resolvable by stable ID strictly so an older
+district placement can still load. No player Lot or district was migrated,
+rewritten, deleted, or saved.
+
+Both changes occur at existing cached boundaries: one global uniform write per
+environment transition and one catalog decision during cache construction.
+There is no per-frame district scan, Lot walk, material update, redraw, or
+rebuild. The final isolated suite passed 32/32 checks, and five
+graphics-enabled preset captures were inspected without shader errors. Details
+are recorded in `Documentation/Validation/hosted-lot-lighting-v01/`.
+
+### September 20 — garden props join the native-surface lighting contract
+
+The native meshes inside garden compositions now use one shared
+`GardenPropPBR` shader. This brings pickets, edging, formal hedges, and fountain
+stone onto the same daylight indirect-diffuse contract as native buildings,
+while their sprite flowers and grass retain the existing district-artwork path.
+The user-reported aged white fence consequently remains ivory in building shade
+instead of turning charcoal-gray. Garden materials stay non-emissive, and
+Evening/Night retain the neutral indirect scale.
+
+Each garden root receives one bounded local renderer/material pass only when it
+is created or loaded. Materials are shared afterward; environment changes still
+publish one uniform and do not scan Lots, gardens, renderers, or materials. An
+isolated 20/20 suite passed, including white-picket seasons and transparent
+placement previews. A graphics-enabled comparison verified the fence lift while
+flowers and grass remained unchanged and reported no shader errors. No player
+content was saved, and the open editor and CityForge-Regions-Review were not
+driven. Evidence: `Documentation/Validation/garden-prop-lighting-v01/`.
+
+### September 21 — stable first paint and white garden paint
+
+All nine aged white-picket garden compositions now use a shared near-white ivory
+tint. Their texture remains responsible for grain and age; the former 0.78 gray
+material multiplier no longer forces shaded paint to read gray. A real isolated
+Noon render confirmed white pickets without bleaching flowers or grass.
+
+District rebuild now publishes the saved time-of-day environment immediately
+after creating its sun and before building terrain, flora, or Lots. Flora shadow
+meshes and spatial batches therefore use the final saved sun ray on first paint
+instead of appearing with a temporary construction sun and changing afterward.
+Calling the same preset again performs environment/local emitter updates but
+does not queue redundant flora work. Actual time changes still use bounded
+eight-tree update slices followed by one spatial-cell batch rebuild at a time.
+
+Fresh isolated validation passed 43/43 focused checks. It directly verifies that
+a Morning district's first shadow batch has the Morning sun vector with no
+pending transition, then verifies a later Afternoon change remains staged. No
+player content was loaded or saved, and neither the open editor nor
+CityForge-Regions-Review was driven. Evidence:
+`Documentation/Validation/lighting-stability-v01/`.
+
+### September 21 — garden lighting corrected at the family boundary
+
+The near-white picket material edit from the preceding entry was rejected as an
+asset-specific workaround and reverted. The picket keeps its authored
+`(0.78, 0.76, 0.68)` material tint.
+
+All native garden meshes now share one daylight-only post-light exposure in
+`GardenPropPBR`, bounded by the world's hue-preserving 0.98 white-point
+shoulder. District and standalone Lot environments publish the same value once
+per environment transition. This applies uniformly to pickets, hedges, edging,
+fountains, and other native garden meshes without changing their materials;
+sprite flowers/grass, terrain, and buildings are unaffected. Evening/Night stay
+neutral, ordinary surfaces remain non-emissive, and no per-frame or per-Lot
+work was added.
+
+Isolated validation passed 43/43 focused checks. Multi-family graphics captures
+confirmed a coordinated garden-mesh lift without changing billboard planting
+or ground presentation. The separate saved-preset-before-first-paint fix for
+tree shadows remains in place. Evidence:
+`Documentation/Validation/garden-family-lighting-v02/`.
+
+### September 21 — Town Center distant LOD, glazing, and interior actor
+
+The Town Center at district zooms was its reduced 3D LOD, not a billboard. Its
+shell had been baked 100 times too small and flat because the builder cancelled
+the imported root's scale and rotation. The corrected shared mesh now retains
+the complete upright building at LOD3; no zoom-time rebuild or replacement was
+added.
+
+Day glass now reads as cool reflective glazing rather than a clear opening into
+the unlit room. It remains transparent and non-emissive, and existing genuine
+night window/lamp lighting is unchanged. The interior strolling-couple card now
+stays parallel to its authored facade while its eight-direction sprite choice
+continues to follow the camera. It sits close behind the glazing, so the whole
+actor artwork crosses the windows instead of rotating through the room clip and
+appearing as a thin slice.
+
+All changes use shared mesh/material/prefab state and the existing local actor
+update. There is no district scan, material walk, redraw, rebuild, or player
+save. Isolated Town Center tests passed 7/7 and world-lighting contracts passed
+9/9. A broader building-package pass was 12/13; its sole failure is the
+unrelated existing NY Brownstone evaluation ground-offset mismatch. Graphics
+captures and details are in
+`Documentation/Validation/town-center-lod-window-v01/`.
+
+### September 21 — clean flora edges and aligned projected silhouettes
+
+The close-zoom green tree fringe and dark rectangular shadow cards came from
+the same shared alpha-coverage problem. Both flora and projected shadows were
+retaining pixels at only two-percent alpha; foreshortened shadow sampling could
+then average the transparent source card into a visible rectangle.
+
+All district and standalone Lot tree billboards now use one 0.08 family-wide
+cutout threshold. District ground shadows use a shared 0.12 threshold and a
+sharper mip selection for their existing silhouette sample. Fine leaves remain
+visible, and projected shadows retain the source texture shape at the trunk
+anchor. No tree asset, species, placement, or player content was modified.
+
+The cached materials, spatial cells, and staged time-of-day update path are
+unchanged. There are no extra samples, draw calls, meshes, allocations, scans,
+redraws, or rebuilds. An isolated focused suite passed 40/40 and a
+graphics-enabled six-family grove was inspected without shader errors.
+Evidence: `Documentation/Validation/flora-edge-shadow-v01/`.
+
+### September 21 — forest-cluster edge/shadow correction (supersedes preceding entry)
+
+The preceding flora entry diagnosed the wrong path: its fixture rendered
+individual trees, while the reported close view contained V03 multi-tree
+forest composites. The V03 edge artifact is their shared chromatic antialias
+fringe. Their dark bars came from a separate procedural shadow path using
+five/nine hard-coded trunk coordinates authored for older V01 compositions.
+The generic flora cutoff and projected-texture mip changes did not repair
+either cluster artifact and have been reverted.
+
+All forest clusters now use one soft directional footprint anchored to the
+composition root and scaled from the sprite bounds. It has no synthetic trunk
+rectangles or per-asset coordinates. V03 family composites share a 0.50
+coverage cutoff that removes their sub-half-coverage color fringe without
+recoloring foliage. Individual tree presentation is restored to its prior
+0.02 coverage contract; winter cluster art retains 0.12.
+
+The clean isolated district-flora suite passed 26/26. A graphics-enabled render
+of the actual large V03 deciduous, mountain, and tropical composites showed
+clean contours and feathered grounded shade without detached bars. Cluster
+shadow geometry is now 42 vertices instead of approximately 270–486, and each
+cluster update performs one terrain registration query instead of five/nine.
+The existing cached spatial cells and bounded time-of-day slices are unchanged;
+there is no per-frame scan, redraw, material walk, or player save. Evidence:
+`Documentation/Validation/flora-cluster-edge-shadow-v02/`.

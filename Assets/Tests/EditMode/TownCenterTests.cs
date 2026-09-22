@@ -73,11 +73,35 @@ namespace CityForgeV3.Tests.EditMode
             var far=package.Find(Building3DLevel.LOD3);
             Assert.That(far.TargetTriangleBudget,Is.LessThan(near.TargetTriangleBudget*.5f));
             Assert.That(far.VisualPrefab.GetComponentInChildren<BuildingInteriorAutomata>(),Is.Null);
+            var nearShell=near.VisualPrefab.GetComponentsInChildren<MeshFilter>(true)
+                .First(filter=>filter.name=="TC_Shell").sharedMesh.bounds;
+            var farShell=far.VisualPrefab.GetComponentsInChildren<MeshFilter>(true)
+                .First(filter=>filter.name=="TC_Shell").sharedMesh.bounds;
+            Assert.That(farShell.size.x,Is.EqualTo(nearShell.size.x).Within(.15f));
+            Assert.That(farShell.size.y,Is.EqualTo(nearShell.size.y).Within(1.2f));
+            Assert.That(farShell.center.y,Is.GreaterThan(4.5f),
+                "Distant shell must be upright and metre-scaled.");
             var wall=root.GetComponentsInChildren<MeshFilter>().First(m=>m.name=="TC_RearSiding");
             var collider=wall.gameObject.AddComponent<MeshCollider>();collider.sharedMesh=wall.sharedMesh;
             Assert.That(collider.Raycast(new Ray(new Vector3(0,3,-10),Vector3.forward),out var hit,20),Is.True);
             Assert.That(hit.point.z,Is.InRange(-4.4f,-4.1f));
             Assert.That(BuildingContentCatalog.Find("town-center-v01"),Is.Not.Null);
+        }
+
+        [Test] public void DayGlassAndInteriorCardPreserveTheWindowPresentation()
+        {
+            var renderers=root.GetComponentsInChildren<Renderer>(true);
+            var glass=renderers.First(renderer=>renderer.name=="TC_Glass")
+                .sharedMaterial;
+            Assert.That(glass.color.a,Is.InRange(.24f,.34f));
+            Assert.That(glass.GetFloat("_Glossiness"),Is.GreaterThan(.6f));
+            var art=root.GetComponentInChildren<SpriteRenderer>(true);
+            var life=root.GetComponentInChildren<BuildingInteriorAutomata>();
+            life.Advance(0f,camera);
+            Assert.That(art.transform.localPosition.z,Is.InRange(1.6f,1.9f));
+            Assert.That(art.transform.localRotation,
+                Is.EqualTo(Quaternion.identity));
+            Assert.That(life.RoomMaximum.z,Is.GreaterThan(art.transform.localPosition.z));
         }
 
         [Test] public void OpaqueExteriorUsesStandardWorldLightingAndOnlyWindowsEmit()

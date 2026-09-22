@@ -48,9 +48,16 @@ public static class TownCenterBuilder
         shell.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(source + "tripo_image_bd63034a_0.jpg");
         shell.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>(source + "tripo_image_bd63034a_2.png"));
         shell.EnableKeyword("_NORMALMAP"); shell.SetFloat("_BumpScale", .5f);
-        var glass = Mat("Glass", new Color(.42f,.5f,.53f,.055f));
+        // Daylight glazing must read as glass rather than an open hole into the
+        // unlit room. Keep enough transmission for the interior automata and
+        // genuine night lighting, with a restrained cool reflection response.
+        var glass = Mat("Glass", new Color(.30f,.39f,.44f,.28f));
         glass.SetFloat("_Mode",3); glass.SetInt("_SrcBlend",(int)BlendMode.One);
         glass.SetInt("_DstBlend",(int)BlendMode.OneMinusSrcAlpha);glass.SetInt("_ZWrite",0);
+        glass.SetFloat("_Metallic",.06f);glass.SetFloat("_Glossiness",.68f);
+        glass.SetFloat("_SpecularHighlights",1);glass.SetFloat("_GlossyReflections",1);
+        glass.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
+        glass.DisableKeyword("_GLOSSYREFLECTIONS_OFF");
         glass.EnableKeyword("_ALPHAPREMULTIPLY_ON");glass.renderQueue=3000;
         var actorMat = AssetDatabase.LoadAssetAtPath<Material>(Root + "/Materials/InteriorPeople.mat");
         if (actorMat == null) { actorMat=new Material(Shader.Find("CityForge/Interior Automata")); AssetDatabase.CreateAsset(actorMat,Root+"/Materials/InteriorPeople.mat"); }
@@ -99,11 +106,16 @@ public static class TownCenterBuilder
             lamps.ConfigureAnchors(null,anchors);lamps.ConfigureTuning(2.8f,0,0,3.2f,3f);lamps.ConfigurePerPixel(true);lamps.SetNightAmount(0);
             var art=new GameObject("Interior strolling couple").AddComponent<SpriteRenderer>();
             art.transform.SetParent(visual.transform,false);
-            art.transform.localPosition=new Vector3(.45f,4.9f,.7f);
+            // Keep the card close behind the front glazing. Its frame covers
+            // the whole four-metre walking route; placing it deep in the room
+            // made the window aperture reduce the couple to a narrow slice.
+            art.transform.localPosition=new Vector3(.45f,4.9f,1.75f);
             art.sharedMaterial=actorMat;art.shadowCastingMode=ShadowCastingMode.Off;art.enabled=false;
             Control("People room fill",art,new Color(.72f,.48f,.27f),.85f);
             var life=visual.AddComponent<BuildingInteriorAutomata>();
             life.Configure(art,renderers.Single(r=>r.name=="TC_Shell"),controls.ToArray());
+            life.ConfigureRoom(new Vector3(-4.7f,4.13f,-3.95f),
+                new Vector3(5.4f,6.71f,2.05f));
             var prefab=PrefabUtility.SaveAsPrefabAsset(visual,Root+"/Prefabs/TownCenterVisual.prefab");
             var far=UnityEngine.Object.Instantiate(visual);
             GameObject farPrefab;
@@ -113,7 +125,12 @@ public static class TownCenterBuilder
                 var farSource=AssetDatabase.LoadAssetAtPath<GameObject>(Root+"/Derived/TownCenterFarShell.fbx");
                 var sourceFilter=farSource.GetComponentInChildren<MeshFilter>();
                 var reduced=UnityEngine.Object.Instantiate(sourceFilter.sharedMesh);
-                var matrix=farSource.transform.worldToLocalMatrix * sourceFilter.transform.localToWorldMatrix;
+                // The reduced FBX stores its metre conversion and upright
+                // rotation on the root MeshFilter itself. Converting through
+                // the same root's world-to-local matrix cancels both, leaving
+                // a shell 100x too small and lying flat. Bake the complete
+                // imported transform into the saved mesh instead.
+                var matrix=sourceFilter.transform.localToWorldMatrix;
                 reduced.vertices=reduced.vertices.Select(matrix.MultiplyPoint3x4).ToArray();
                 var nm=matrix.inverse.transpose;reduced.normals=reduced.normals.Select(n=>nm.MultiplyVector(n).normalized).ToArray();
                 reduced.tangents=reduced.tangents.Select(t=> { var v=matrix.MultiplyVector(new Vector3(t.x,t.y,t.z)).normalized;return new Vector4(v.x,v.y,v.z,t.w*(matrix.determinant<0?-1:1)); }).ToArray();

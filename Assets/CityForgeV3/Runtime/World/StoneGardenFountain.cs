@@ -43,7 +43,7 @@ namespace CityForgeV3.World
             model.localPosition -= new Vector3(bounds.center.x, bounds.min.y,
                 bounds.center.z);
 
-            var shader = Shader.Find("Standard");
+            var shader = Shader.Find("CityForgeV3/GardenPropPBR");
             var material = new Material(shader)
             {
                 name = "CF Stone Garden Fountain",

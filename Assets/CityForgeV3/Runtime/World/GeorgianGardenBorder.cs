@@ -106,7 +106,8 @@ namespace CityForgeV3.World
             var material = rim ? _rimMaterial : _soilMaterial;
             if (material == null)
             {
-                material = new Material(Shader.Find("Standard"))
+                material = new Material(Shader.Find(
+                    "CityForgeV3/GardenPropPBR"))
                 {
                     color = rim ? new Color(0.27f, 0.24f, 0.20f) :
                         new Color(0.21f, 0.18f, 0.13f)

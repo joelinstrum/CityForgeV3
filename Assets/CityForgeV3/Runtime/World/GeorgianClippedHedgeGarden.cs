@@ -40,7 +40,7 @@ namespace CityForgeV3.World
                 return false;
             }
             leaves.wrapMode = TextureWrapMode.Repeat;
-            var shader = Shader.Find("Standard");
+            var shader = Shader.Find("CityForgeV3/GardenPropPBR");
             _leafMaterial = new Material(shader)
             {
                 name = "Garden clipped leaves",

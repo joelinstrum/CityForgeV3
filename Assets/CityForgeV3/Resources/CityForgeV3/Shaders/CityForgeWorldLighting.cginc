@@ -6,12 +6,24 @@
 fixed4 _CFWorldAmbientColor;
 fixed4 _CFWorldSunColor;
 float4 _CFWorldLightDirection;
+half _CFWorldWhitePoint;
+
+inline fixed3 CityForgeBoundWorldIllumination(fixed3 illumination)
+{
+    // Preserve hue and sub-white contrast. Only scale values whose brightest
+    // channel would exceed the world's display-white contract.
+    half peak = max(illumination.r, max(illumination.g, illumination.b));
+    half whitePoint = _CFWorldWhitePoint > 0.01h
+        ? _CFWorldWhitePoint : 0.98h;
+    half scale = min(1.0h, whitePoint / max(peak, 0.0001h));
+    return max(0, illumination * scale);
+}
 
 inline fixed3 CityForgeWorldLighting(fixed3 worldNormal, fixed shadow)
 {
     fixed diffuse = saturate(dot(normalize(worldNormal),
         normalize(_CFWorldLightDirection.xyz)));
-    return max(0, _CFWorldAmbientColor.rgb +
+    return CityForgeBoundWorldIllumination(_CFWorldAmbientColor.rgb +
         _CFWorldSunColor.rgb * diffuse * shadow);
 }
 
@@ -19,7 +31,7 @@ inline fixed3 CityForgeWorldLighting(fixed3 worldNormal, fixed shadow)
 // normal. It still receives the world's intensity, color and shadow state.
 inline fixed3 CityForgeArtworkLighting(fixed shadow)
 {
-    return max(0, _CFWorldAmbientColor.rgb +
+    return CityForgeBoundWorldIllumination(_CFWorldAmbientColor.rgb +
         _CFWorldSunColor.rgb * shadow);
 }
 
