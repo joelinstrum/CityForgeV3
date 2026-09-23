@@ -9,10 +9,11 @@ namespace CityForgeV3.World
         SeasonPreset _forestSeason = SeasonPreset.Summer;
         public SeasonPreset ForestSeason => _forestSeason;
 
-        SpriteRenderer[] _pendingForestSeason;
-        int _pendingForestIndex;
-        public bool ForestSeasonPending => _pendingForestSeason != null;
-        public const int ForestSeasonFrameBudget = 16;
+        Dictionary<string, SpriteRenderer>.ValueCollection.Enumerator
+            _pendingForestEnumerator;
+        bool _forestAppearancePending;
+        public bool ForestSeasonPending => _forestAppearancePending;
+        public const int ForestSeasonFrameBudget = 4;
         SpriteRenderer[] _pendingTimeOfDayShadows;
         int _pendingTimeOfDayShadowIndex;
         public bool TimeOfDayPresentationPending =>
@@ -85,7 +86,8 @@ namespace CityForgeV3.World
 
         Sprite ForestSprite(string id, SeasonPreset season)
         {
-            string path = ForestClusterCatalog.ResourcePath(id, season);
+            string path = ForestClusterCatalog.FarCanopyResourcePath(id,
+                season) ?? ForestClusterCatalog.ResourcePath(id, season);
             if (_districtFloraSprites.TryGetValue(path, out var sprite) && sprite != null) return sprite;
             var texture = Resources.Load<Texture2D>(path);
             if (texture == null) throw new MissingReferenceException(path);
@@ -96,7 +98,7 @@ namespace CityForgeV3.World
 
         void PrepareForestSeason(RegionCityTile district)
         {
-            _pendingForestSeason = null; _pendingForestIndex = 0;
+            _forestAppearancePending = false;
             _forestSeason = ForestClusterCatalog.SeasonForIndex(district.Labor?.SeasonIndex ?? 0);
             // Warm the family sprites at the existing loading/bulk-edit boundary.
             // First seasonal use must not decode textures or build tight sprite meshes.
@@ -109,6 +111,23 @@ namespace CityForgeV3.World
                 }
         }
 
+        void RegisterForestCluster(string id, SpriteRenderer renderer)
+        {
+            _forestClusters[id] = renderer;
+            RestartForestAppearanceIfPending();
+        }
+
+        void UnregisterForestCluster(string id)
+        {
+            if (_forestClusters.Remove(id)) RestartForestAppearanceIfPending();
+        }
+
+        void RestartForestAppearanceIfPending()
+        {
+            if (_forestAppearancePending)
+                _pendingForestEnumerator = _forestClusters.Values.GetEnumerator();
+        }
+
         // Read the existing calendar without advancing it or touching labor state.
         // The common path is a scalar comparison, never a collection scan.
         public void SyncForestSeason(int budget = ForestSeasonFrameBudget)
@@ -119,24 +138,27 @@ namespace CityForgeV3.World
             {
                 var previous = _forestSeason;
                 _forestSeason = season;
-                if (_pendingForestSeason == null &&
+                if (!_forestAppearancePending &&
                     ((previous == SeasonPreset.Spring && season == SeasonPreset.Summer) ||
                      (previous == SeasonPreset.Summer && season == SeasonPreset.Spring))) return;
-                // One snapshot of the cluster-only registry at the season boundary.
-                // Small bounded slices below update only their affected batch cells.
-                _pendingForestSeason = new SpriteRenderer[_forestClusters.Count];
-                _forestClusters.Values.CopyTo(_pendingForestSeason, 0);
-                _pendingForestIndex = 0;
+                // Season changes only create an O(1) enumerator. Dense
+                // districts advance in bounded slices, not one scan.
+                _pendingForestEnumerator = _forestClusters.Values.GetEnumerator();
+                _forestAppearancePending = _forestClusters.Count > 0;
             }
-            if (_pendingForestSeason == null) return;
+            if (!_forestAppearancePending) return;
             _floraBatches?.BeginChanges();
             try
             {
-                int end = Mathf.Min(_pendingForestSeason.Length, _pendingForestIndex + Mathf.Max(1, budget));
-                var changed = new List<SpriteRenderer>(end - _pendingForestIndex);
-                for (; _pendingForestIndex < end; _pendingForestIndex++)
+                var changed = new List<SpriteRenderer>(Mathf.Max(1, budget));
+                for (var index = 0; index < Mathf.Max(1, budget); index++)
                 {
-                    var renderer = _pendingForestSeason[_pendingForestIndex];
+                    if (!_pendingForestEnumerator.MoveNext())
+                    {
+                        _forestAppearancePending = false;
+                        break;
+                    }
+                    var renderer = _pendingForestEnumerator.Current;
                     if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
                     var id = FloraTreeRepairs.Identity(renderer.sprite.texture.name);
                     var sprite = ForestSprite(id, season);
@@ -148,7 +170,6 @@ namespace CityForgeV3.World
                 }
                 UpdateDistrictFloraShadowsFor(changed);
                 foreach (var renderer in changed) _floraBatches?.Add(renderer);
-                if (_pendingForestIndex == _pendingForestSeason.Length) _pendingForestSeason = null;
             }
             finally { _floraBatches?.EndChanges(); }
         }

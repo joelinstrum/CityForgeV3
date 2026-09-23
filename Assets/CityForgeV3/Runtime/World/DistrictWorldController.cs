@@ -466,7 +466,7 @@ namespace CityForgeV3.World
             }
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
-            _pendingForestSeason = null;
+            _forestAppearancePending = false;
             _pendingTimeOfDayShadows = null;
             _pendingTimeOfDayShadowIndex = 0;
             _districtFloraRoot = new GameObject("District Flora").transform;
@@ -785,8 +785,13 @@ namespace CityForgeV3.World
                 placed.InstanceId);
             var presentationId = LotWorldController.ResolveFloraPresentationId(
                 RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
-            var resource = LotWorldController.ResolveFloraResourcePath(
-                presentationId, ForestClusterCatalog.IsCluster(presentationId) ? _forestSeason : SeasonPreset.Summer);
+            var resource = ForestClusterCatalog.IsCluster(presentationId)
+                    ? ForestClusterCatalog.FarCanopyResourcePath(
+                        presentationId, _forestSeason) ??
+                      LotWorldController.ResolveFloraResourcePath(
+                        presentationId, _forestSeason)
+                    : LotWorldController.ResolveFloraResourcePath(
+                        presentationId, SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
             var spriteKey = resource + "|" + presentationId;
             if (!_districtFloraSprites.TryGetValue(spriteKey, out var sprite) ||
@@ -832,7 +837,7 @@ namespace CityForgeV3.World
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId))
             {
-                _forestClusters[placed.InstanceId] = renderer;
+                RegisterForestCluster(placed.InstanceId, renderer);
                 ApplyForestSeasonCutoff(renderer);
             }
             RegisterSelectable(item, new DistrictSelectionRef(DistrictSelectionKind.Flora, placed.InstanceId),
@@ -2834,7 +2839,7 @@ namespace CityForgeV3.World
             _riverSurfaceIndex.Clear();
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
-            _pendingForestSeason = null;
+            _forestAppearancePending = false;
             _districtSelectionRoot = null;
             for (var index = transform.childCount - 1; index >= 0; index--)
             {

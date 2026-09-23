@@ -467,7 +467,7 @@ public class DistrictFloraBatchesTests
         d.Labor.SeasonIndex = 2; // A reload/undo/skip while the prior transition is pending.
         trees[20].gameObject.SetActive(false); registry.Remove("20");
         int guard=0;
-        do { world.SyncForestSeason(); Assert.Less(++guard, 10); } while (world.ForestSeasonPending);
+        do { world.SyncForestSeason(); Assert.Less(++guard, 20); } while (world.ForestSeasonPending);
         Assert.True(registry.Values.All(r=>r.sprite.texture.name.EndsWith("-winter")));
         var sprites = registry.Values.Select(r=>r.sprite).ToArray();
         world.SyncForestSeason(); CollectionAssert.AreEqual(sprites, registry.Values.Select(r=>r.sprite));

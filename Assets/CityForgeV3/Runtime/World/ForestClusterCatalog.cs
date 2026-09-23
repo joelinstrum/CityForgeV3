@@ -37,6 +37,17 @@ namespace CityForgeV3.World
             (name.StartsWith("forest-deciduous-") ||
              name.StartsWith("forest-mountain-") ||
              name.StartsWith("forest-tropical-"));
+        // The far-view artwork is deliberately used at every zoom in this
+        // visual experiment so close-up readability can be judged in play.
+        public static string FarCanopyResourcePath(string id,
+            SeasonPreset season)
+        {
+            if (id != "forest-deciduous-compact" &&
+                id != "forest-deciduous-large") return null;
+            if (season == SeasonPreset.Winter) return null;
+            var suffix = season == SeasonPreset.Autumn ? "autumn" : "summer";
+            return "CityForgeV3/Flora/ForestCanopyFarV01/" + id + "-" + suffix;
+        }
         public static SeasonPreset SeasonForIndex(int index) => (Mathf.Max(0, index) % 4) switch
         {
             1 => SeasonPreset.Autumn, 2 => SeasonPreset.Winter,
