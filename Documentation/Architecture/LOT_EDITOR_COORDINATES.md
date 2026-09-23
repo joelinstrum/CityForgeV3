@@ -45,3 +45,21 @@ the sun-position azimuth plus 180°, followed by the Lot Editor's calibrated
 X/Z headings otherwise display as south/north in the isometric lot view when
 the player expects west/east. Camera registration and model-facing offsets
 must never add any further rotation to this world-space light direction.
+
+## Building profile and height
+
+Top Down controls a building's X/Z placement. Profile is an orthographic
+elevation view of the selected native 3D building; its two axes show the
+east-west and north-south terrain cross-sections. The gold line samples lot
+terrain, or the district's actual terrain/riverbed when hosted. The optional
+blue line uses a nearby authored water area or district river water elevation
+when available. Otherwise it is an adjustable preview reference, clearly
+labelled as such and not saved as a water body.
+
+`PlacedBuilding3D.ElevationOffsetMeters` is the building's saved Y offset from
+the lot datum; absent fields in older saves mean zero. Profile dragging and
+the inspector buttons change only the selected building, its existing shadow
+copies, and its selection outline. Snap Base to Ground samples the terrain at
+the building center; use the profile lines to check edges on a slope. Camera
+and preview-line changes are editorial only. Progress is written only by the
+explicit Lot Save action. No per-frame district scan or redraw is required.

@@ -2583,6 +2583,12 @@ namespace CityForgeV3.World
                 LotWorldController.AutomataSeasonForDistrictIndex(
                     _terrainDistrict?.Labor?.SeasonIndex ?? 0));
             lot.ConfigureDistrictRiverSurfaceSampler(SampleRiverSurface);
+            lot.ConfigureDistrictTerrainElevationSampler(world =>
+            {
+                var local = _content.InverseTransformPoint(world);
+                return _content.TransformPoint(new Vector3(local.x,
+                    TerrainElevation(local.x, local.z), local.z)).y;
+            });
             lot.ConfigureBoatRouteProvider(FindDownstreamBoatRoute);
             lot.LoadRuntimeLot(data);
             lot.ApplyDistrictBoatDockOverride(placement);

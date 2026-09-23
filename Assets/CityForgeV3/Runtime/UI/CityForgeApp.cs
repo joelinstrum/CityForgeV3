@@ -1041,6 +1041,11 @@ namespace CityForgeV3.UI
         ToggleTopDownView();
         evt.StopPropagation();
       }
+      else if (evt.keyCode == KeyCode.P)
+      {
+        ToggleLotProfileView();
+        evt.StopPropagation();
+      }
       else if (evt.keyCode == KeyCode.R &&
                _lotWorld.ActiveObjectSelection ==
                LotObjectSelectionKind.BuildingProp)
@@ -1735,7 +1740,9 @@ namespace CityForgeV3.UI
         {
           _building3DPointerDown = true;
           viewportInput.CapturePointer(evt.pointerId);
-          _lotStatus = "3D building selected • drag to move • Left/Right rotate 45°";
+          _lotStatus = _lotWorld.ProfileViewEnabled
+              ? "3D building selected • drag vertically to set height"
+              : "3D building selected • drag to move • Left/Right rotate 45°";
           evt.StopPropagation();
           return;
         }
@@ -2543,6 +2550,12 @@ namespace CityForgeV3.UI
           ToggleTopDownView,
           true,
           _lotWorld.TopDownViewEnabled ? "mode-selected" : "quiet"));
+      topbar.Add(CfButton.Create(
+          _lotWorld.ProfileViewEnabled ? "EXIT PROFILE" : "PROFILE [P]",
+          ToggleLotProfileView,
+          _lotWorld.ProfileViewEnabled ||
+              _lotWorld.SelectedBuilding3DIndex >= 0,
+          _lotWorld.ProfileViewEnabled ? "mode-selected" : "quiet"));
 
       var title = new VisualElement();
       title.AddToClassList("topbar-title");
@@ -3423,6 +3436,12 @@ namespace CityForgeV3.UI
                 "inspector-title");
             buildingName.name = "selected-building-name";
             inspector.Add(buildingName);
+            if (_lotWorld.PlacedBuilding3DCount > 1)
+              inspector.Add(CfButton.Create("NEXT PLACED BUILDING", () =>
+              {
+                _lotWorld.CycleSelectedBuilding3D(1);
+                Show(AppScreen.LotEditor);
+              }, true, "quiet"));
             if (_lotWorld.SelectedBuildingCanRepaint)
             {
               inspector.Add(StyledLabel("HOUSE PAINT", "section-label"));
@@ -3528,6 +3547,75 @@ namespace CityForgeV3.UI
             rotationRow.Add(rotateLeft);
             rotationRow.Add(rotateRight);
             inspector.Add(rotationRow);
+            inspector.Add(Property("BUILDING HEIGHT",
+                $"{_lotWorld.SelectedBuilding3DElevation:+0.00;-0.00;0.00} M"));
+            var heightRow = new VisualElement();
+            heightRow.AddToClassList("inspector-actions");
+            heightRow.Add(CfButton.Create("LOWER 0.25 M", () =>
+            {
+              _lotWorld.AdjustSelectedBuilding3DElevation(-.25f);
+              _lotStatus = "Building height adjusted; save the lot to keep it";
+              Show(AppScreen.LotEditor);
+            }, true, "quiet"));
+            heightRow.Add(CfButton.Create("RAISE 0.25 M", () =>
+            {
+              _lotWorld.AdjustSelectedBuilding3DElevation(.25f);
+              _lotStatus = "Building height adjusted; save the lot to keep it";
+              Show(AppScreen.LotEditor);
+            }, true, "quiet"));
+            inspector.Add(heightRow);
+            inspector.Add(CfButton.Create("SNAP BASE TO GROUND", () =>
+            {
+              _lotStatus = _lotWorld.AlignSelectedBuilding3DToGround()
+                  ? "Building base aligned to terrain at its center"
+                  : "Building base is already at the terrain height";
+              Show(AppScreen.LotEditor);
+            }, true, "quiet"));
+            if (_lotWorld.ProfileViewEnabled)
+            {
+              inspector.Add(StyledLabel(
+                  "PROFILE • GOLD = TERRAIN", "inspector-note"));
+              var profileRow = new VisualElement();
+              profileRow.AddToClassList("inspector-actions");
+              profileRow.Add(CfButton.Create(
+                  $"AXIS: {_lotWorld.ProfileAxisLabel}", () =>
+              {
+                _lotWorld.TurnProfileView();
+                Show(AppScreen.LotEditor);
+              }, true, "quiet"));
+              profileRow.Add(CfButton.Create(
+                  _lotWorld.ProfileWaterReferenceVisible
+                      ? "HIDE WATERLINE" : "SHOW WATERLINE",
+                  () =>
+                  {
+                    _lotWorld.ToggleProfileWaterReference();
+                    Show(AppScreen.LotEditor);
+                  }, true, "quiet"));
+              inspector.Add(profileRow);
+              if (_lotWorld.ProfileWaterReferenceVisible)
+              {
+                inspector.Add(Property("BLUE WATERLINE",
+                    $"{_lotWorld.ProfileWaterLevel:+0.00;-0.00;0.00} M" +
+                    (_lotWorld.ProfileWaterReferenceIsPreview
+                        ? " • PREVIEW ONLY" : " • ACTUAL")));
+                if (_lotWorld.ProfileWaterReferenceIsPreview)
+                {
+                  var waterRow = new VisualElement();
+                  waterRow.AddToClassList("inspector-actions");
+                  waterRow.Add(CfButton.Create("WATER −0.25 M", () =>
+                  {
+                    _lotWorld.AdjustProfilePreviewWaterLevel(-.25f);
+                    Show(AppScreen.LotEditor);
+                  }, true, "quiet"));
+                  waterRow.Add(CfButton.Create("WATER +0.25 M", () =>
+                  {
+                    _lotWorld.AdjustProfilePreviewWaterLevel(.25f);
+                    Show(AppScreen.LotEditor);
+                  }, true, "quiet"));
+                  inspector.Add(waterRow);
+                }
+              }
+            }
             inspector.Add(Property("MODE", construction == null
                 ? "COMPLETED BUILDING"
                 : construction.StageLabel));
@@ -3572,8 +3660,14 @@ namespace CityForgeV3.UI
             inspector.Add(StyledLabel("Nothing Selected",
                 "inspector-title"));
             inspector.Add(StyledLabel(
-                "Select a placed 3D building to simulate its construction.",
+                "Select a placed 3D building to adjust its height or construction.",
                 "inspector-note"));
+            if (_lotWorld.PlacedBuilding3DCount > 0)
+              inspector.Add(CfButton.Create("SELECT PLACED BUILDING", () =>
+              {
+                _lotWorld.CycleSelectedBuilding3D(1);
+                Show(AppScreen.LotEditor);
+              }, true, "quiet"));
           }
         }
         if (_lotEditorCategory == LotEditorCategory.Buildings && _lotWorld.IsSelected)
@@ -6560,6 +6654,15 @@ namespace CityForgeV3.UI
       _lotStatus = _lotWorld.TopDownViewEnabled
           ? "Top-down placement view — select and move objects normally"
           : "Top-down placement view closed — previous camera restored";
+      Show(AppScreen.LotEditor);
+    }
+
+    private void ToggleLotProfileView()
+    {
+      if (!_lotWorld.ToggleProfileView()) return;
+      _lotStatus = _lotWorld.ProfileViewEnabled
+          ? "Profile view — adjust selected building height against terrain"
+          : "Profile view closed";
       Show(AppScreen.LotEditor);
     }
 

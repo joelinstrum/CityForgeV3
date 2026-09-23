@@ -264,6 +264,11 @@ namespace CityForgeV3.World
         public int OrbitOctant;
         public LotZoomLevel ZoomLevel;
         public bool TopDown;
+        public bool Profile;
+        public int ProfileAxis;
+        public int ProfileSelectedBuildingIndex = -1;
+        public bool ProfileWaterReferenceVisible;
+        public float ProfilePreviewWaterLevelMeters = .5f;
         public Vector2 TopDownWorldZScreenDirection;
         public BuildingInspectionMode InspectionMode;
         public BuildingInspectionMode InspectionModeBeforeTopDown;
@@ -391,6 +396,8 @@ namespace CityForgeV3.World
         public string AssetId = "brownstone-building-22k";
         public float X;
         public float Z;
+        // Relative to the lot datum; zero preserves all existing saves.
+        public float ElevationOffsetMeters;
         public int RotationQuarterTurns;
         public int RotationEighthTurns = -1;
         public List<PlacedBuildingProp> Attachments = new();
