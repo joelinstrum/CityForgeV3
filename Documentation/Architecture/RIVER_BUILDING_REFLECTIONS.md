@@ -9,9 +9,9 @@ district river. It is deliberately not a district-wide planar reflection.
 - The pre-render callback queries only the close camera area. It chooses at
   most one visible mill whose footprint reaches nearby river water. An
   unfinished/invisible building is skipped.
-- The Lot Editor exposes a per-mill River Reflection switch. Existing saved
-  mills default to on; turning it off is stored only by an explicit lot Save.
-  District candidate registration respects the switch on load/add.
+- Lot General exposes a River Reflections switch on every lot. Existing saved
+  lots default to on; turning it off is stored only by an explicit lot Save.
+  District candidate registration respects the lot setting on load/add.
 - One isolated 256 px-high capture (width 256–512 px) renders the selected
   mill at most once every 0.2 seconds. The river shader projects and lightly
   distorts it only on actual water within 40 m of that mill. Its projector is

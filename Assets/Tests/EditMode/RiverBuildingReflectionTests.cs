@@ -165,7 +165,7 @@ public sealed class RiverBuildingReflectionTests
     }
 
     [Test]
-    public void MillReflectionCanBeOptedOutPerSavedBuilding()
+    public void RiverReflectionCanBeOptedOutPerLot()
     {
         var owner = new GameObject("Mill reflection option fixture");
         try
@@ -176,34 +176,31 @@ public sealed class RiverBuildingReflectionTests
                 4, 4);
             Assert.That(world.AddExperimentalBuilding3D("lumber-mill-v01",
                 0f, 0f, 0), Is.True);
-            Assert.That(world.CycleSelectedBuilding3D(1), Is.True);
-            Assert.That(world.SelectedBuilding3DSupportsRiverReflection,
-                Is.True);
-            Assert.That(world.SelectedBuilding3DRiverReflectionEnabled,
-                Is.True);
+            Assert.That(world.RiverReflectionEnabled, Is.True);
             var roots = new List<Transform>();
             world.CollectNativeBuildingRoots("lumber-mill-v01", roots,
                 reflectionEnabledOnly: true);
             Assert.That(roots, Has.Count.EqualTo(1));
-            Assert.That(world.SetSelectedBuilding3DRiverReflectionEnabled(
-                false), Is.True);
-            Assert.That(world.SelectedBuilding3DRiverReflectionEnabled,
-                Is.False);
+            world.SetRiverReflectionEnabled(false);
+            Assert.That(world.RiverReflectionEnabled, Is.False);
             roots.Clear();
             world.CollectNativeBuildingRoots("lumber-mill-v01", roots,
                 reflectionEnabledOnly: true);
             Assert.That(roots, Is.Empty);
-            var saved = JsonUtility.ToJson(new PlacedBuilding3D
+            var saved = JsonUtility.ToJson(new LotSaveData
             {
-                AssetId = "lumber-mill-v01",
                 RiverReflectionDisabled = true
             });
-            Assert.That(JsonUtility.FromJson<PlacedBuilding3D>(saved)
+            Assert.That(JsonUtility.FromJson<LotSaveData>(saved)
                 .RiverReflectionDisabled, Is.True);
-            Assert.That(JsonUtility.FromJson<PlacedBuilding3D>(
-                "{\"AssetId\":\"lumber-mill-v01\"}")
+            Assert.That(JsonUtility.FromJson<LotSaveData>("{}")
                 .RiverReflectionDisabled, Is.False,
-                "Older saved mills retain their reflection by default.");
+                "Older saved lots retain their reflection by default.");
+            world.SetRiverReflectionEnabled(true);
+            roots.Clear();
+            world.CollectNativeBuildingRoots("lumber-mill-v01", roots,
+                reflectionEnabledOnly: true);
+            Assert.That(roots, Has.Count.EqualTo(1));
         }
         finally { Object.DestroyImmediate(owner); }
     }

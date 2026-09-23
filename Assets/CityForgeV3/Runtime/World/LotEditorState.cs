@@ -298,6 +298,8 @@ namespace CityForgeV3.World
         public TrafficLotType TrafficType = TrafficLotType.None;
         public List<OutsideRoadConnector> OutsideRoadConnectors = new();
         public bool HasWaterOrientation;
+        // All lots may opt out; missing in older saves means enabled.
+        public bool RiverReflectionDisabled;
         public Vector3 WaterOrientationLand;
         public Vector3 WaterOrientationWater;
         public bool HasBuilding;
@@ -352,6 +354,7 @@ namespace CityForgeV3.World
                 TrafficType = TrafficType,
                 OutsideRoadConnectors = OutsideRoadConnectors,
                 HasWaterOrientation = HasWaterOrientation,
+                RiverReflectionDisabled = RiverReflectionDisabled,
                 WaterOrientationLand = WaterOrientationLand,
                 WaterOrientationWater = WaterOrientationWater,
                 HasBuilding = HasBuilding,
@@ -398,8 +401,6 @@ namespace CityForgeV3.World
         public float Z;
         // Relative to the lot datum; zero preserves all existing saves.
         public float ElevationOffsetMeters;
-        // Opt out of the close-zoom river reflection. False preserves existing lots.
-        public bool RiverReflectionDisabled;
         public int RotationQuarterTurns;
         public int RotationEighthTurns = -1;
         public List<PlacedBuildingProp> Attachments = new();

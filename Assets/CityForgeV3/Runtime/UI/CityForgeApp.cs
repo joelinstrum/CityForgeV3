@@ -3571,27 +3571,6 @@ namespace CityForgeV3.UI
                   : "Building base is already at the terrain height";
               Show(AppScreen.LotEditor);
             }, true, "quiet"));
-            if (_lotWorld.SelectedBuilding3DSupportsRiverReflection)
-            {
-              var reflectionToggle = CfButton.Create(
-                  _lotWorld.SelectedBuilding3DRiverReflectionEnabled
-                      ? "RIVER REFLECTION: ON" : "RIVER REFLECTION: OFF",
-                  () =>
-                  {
-                    var enabled = !_lotWorld
-                        .SelectedBuilding3DRiverReflectionEnabled;
-                    _lotWorld.SetSelectedBuilding3DRiverReflectionEnabled(
-                        enabled);
-                    _lotStatus = enabled
-                        ? "River reflection enabled; save the lot to keep it"
-                        : "River reflection disabled; save the lot to keep it";
-                    Show(AppScreen.LotEditor);
-                  }, true, "quiet");
-              reflectionToggle.tooltip =
-                  "Show this mill in nearby river water at close zoom. " +
-                  "Save the lot to keep this setting.";
-              inspector.Add(reflectionToggle);
-            }
             if (_lotWorld.ProfileViewEnabled)
             {
               inspector.Add(StyledLabel(
