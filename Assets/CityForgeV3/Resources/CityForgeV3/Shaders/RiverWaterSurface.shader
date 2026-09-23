@@ -103,6 +103,8 @@ Shader "CityForgeV3/RiverWaterSurface"
             sampler2D _CF_RiverBuildingReflectionTex;
             float4x4 _CF_RiverBuildingReflectionVP;
             float4 _CF_RiverBuildingReflectionCenter;
+            float4 _CF_RiverBuildingReflectionWaterDirection;
+            float4 _CF_RiverBuildingReflectionUvBasis;
             float _CF_RiverBuildingReflectionEnabled;
 
             Varyings vert(AppData input)
@@ -249,29 +251,39 @@ Shader "CityForgeV3/RiverWaterSurface"
                     float radius = _CF_RiverBuildingReflectionCenter.z;
                     if (distanceToBuilding < radius)
                     {
-                        // Compress the footprint toward the mill by 20% so
-                        // the image starts nearer the building's waterline.
-                        float3 reflectionSampleWorld = input.worldPosition;
-                        reflectionSampleWorld.xz =
-                            _CF_RiverBuildingReflectionCenter.xy +
-                            (input.worldPosition.xz -
-                                _CF_RiverBuildingReflectionCenter.xy) / 0.8;
-                        float4 reflectedPosition = mul(
-                            _CF_RiverBuildingReflectionVP,
-                            float4(reflectionSampleWorld, 1.0));
-                        float2 reflectionUv = reflectedPosition.xy /
-                            max(0.001, reflectedPosition.w) * 0.5 + 0.5;
-                        reflectionUv += flow * alongWarp * 0.003;
-                        if (reflectedPosition.w > 0.0 &&
+                        float2 waterDirection = normalize(
+                            _CF_RiverBuildingReflectionWaterDirection.xy);
+                        float2 across = float2(-waterDirection.y,
+                            waterDirection.x);
+                        float2 delta = input.worldPosition.xz -
+                            _CF_RiverBuildingReflectionCenter.xy;
+                        float depth = dot(delta, waterDirection);
+                        float lateral = dot(delta, across);
+                        // The capture computes this fixed world-space UV
+                        // basis once, rather than three matrix projections
+                        // for every water pixel.
+                        float2 reflectionUv =
+                            _CF_RiverBuildingReflectionUvBasis.xy +
+                            float2(lateral *
+                                _CF_RiverBuildingReflectionUvBasis.z,
+                                -depth *
+                                _CF_RiverBuildingReflectionUvBasis.w);
+                        reflectionUv += flow * alongWarp * 0.007;
+                        if (depth > 0.0 &&
                             all(reflectionUv >= 0.0) &&
                             all(reflectionUv <= 1.0))
                         {
                             fixed4 reflected = tex2D(
                                 _CF_RiverBuildingReflectionTex, reflectionUv);
                             float edgeMask = 1.0 - smoothstep(
-                                radius * 0.55, radius, distanceToBuilding);
-                            float amount = reflected.a * edgeMask *
-                                smoothstep(0.01, 0.18, depthCoordinate) * 0.72;
+                                radius * 0.4, radius, distanceToBuilding);
+                            float sideFade = 1.0 - smoothstep(10.0,
+                                23.0, abs(lateral));
+                            float depthFade = 1.0 - smoothstep(14.0,
+                                38.0, depth);
+                            float amount = reflected.a * edgeMask * sideFade *
+                                depthFade * smoothstep(0.0, 3.0, depth) *
+                                smoothstep(0.01, 0.18, depthCoordinate) * 0.55;
                             water.rgb = lerp(water.rgb,
                                 reflected.rgb * float3(0.90, 1.0, 1.08),
                                 amount);

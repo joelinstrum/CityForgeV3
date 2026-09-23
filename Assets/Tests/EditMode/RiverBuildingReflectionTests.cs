@@ -97,6 +97,14 @@ public sealed class RiverBuildingReflectionTests
             Assert.That(world.RiverBuildingReflectionActiveForQa, Is.True);
             Assert.That(Shader.GetGlobalFloat(
                 "_CF_RiverBuildingReflectionEnabled"), Is.EqualTo(1f));
+            var waterDirection = Shader.GetGlobalVector(
+                "_CF_RiverBuildingReflectionWaterDirection");
+            Assert.That(new Vector2(waterDirection.x, waterDirection.y)
+                .magnitude, Is.EqualTo(1f).Within(.01f));
+            var uvBasis = Shader.GetGlobalVector(
+                "_CF_RiverBuildingReflectionUvBasis");
+            Assert.That(uvBasis.w, Is.GreaterThan(0f),
+                "The capture must provide a nonzero reflection depth scale.");
             var pinnedProjection = Shader.GetGlobalMatrix(
                 "_CF_RiverBuildingReflectionVP");
             var capture = Shader.GetGlobalTexture(

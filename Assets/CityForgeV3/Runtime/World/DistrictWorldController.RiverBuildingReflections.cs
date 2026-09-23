@@ -14,7 +14,7 @@ namespace CityForgeV3.World
         public const float RiverBuildingReflectionMinimumInterval = .2f;
         private const int RiverBuildingReflectionLayer = 30;
         private const string RiverBuildingReflectionAssetId = "lumber-mill-v01";
-        private const float RiverBuildingReflectionRadiusMeters = 40f;
+        private const float RiverBuildingReflectionRadiusMeters = 45f;
         private static readonly int RiverReflectionEnabledId =
             Shader.PropertyToID("_CF_RiverBuildingReflectionEnabled");
         private static readonly int RiverReflectionTextureId =
@@ -23,6 +23,10 @@ namespace CityForgeV3.World
             Shader.PropertyToID("_CF_RiverBuildingReflectionVP");
         private static readonly int RiverReflectionCenterId =
             Shader.PropertyToID("_CF_RiverBuildingReflectionCenter");
+        private static readonly int RiverReflectionWaterDirectionId =
+            Shader.PropertyToID("_CF_RiverBuildingReflectionWaterDirection");
+        private static readonly int RiverReflectionUvBasisId =
+            Shader.PropertyToID("_CF_RiverBuildingReflectionUvBasis");
 
         private sealed class RiverReflectionCandidate
         {
@@ -41,6 +45,8 @@ namespace CityForgeV3.World
         private readonly List<(GameObject Node, int Layer)>
             _riverBuildingReflectionOriginalLayers = new();
         private RiverReflectionCandidate _activeRiverBuildingReflection;
+        private Vector2 _riverBuildingReflectionWaterDirection;
+        private Vector4 _riverBuildingReflectionUvBasis;
         private Camera _riverBuildingReflectionCamera;
         private RenderTexture _riverBuildingReflectionTexture;
         private float _riverBuildingReflectionLastRender = float.NegativeInfinity;
@@ -198,6 +204,7 @@ namespace CityForgeV3.World
                 _riverBuildingReflectionNearby);
             RiverReflectionCandidate best = null;
             var bestDistance = float.PositiveInfinity;
+            var bestWaterDirection = Vector2.zero;
             foreach (var candidate in _riverBuildingReflectionNearby)
             {
                 if (candidate.Root == null ||
@@ -210,18 +217,22 @@ namespace CityForgeV3.World
                     center.z - _pan.z)).sqrMagnitude;
                 if (distance >= bestDistance ||
                     !TryRiverWaterAtReflectionCandidate(candidate,
-                        out var water)) continue;
+                        out var water, out var waterDirection)) continue;
                 best = candidate;
                 bestDistance = distance;
                 waterElevation = water;
+                bestWaterDirection = waterDirection;
             }
+            _riverBuildingReflectionWaterDirection = bestWaterDirection;
             return best;
         }
 
         private bool TryRiverWaterAtReflectionCandidate(
-            RiverReflectionCandidate candidate, out float elevation)
+            RiverReflectionCandidate candidate, out float elevation,
+            out Vector2 waterDirection)
         {
             elevation = 0f;
+            waterDirection = Vector2.zero;
             var center = candidate.Root.position;
             var bounds = default(Bounds);
             var hasBounds = false;
@@ -253,6 +264,36 @@ namespace CityForgeV3.World
                 if (screen.z <= 0f || screen.x < -.1f || screen.x > 1.1f ||
                     screen.y < -.1f || screen.y > 1.1f) continue;
                 elevation = sample.Value.WaterElevation;
+                var tangent = sample.Value.DownstreamDirection;
+                var normal = new Vector2(-tangent.z, tangent.x).normalized;
+                var plus = SampleRiverSurface(center + new Vector3(
+                    normal.x * 8f, 0f, normal.y * 8f));
+                var minus = SampleRiverSurface(center - new Vector3(
+                    normal.x * 8f, 0f, normal.y * 8f));
+                var plusDistance = plus?.DistanceFromCenter ??
+                    float.PositiveInfinity;
+                var minusDistance = minus?.DistanceFromCenter ??
+                    float.PositiveInfinity;
+                waterDirection = plusDistance < minusDistance
+                    ? normal : -normal;
+                if (float.IsInfinity(plusDistance) &&
+                    float.IsInfinity(minusDistance))
+                {
+                    waterDirection = new Vector2(point.x - center.x,
+                        point.z - center.z).normalized;
+                }
+                // Where the water faces the viewer, aim the elongated image
+                // mostly down-screen while keeping it on the wet side of the
+                // mill. A straight bank normal reads as sideways at our
+                // isometric camera angle.
+                var towardViewer = new Vector2(
+                    _camera.transform.position.x - _pan.x,
+                    _camera.transform.position.z - _pan.z).normalized;
+                if (Vector2.Dot(waterDirection, towardViewer) > .15f)
+                    waterDirection = (waterDirection * .3f +
+                        towardViewer * .7f).normalized;
+                if (waterDirection.sqrMagnitude < .01f)
+                    waterDirection = towardViewer;
                 return true;
             }
             return false;
@@ -321,8 +362,30 @@ namespace CityForgeV3.World
             }
             var projection = GL.GetGPUProjectionMatrix(
                 mirror.projectionMatrix, true);
-            Shader.SetGlobalMatrix(RiverReflectionMatrixId,
-                projection * mirror.worldToCameraMatrix);
+            var viewProjection = projection * mirror.worldToCameraMatrix;
+            Shader.SetGlobalMatrix(RiverReflectionMatrixId, viewProjection);
+            var center = _activeRiverBuildingReflection.Root.position;
+            var direction = _riverBuildingReflectionWaterDirection;
+            var across = new Vector2(-direction.y, direction.x);
+            var anchor = new Vector3(center.x, waterElevation, center.z);
+            var anchorUv = ProjectRiverReflectionUv(viewProjection, anchor);
+            var acrossUv = ProjectRiverReflectionUv(viewProjection,
+                anchor + new Vector3(across.x, 0f, across.y));
+            var depthUv = ProjectRiverReflectionUv(viewProjection,
+                anchor + new Vector3(direction.x, 0f, direction.y));
+            _riverBuildingReflectionUvBasis = new Vector4(anchorUv.x,
+                anchorUv.y, (acrossUv.x - anchorUv.x) * .8f,
+                Mathf.Max(Mathf.Abs(depthUv.x - anchorUv.x) * .7f,
+                    Mathf.Abs(depthUv.y - anchorUv.y)));
+        }
+
+        private static Vector2 ProjectRiverReflectionUv(Matrix4x4 matrix,
+            Vector3 world)
+        {
+            var projected = matrix * new Vector4(world.x, world.y, world.z,
+                1f);
+            return new Vector2(projected.x / projected.w * .5f + .5f,
+                projected.y / projected.w * .5f + .5f);
         }
 
         private void PublishRiverBuildingReflection()
@@ -339,6 +402,11 @@ namespace CityForgeV3.World
             Shader.SetGlobalVector(RiverReflectionCenterId,
                 new Vector4(center.x, center.z,
                     RiverBuildingReflectionRadiusMeters, 0f));
+            Shader.SetGlobalVector(RiverReflectionWaterDirectionId,
+                new Vector4(_riverBuildingReflectionWaterDirection.x,
+                    _riverBuildingReflectionWaterDirection.y, 0f, 0f));
+            Shader.SetGlobalVector(RiverReflectionUvBasisId,
+                _riverBuildingReflectionUvBasis);
             Shader.SetGlobalFloat(RiverReflectionEnabledId, 1f);
         }
 
