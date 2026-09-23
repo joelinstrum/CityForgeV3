@@ -167,7 +167,7 @@ namespace CityForgeV3.Tests.EditMode
                 "Night must not lift ordinary native-surface albedo.");
             Assert.That(Shader.GetGlobalFloat(
                     "_CFNativeBuildingNightDimming"),
-                Is.EqualTo(.55f).Within(.001f),
+                Is.EqualTo(.73f).Within(.001f),
                 "Night should darken building shells without changing emission.");
             Assert.That(Shader.GetGlobalFloat("_CFGardenSurfaceExposure"),
                 Is.EqualTo(1f).Within(.001f),
@@ -255,7 +255,7 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
                 TimeOfDayPreset.Evening), Is.EqualTo(.8f));
             Assert.That(DistrictWorldController.NativeBuildingNightResponseFor(
-                TimeOfDayPreset.Night), Is.EqualTo(.45f));
+                TimeOfDayPreset.Night), Is.EqualTo(.27f));
             foreach (var preset in new[]
                      {
                          TimeOfDayPreset.Morning,

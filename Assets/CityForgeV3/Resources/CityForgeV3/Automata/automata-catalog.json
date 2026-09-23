@@ -39,6 +39,25 @@
       "defaultSeasonMask": 15
     },
     {
+      "id": "founders-farmer-hoeing-v01",
+      "displayName": "Farmer Hoeing",
+      "description": "One farmer hoes two patches and walks between them inside a 3 × 3 m field area",
+      "resourceRoot": "CityForgeV3/Automata/FarmerHoeV01/Group/founders-farmer-hoeing-v01",
+      "thumbnailResource": "CityForgeV3/Automata/FarmerHoeV01/Group/thumbnail",
+      "footprintMeters": 3,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameColumns": 8,
+      "frameCount": 32,
+      "facingCount": 8,
+      "framesPerSecond": 4,
+      "pixelsPerMeter": 64,
+      "pivotY": 0.22,
+      "visibleBelowPivotMeters": 0.1,
+      "defaultTimeMask": 7,
+      "defaultSeasonMask": 7
+    },
+    {
       "id": "victorian-gentlemen-chatting-v01",
       "displayName": "Victorian Gentlemen Chatting",
       "description": "Two gentlemen in charcoal and brown coats facing one another in a relaxed conversation",

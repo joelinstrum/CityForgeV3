@@ -68,7 +68,7 @@ namespace CityForgeV3.World
             // Night ambient keeps the terrain visible, but pale siding and
             // roofs otherwise read as self-lit. Authored emission stays put.
             TimeOfDayPreset.Evening => .8f,
-            TimeOfDayPreset.Night => .45f,
+            TimeOfDayPreset.Night => .27f,
             _ => 1f
         };
 

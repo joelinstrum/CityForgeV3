@@ -8,9 +8,19 @@ namespace CityForgeV3.Behaviors
         private Transform _bundle;
         private Transform[] _upper, _fore, _hand;
         private bool _carrying;
-        public void Initialize(Transform bundle)
+        public void Initialize(Transform bundle, int workerIndex)
         {
             _animator = GetComponentInChildren<Animator>();
+            if (_animator != null)
+            {
+                // Independent idle beats keep the paired dock crew from
+                // appearing to perform the same step in lockstep. Simulation
+                // timing and walking routes remain authoritative elsewhere.
+                _animator.speed = workerIndex % 2 == 0 ? .94f : 1.06f;
+                _animator.Play("Idle", 0,
+                    Mathf.Repeat(workerIndex * .43f, 1f));
+                _animator.Update(0f);
+            }
             _bundle = bundle;
             var bones = GetComponentsInChildren<Transform>();
             _upper = new[] { bones.FirstOrDefault(x => x.name == "L_Upperarm"), bones.FirstOrDefault(x => x.name == "R_Upperarm") };
