@@ -97,6 +97,8 @@ public sealed class RiverBuildingReflectionTests
             Assert.That(world.RiverBuildingReflectionActiveForQa, Is.True);
             Assert.That(Shader.GetGlobalFloat(
                 "_CF_RiverBuildingReflectionEnabled"), Is.EqualTo(1f));
+            var pinnedProjection = Shader.GetGlobalMatrix(
+                "_CF_RiverBuildingReflectionVP");
             var capture = Shader.GetGlobalTexture(
                 "_CF_RiverBuildingReflectionTex") as RenderTexture;
             Assert.That(capture, Is.Not.Null);
@@ -125,9 +127,16 @@ public sealed class RiverBuildingReflectionTests
                 Is.EqualTo(1));
             Assert.That(world.RiverBuildingReflectionActiveForQa, Is.False);
             world.RiverBuildingReflectionsEnabled = true;
+            world.SetPan(new Vector2(12f, 27f));
             camera.Render();
             Assert.That(world.RiverBuildingReflectionRenderCountForQa,
                 Is.EqualTo(2));
+            var afterPanProjection = Shader.GetGlobalMatrix(
+                "_CF_RiverBuildingReflectionVP");
+            for (var index = 0; index < 16; index++)
+                Assert.That(afterPanProjection[index],
+                    Is.EqualTo(pinnedProjection[index]).Within(.0001f),
+                    "Panning must not slide the mill reflection on the river.");
             world.SetZoom(DistrictZoomLevel.LOD3);
             Assert.That(world.RiverBuildingReflectionActiveForQa, Is.False);
             Assert.That(Shader.GetGlobalFloat(
@@ -153,5 +162,49 @@ public sealed class RiverBuildingReflectionTests
             File.Delete(path);
             LotContentCatalog.InvalidateCache();
         }
+    }
+
+    [Test]
+    public void MillReflectionCanBeOptedOutPerSavedBuilding()
+    {
+        var owner = new GameObject("Mill reflection option fixture");
+        try
+        {
+            var world = owner.AddComponent<LotWorldController>();
+            world.Build();
+            world.ConfigureLot("Mill reflection option", LotType.Industrial,
+                4, 4);
+            Assert.That(world.AddExperimentalBuilding3D("lumber-mill-v01",
+                0f, 0f, 0), Is.True);
+            Assert.That(world.CycleSelectedBuilding3D(1), Is.True);
+            Assert.That(world.SelectedBuilding3DSupportsRiverReflection,
+                Is.True);
+            Assert.That(world.SelectedBuilding3DRiverReflectionEnabled,
+                Is.True);
+            var roots = new List<Transform>();
+            world.CollectNativeBuildingRoots("lumber-mill-v01", roots,
+                reflectionEnabledOnly: true);
+            Assert.That(roots, Has.Count.EqualTo(1));
+            Assert.That(world.SetSelectedBuilding3DRiverReflectionEnabled(
+                false), Is.True);
+            Assert.That(world.SelectedBuilding3DRiverReflectionEnabled,
+                Is.False);
+            roots.Clear();
+            world.CollectNativeBuildingRoots("lumber-mill-v01", roots,
+                reflectionEnabledOnly: true);
+            Assert.That(roots, Is.Empty);
+            var saved = JsonUtility.ToJson(new PlacedBuilding3D
+            {
+                AssetId = "lumber-mill-v01",
+                RiverReflectionDisabled = true
+            });
+            Assert.That(JsonUtility.FromJson<PlacedBuilding3D>(saved)
+                .RiverReflectionDisabled, Is.True);
+            Assert.That(JsonUtility.FromJson<PlacedBuilding3D>(
+                "{\"AssetId\":\"lumber-mill-v01\"}")
+                .RiverReflectionDisabled, Is.False,
+                "Older saved mills retain their reflection by default.");
+        }
+        finally { Object.DestroyImmediate(owner); }
     }
 }

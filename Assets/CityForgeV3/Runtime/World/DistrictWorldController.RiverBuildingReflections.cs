@@ -72,7 +72,7 @@ namespace CityForgeV3.World
             if (lot == null) return;
             _riverBuildingReflectionRoots.Clear();
             lot.CollectNativeBuildingRoots(RiverBuildingReflectionAssetId,
-                _riverBuildingReflectionRoots);
+                _riverBuildingReflectionRoots, reflectionEnabledOnly: true);
             if (_riverBuildingReflectionRoots.Count == 0) return;
             var candidates = new List<RiverReflectionCandidate>(
                 _riverBuildingReflectionRoots.Count);
@@ -294,7 +294,13 @@ namespace CityForgeV3.World
             mirror.useOcclusionCulling = false;
             mirror.depthTextureMode = DepthTextureMode.None;
             mirror.aspect = _camera.aspect;
-            var position = _camera.transform.position;
+            // Capture in a fixed mill-local world frame. The player camera's
+            // pan must not change the reflected UVs on stationary water.
+            var rootPosition = _activeRiverBuildingReflection.Root.position;
+            var panTarget = _pan + Vector3.up * TerrainElevation(
+                _pan.x, _pan.z);
+            var position = rootPosition +
+                (_camera.transform.position - panTarget);
             position.y = 2f * waterElevation - position.y;
             var forward = _camera.transform.forward;
             forward.y = -forward.y;

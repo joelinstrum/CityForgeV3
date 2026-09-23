@@ -249,9 +249,16 @@ Shader "CityForgeV3/RiverWaterSurface"
                     float radius = _CF_RiverBuildingReflectionCenter.z;
                     if (distanceToBuilding < radius)
                     {
+                        // Compress the footprint toward the mill by 20% so
+                        // the image starts nearer the building's waterline.
+                        float3 reflectionSampleWorld = input.worldPosition;
+                        reflectionSampleWorld.xz =
+                            _CF_RiverBuildingReflectionCenter.xy +
+                            (input.worldPosition.xz -
+                                _CF_RiverBuildingReflectionCenter.xy) / 0.8;
                         float4 reflectedPosition = mul(
                             _CF_RiverBuildingReflectionVP,
-                            float4(input.worldPosition, 1.0));
+                            float4(reflectionSampleWorld, 1.0));
                         float2 reflectionUv = reflectedPosition.xy /
                             max(0.001, reflectedPosition.w) * 0.5 + 0.5;
                         reflectionUv += flow * alongWarp * 0.003;

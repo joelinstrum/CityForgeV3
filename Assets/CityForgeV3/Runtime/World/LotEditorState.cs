@@ -398,6 +398,8 @@ namespace CityForgeV3.World
         public float Z;
         // Relative to the lot datum; zero preserves all existing saves.
         public float ElevationOffsetMeters;
+        // Opt out of the close-zoom river reflection. False preserves existing lots.
+        public bool RiverReflectionDisabled;
         public int RotationQuarterTurns;
         public int RotationEighthTurns = -1;
         public List<PlacedBuildingProp> Attachments = new();

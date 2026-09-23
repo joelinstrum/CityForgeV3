@@ -153,6 +153,25 @@ namespace CityForgeV3.World
                 ? _session.Data.Buildings3D[_selectedBuilding3DIndex]
                     .ElevationOffsetMeters
                 : 0f;
+        public bool SelectedBuilding3DSupportsRiverReflection =>
+            _selectedBuilding3DIndex >= 0 &&
+            _selectedBuilding3DIndex < (_session?.Data?.Buildings3D?.Count ?? 0) &&
+            _session.Data.Buildings3D[_selectedBuilding3DIndex].AssetId ==
+                "lumber-mill-v01";
+        public bool SelectedBuilding3DRiverReflectionEnabled =>
+            SelectedBuilding3DSupportsRiverReflection &&
+            !_session.Data.Buildings3D[_selectedBuilding3DIndex]
+                .RiverReflectionDisabled;
+
+        public bool SetSelectedBuilding3DRiverReflectionEnabled(bool enabled)
+        {
+            if (!SelectedBuilding3DSupportsRiverReflection) return false;
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            if (placed.RiverReflectionDisabled == !enabled) return true;
+            placed.RiverReflectionDisabled = !enabled;
+            StateChanged?.Invoke();
+            return true;
+        }
 
         public bool AdjustSelectedBuilding3DElevation(float deltaMeters)
         {
@@ -303,13 +322,15 @@ namespace CityForgeV3.World
         // Used only when a hosted lot is added or rebuilt. District reflection
         // candidates are indexed from this result, never discovered per frame.
         public void CollectNativeBuildingRoots(string assetId,
-            List<Transform> results)
+            List<Transform> results, bool reflectionEnabledOnly = false)
         {
             if (results == null || _session?.Data?.Buildings3D == null) return;
             var count = Mathf.Min(_session.Data.Buildings3D.Count,
                 _experimentalBuilding3DVisibleRoots.Count);
             for (var index = 0; index < count; index++)
                 if (_session.Data.Buildings3D[index].AssetId == assetId &&
+                    (!reflectionEnabledOnly || !_session.Data.Buildings3D[index]
+                        .RiverReflectionDisabled) &&
                     _experimentalBuilding3DVisibleRoots[index] != null)
                     results.Add(_experimentalBuilding3DVisibleRoots[index].transform);
         }
