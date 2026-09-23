@@ -416,6 +416,7 @@ namespace CityForgeV3.World
             }
             _riverRoot = new GameObject("District Rivers").transform;
             _riverRoot.SetParent(_content, false);
+            InvalidateRiverBuildingReflection();
             _riverSurfaces.Clear();
             _riverSurfaceIndex.Clear();
             _riverGrassEdgeRenderers.Clear();
@@ -2178,6 +2179,7 @@ namespace CityForgeV3.World
             lot.transform.localRotation = rotation;
             lot.ApplyDistrictBoatDockOverride(placement);
             if (rotated) lot.RefreshHostedPresentationFacing();
+            UpdateRiverBuildingReflectionCandidates(lot);
             InvalidateTimberNavigation();
             return true;
         }
@@ -2423,6 +2425,7 @@ namespace CityForgeV3.World
         public void SetZoom(DistrictZoomLevel level)
         {
             if (_camera == null) return;
+            SetRiverBuildingReflectionZoom(level);
             _zoomLevel = level;
             _clouds?.SetZoom(level);
             _rainStorm?.SetZoom(level);
@@ -2493,10 +2496,25 @@ namespace CityForgeV3.World
             }
         }
 
-        private void OnDisable() => RestoreAfternoonSceneLights();
-        private void OnDestroy() { ClearDistrictBridges();RestoreAfternoonSceneLights(); }
+        private void OnDisable()
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            RestoreAfternoonSceneLights();
+            DisableRiverBuildingReflection();
+        }
+        private void OnDestroy()
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            ClearDistrictBridges();
+            RestoreAfternoonSceneLights();
+            DisposeRiverBuildingReflection();
+        }
         private void OnEnable()
-        { if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay); }
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            Camera.onPreRender += OnRiverBuildingReflectionCameraPreRender;
+            if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay);
+        }
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
@@ -2599,6 +2617,7 @@ namespace CityForgeV3.World
                 rotationQuarterTurns * 90f + HostedLotFacingOffsetDegrees,
                 0f);
             lot.RefreshHostedPresentationFacing();
+            RegisterRiverBuildingReflectionCandidates(lot);
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
@@ -2624,6 +2643,8 @@ namespace CityForgeV3.World
             // River transparency samples opaque scene depth so bridge piers
             // and banks remain visible just beneath the water surface.
             _camera.depthTextureMode |= DepthTextureMode.Depth;
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            Camera.onPreRender += OnRiverBuildingReflectionCameraPreRender;
         }
 
         private void BuildSun()
@@ -2789,6 +2810,7 @@ namespace CityForgeV3.World
             _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();
+            DisposeRiverBuildingReflection();
             _roadsByCell.Clear();
             _roadPlacementsByCell.Clear();
             _roadVisualState.Clear();

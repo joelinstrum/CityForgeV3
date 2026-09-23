@@ -299,6 +299,20 @@ namespace CityForgeV3.World
 
         public int ExperimentalBuilding3DCount =>
             _session?.Data?.Buildings3D?.Count ?? 0;
+
+        // Used only when a hosted lot is added or rebuilt. District reflection
+        // candidates are indexed from this result, never discovered per frame.
+        public void CollectNativeBuildingRoots(string assetId,
+            List<Transform> results)
+        {
+            if (results == null || _session?.Data?.Buildings3D == null) return;
+            var count = Mathf.Min(_session.Data.Buildings3D.Count,
+                _experimentalBuilding3DVisibleRoots.Count);
+            for (var index = 0; index < count; index++)
+                if (_session.Data.Buildings3D[index].AssetId == assetId &&
+                    _experimentalBuilding3DVisibleRoots[index] != null)
+                    results.Add(_experimentalBuilding3DVisibleRoots[index].transform);
+        }
         public int ExperimentalBuilding3DFloraShadowCasterCount
         {
             get

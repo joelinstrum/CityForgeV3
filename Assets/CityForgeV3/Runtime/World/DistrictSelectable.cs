@@ -140,7 +140,11 @@ namespace CityForgeV3.World
             if (target == null) return;
             if (target.Identity.Kind == DistrictSelectionKind.Lot &&
                 _lotsByInstance.TryGetValue(target.Identity.Id, out var lot))
-            { _lots.Remove(lot); _lotsByInstance.Remove(target.Identity.Id); }
+            {
+                UnregisterRiverBuildingReflectionCandidates(lot);
+                _lots.Remove(lot);
+                _lotsByInstance.Remove(target.Identity.Id);
+            }
             if (target.RefreshAfterDeletion != null) target.RefreshAfterDeletion();
             else { target.gameObject.SetActive(false); Destroy(target.gameObject); }
         }
