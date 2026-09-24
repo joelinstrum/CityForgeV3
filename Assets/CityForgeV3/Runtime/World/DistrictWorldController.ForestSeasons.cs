@@ -90,18 +90,20 @@ namespace CityForgeV3.World
         {
             if (ForestTrueAngleCluster.Supports(id))
                 return ForestTrueAngleCluster.RootSprite(id, season);
-            if (id == "american-elm")
+            if (id is "american-elm" or "american-sycamore")
             {
-                string elmPath = FloraTreeRepairs.BillboardPath(id, season);
-                string elmKey = elmPath + "|" + id;
-                if (_districtFloraSprites.TryGetValue(elmKey, out var elmSprite) && elmSprite != null)
-                    return elmSprite;
-                var elmTexture = Resources.Load<Texture2D>(elmPath);
-                if (elmTexture == null) throw new MissingReferenceException(elmPath);
-                return _districtFloraSprites[elmKey] = Sprite.Create(elmTexture,
-                    new Rect(0, 0, elmTexture.width, elmTexture.height),
-                    LotWorldController.FloraPivot(elmTexture.name),
-                    FloraTreeRepairs.PixelsPerUnit(id), 0, SpriteMeshType.FullRect);
+                string presentationId = id == "american-sycamore" ? "london-plane-a" : id;
+                string seasonalPath = FloraTreeRepairs.BillboardPath(presentationId, season);
+                string key = seasonalPath + "|" + id;
+                if (_districtFloraSprites.TryGetValue(key, out var cached) && cached != null)
+                    return cached;
+                var seasonalTexture = Resources.Load<Texture2D>(seasonalPath);
+                if (seasonalTexture == null) throw new MissingReferenceException(seasonalPath);
+                return _districtFloraSprites[key] = Sprite.Create(seasonalTexture,
+                    new Rect(0, 0, seasonalTexture.width, seasonalTexture.height),
+                    LotWorldController.FloraPivot(seasonalTexture.name),
+                    FloraTreeRepairs.PixelsPerUnit(presentationId), 0,
+                    SpriteMeshType.FullRect);
             }
             string path = ForestClusterCatalog.FarCanopyResourcePath(id,
                 season) ?? ForestClusterCatalog.ResourcePath(id, season);

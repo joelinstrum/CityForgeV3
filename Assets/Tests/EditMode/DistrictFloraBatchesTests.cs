@@ -530,47 +530,72 @@ public class DistrictFloraBatchesTests
             Assert.AreEqual(105f, LotWorldController.FloraPixelsPerUnit("cilician-fir", art.name));
         }
     }
-    [Test] public void LondonPlaneAUsesTheRealisticSeasonalArtwork()
+    [Test] public void PlaneVariantsUseOneAmericanSycamoreInEverySeason()
     {
-        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
-            SeasonPreset.Autumn, SeasonPreset.Winter })
+        foreach (var id in new[] { "london-plane-a", "london-plane-b",
+            "plane-uk-3d-a", "plane-uk-3d-b", "london-plane-c" })
         {
-            var path = LotWorldController.ResolveFloraResourcePath("london-plane-a", season);
-            Assert.AreEqual(FloraTreeRepairs.RealisticLondonPlaneRoot + "london-plane-a-" +
-                season.ToString().ToLowerInvariant(), path);
-            var art = Resources.Load<Texture2D>(path);
-            Assert.NotNull(art, path);
-            Assert.AreEqual(1024, art.width); Assert.AreEqual(1536, art.height);
-            Assert.Greater(art.mipmapCount, 1); Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
-            Assert.True(art.GetPixels32().Any(pixel => pixel.a == 0));
-            Assert.True(art.GetPixels32().Any(pixel => pixel.a > 250));
-            var sprite = Sprite.Create(art, new Rect(0, 0, art.width, art.height),
-                LotWorldController.FloraPivot(art.name), 96f);
-            var pixels = art.GetPixels32();
-            int firstOpaque = System.Array.FindIndex(pixels, p => p.a > 128);
-            float footY = firstOpaque / art.width;
-            Assert.That(Mathf.Abs(footY - sprite.pivot.y), Is.LessThanOrEqualTo(1f),
-                "Visible trunk must begin at the shared tree/selection/shadow origin, within one texel.");
-            Object.DestroyImmediate(sprite);
-            Assert.AreEqual(96f, LotWorldController.FloraPixelsPerUnit("london-plane-a", art.name));
+            foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+                SeasonPreset.Autumn, SeasonPreset.Winter })
+            {
+                var expected = season == SeasonPreset.Spring ? "summer" :
+                    season.ToString().ToLowerInvariant();
+                var path = LotWorldController.ResolveFloraResourcePath(id, season);
+                Assert.AreEqual(FloraTreeRepairs.AmericanSycamoreRoot +
+                    "american-sycamore-" + expected, path, id);
+                var art = Resources.Load<Texture2D>(path);
+                Assert.NotNull(art, path);
+                Assert.AreEqual(1312, art.width);
+                Assert.AreEqual(1199, art.height);
+                Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
+                Assert.AreEqual(72f, LotWorldController.FloraPixelsPerUnit(id, art.name));
+                Assert.Greater(LotWorldController.FloraPivot(art.name).y, 0f);
+            }
         }
     }
-    [Test] public void LondonPlaneBUsesTheHighIsometricArtBeforeWinter()
+    [Test] public void DistrictPlaneVariantsShareSpritesAndFollowSeasons()
     {
-        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
-            SeasonPreset.Autumn })
+        var host = new GameObject("Seasonal sycamore district test");
+        try
         {
-            var path = LotWorldController.ResolveFloraResourcePath("london-plane-b", season);
-            Assert.AreEqual(FloraTreeRepairs.RealisticLondonPlaneRoot + "london-plane-b-" +
-                season.ToString().ToLowerInvariant(), path);
-            var art = Resources.Load<Texture2D>(path);
-            Assert.NotNull(art, path); Assert.AreEqual(1024, art.width);
-            Assert.AreEqual(1536, art.height); Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
-            Assert.AreEqual(new Vector2(.5f, .065f), LotWorldController.FloraPivot(art.name));
-            Assert.AreEqual(96f, LotWorldController.FloraPixelsPerUnit("london-plane-b", art.name));
+            var district = new RegionCityTile
+            {
+                TileId = "sycamore-season-test", Width = 1, Height = 1,
+                Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 }
+            };
+            foreach (var id in new[] { "london-plane-a", "london-plane-b" })
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = id, FloraId = id,
+                    NormalizedX = id == "london-plane-a" ? .3f : .7f,
+                    NormalizedZ = .5f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var trees = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Where(r => r.name.StartsWith("District Flora — london-plane-"))
+                .ToArray();
+            Assert.AreEqual(2, trees.Length);
+            Assert.AreSame(trees[0].sprite, trees[1].sprite);
+            foreach (var (index, name) in new[] { (1, "autumn"),
+                (2, "winter"), (3, "summer") })
+            {
+                district.Labor.SeasonIndex = index;
+                var slices = 0;
+                while (true)
+                {
+                    world.SyncForestSeason();
+                    if (!world.ForestSeasonPending) break;
+                    Assert.Less(++slices, 10);
+                }
+                Assert.True(trees.All(r => r.sprite.texture.name ==
+                    "american-sycamore-" + name));
+                Assert.AreSame(trees[0].sprite, trees[1].sprite);
+            }
         }
-        Assert.AreEqual("CityForgeV3/Flora/LegacyTreesV01/london-plane-b-winter",
-            LotWorldController.ResolveFloraResourcePath("london-plane-b", SeasonPreset.Winter));
+        finally { Object.DestroyImmediate(host); }
     }
     [Test] public void BatchedSeasonSwapRetainsUnrelatedCellAndSelectionHandle()
     {

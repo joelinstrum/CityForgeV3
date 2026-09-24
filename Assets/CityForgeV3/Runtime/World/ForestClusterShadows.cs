@@ -38,6 +38,7 @@ namespace CityForgeV3.World
             var atlas = source.GetComponent<ForestTrueAngleCluster>();
             string name = source.sprite.texture.name;
             bool broadTree = name.StartsWith("american-elm-") ||
+                name.StartsWith("american-sycamore-") ||
                 name == "angel-oak-spanish-moss";
             if (atlas == null && !ForestClusterCatalog.IsTexture(name) &&
                 !broadTree) return false;

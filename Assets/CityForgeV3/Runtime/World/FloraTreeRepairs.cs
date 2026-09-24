@@ -6,6 +6,7 @@ namespace CityForgeV3.World
   public const string Root="CityForgeV3/Flora/TreeRepairsV01/";
   public const string RealisticCilicianRoot="CityForgeV3/Flora/CilicianFirRealisticV01/";
   public const string RealisticLondonPlaneRoot="CityForgeV3/Flora/LondonPlaneRealisticV01/";
+  public const string AmericanSycamoreRoot="CityForgeV3/Flora/AmericanSycamoreV01/";
   public const string RealisticRedMapleRoot="CityForgeV3/Flora/RedMapleRealisticV01/";
   public const string RealisticSilverMapleRoot="CityForgeV3/Flora/SilverMapleRealisticV01/";
   public const string RealisticWillowRoot="CityForgeV3/Flora/WillowRealisticV01/";
@@ -17,6 +18,7 @@ namespace CityForgeV3.World
   public const string MediumConifersRoot="CityForgeV3/Flora/MediumConifersV01/";
   public const string PhotographicPalmsRoot="CityForgeV3/Flora/PhotographicPalmsV01/";
   public static string Identity(string name){foreach(var s in new[]{"-spring","-summer","-autumn","-winter"})if(name!=null&&name.EndsWith(s))return name.Substring(0,name.Length-s.Length);return name??"";}
+  public static bool UsesAmericanSycamore(string id)=>id is "london-plane-a" or "london-plane-b";
   public static string BillboardPath(string id,SeasonPreset season)=>
    id is "la-fan-palm-a-medium" or "la-fan-palm-b-medium"
     ? PhotographicPalmsRoot+id.Substring(0,id.Length-"-medium".Length)
@@ -32,8 +34,8 @@ namespace CityForgeV3.World
     :id is "mature-oak" or "shagbark-hickory"
     ? PhotographicDeciduousRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="cilician-fir"?RealisticCilicianRoot+id+"-"+season.ToString().ToLowerInvariant()
-    :id=="london-plane-a"||(id=="london-plane-b"&&season!=SeasonPreset.Winter)
-     ?RealisticLondonPlaneRoot+id+"-"+season.ToString().ToLowerInvariant()
+    :UsesAmericanSycamore(id) ? AmericanSycamoreRoot+"american-sycamore-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
     :id=="fraser-fir-snowy"||id=="vendor-balsam-fir-classic"||id=="street-tree-3d"
      ?Root+id+"-"+season.ToString().ToLowerInvariant():null;
   public static float PixelsPerUnit(string id)=>id switch
@@ -65,8 +67,8 @@ namespace CityForgeV3.World
    // The new 1024×1536 realistic fir retains the prior approximately 14.5m
    // physical height, despite its taller canvas.
    "cilician-fir"=>105.0000000f,
-   "london-plane-a"=>96.0000000f,
-   "london-plane-b"=>96.0000000f,
+   "london-plane-a"=>72f,
+   "london-plane-b"=>72f,
    "vendor-red-maple"=>96f,
    "silver-maple-a"=>84f,
    "fraser-fir-snowy"=>112.7246094f,
@@ -79,7 +81,9 @@ namespace CityForgeV3.World
    switch(id){
     case "vendor-balsam-fir-classic":pivot=new Vector2(0.50247687f,0.12109086f);return true;
     case "cilician-fir":pivot=new Vector2(.5f,0f);return true;
-    // Measured visible trunk foot, not canvas bottom or Plane B's padding.
+    // Measured visible trunk foot, not the lowest canopy leaf.
+    case "american-sycamore":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?75f:texture.EndsWith("autumn")?81f:58f)/1199f);return true;
     case "london-plane-a":pivot=new Vector2(.5f,
      (texture.EndsWith("winter") ? 18f : texture.EndsWith("autumn") ? 20f : 19f) / 1536f);return true;
     case "london-plane-b":pivot=new Vector2(.5f,.065f);return true;

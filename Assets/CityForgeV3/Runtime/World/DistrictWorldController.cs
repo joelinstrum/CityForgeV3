@@ -817,10 +817,13 @@ namespace CityForgeV3.World
                     : trueAngle ? ForestTrueAngleCluster.ResourcePath(
                         presentationId, _forestSeason)
                     : LotWorldController.ResolveFloraResourcePath(
-                        presentationId, presentationId == "american-elm"
+                        presentationId, presentationId == "american-elm" ||
+                            FloraTreeRepairs.UsesAmericanSycamore(presentationId)
                             ? _forestSeason : SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
-            var spriteKey = resource + "|" + presentationId;
+            var spriteKey = resource + "|" +
+                (FloraTreeRepairs.UsesAmericanSycamore(presentationId)
+                    ? "american-sycamore" : presentationId);
             Sprite sprite;
             if (trueAngle)
                 sprite = ForestTrueAngleCluster.RootSprite(presentationId,
@@ -836,6 +839,7 @@ namespace CityForgeV3.World
                     LotWorldController.FloraPixelsPerUnit(
                         presentationId, texture.name), 0,
                     (presentationId == "american-elm" ||
+                     FloraTreeRepairs.UsesAmericanSycamore(presentationId) ||
                      presentationId == "angel-oak-spanish-moss" ||
                      ForestClusterCatalog.UsesQuadCanopyMesh(resource))
                         ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
@@ -880,7 +884,8 @@ namespace CityForgeV3.World
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
-                presentationId == "american-elm")
+                presentationId == "american-elm" ||
+                FloraTreeRepairs.UsesAmericanSycamore(presentationId))
             {
                 RegisterForestCluster(placed.InstanceId, renderer);
                 ApplyForestSeasonCutoff(renderer);
