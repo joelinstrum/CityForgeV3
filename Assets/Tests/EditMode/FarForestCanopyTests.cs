@@ -182,6 +182,49 @@ namespace CityForgeV3.Tests.EditMode
             finally { Object.DestroyImmediate(owner); }
         }
 
+        [TestCase("forest-deciduous-large", 0)]
+        [TestCase("forest-mountain-large", 0)]
+        [TestCase("forest-mountain-large", 2)]
+        public void NoonAtlasShadowsStayTuckedUnderTheirTrees(
+            string id, int seasonIndex)
+        {
+            var owner = new GameObject("Tight noon forest shadow test");
+            var mesh = new Mesh();
+            try
+            {
+                var tree = new GameObject("Cluster");
+                tree.transform.SetParent(owner.transform, false);
+                var cluster = tree.AddComponent<ForestTrueAngleCluster>();
+                var season = ForestClusterCatalog.SeasonForIndex(seasonIndex);
+                cluster.Configure(id, 0, season, _ => 0f);
+                var source = tree.AddComponent<SpriteRenderer>();
+                source.sprite = ForestTrueAngleCluster.RootSprite(id, season);
+                var shadowObject = new GameObject("Shadow");
+                shadowObject.transform.SetParent(tree.transform, false);
+                shadowObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var shadow = shadowObject.AddComponent<MeshRenderer>();
+                var ray = TimeOfDayLighting.SunRotation(
+                    TimeOfDayPreset.Noon) * Vector3.forward;
+                Assert.That(ForestClusterShadows.Update(source, shadow, ray,
+                    _ => 0f, point => point, .55f), Is.True);
+                var behind = new Vector3(ray.x, 0f, ray.z).normalized;
+                for (var piece = 0; piece < cluster.PieceCount; piece++)
+                {
+                    var treeFoot = cluster.WorldOffset(piece);
+                    var farthest = mesh.vertices.Skip(piece * 50).Take(41)
+                        .Max(vertex => Vector3.Dot(vertex - treeFoot, behind));
+                    Assert.That(farthest,
+                        Is.LessThan(cluster.TreeWidth * cluster.PieceScale(piece) * .38f),
+                        "The noon crown shadow should end beneath the canopy.");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(owner);
+                Object.DestroyImmediate(mesh);
+            }
+        }
+
         [Test]
         public void SeasonSwapOnlyChangesOneBudgetOfExistingClusterHandles()
         {
