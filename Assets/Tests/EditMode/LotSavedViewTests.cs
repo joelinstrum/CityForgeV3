@@ -76,4 +76,49 @@ public class LotSavedViewTests
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
         }
     }
+
+    [Test]
+    public void ProfileAndBuildingHeightSurviveExplicitSaveAndFreshLoad()
+    {
+        var directory = Path.Combine(Path.GetTempPath(),
+            "CityForge-profile-" + Guid.NewGuid().ToString("N"));
+        var owner = new GameObject("Profile save fixture");
+        try
+        {
+            var world = owner.AddComponent<LotWorldController>();
+            world.Build();
+            world.NewEmptyLot("Profile save fixture", LotType.Residential,
+                4, 4);
+            Assert.That(world.AddExperimentalBuilding3D(
+                "new-england-farmhouse-v02", 0, 0, 0), Is.True);
+            Assert.That(world.AdjustSelectedBuilding3DElevation(-.75f),
+                Is.True);
+            Assert.That(world.ToggleProfileView(), Is.True);
+            world.TurnProfileView();
+            world.ToggleProfileWaterReference();
+            world.AdjustProfilePreviewWaterLevel(.25f);
+            world.SaveLot(directory);
+            var id = world.CurrentLotId;
+            Object.DestroyImmediate(owner);
+            owner = new GameObject("Restored profile fixture");
+            world = owner.AddComponent<LotWorldController>();
+            world.Build();
+            Assert.That(world.LoadLot(id, directory), Is.True);
+            Assert.That(world.ProfileViewEnabled, Is.True);
+            Assert.That(world.ProfileAxisLabel, Is.EqualTo("NORTH–SOUTH"));
+            Assert.That(world.ProfileWaterReferenceVisible, Is.True);
+            Assert.That(world.ProfileWaterReferenceIsPreview, Is.True);
+            Assert.That(world.ProfileWaterLevel,
+                Is.EqualTo(.75f).Within(.001f));
+            Assert.That(world.SelectedBuilding3DIndex, Is.EqualTo(0));
+            Assert.That(world.SelectedBuilding3DElevation,
+                Is.EqualTo(-.75f));
+            Assert.That(world.HasUnsavedChanges, Is.False);
+        }
+        finally
+        {
+            Object.DestroyImmediate(owner);
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+    }
 }

@@ -36,7 +36,7 @@ namespace CityForgeV3.World
                     {
                         case PlacedProp p: item.Position = new Vector3(p.PositionX, 0, p.PositionZ); item.HasPosition = true; break;
                         case PlacedFlora p: item.Position = new Vector3(p.PositionX, -p.SinkDepthMeters, p.PositionZ); item.HasPosition = true; break;
-                        case PlacedBuilding3D p: item.Position = new Vector3(p.X, 0, p.Z); item.HasPosition = true; break;
+                        case PlacedBuilding3D p: item.Position = new Vector3(p.X, p.ElevationOffsetMeters, p.Z); item.HasPosition = true; break;
                         case PlacedBuilding p: item.Position = new Vector3(p.CellX, 0, p.CellZ); item.HasPosition = true; break;
                         case PlacedEffect p: item.Position = new Vector3(p.PositionX, p.PositionY, p.PositionZ); item.HasPosition = !p.HasHostAttachment; break;
                         case PlacedDecal p: item.Position = new Vector3(p.PositionX, 0, p.PositionZ); item.HasPosition = true; break;

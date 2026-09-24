@@ -27,9 +27,10 @@ namespace CityForgeV3.World
         // rivers. Keeping the cutoff between the 76 m medium maximum and the
         // 144 m major minimum makes the art choice stable and size-driven.
         public const float WideRiverMinimumWidthMeters = 100f;
-        public const float WideOuterBlendMeters = 8f;
+        public const float WideOuterBlendMeters = 4f;
         public const float DefaultOuterFadeEnd = 0.833333f;
-        public const float WideOuterFadeNoise = 0.18f;
+        public const float WideOuterFadeNoise = 0.10f;
+        public const float WideTerrainBlendStrength = 0.65f;
         public const float DetailMeters = 48f;
         public const float DefaultSubmergedBedBrightness = 0.8f;
         public const float WideSubmergedBedBrightness = 0.94f;
@@ -41,6 +42,11 @@ namespace CityForgeV3.World
         public const float WideDeepWaterStart = 0.34f;
         public const float WideDepthBlendSoftness = 0.58f;
         public const float WideSubmergedWaterOpacity = 0.82f;
+        public const float WideWaterEdgeFeatherMeters = 6f;
+        public const float DefaultWaterEdgeFeatherMeters = 1.5f;
+        // Presentation-only shoulder beyond the calculated gameplay waterline.
+        // It gives the shader real geometry on which to show shallow opacity.
+        public const float WideVisualWaterShoulderMeters = 12f;
         public readonly float[] Bend;
         public readonly string ShorelineResource;
         public readonly string SubmergedGravelTextureResource;
@@ -76,7 +82,8 @@ namespace CityForgeV3.World
             OuterBlendMeters = usesWideBank ? WideOuterBlendMeters : 0f;
             OuterFadeEnd = DefaultOuterFadeEnd + OuterBlendMeters / 16f;
             OuterFadeNoise = usesWideBank ? WideOuterFadeNoise : 0f;
-            TerrainBlendStrength = usesWideBank ? 1f : 0f;
+            TerrainBlendStrength = usesWideBank
+                ? WideTerrainBlendStrength : 0f;
             SubmergedBedBrightness = usesWideBank
                 ? WideSubmergedBedBrightness : DefaultSubmergedBedBrightness;
             SubmergedBlendStart = usesWideBank
@@ -106,6 +113,12 @@ namespace CityForgeV3.World
 
         public static bool UsesWideRiverBank(float widthMeters) =>
             widthMeters >= WideRiverMinimumWidthMeters;
+
+        public static float VisualWaterHalfWidth(float waterlineHalfWidth,
+            float bankHalfWidth, float riverWidthMeters) =>
+            Mathf.Min(bankHalfWidth, waterlineHalfWidth +
+                (UsesWideRiverBank(riverWidthMeters)
+                    ? WideVisualWaterShoulderMeters : 0f));
 
         static Vector2 AtDistance(IReadOnlyList<Vector2> points, float[] distances, float distance)
         {

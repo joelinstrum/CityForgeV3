@@ -69,6 +69,21 @@ namespace CityForgeV3.World
         }
         public static Vector2 TreePoint(RegionCityTile d, PlacedDistrictFlora t) => new((t.NormalizedX-.5f)*DistrictScale.SizeMeters(d.Width),(t.NormalizedZ-.5f)*DistrictScale.SizeMeters(d.Height));
         public static string SeasonName(int index) => new[]{"Summer","Autumn","Winter","Spring"}[Math.Max(0,index)%4];
+        // The displayed year turns over with spring: winter index 2 and spring
+        // index 3 belong to adjacent calendar years.
+        public static int CalendarYear(RegionCityTile d) => d == null ? 0 :
+            d.FoundingYear + (Math.Max(0, State(d).SeasonIndex) + 1) / 4;
+        public static void AdvanceSeason(RegionCityTile d)
+        {
+            if (d == null) return;
+            var s=State(d);s.SeasonIndex++;s.PaidSlots=0;
+            var due=(long)s.AssignedAxemen*Wage;
+            if(due<=d.Treasury){d.Treasury-=(int)due;s.PaidSlots=s.AssignedAxemen;}
+            DistrictWildlife.RenewWages(d);
+            DistrictQuarry.PayWages(d);
+            DistrictBusinessEconomy.SettleSeason(d);
+            DistrictLotSimulation.For(d).AdvanceSeason(s.SeasonIndex);
+        }
         public static DistrictLaborChanges Tick(RegionCityTile d,float dt,Func<Vector2,Vector2,List<Vector2>> route,Func<Vector2,bool> walkable)
         {
             var changes=new DistrictLaborChanges();var s=State(d);if(dt<=0 || !float.IsFinite(dt))return changes;
@@ -77,13 +92,8 @@ namespace CityForgeV3.World
             s.SeasonSeconds+=dt;
             while(s.SeasonSeconds>=SeasonDuration)
             {
-                s.SeasonSeconds-=SeasonDuration;s.SeasonIndex++;s.PaidSlots=0;
-                var due=(long)s.AssignedAxemen*Wage;
-                if(due<=d.Treasury){d.Treasury-=(int)due;s.PaidSlots=s.AssignedAxemen;}
-                DistrictWildlife.RenewWages(d);
-                DistrictQuarry.PayWages(d);
-                DistrictBusinessEconomy.SettleSeason(d);
-                DistrictLotSimulation.For(d).AdvanceSeason(s.SeasonIndex);
+                s.SeasonSeconds-=SeasonDuration;
+                AdvanceSeason(d);
                 changes.Durable=true;
             }
             if(!s.CampPlaced)return changes;

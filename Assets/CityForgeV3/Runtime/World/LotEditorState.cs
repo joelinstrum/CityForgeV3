@@ -264,6 +264,11 @@ namespace CityForgeV3.World
         public int OrbitOctant;
         public LotZoomLevel ZoomLevel;
         public bool TopDown;
+        public bool Profile;
+        public int ProfileAxis;
+        public int ProfileSelectedBuildingIndex = -1;
+        public bool ProfileWaterReferenceVisible;
+        public float ProfilePreviewWaterLevelMeters = .5f;
         public Vector2 TopDownWorldZScreenDirection;
         public BuildingInspectionMode InspectionMode;
         public BuildingInspectionMode InspectionModeBeforeTopDown;
@@ -293,6 +298,8 @@ namespace CityForgeV3.World
         public TrafficLotType TrafficType = TrafficLotType.None;
         public List<OutsideRoadConnector> OutsideRoadConnectors = new();
         public bool HasWaterOrientation;
+        // All lots may opt out; missing in older saves means enabled.
+        public bool RiverReflectionDisabled;
         public Vector3 WaterOrientationLand;
         public Vector3 WaterOrientationWater;
         public bool HasBuilding;
@@ -347,6 +354,7 @@ namespace CityForgeV3.World
                 TrafficType = TrafficType,
                 OutsideRoadConnectors = OutsideRoadConnectors,
                 HasWaterOrientation = HasWaterOrientation,
+                RiverReflectionDisabled = RiverReflectionDisabled,
                 WaterOrientationLand = WaterOrientationLand,
                 WaterOrientationWater = WaterOrientationWater,
                 HasBuilding = HasBuilding,
@@ -391,6 +399,8 @@ namespace CityForgeV3.World
         public string AssetId = "brownstone-building-22k";
         public float X;
         public float Z;
+        // Relative to the lot datum; zero preserves all existing saves.
+        public float ElevationOffsetMeters;
         public int RotationQuarterTurns;
         public int RotationEighthTurns = -1;
         public List<PlacedBuildingProp> Attachments = new();

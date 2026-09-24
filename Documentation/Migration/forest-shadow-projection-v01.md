@@ -1,0 +1,7 @@
+# Tighter true-angle forest shadows
+
+The shared projected-shadow geometry for true-angle deciduous and fir clumps now uses a smaller crown footprint and shorter travel. Noon applies a 0.55 travel scale; morning and afternoon use 0.65. The crown center sits one-quarter of that travel behind its tree rather than more than halfway, and its length derives from each tree's own width rather than the entire clump envelope. Bare deciduous winter footprints are likewise narrower. Snowy firs retain separate crown shadows rather than using the bare-deciduous winter footprint. Legacy forest artwork is unchanged.
+
+The local geometry rebuild still happens only on placement, terrain edit, or staged time/season change. No per-frame shadow work or extra renderers were added. In an isolated Unity copy, 44 focused EditMode tests passed, including noon-footprint bounds for summer deciduous and summer/winter fir clumps. Noon graphics previews for both groups were reviewed there; Joe's live-editor view remains the final visual check.
+
+Follow-up after Joe's in-game screenshot: a short noon projection alone still read as being in front of the deciduous trunks. Noon deciduous crowns now project along the active camera's ground-plane forward direction, with a small bias behind each trunk. Fir direction is unchanged. The true-angle crown feather was narrowed from 16% to 6% for a more defined edge. This direction is computed only during the existing shadow update, not each frame.

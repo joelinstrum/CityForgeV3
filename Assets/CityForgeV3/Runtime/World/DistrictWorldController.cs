@@ -416,6 +416,7 @@ namespace CityForgeV3.World
             }
             _riverRoot = new GameObject("District Rivers").transform;
             _riverRoot.SetParent(_content, false);
+            InvalidateRiverBuildingReflection();
             _riverSurfaces.Clear();
             _riverSurfaceIndex.Clear();
             _riverGrassEdgeRenderers.Clear();
@@ -465,7 +466,7 @@ namespace CityForgeV3.World
             }
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
-            _pendingForestSeason = null;
+            _forestAppearancePending = false;
             _pendingTimeOfDayShadows = null;
             _pendingTimeOfDayShadowIndex = 0;
             _districtFloraRoot = new GameObject("District Flora").transform;
@@ -520,6 +521,19 @@ namespace CityForgeV3.World
                 if (renderer == null || !renderer.gameObject.activeInHierarchy)
                     continue;
                 var bounds = renderer.bounds;
+                var atlas = renderer.GetComponent<ForestTrueAngleCluster>();
+                if (atlas != null)
+                {
+                    // The selection handle is the clump root, while its
+                    // other trees live in the existing flora mesh batch.
+                    // Extend hit testing only on an explicit pointer query.
+                    for (int piece = 0; piece < atlas.PieceCount; piece++)
+                    {
+                        var pieceBounds = renderer.bounds;
+                        pieceBounds.center += atlas.WorldOffset(piece);
+                        bounds.Encapsulate(pieceBounds);
+                    }
+                }
                 var min = new Vector2(float.PositiveInfinity,
                     float.PositiveInfinity);
                 var max = new Vector2(float.NegativeInfinity,
@@ -566,6 +580,7 @@ namespace CityForgeV3.World
             _floraBatches?.BeginChanges();
             try
             {
+                var added = new List<SpriteRenderer>(additions.Count);
                 foreach (var placed in additions)
                 {
                     if (placed == null || _districtFloraPresentations.ContainsKey(
@@ -573,8 +588,13 @@ namespace CityForgeV3.World
                     AddDistrictFloraPresentation(placed);
                     if (_districtFloraPresentations.TryGetValue(
                             placed.InstanceId, out var renderer))
-                        _floraBatches?.Add(renderer);
+                        added.Add(renderer);
                 }
+                // A shadow mesh starts as an upright copy of its sprite. Project
+                // newly added flora before batching it so a planted tree never
+                // shows that copy as a translucent halo for its first frame.
+                UpdateDistrictFloraShadowsFor(added);
+                foreach (var renderer in added) _floraBatches?.Add(renderer);
             }
             finally { _floraBatches?.EndChanges(); }
             BuildDistrictFloraSelection(selectedInstanceId);
@@ -602,6 +622,14 @@ namespace CityForgeV3.World
                         continue;
                     _floraBatches?.Remove(renderer);
                     renderer.transform.localPosition = DistrictFloraPosition(placed);
+                    var atlas = renderer.GetComponent<ForestTrueAngleCluster>();
+                    if (atlas != null)
+                    {
+                        var root = renderer.transform.localPosition;
+                        float rootHeight = TerrainElevation(root.x, root.z);
+                        atlas.RefreshGround(offset => TerrainElevation(
+                            root.x + offset.x, root.z + offset.y) - rootHeight);
+                    }
                     renderer.sortingOrder = DistrictFloraSortingOrder(
                         renderer.transform.localPosition);
                     changed.Add(renderer);
@@ -778,11 +806,29 @@ namespace CityForgeV3.World
                 placed.InstanceId);
             var presentationId = LotWorldController.ResolveFloraPresentationId(
                 RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
-            var resource = LotWorldController.ResolveFloraResourcePath(
-                presentationId, ForestClusterCatalog.IsCluster(presentationId) ? _forestSeason : SeasonPreset.Summer);
+            bool trueAngle = ForestTrueAngleCluster.Supports(presentationId) &&
+                (placed.FloraId != "cilician-fir" ||
+                 placed.HarvestState == DistrictTreeHarvestState.Standing);
+            var resource = !trueAngle && ForestClusterCatalog.IsCluster(presentationId)
+                    ? ForestClusterCatalog.FarCanopyResourcePath(
+                        presentationId, _forestSeason) ??
+                      LotWorldController.ResolveFloraResourcePath(
+                        presentationId, _forestSeason)
+                    : trueAngle ? ForestTrueAngleCluster.ResourcePath(
+                        presentationId, _forestSeason)
+                    : LotWorldController.ResolveFloraResourcePath(
+                        presentationId, presentationId == "american-elm" ||
+                            FloraTreeRepairs.UsesAmericanSycamore(presentationId)
+                            ? _forestSeason : SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
-            var spriteKey = resource + "|" + presentationId;
-            if (!_districtFloraSprites.TryGetValue(spriteKey, out var sprite) ||
+            var spriteKey = resource + "|" +
+                (FloraTreeRepairs.UsesAmericanSycamore(presentationId)
+                    ? "american-sycamore" : presentationId);
+            Sprite sprite;
+            if (trueAngle)
+                sprite = ForestTrueAngleCluster.RootSprite(presentationId,
+                    _forestSeason);
+            else if (!_districtFloraSprites.TryGetValue(spriteKey, out sprite) ||
                 sprite == null)
             {
                 var texture = Resources.Load<Texture2D>(resource);
@@ -791,7 +837,12 @@ namespace CityForgeV3.World
                     new Rect(0f, 0f, texture.width, texture.height),
                     LotWorldController.FloraPivot(texture.name),
                     LotWorldController.FloraPixelsPerUnit(
-                        presentationId, texture.name));
+                        presentationId, texture.name), 0,
+                    (presentationId == "american-elm" ||
+                     FloraTreeRepairs.UsesAmericanSycamore(presentationId) ||
+                     presentationId == "angel-oak-spanish-moss" ||
+                     ForestClusterCatalog.UsesQuadCanopyMesh(resource))
+                        ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
                 _districtFloraSprites[spriteKey] = sprite;
             }
             if (placed.FloraId == "cilician-fir" && placed.HarvestState != DistrictTreeHarvestState.Standing)
@@ -806,6 +857,15 @@ namespace CityForgeV3.World
                         ? placed.RotationEighthTurns * 45f : 0f);
             item.transform.localScale = Vector3.one * Mathf.Clamp(
                 placed.Scale, .65f, 1.45f);
+            if (trueAngle)
+            {
+                var atlas = item.AddComponent<ForestTrueAngleCluster>();
+                var root = item.transform.localPosition;
+                float rootHeight = TerrainElevation(root.x, root.z);
+                atlas.Configure(presentationId, variation, _forestSeason,
+                    offset => TerrainElevation(root.x + offset.x,
+                        root.z + offset.y) - rootHeight);
+            }
             var renderer = item.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sharedMaterial = DistrictFloraMaterial();
@@ -823,9 +883,11 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
-            if (ForestClusterCatalog.IsCluster(placed.FloraId))
+            if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
+                presentationId == "american-elm" ||
+                FloraTreeRepairs.UsesAmericanSycamore(presentationId))
             {
-                _forestClusters[placed.InstanceId] = renderer;
+                RegisterForestCluster(placed.InstanceId, renderer);
                 ApplyForestSeasonCutoff(renderer);
             }
             RegisterSelectable(item, new DistrictSelectionRef(DistrictSelectionKind.Flora, placed.InstanceId),
@@ -896,6 +958,10 @@ namespace CityForgeV3.World
             var ray = _sun != null
                 ? _sun.transform.rotation * Vector3.forward
                 : TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
+            var shadowRay = ForestClusterShadows.BehindCameraRay(
+                ray, _camera.transform.forward);
+            var screenBehind = Vector3.ProjectOnPlane(
+                _camera.transform.forward, Vector3.up);
             var opacity = TimeOfDay switch
             {
                 TimeOfDayPreset.Morning => .38f,
@@ -917,7 +983,17 @@ namespace CityForgeV3.World
                 shadow.sortingOrder = visibleRenderer.sortingOrder - 1;
                 var properties = new MaterialPropertyBlock();
                 shadow.GetPropertyBlock(properties);
+                var atlas = visibleRenderer.GetComponent<ForestTrueAngleCluster>();
+                var individualFir = atlas != null && atlas.IsFir &&
+                    atlas.PieceCount == 1;
+                var source = individualFir ? atlas.Piece(0) :
+                    visibleRenderer.sprite;
+                var detailedCutout = individualFir ||
+                    source.texture.name.StartsWith("american-elm-") ||
+                    source.texture.name.StartsWith("american-sycamore-") ||
+                    source.texture.name == "angel-oak-spanish-moss";
                 properties.SetVector("_SunRay", ray.normalized);
+                properties.SetFloat("_Cutoff", detailedCutout ? .3f : .02f);
                 // The flora root is registered to its actual receiver height,
                 // including depressed riverbeds. Project just above that root.
                 // The former fixed .145 m value sat beneath the .184 m district
@@ -935,8 +1011,7 @@ namespace CityForgeV3.World
                 shadow.SetPropertyBlock(properties);
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
-                var source = visibleRenderer.sprite;
-                if (ForestClusterShadows.Update(visibleRenderer, shadow, ray, world =>
+                if (ForestClusterShadows.Update(visibleRenderer, shadow, shadowRay, world =>
                 {
                     var local = _content.InverseTransformPoint(world);
                     var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
@@ -950,14 +1025,16 @@ namespace CityForgeV3.World
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
-                }))
+                }, TimeOfDay == TimeOfDayPreset.Noon ? .8f : .65f,
+                    screenBehind))
                 {
                     properties.SetTexture("_MainTex", Texture2D.whiteTexture);
                     shadow.SetPropertyBlock(properties);
                     continue;
                 }
                 var root = visibleRenderer.transform.position;
-                var right = Vector3.Cross(Vector3.up, new Vector3(ray.x, 0, ray.z));
+                var right = Vector3.Cross(Vector3.up,
+                    new Vector3(shadowRay.x, 0, shadowRay.z));
                 if (right.sqrMagnitude < .0001f) right = visibleRenderer.transform.right;
                 right.y = 0f;
                 right.Normalize();
@@ -966,19 +1043,40 @@ namespace CityForgeV3.World
                 var projected = new Vector3[vertices.Length];
                 var colors = new Color[vertices.Length];
                 var referenceHeight = Mathf.Max(.01f, source.bounds.size.y * scale.y);
+                var horizontal = new Vector3(shadowRay.x, 0f, shadowRay.z);
+                var horizontalMagnitude = horizontal.magnitude;
+                var direction = horizontalMagnitude > .0001f
+                    ? horizontal / horizontalMagnitude : Vector3.forward;
+                var detailedTravel = detailedCutout ? Mathf.Min(
+                    referenceHeight * horizontalMagnitude /
+                        Mathf.Max(.05f, -shadowRay.y) *
+                        (TimeOfDay == TimeOfDayPreset.Noon ? .8f : .55f),
+                    source.bounds.size.x * scale.x * .65f) : 0f;
                 for (var i=0;i<vertices.Length;i++)
                 {
                     var height = Mathf.Max(0f, vertices[i].y * scale.y);
                     var world = root + right * (vertices[i].x * scale.x);
-                    var travel = height / Mathf.Max(.05f, -ray.y);
-                    world += new Vector3(ray.x,0f,ray.z) * travel;
+                    var travel = detailedCutout ? detailedTravel *
+                        Mathf.Clamp01(height / referenceHeight) :
+                        height / Mathf.Max(.05f, -shadowRay.y) *
+                        horizontalMagnitude;
+                    world += direction * travel;
                     var terrainPoint = _content.InverseTransformPoint(world);
                     world.y = groundY + .025f + TerrainElevation(terrainPoint.x, terrainPoint.z) - TerrainElevation(root.x, root.z);
                     projected[i] = shadow.transform.InverseTransformPoint(world);
                     colors[i] = new Color(1f,1f,1f,Mathf.Clamp01(height/referenceHeight));
                 }
                 var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
-                mesh.vertices = projected;
+                if (mesh.vertexCount != projected.Length || individualFir)
+                {
+                    mesh.Clear();
+                    mesh.vertices = projected;
+                    mesh.uv = source.uv;
+                    mesh.triangles = System.Array.ConvertAll(source.triangles,
+                        index => (int)index);
+                }
+                else
+                    mesh.vertices = projected;
                 mesh.colors = colors;
                 mesh.RecalculateBounds();
                 properties.SetTexture("_MainTex", source.texture);
@@ -1174,6 +1272,10 @@ namespace CityForgeV3.World
                     Mathf.InverseLerp(bankElevations[band - 1], bankElevations[band], waterElevation));
                 break;
             }
+            // Navigation remains slightly inset from the bank intersection.
+            // The visual surface reaches the true waterline and uses a narrow
+            // physical feather there, allowing blue shallow water to remain
+            // visible without ending on a hard mesh boundary.
             var waterWidth = Mathf.Max(.01f, waterHalfWidth - .10f) * 2f;
             var runtimeSurface = new RuntimeRiverSurface(centerline, halfWidth,
                 dirtOuterDistance, waterWidth * .5f, waterElevation,
@@ -1185,7 +1287,13 @@ namespace CityForgeV3.World
                 var max=Vector2.Max(centerline[i-1],centerline[i])+Vector2.one*halfWidth;
                 _riverSurfaceIndex.Add(Rect.MinMaxRect(min.x,min.y,max.x,max.y),runtimeSurface,true);
             }
-            AddRiverWaterSurface(centerline, waterWidth, waterElevation,
+            // The calculated waterline remains authoritative for navigation.
+            // Major-river presentation extends into the shallow bank so the
+            // shader has geometry across which to express its opacity ramp.
+            var visualWaterHalfWidth = RiverBankAppearance.VisualWaterHalfWidth(
+                waterHalfWidth, halfWidth, river.WidthMeters);
+            var visualWaterWidth = Mathf.Max(.01f, visualWaterHalfWidth) * 2f;
+            AddRiverWaterSurface(centerline, visualWaterWidth, waterElevation,
                 waterTexture, $"River Water — {river.InstanceId}", deep);
         }
 
@@ -1563,6 +1671,12 @@ namespace CityForgeV3.World
             if (material.HasProperty("_SubmergedOpacity") && wideRiver)
                 material.SetFloat("_SubmergedOpacity",
                     RiverBankAppearance.WideSubmergedWaterOpacity);
+            if (material.HasProperty("_WaterHalfWidth"))
+                material.SetFloat("_WaterHalfWidth", halfWidth);
+            if (material.HasProperty("_EdgeFeatherMeters"))
+                material.SetFloat("_EdgeFeatherMeters", wideRiver
+                    ? RiverBankAppearance.WideWaterEdgeFeatherMeters
+                    : RiverBankAppearance.DefaultWaterEdgeFeatherMeters);
             if (material.HasProperty("_FlowSpeed"))
                 material.SetFloat("_FlowSpeed", _waterFlowSpeed);
             if (material.HasProperty("_WaveDistortion"))
@@ -2126,7 +2240,9 @@ namespace CityForgeV3.World
             var center = DistrictLotCenterMeters(district, placement, data);
             var cleared = DistrictHarvestIndex.For(district).ClearFootprint(new Rect(center - size * .5f, size));
             RemoveFloraPresentations(cleared);
-            DistrictLotSimulation.For(district).Add(placement.InstanceId, data);
+            DistrictLotSimulation.For(district).Add(placement.InstanceId, data,
+                placement.HasPopulationOverride,
+                placement.PopulationOverride);
             lot.BindDistrictBehaviors(placement, district);
             lot.SetDistrictPresentationLevel(PresentationLevel(_zoomLevel));
             lot.SetTimeOfDay(TimeOfDay);
@@ -2154,6 +2270,7 @@ namespace CityForgeV3.World
             lot.transform.localRotation = rotation;
             lot.ApplyDistrictBoatDockOverride(placement);
             if (rotated) lot.RefreshHostedPresentationFacing();
+            UpdateRiverBuildingReflectionCandidates(lot);
             InvalidateTimberNavigation();
             return true;
         }
@@ -2399,6 +2516,7 @@ namespace CityForgeV3.World
         public void SetZoom(DistrictZoomLevel level)
         {
             if (_camera == null) return;
+            SetRiverBuildingReflectionZoom(level);
             _zoomLevel = level;
             _clouds?.SetZoom(level);
             _rainStorm?.SetZoom(level);
@@ -2469,10 +2587,25 @@ namespace CityForgeV3.World
             }
         }
 
-        private void OnDisable() => RestoreAfternoonSceneLights();
-        private void OnDestroy() { ClearDistrictBridges();RestoreAfternoonSceneLights(); }
+        private void OnDisable()
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            RestoreAfternoonSceneLights();
+            DisableRiverBuildingReflection();
+        }
+        private void OnDestroy()
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            ClearDistrictBridges();
+            RestoreAfternoonSceneLights();
+            DisposeRiverBuildingReflection();
+        }
         private void OnEnable()
-        { if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay); }
+        {
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            Camera.onPreRender += OnRiverBuildingReflectionCameraPreRender;
+            if (_sun != null) ApplyAfternoonSceneLights(TimeOfDay);
+        }
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
@@ -2559,6 +2692,12 @@ namespace CityForgeV3.World
                 LotWorldController.AutomataSeasonForDistrictIndex(
                     _terrainDistrict?.Labor?.SeasonIndex ?? 0));
             lot.ConfigureDistrictRiverSurfaceSampler(SampleRiverSurface);
+            lot.ConfigureDistrictTerrainElevationSampler(world =>
+            {
+                var local = _content.InverseTransformPoint(world);
+                return _content.TransformPoint(new Vector3(local.x,
+                    TerrainElevation(local.x, local.z), local.z)).y;
+            });
             lot.ConfigureBoatRouteProvider(FindDownstreamBoatRoute);
             lot.LoadRuntimeLot(data);
             lot.ApplyDistrictBoatDockOverride(placement);
@@ -2569,6 +2708,7 @@ namespace CityForgeV3.World
                 rotationQuarterTurns * 90f + HostedLotFacingOffsetDegrees,
                 0f);
             lot.RefreshHostedPresentationFacing();
+            RegisterRiverBuildingReflectionCandidates(lot);
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
@@ -2594,6 +2734,8 @@ namespace CityForgeV3.World
             // River transparency samples opaque scene depth so bridge piers
             // and banks remain visible just beneath the water surface.
             _camera.depthTextureMode |= DepthTextureMode.Depth;
+            Camera.onPreRender -= OnRiverBuildingReflectionCameraPreRender;
+            Camera.onPreRender += OnRiverBuildingReflectionCameraPreRender;
         }
 
         private void BuildSun()
@@ -2759,6 +2901,7 @@ namespace CityForgeV3.World
             _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();
+            DisposeRiverBuildingReflection();
             _roadsByCell.Clear();
             _roadPlacementsByCell.Clear();
             _roadVisualState.Clear();
@@ -2782,7 +2925,7 @@ namespace CityForgeV3.World
             _riverSurfaceIndex.Clear();
             _districtFloraPresentations.Clear();
             _forestClusters.Clear();
-            _pendingForestSeason = null;
+            _forestAppearancePending = false;
             _districtSelectionRoot = null;
             for (var index = transform.childCount - 1; index >= 0; index--)
             {

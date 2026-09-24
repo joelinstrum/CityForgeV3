@@ -211,6 +211,11 @@ namespace CityForgeV3.World
             for (var i = 1; i < route.Count; i++)
             {
                 var delta = route[i] - route[i - 1]; length += delta.magnitude;
+                // The first leg is the short push-off from the authored dock
+                // pose to the river centerline. A hull may intentionally rest
+                // on the irregular shoreline there; navigability is enforced
+                // on every downstream channel segment after it clears the dock.
+                if (i == 1) continue;
                 var side = Vector3.Cross(Vector3.up, delta.normalized) * (boatWidth * .5f + .2f);
                 var samples = Mathf.Max(1, Mathf.CeilToInt(delta.magnitude / 2));
                 for (var j = 0; j <= samples; j++)

@@ -54,6 +54,7 @@ namespace CityForgeV3.World
         private bool _gridVisible = true;
         private bool _districtHosted;
         private Func<Vector3, RiverSurfaceSample?> _districtRiverSurfaceSampler;
+        private Func<Vector3, float> _districtTerrainElevationSampler;
         private bool _gridEditorActive = true;
         private Transform _neighborhoodRoad;
         private Transform _roadArtworkRoot;
@@ -216,6 +217,21 @@ namespace CityForgeV3.World
         public BuildingInspectionMode InspectionMode { get; private set; } =
             BuildingInspectionMode.Artwork;
         public bool TopDownViewEnabled { get; private set; }
+        public bool ProfileViewEnabled { get; private set; }
+        private int _profileAxis;
+        private bool _profileWaterReferenceVisible;
+        private float _profilePreviewWaterLevelMeters = .5f;
+        private bool _profileActualWaterAvailable;
+        private float _profileActualWaterLevel;
+        private LineRenderer _profileTerrainGuide;
+        private LineRenderer _profileWaterGuide;
+        private Material _profileGuideMaterial;
+        public bool ProfileWaterReferenceVisible =>
+            _profileWaterReferenceVisible;
+        public float ProfilePreviewWaterLevelMeters =>
+            _profilePreviewWaterLevelMeters;
+        public string ProfileAxisLabel => _profileAxis == 0
+            ? "EAST–WEST" : "NORTH–SOUTH";
         public float CameraPitchDegrees => _camera == null
             ? 0f : _camera.transform.eulerAngles.x;
         private BuildingInspectionMode _inspectionModeBeforeTopDown =
@@ -482,6 +498,12 @@ namespace CityForgeV3.World
             Func<Vector3, RiverSurfaceSample?> sampler)
         {
             _districtRiverSurfaceSampler = sampler;
+        }
+
+        public void ConfigureDistrictTerrainElevationSampler(
+            Func<Vector3, float> sampler)
+        {
+            _districtTerrainElevationSampler = sampler;
         }
 
         /// <summary>
@@ -1267,7 +1289,7 @@ namespace CityForgeV3.World
                 var variation = FloraVariationProfile(placed);
                 var presentationId = ResolveFloraPresentationId(
                     placed.FloraId, variation, Season);
-                var sprite = LoadFloraSprite(presentationId);
+                var sprite = LoadFloraSprite(presentationId, variation);
                 if (sprite == null) continue;
                 var root = new GameObject(
                     $"Flora — {placed.FloraId} — Variant {variation + 1}");
@@ -1325,7 +1347,7 @@ namespace CityForgeV3.World
                 var variation = FloraVariationProfile(placed);
                 var presentationId = ResolveFloraPresentationId(
                     placed.FloraId, variation, Season);
-                var sprite = LoadFloraSprite(presentationId);
+                var sprite = LoadFloraSprite(presentationId, variation);
                 if (sprite == null) continue;
                 renderer.sprite = sprite;
                 ConfigurePlaneTree(renderer, placed.FloraId);
@@ -1725,7 +1747,7 @@ namespace CityForgeV3.World
         {
             "maple" => "vendor-red-maple",
             "ashe" or "vendor-oregon-ash" => "american-elm",
-            "oak" or "oak-b" or "angel-oak-spanish-moss" or
+            "oak" or "oak-b" or
                 "vendor-cypress-oak" or "vendor-cypress-oak-wide" => "mature-oak",
             "evergreen" or "evergreen-b" or "evergreen-snow" or
                 "evergreen-b-snow" or "narrow-street-tree" => "medium-blue-spruce",
@@ -1776,9 +1798,13 @@ namespace CityForgeV3.World
             };
         }
 
-        private Sprite LoadFloraSprite(string floraId)
+        private Sprite LoadFloraSprite(string floraId, int variation = 0)
         {
             if (string.IsNullOrWhiteSpace(floraId)) return null;
+            var artworkId = CurrentTreeArtwork(floraId);
+            if (ForestTrueAngleCluster.IsFirIndividual(artworkId))
+                return ForestTrueAngleCluster.IndividualSprite(artworkId,
+                    variation, Season);
             if (StoneFloraCatalog.IsStone(floraId)) { if (!_floraSpriteCache.TryGetValue(floraId, out var stone)) _floraSpriteCache[floraId] = stone = StoneFloraCatalog.CreateSprite(floraId); return stone; }
             var resourcePath = ResolveFloraResourcePath(floraId, Season);
             if (string.IsNullOrWhiteSpace(resourcePath)) return null;
@@ -2277,6 +2303,8 @@ namespace CityForgeV3.World
         public void SetCameraOrbitOctant(int octant)
         {
             _cameraOrbitOctant = ((octant % 8) + 8) % 8;
+            if (ProfileViewEnabled) ProfileViewEnabled = false;
+            RefreshProfileGuides();
             if (TopDownViewEnabled)
                 ToggleTopDownView();
             else
@@ -2310,6 +2338,11 @@ namespace CityForgeV3.World
 
         public void ToggleTopDownView()
         {
+            if (!TopDownViewEnabled && ProfileViewEnabled)
+            {
+                ProfileViewEnabled = false;
+                RefreshProfileGuides();
+            }
             if (!TopDownViewEnabled && _camera != null)
             {
                 var projectedWorldZ = new Vector2(
@@ -2331,6 +2364,48 @@ namespace CityForgeV3.World
             ApplySessionState();
             ApplyCameraFacing(false);
             NotifyStateChanged();
+        }
+
+        public bool ToggleProfileView()
+        {
+            if (!ProfileViewEnabled && SelectedBuilding3DIndex < 0)
+                return false;
+            if (!ProfileViewEnabled && TopDownViewEnabled)
+            {
+                TopDownViewEnabled = false;
+                InspectionMode = _inspectionModeBeforeTopDown;
+            }
+            ProfileViewEnabled = !ProfileViewEnabled;
+            ApplyCameraFacing(false);
+            RefreshProfileGuides();
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        public void TurnProfileView()
+        {
+            if (!ProfileViewEnabled) return;
+            _profileAxis = 1 - _profileAxis;
+            ApplyCameraFacing(false);
+            RefreshProfileGuides();
+            StateChanged?.Invoke();
+        }
+
+        public void ToggleProfileWaterReference()
+        {
+            _profileWaterReferenceVisible = !_profileWaterReferenceVisible;
+            RefreshProfileGuides();
+            StateChanged?.Invoke();
+        }
+
+        public void AdjustProfilePreviewWaterLevel(float deltaMeters)
+        {
+            _profilePreviewWaterLevelMeters = Mathf.Clamp(
+                _profilePreviewWaterLevelMeters + deltaMeters,
+                Building3DMinimumElevationMeters,
+                Building3DMaximumElevationMeters);
+            RefreshProfileGuides();
+            StateChanged?.Invoke();
         }
 
         public void ToggleRegistrationDiagnostics()
@@ -3208,6 +3283,10 @@ namespace CityForgeV3.World
         public void NewEmptyLot(string name, LotType lotType,
             int widthCells, int depthCells)
         {
+            var leavingProfile = ProfileViewEnabled;
+            ProfileViewEnabled = false;
+            _selectedBuilding3DIndex = -1;
+            RefreshProfileGuides();
             _buildingDragActive = false;
             _buildingFocusFreezeActive = false;
             _session.NewLot(name, lotType, Mathf.Max(widthCells, depthCells) * 10);
@@ -3221,6 +3300,7 @@ namespace CityForgeV3.World
             RebuildRoadArtwork();
             RebuildRoadVehicleNetwork();
             ApplySessionState();
+            if (leavingProfile) ApplyCameraFacing(false);
             NotifyStateChanged();
         }
 
@@ -3263,6 +3343,13 @@ namespace CityForgeV3.World
                 OrbitOctant = _cameraOrbitOctant,
                 ZoomLevel = ZoomLevel,
                 TopDown = TopDownViewEnabled,
+                Profile = ProfileViewEnabled,
+                ProfileAxis = _profileAxis,
+                ProfileSelectedBuildingIndex = ProfileViewEnabled
+                    ? SelectedBuilding3DIndex : -1,
+                ProfileWaterReferenceVisible = _profileWaterReferenceVisible,
+                ProfilePreviewWaterLevelMeters =
+                    _profilePreviewWaterLevelMeters,
                 TopDownWorldZScreenDirection = _topDownWorldZScreenDirection,
                 InspectionMode = InspectionMode,
                 InspectionModeBeforeTopDown = _inspectionModeBeforeTopDown
@@ -3446,6 +3533,20 @@ namespace CityForgeV3.World
                 _cameraPanWorld = savedView ? view.PanWorld : Vector3.zero;
                 ZoomLevel = savedView ? view.ZoomLevel : LotZoomLevel.Lot;
                 TopDownViewEnabled = savedView && view.TopDown;
+                ProfileViewEnabled = savedView && view.Profile &&
+                    !TopDownViewEnabled;
+                _profileAxis = savedView && view.ProfileAxis == 1 ? 1 : 0;
+                _profileWaterReferenceVisible = savedView &&
+                    view.ProfileWaterReferenceVisible;
+                _profilePreviewWaterLevelMeters = savedView
+                    ? view.ProfilePreviewWaterLevelMeters : .5f;
+                _selectedBuilding3DIndex = ProfileViewEnabled &&
+                    view.ProfileSelectedBuildingIndex >= 0 &&
+                    view.ProfileSelectedBuildingIndex <
+                    (_session.Data.Buildings3D?.Count ?? 0)
+                        ? view.ProfileSelectedBuildingIndex : -1;
+                if (_selectedBuilding3DIndex < 0)
+                    ProfileViewEnabled = false;
                 _topDownWorldZScreenDirection = savedView ? view.TopDownWorldZScreenDirection : Vector2.up;
                 InspectionMode = savedView ? view.InspectionMode : BuildingInspectionMode.Artwork;
                 _inspectionModeBeforeTopDown = savedView ? view.InspectionModeBeforeTopDown : BuildingInspectionMode.Artwork;
@@ -3474,6 +3575,7 @@ namespace CityForgeV3.World
                 AlignFloraToCamera();
                 UpdatePresentationDepthOrdering();
             }
+            RefreshProfileGuides();
             NotifyStateChanged();
             return loaded;
         }
@@ -6250,14 +6352,8 @@ namespace CityForgeV3.World
                 var sunColor = spec.SunColor;
                 if (ExperimentalBuilding3DCount > 0)
                 {
-                    sunIntensity = TimeOfDay switch
-                    {
-                        TimeOfDayPreset.Morning => 0.62f,
-                        TimeOfDayPreset.Noon => 0.64f,
-                        TimeOfDayPreset.Afternoon => 0.50f,
-                        TimeOfDayPreset.Evening => 0.14f,
-                        _ => 0.035f
-                    };
+                    sunIntensity = DistrictWorldController.RegionSunIntensity(
+                        TimeOfDay);
                     if (TimeOfDay == TimeOfDayPreset.Morning)
                     {
                         // Make warmth a subtle directional cue rather than an
@@ -6314,6 +6410,8 @@ namespace CityForgeV3.World
                     DistrictWorldController.NativeSurfaceIndirectScaleFor(
                         TimeOfDay),
                     DistrictWorldController.GardenSurfaceExposureFor(
+                        TimeOfDay),
+                    DistrictWorldController.NativeBuildingNightResponseFor(
                         TimeOfDay));
             }
 
@@ -6413,6 +6511,11 @@ namespace CityForgeV3.World
                 ApplyTopDownCamera(preserveProjectionFit);
                 return;
             }
+            if (ProfileViewEnabled)
+            {
+                ApplyProfileCamera();
+                return;
+            }
 
             var experimental3D = ExperimentalBuilding3DCount > 0;
             // Keep the shallow 20-degree CityForge elevation, but view native
@@ -6487,6 +6590,187 @@ namespace CityForgeV3.World
             UpdatePresentationDepthOrdering();
             if (!preserveProjectionFit)
                 ApplyProjectedLotFit();
+        }
+
+        private void ApplyProfileCamera()
+        {
+            if (_camera == null || SelectedBuilding3DIndex < 0 ||
+                SelectedBuilding3DIndex >= _experimentalBuilding3DVisibleRoots.Count)
+                return;
+            var root = _experimentalBuilding3DVisibleRoots[SelectedBuilding3DIndex];
+            if (root == null) return;
+            var bounds = CombinedRendererBounds(root, out var hasBounds);
+            if (!hasBounds) return;
+            var alongX = _profileAxis == 0;
+            var axis = alongX ? transform.forward : transform.right;
+            var span = alongX ? bounds.size.x : bounds.size.z;
+            var aspect = Mathf.Max(.5f, _camera.aspect);
+            _camera.transform.position = bounds.center + axis *
+                Mathf.Max(30f, LotSizeMeters);
+            _camera.transform.LookAt(bounds.center, transform.up);
+            _camera.orthographicSize = Mathf.Max(5f,
+                bounds.size.y * .6f + 2f,
+                span / (2f * aspect) + 2f);
+            AlignBuildingPresentationsToCamera();
+            AlignFloraToCamera();
+            UpdatePresentationDepthOrdering();
+        }
+
+        private LineRenderer EnsureProfileGuide(ref LineRenderer guide,
+            string name, Color color)
+        {
+            if (guide != null) return guide;
+            if (_profileGuideMaterial == null)
+            {
+                _profileGuideMaterial = new Material(
+                    Shader.Find("Sprites/Default"))
+                {
+                    name = "Lot profile reference lines",
+                    renderQueue = 3002
+                };
+            }
+            var node = new GameObject(name);
+            node.transform.SetParent(transform, false);
+            guide = node.AddComponent<LineRenderer>();
+            guide.sharedMaterial = _profileGuideMaterial;
+            guide.useWorldSpace = false;
+            guide.startWidth = guide.endWidth = .10f;
+            guide.startColor = guide.endColor = color;
+            guide.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            guide.receiveShadows = false;
+            return guide;
+        }
+
+        private void RefreshProfileGuides()
+        {
+            var active = ProfileViewEnabled && SelectedBuilding3DIndex >= 0 &&
+                SelectedBuilding3DIndex < (_session?.Data?.Buildings3D?.Count ?? 0);
+            _profileActualWaterAvailable = active &&
+                TryProfileActualWaterLevel(out _profileActualWaterLevel);
+            if (_profileTerrainGuide != null)
+                _profileTerrainGuide.gameObject.SetActive(active);
+            if (_profileWaterGuide != null)
+                _profileWaterGuide.gameObject.SetActive(active &&
+                    _profileWaterReferenceVisible);
+            if (!active) return;
+
+            var placed = _session.Data.Buildings3D[SelectedBuilding3DIndex];
+            var alongX = _profileAxis == 0;
+            var center = alongX ? placed.X : placed.Z;
+            var across = alongX ? placed.Z : placed.X;
+            var halfSpan = (alongX ? LotWidthMeters : LotDepthMeters) * .5f;
+            var selectedRoot = SelectedBuilding3DIndex <
+                _experimentalBuilding3DVisibleRoots.Count
+                    ? _experimentalBuilding3DVisibleRoots[SelectedBuilding3DIndex]
+                    : null;
+            var hasBounds = false;
+            var bounds = selectedRoot != null
+                ? CombinedRendererBounds(selectedRoot, out hasBounds)
+                : default;
+            var foreground = across + (hasBounds
+                ? (alongX ? bounds.extents.z : bounds.extents.x) + 1f
+                : 3f);
+            var terrain = EnsureProfileGuide(ref _profileTerrainGuide,
+                "Profile terrain cross-section", new Color(1f, .78f, .35f));
+            terrain.gameObject.SetActive(true);
+            const int sampleCount = 41;
+            terrain.positionCount = sampleCount;
+            for (var index = 0; index < sampleCount; index++)
+            {
+                var offset = Mathf.Lerp(-halfSpan, halfSpan,
+                    index / (float)(sampleCount - 1));
+                var x = alongX ? offset : across;
+                var z = alongX ? across : offset;
+                var height = ProfileTerrainHeight(x, z) + .06f;
+                terrain.SetPosition(index, alongX
+                    ? new Vector3(x, height, foreground)
+                    : new Vector3(foreground, height, z));
+            }
+            if (!_profileWaterReferenceVisible) return;
+            var water = EnsureProfileGuide(ref _profileWaterGuide,
+                "Profile waterline reference", new Color(.28f, .78f, 1f));
+            water.gameObject.SetActive(true);
+            var level = ProfileWaterLevel;
+            water.positionCount = 2;
+            var near = Mathf.Clamp(center - 15f, -halfSpan, halfSpan);
+            var far = Mathf.Clamp(center + 15f, -halfSpan, halfSpan);
+            water.SetPosition(0, alongX
+                ? new Vector3(near, level, foreground + .05f)
+                : new Vector3(foreground + .05f, level, near));
+            water.SetPosition(1, alongX
+                ? new Vector3(far, level, foreground + .05f)
+                : new Vector3(foreground + .05f, level, far));
+        }
+
+        public bool ProfileWaterReferenceIsPreview =>
+            !_profileActualWaterAvailable;
+
+        public float ProfileWaterLevel =>
+            _profileActualWaterAvailable
+                ? _profileActualWaterLevel : _profilePreviewWaterLevelMeters;
+
+        private float ProfileTerrainHeight(float x, float z)
+        {
+            if (!_districtHosted || _districtTerrainElevationSampler == null)
+                return SampleTerrainHeight(x, z);
+            var world = transform.TransformPoint(new Vector3(x, 0f, z));
+            var river = _districtRiverSurfaceSampler?.Invoke(world);
+            var height = river.HasValue && river.Value.InsideChannel
+                ? river.Value.BedElevation
+                : _districtTerrainElevationSampler(world);
+            return transform.InverseTransformPoint(new Vector3(
+                world.x, height, world.z)).y;
+        }
+
+        private bool TryProfileActualWaterLevel(out float level)
+        {
+            level = 0f;
+            if (SelectedBuilding3DIndex < 0 ||
+                SelectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
+                return false;
+            var placed = _session.Data.Buildings3D[SelectedBuilding3DIndex];
+            var root = SelectedBuilding3DIndex <
+                _experimentalBuilding3DVisibleRoots.Count
+                    ? _experimentalBuilding3DVisibleRoots[SelectedBuilding3DIndex]
+                    : null;
+            var hasBounds = false;
+            var bounds = root != null
+                ? CombinedRendererBounds(root, out hasBounds)
+                : default;
+            var radiusX = hasBounds ? bounds.extents.x * .75f : 2f;
+            var radiusZ = hasBounds ? bounds.extents.z * .75f : 2f;
+            var points = new[]
+            {
+                new Vector2(placed.X, placed.Z),
+                new Vector2(placed.X - radiusX, placed.Z),
+                new Vector2(placed.X + radiusX, placed.Z),
+                new Vector2(placed.X, placed.Z - radiusZ),
+                new Vector2(placed.X, placed.Z + radiusZ)
+            };
+            foreach (var area in _session.Data.WaterAreas ??
+                     new List<PlacedWaterArea>())
+            {
+                if (area?.Boundary == null) continue;
+                var boundary = WaterBoundary(area);
+                foreach (var point in points)
+                    if (PointInWaterPolygon(point, boundary))
+                    {
+                        level = area.HeightMeters;
+                        return true;
+                    }
+            }
+            if (_districtRiverSurfaceSampler == null) return false;
+            foreach (var point in points)
+            {
+                var world = transform.TransformPoint(new Vector3(
+                    point.x, 0f, point.y));
+                var river = _districtRiverSurfaceSampler(world);
+                if (!river.HasValue || !river.Value.UnderWater) continue;
+                level = transform.InverseTransformPoint(new Vector3(world.x,
+                    river.Value.WaterElevation, world.z)).y;
+                return true;
+            }
+            return false;
         }
 
         private void AlignBuildingPresentationsToCamera()

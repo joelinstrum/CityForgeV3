@@ -830,13 +830,10 @@ namespace CityForgeV3.UI
           return;
         }
 
-        if (DistrictMoveToolActive())
+        if (_districtSelectionDragActive)
         {
-          if (_districtSelectionDragActive)
-          {
-            MoveDistrictSelection(district, normalized);
-            return;
-          }
+          MoveDistrictSelection(district, normalized);
+          return;
         }
 
         if (DistrictWaterSelectToolActive())
@@ -1043,6 +1040,13 @@ namespace CityForgeV3.UI
         { ReturnToQuietDistrict(); evt.StopImmediatePropagation(); return; }
         if (DistrictSelectToolActive())
         {
+          if (_districtWorld != null && _districtWorld.TryGroundPoint(
+                  DistrictCameraPoint(evt.position), out var selectedPoint) &&
+              BeginDistrictMovePointer(district, selectedPoint, evt.position))
+          {
+            evt.StopImmediatePropagation();
+            return;
+          }
           BeginDistrictSelectionPointer(district, evt.position,
                     screen, evt.pointerId);
           evt.StopImmediatePropagation();
@@ -1548,8 +1552,8 @@ namespace CityForgeV3.UI
       var bounds = screen.worldBound;
       if (bounds.width <= 0 || bounds.height <= 0) return;
       _districtEdgePanDirection = DistrictZoom.EdgePanWorldMotion(new Vector2(
-          (evt.position.x - bounds.xMin) / bounds.width,
-          (evt.position.y - bounds.yMin) / bounds.height));
+          evt.position.x - bounds.xMin, evt.position.y - bounds.yMin),
+          bounds.size);
     }
 
     private static void AttachLargeRegionHoverHelp(VisualElement screen)
@@ -1571,6 +1575,7 @@ namespace CityForgeV3.UI
       helpPanel.Add(helpText);
       helpLayer.Add(helpPanel);
 
+      var helpRevision = 0;
       // Delegate hover/focus so locally replaced tool palettes keep working.
       void ShowHelp(VisualElement target)
       {
@@ -1588,11 +1593,19 @@ namespace CityForgeV3.UI
         }
         helpPanel.style.display = DisplayStyle.Flex;
         helpLayer.BringToFront();
+        var shownRevision = ++helpRevision;
+        helpPanel.schedule.Execute(() =>
+        {
+          if (shownRevision == helpRevision)
+            helpPanel.style.display = DisplayStyle.None;
+        }).ExecuteLater(3000);
       }
       screen.RegisterCallback<PointerOverEvent>(evt => ShowHelp(evt.target as VisualElement));
-      screen.RegisterCallback<PointerOutEvent>(_ => helpPanel.style.display = DisplayStyle.None);
+      screen.RegisterCallback<PointerOutEvent>(_ =>
+      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
       screen.RegisterCallback<FocusInEvent>(evt => ShowHelp(evt.target as VisualElement));
-      screen.RegisterCallback<FocusOutEvent>(_ => helpPanel.style.display = DisplayStyle.None);
+      screen.RegisterCallback<FocusOutEvent>(_ =>
+      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
 
       screen.Add(helpLayer);
       helpLayer.BringToFront();
@@ -2461,6 +2474,7 @@ namespace CityForgeV3.UI
     {
       var lot = LotContentCatalog.Read(_pendingDistrictLotId);
       if (district == null || lot == null) return;
+      var testPlacement = IsTestLotPlacement;
       if (!TryDistrictLotFootprint(district, x, y, out var gridX,
               out var gridZ, out var footprintWidth, out var footprintDepth, out var placeable) ||
           !placeable) return;
@@ -2489,14 +2503,15 @@ namespace CityForgeV3.UI
       };
       district.Lots.Add(placement);
       if (_districtWorld != null &&
-          !_districtWorld.AddPlacedLot(district, placement, IsTestLotPlacement))
+          !_districtWorld.AddPlacedLot(district, placement, testPlacement))
       {
         district.Lots.Remove(placement);
         return;
       }
       district.Treasury -= plopCost;
       DistrictLotRequirements.Consume(district, constructionResources);
-      DistrictLotSimulation.For(district).Add(instanceId, lot);
+      DistrictLotSimulation.For(district).Add(instanceId, lot,
+          placement.HasPopulationOverride, placement.PopulationOverride);
       _districtWorld?.HideLotPlacementGuide();
       _pendingDistrictLotId = "";
       _pendingDistrictLotIsTest = false;
@@ -2884,7 +2899,12 @@ namespace CityForgeV3.UI
 
       if (_districtEdgePanDirection != Vector2Int.zero)
       {
-        var continuousStep = panStep * 2.4f * Time.unscaledDeltaTime;
+        var continuousSpeed = _districtWorld?.WorldCamera != null
+            ? DistrictZoom.EdgePanSpeedMetersPerSecond(
+                _districtWorld.WorldCamera.orthographicSize,
+                _terraformZoomLevel)
+            : panStep * 2.4f;
+        var continuousStep = continuousSpeed * Time.unscaledDeltaTime;
         _terraformPanOffset += DistrictZoom.PanOffsetForWorldMotion(
             _districtEdgePanDirection.x,
             _districtEdgePanDirection.y, continuousStep);
@@ -3650,25 +3670,26 @@ namespace CityForgeV3.UI
       UpdateDistrictSelectionMarquee(panelPosition);
     }
 
-    private void BeginDistrictMovePointer(RegionCityTile district,
+    private bool BeginDistrictMovePointer(RegionCityTile district,
         Vector2 normalized, Vector2 panelPosition)
     {
       if (_districtSelection.Any(item => item.Kind == DistrictSelectionKind.Entity && _districtWorld?.ResolveSelectable(item)?.DeleteBuilding == null))
       {
         ShowDistrictNotice("This object's placement is fixed. Select it to see its supported actions.");
-        return;
+        return false;
       }
       var pixel = DistrictCameraPoint(panelPosition);
       var hits = _districtWorld.CollectDistrictSelectionInScreenRect(district,
           new Rect(pixel.x - 4f, pixel.y - 4f, 8f, 8f));
       if (!_districtSelection.Any(selected => hits.Any(hit =>
-              hit.Kind == selected.Kind && hit.Id == selected.Id))) return;
+              hit.Kind == selected.Kind && hit.Id == selected.Id))) return false;
       _districtSelectionStart = _districtSelectionLast = normalized;
       _districtSelectionGridRemainder = Vector2.zero;
       _districtSelectionMovedRiver = false;
       _districtSelectionMovedRoad = false;
       _districtSelectionMovedLot = false;
       _districtSelectionDragActive = true;
+      return true;
     }
 
     private void UpdateDistrictSelectionMarquee(Vector2 panelPosition)

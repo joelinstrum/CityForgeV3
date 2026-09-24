@@ -51,6 +51,8 @@ namespace CityForgeV3.UI
                     PersistDistrictRegion();
                     CfMapChrome.SetCaption(button, "SAVED");
                     button.tooltip = "Region and all districts saved.";
+                    if (name == "district-save-button")
+                        ShowDistrictNotice("District Saved");
                     button.schedule.Execute(() => { CfMapChrome.SetCaption(button, "SAVE"); button.tooltip = "Save region and all districts. Changes are not saved automatically."; }).ExecuteLater(2000);
                 }
                 catch (System.Exception error)

@@ -17,6 +17,8 @@ namespace CityForgeV3.World
             Shader.PropertyToID("_CFHybridArtworkExposure");
         private static readonly int NativeSurfaceIndirectScaleId =
             Shader.PropertyToID("_CFNativeSurfaceIndirectScale");
+        private static readonly int NativeBuildingNightDimmingId =
+            Shader.PropertyToID("_CFNativeBuildingNightDimming");
         private static readonly int GardenSurfaceExposureId =
             Shader.PropertyToID("_CFGardenSurfaceExposure");
 
@@ -24,13 +26,15 @@ namespace CityForgeV3.World
 
         public static float RegionSunIntensity(TimeOfDayPreset preset) => preset switch
         {
-            TimeOfDayPreset.Morning => .62f,
+            // Morning uses a softer key and stronger fill so lit faces are not
+            // blown out while the shaded side remains readable.
+            TimeOfDayPreset.Morning => .52f,
             // Ambient plus the full artwork sun must remain below display
             // white. The former 1.05 intensity produced about 1.37 at noon,
             // clipping texture highlights and flattening baked contrast.
             TimeOfDayPreset.Noon => .64f,
             TimeOfDayPreset.Afternoon => .675f,
-            TimeOfDayPreset.Evening => .14f,
+            TimeOfDayPreset.Evening => .18f,
             _ => .035f
         };
 
@@ -55,6 +59,16 @@ namespace CityForgeV3.World
             TimeOfDayPreset.Morning => 2.5f,
             TimeOfDayPreset.Noon => 2.5f,
             TimeOfDayPreset.Afternoon => 2.5f,
+            _ => 1f
+        };
+
+        public static float NativeBuildingNightResponseFor(
+            TimeOfDayPreset preset) => preset switch
+        {
+            // Night ambient keeps the terrain visible, but pale siding and
+            // roofs otherwise read as self-lit. Authored emission stays put.
+            TimeOfDayPreset.Evening => .8f,
+            TimeOfDayPreset.Night => .27f,
             _ => 1f
         };
 
@@ -89,7 +103,8 @@ namespace CityForgeV3.World
                 sunIntensity, sunRotation,
                 HybridArtworkExposureFor(preset),
                 NativeSurfaceIndirectScaleFor(preset),
-                GardenSurfaceExposureFor(preset));
+                GardenSurfaceExposureFor(preset),
+                NativeBuildingNightResponseFor(preset));
             if (sun == null) return;
             sun.transform.rotation = sunRotation;
             sun.color = sunColor;
@@ -102,7 +117,8 @@ namespace CityForgeV3.World
             Color sunColor, float sunIntensity, Quaternion sunRotation,
             float hybridArtworkExposure = 1f,
             float nativeSurfaceIndirectScale = 1f,
-            float gardenSurfaceExposure = 1f)
+            float gardenSurfaceExposure = 1f,
+            float nativeBuildingNightResponse = 1f)
         {
             var directionToSun = -(sunRotation * Vector3.forward).normalized;
             Shader.SetGlobalColor(WorldAmbientColorId, ambientColor);
@@ -116,6 +132,8 @@ namespace CityForgeV3.World
                 Mathf.Max(0f, nativeSurfaceIndirectScale));
             Shader.SetGlobalFloat(GardenSurfaceExposureId,
                 Mathf.Max(0f, gardenSurfaceExposure));
+            Shader.SetGlobalFloat(NativeBuildingNightDimmingId,
+                1f - Mathf.Clamp01(nativeBuildingNightResponse));
         }
 
         public static Color BoundWorldIllumination(Color illumination)

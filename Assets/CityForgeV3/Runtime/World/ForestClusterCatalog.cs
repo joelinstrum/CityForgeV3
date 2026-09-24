@@ -33,10 +33,27 @@ namespace CityForgeV3.World
             IsCluster(FloraTreeRepairs.Identity(name)) &&
             (name.EndsWith("-summer") || name.EndsWith("-autumn") || name.EndsWith("-winter"));
         public static bool UsesDepthShadedCutout(string name) => name != null &&
-            name.EndsWith("-summer") &&
+            (name.EndsWith("-summer") || name.EndsWith("-autumn")) &&
             (name.StartsWith("forest-deciduous-") ||
              name.StartsWith("forest-mountain-") ||
              name.StartsWith("forest-tropical-"));
+        // The far-view artwork is deliberately used at every zoom in this
+        // visual experiment so close-up readability can be judged in play.
+        public static string FarCanopyResourcePath(string id,
+            SeasonPreset season)
+        {
+            if (id != "forest-deciduous-compact" &&
+                id != "forest-deciduous-large") return null;
+            if (season == SeasonPreset.Winter) return null;
+            if (season != SeasonPreset.Autumn)
+                return "CityForgeV3/Flora/ForestCanopyObliqueSummerV03/" + id + "-summer";
+            return "CityForgeV3/Flora/ForestCanopyFarV01/" + id + "-autumn";
+        }
+        // The oblique cutouts have intricate alpha edges. A four-vertex quad
+        // keeps local batch rebuilds bounded; their shader still clips alpha.
+        public static bool UsesQuadCanopyMesh(string resourcePath) =>
+            resourcePath != null && resourcePath.StartsWith(
+                "CityForgeV3/Flora/ForestCanopyObliqueSummerV03/");
         public static SeasonPreset SeasonForIndex(int index) => (Mathf.Max(0, index) % 4) switch
         {
             1 => SeasonPreset.Autumn, 2 => SeasonPreset.Winter,
@@ -51,13 +68,12 @@ namespace CityForgeV3.World
                 string familySuffix = id.StartsWith("forest-tropical-") ? "summer" :
                     season == SeasonPreset.Autumn ? "autumn" :
                     season == SeasonPreset.Winter ? "winter" : "summer";
-                // Preview the stronger depth-shaded family compositions in
-                // summer (and spring, which shares summer artwork). Autumn and
-                // winter remain on approved V01 until matching derivatives of
-                // the accepted V03 silhouettes are ready.
+                // Summer/spring use the accepted V03 depth-staggered art.
+                // Autumn/winter use seasonal derivatives of those same
+                // silhouettes so trunks never fall back to the old V01 row.
                 string collection = familySuffix == "summer"
                     ? "ForestClustersFamilyMixV03"
-                    : "ForestClustersFamilyMixV01";
+                    : "ForestClustersFamilyMixV04";
                 return "CityForgeV3/Flora/" + collection + "/" + id + "-" + familySuffix;
             }
             string palette = (id[16] - '1') % 2 == 0 ? "01" : "02";

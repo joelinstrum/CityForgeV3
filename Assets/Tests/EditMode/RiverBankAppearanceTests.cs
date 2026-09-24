@@ -190,13 +190,15 @@ namespace CityForgeV3.Tests
             Assert.That(major.OuterBlendMeters,
                 Is.EqualTo(RiverBankAppearance.WideOuterBlendMeters));
             Assert.That(major.OuterFadeEnd,
-                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd +
+                    RiverBankAppearance.WideOuterBlendMeters / 16f)
                     .Within(.00001f));
             Assert.That(medium.OuterFadeNoise, Is.Zero);
             Assert.That(medium.TerrainBlendStrength, Is.Zero);
             Assert.That(major.OuterFadeNoise,
                 Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
-            Assert.That(major.TerrainBlendStrength, Is.EqualTo(1f));
+            Assert.That(major.TerrainBlendStrength,
+                Is.EqualTo(RiverBankAppearance.WideTerrainBlendStrength));
             Assert.That(medium.SubmergedBedBrightness,
                 Is.EqualTo(RiverBankAppearance.DefaultSubmergedBedBrightness));
             Assert.That(medium.SubmergedBlendStart,
@@ -313,12 +315,13 @@ namespace CityForgeV3.Tests
                 Assert.That(material.GetFloat("_BankPatternOffset"),
                     Is.GreaterThanOrEqualTo(0f));
                 Assert.That(material.GetFloat("_OuterFadeEnd"),
-                    Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd + .5f)
+                    Is.EqualTo(RiverBankAppearance.DefaultOuterFadeEnd +
+                        RiverBankAppearance.WideOuterBlendMeters / 16f)
                         .Within(.00001f));
                 Assert.That(material.GetFloat("_OuterFadeNoise"),
                     Is.EqualTo(RiverBankAppearance.WideOuterFadeNoise));
                 Assert.That(material.GetFloat("_TerrainBlendStrength"),
-                    Is.EqualTo(1f));
+                    Is.EqualTo(RiverBankAppearance.WideTerrainBlendStrength));
                 Assert.That(material.GetFloat("_SubmergedBedBrightness"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedBedBrightness));
                 Assert.That(material.GetFloat("_SubmergedBlendStart"),
@@ -332,10 +335,12 @@ namespace CityForgeV3.Tests
                     Is.SameAs(Resources.Load<Texture2D>(
                         DistrictWorldController.DistrictGrassResource)));
 
-                var waterMaterial = host.GetComponentsInChildren<MeshRenderer>()
-                    .Select(renderer => renderer.sharedMaterial)
-                    .First(candidate => candidate.shader.name ==
+                var waterRenderer = host.GetComponentsInChildren<MeshRenderer>()
+                    .First(renderer => renderer.sharedMaterial.shader.name ==
                         "CityForgeV3/RiverWaterSurface");
+                var waterMaterial = waterRenderer.sharedMaterial;
+                Assert.That(waterMaterial.GetFloat("_WaterVisible"),
+                    Is.EqualTo(1f));
                 Assert.That(waterMaterial.GetFloat("_EdgeOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideWaterEdgeOpacity));
                 Assert.That(waterMaterial.GetFloat("_DeepWaterStart"),
@@ -344,6 +349,16 @@ namespace CityForgeV3.Tests
                     Is.EqualTo(RiverBankAppearance.WideDepthBlendSoftness));
                 Assert.That(waterMaterial.GetFloat("_SubmergedOpacity"),
                     Is.EqualTo(RiverBankAppearance.WideSubmergedWaterOpacity));
+                Assert.That(waterMaterial.GetFloat("_EdgeFeatherMeters"),
+                    Is.EqualTo(RiverBankAppearance.WideWaterEdgeFeatherMeters));
+                Assert.That(waterMaterial.GetFloat("_WaterHalfWidth"),
+                    Is.GreaterThan(1f));
+                Assert.That(RiverBankAppearance.VisualWaterHalfWidth(
+                        60f, 78f, 144f),
+                    Is.EqualTo(72f));
+                Assert.That(RiverBankAppearance.VisualWaterHalfWidth(
+                        30f, 40f, 76f),
+                    Is.EqualTo(30f));
 
                 var grassEdge = host.GetComponentsInChildren<MeshFilter>()
                     .First(filter => filter.name.Contains("Grass Edge"));

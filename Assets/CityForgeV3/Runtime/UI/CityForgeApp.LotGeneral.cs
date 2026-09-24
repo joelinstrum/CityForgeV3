@@ -16,6 +16,7 @@ namespace CityForgeV3.UI
             var baseCost = Math.Max(0, lot.BasePlopCost);
             var widthCells = Mathf.Clamp(_lotWorld.LotWidthCells, 1, 8);
             var depthCells = Mathf.Clamp(_lotWorld.LotDepthCells, 1, 8);
+            var riverReflectionEnabled = _lotWorld.RiverReflectionEnabled;
             var panel = CreateDocumentModal("LOT GENERAL",
                 "Set the category, size, and build requirements. Apply changes, then Save the Lot to keep them.");
             panel.name = "lot-general-panel";
@@ -104,6 +105,13 @@ namespace CityForgeV3.UI
             scroll.Add(StyledLabel("Each major cell is 10 × 10 meters.",
                 "inspector-note"));
 
+            Heading("VISUALS");
+            Flag("River reflections", riverReflectionEnabled,
+                value => riverReflectionEnabled = value);
+            scroll.Add(StyledLabel(
+                "Reflect eligible buildings in nearby river water at close zoom.",
+                "inspector-note"));
+
             Heading("BUILD REQUIREMENTS");
             var buildingCost = Math.Max(0,
                 LotEconomy.CalculatePlopCost(lot) - Math.Max(0, lot.BasePlopCost));
@@ -158,6 +166,7 @@ namespace CityForgeV3.UI
                     depthCells, LotEraCatalog.IdForDisplayName(eraField.value));
                 _lotWorld.SetTrafficType(
                     TrafficLotModel.ForDisplayName(trafficField.value));
+                _lotWorld.SetRiverReflectionEnabled(riverReflectionEnabled);
                 lot.BasePlopCost = baseCost;
                 lot.Stats = requirements;
             }

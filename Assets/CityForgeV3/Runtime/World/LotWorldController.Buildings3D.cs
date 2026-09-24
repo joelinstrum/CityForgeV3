@@ -83,8 +83,12 @@ namespace CityForgeV3.World
         private readonly List<GameObject> _experimentalBuilding3DVisibleRoots = new();
         private readonly List<FarZoomBuildingBillboard> _farBuildingBillboards = new();
         private readonly List<Material> _experimentalBuilding3DMaterials = new();
+        private readonly Dictionary<Material, Material>
+            _preparedImportedBuildingMaterials = new();
         private readonly Dictionary<GameObject, GameObject>
             _experimentalBuilding3DGroundShadows = new();
+        private readonly Dictionary<GameObject, List<GameObject>>
+            _experimentalBuilding3DShadowCopies = new();
         private readonly Dictionary<GameObject, List<Vector2>>
             _buildingFootprintContours = new();
         private readonly Dictionary<GameObject, Bounds>
@@ -129,7 +133,11 @@ namespace CityForgeV3.World
         private bool _building3DDragActive;
         private bool _building3DPlacementPreviewActive;
         private Vector2 _building3DDragOffset;
+        private float _building3DProfileDragStartY;
+        private float _building3DProfileDragStartElevation;
         public const float Building3DPlacementPreviewOpacity = 0.75f;
+        public const float Building3DMinimumElevationMeters = -8f;
+        public const float Building3DMaximumElevationMeters = 16f;
         public bool Building3DPlacementPreviewActive =>
             _building3DPlacementPreviewActive;
         private GameObject _building3DSelectionOutline;
@@ -137,6 +145,71 @@ namespace CityForgeV3.World
         private Material _building3DMeshSelectionMaterial;
 
         public int SelectedBuilding3DIndex => _selectedBuilding3DIndex;
+        public int PlacedBuilding3DCount =>
+            _session?.Data?.Buildings3D?.Count ?? 0;
+        public float SelectedBuilding3DElevation =>
+            _selectedBuilding3DIndex >= 0 &&
+            _selectedBuilding3DIndex < (_session?.Data?.Buildings3D?.Count ?? 0)
+                ? _session.Data.Buildings3D[_selectedBuilding3DIndex]
+                    .ElevationOffsetMeters
+                : 0f;
+        public bool RiverReflectionEnabled =>
+            _session?.Data != null && !_session.Data.RiverReflectionDisabled;
+
+        public void SetRiverReflectionEnabled(bool enabled)
+        {
+            if (_session?.Data == null ||
+                _session.Data.RiverReflectionDisabled == !enabled) return;
+            _session.Data.RiverReflectionDisabled = !enabled;
+            StateChanged?.Invoke();
+        }
+
+        public bool AdjustSelectedBuilding3DElevation(float deltaMeters)
+        {
+            if (_selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0) ||
+                _selectedBuilding3DIndex >= _experimentalBuilding3DVisibleRoots.Count)
+                return false;
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            var next = Mathf.Clamp(placed.ElevationOffsetMeters + deltaMeters,
+                Building3DMinimumElevationMeters,
+                Building3DMaximumElevationMeters);
+            if (Mathf.Approximately(next, placed.ElevationOffsetMeters))
+                return false;
+            var change = next - placed.ElevationOffsetMeters;
+            placed.ElevationOffsetMeters = next;
+            var root = _experimentalBuilding3DVisibleRoots[
+                _selectedBuilding3DIndex];
+            if (root != null)
+            {
+                root.transform.localPosition += Vector3.up * change;
+                if (_experimentalBuilding3DShadowCopies.TryGetValue(root,
+                        out var copies))
+                    foreach (var copy in copies)
+                        if (copy != null)
+                            copy.transform.localPosition += Vector3.up * change;
+                UpdateExperimentalBuilding3DProjectedGroundShadows(root);
+                if (_building3DSelectionOutline != null)
+                    _building3DSelectionOutline.transform.localPosition +=
+                        Vector3.up * change;
+            }
+            // Height edits only mutate an existing placement. Its ID is
+            // already stable; avoid the registry's whole-lot ID sweep on
+            // every quarter-metre drag step.
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        public bool AlignSelectedBuilding3DToGround()
+        {
+            if (_selectedBuilding3DIndex < 0 ||
+                _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
+                return false;
+            var placed = _session.Data.Buildings3D[_selectedBuilding3DIndex];
+            return AdjustSelectedBuilding3DElevation(
+                ProfileTerrainHeight(placed.X, placed.Z) -
+                placed.ElevationOffsetMeters);
+        }
         public bool SelectedBuildingCanRepaint
         {
             get
@@ -236,6 +309,21 @@ namespace CityForgeV3.World
 
         public int ExperimentalBuilding3DCount =>
             _session?.Data?.Buildings3D?.Count ?? 0;
+
+        // Used only when a hosted lot is added or rebuilt. District reflection
+        // candidates are indexed from this result, never discovered per frame.
+        public void CollectNativeBuildingRoots(string assetId,
+            List<Transform> results, bool reflectionEnabledOnly = false)
+        {
+            if (results == null || _session?.Data?.Buildings3D == null ||
+                (reflectionEnabledOnly && !RiverReflectionEnabled)) return;
+            var count = Mathf.Min(_session.Data.Buildings3D.Count,
+                _experimentalBuilding3DVisibleRoots.Count);
+            for (var index = 0; index < count; index++)
+                if (_session.Data.Buildings3D[index].AssetId == assetId &&
+                    _experimentalBuilding3DVisibleRoots[index] != null)
+                    results.Add(_experimentalBuilding3DVisibleRoots[index].transform);
+        }
         public int ExperimentalBuilding3DFloraShadowCasterCount
         {
             get
@@ -382,7 +470,9 @@ namespace CityForgeV3.World
             // previous refit forced the native-3D 45-degree azimuth here,
             // making the entire lot appear to rotate as soon as the first
             // building was placed.
-            RestoreCameraFraming(preservedCamera);
+            if (ProfileViewEnabled) ApplyProfileCamera();
+            else RestoreCameraFraming(preservedCamera);
+            RefreshProfileGuides();
             NotifyStateChanged();
             return true;
         }
@@ -772,6 +862,11 @@ namespace CityForgeV3.World
                 if (Application.isPlaying) Destroy(_experimental3DStudioSkybox);
                 else DestroyImmediate(_experimental3DStudioSkybox);
             }
+            if (_profileGuideMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(_profileGuideMaterial);
+                else DestroyImmediate(_profileGuideMaterial);
+            }
             if (_experimental3DShadowDistanceApplied)
             {
                 QualitySettings.shadowDistance =
@@ -801,6 +896,7 @@ namespace CityForgeV3.World
             _farBuildingBillboards.Clear();
             _building3DSelectionOutline = null;
             _experimentalBuilding3DGroundShadows.Clear();
+            _experimentalBuilding3DShadowCopies.Clear();
             _buildingFootprintContours.Clear();
             _buildingFloraBounds.Clear();
             foreach (var material in _experimentalBuilding3DMaterials)
@@ -810,6 +906,7 @@ namespace CityForgeV3.World
                     else DestroyImmediate(material);
                 }
             _experimentalBuilding3DMaterials.Clear();
+            _preparedImportedBuildingMaterials.Clear();
             if (_session?.Data?.Buildings3D == null) return;
 
             foreach (var placed in _session.Data.Buildings3D)
@@ -882,6 +979,10 @@ namespace CityForgeV3.World
                 }
                 root.GetComponentInChildren<BuildingDoorController>(true)?.SetOpen(placed.DoorOpen, true);
                 GroundExperimentalBuilding(root);
+                root.transform.localPosition += Vector3.up *
+                    Mathf.Clamp(placed.ElevationOffsetMeters,
+                        Building3DMinimumElevationMeters,
+                        Building3DMaximumElevationMeters);
                 // Package-level unit conversion changes the representation
                 // bounds after the prefab's LODGroup was authored. Recompute
                 // here so Unity does not cull a meter-sized building using
@@ -923,6 +1024,7 @@ namespace CityForgeV3.World
             // loaded lot does not wait for a later time-of-day interaction.
             UpdateExperimentalBuilding3DProjectedGroundShadows();
             RefreshBuilding3DSelectionOutline();
+            RefreshProfileGuides();
         }
 
         private void BuildExperimentalBuilding3DProjectedGroundShadow(
@@ -983,9 +1085,23 @@ namespace CityForgeV3.World
             _experimentalBuilding3DMaterials.Add(material);
             _experimentalBuilding3DGroundShadows[visibleRoot] = shadow;
             _experimentalBuilding3DRoots.Add(shadow);
+            RegisterBuilding3DShadowCopy(visibleRoot, shadow);
         }
 
-        private void UpdateExperimentalBuilding3DProjectedGroundShadows()
+        private void RegisterBuilding3DShadowCopy(GameObject source,
+            GameObject copy)
+        {
+            if (!_experimentalBuilding3DShadowCopies.TryGetValue(source,
+                    out var copies))
+            {
+                copies = new List<GameObject>(4);
+                _experimentalBuilding3DShadowCopies.Add(source, copies);
+            }
+            copies.Add(copy);
+        }
+
+        private void UpdateExperimentalBuilding3DProjectedGroundShadows(
+            GameObject sourceFilter = null)
         {
             if (ExperimentalBuilding3DCount <= 0 || _sun == null) return;
             // The Lot Editor's exact-color receiver uses this projected copy.
@@ -1012,13 +1128,21 @@ namespace CityForgeV3.World
             };
             opacity *= Mathf.Clamp01(_environmentShadowStrength);
 
-            foreach (var pair in _experimentalBuilding3DGroundShadows)
+            if (sourceFilter != null)
             {
-                var source = pair.Key;
-                var shadow = pair.Value;
-                if (source == null || shadow == null) continue;
+                if (_experimentalBuilding3DGroundShadows.TryGetValue(
+                        sourceFilter, out var selectedShadow))
+                    UpdateOne(sourceFilter, selectedShadow);
+                return;
+            }
+            foreach (var pair in _experimentalBuilding3DGroundShadows)
+                UpdateOne(pair.Key, pair.Value);
+
+            void UpdateOne(GameObject source, GameObject shadow)
+            {
+                if (source == null || shadow == null) return;
                 shadow.SetActive(visible);
-                if (!visible) continue;
+                if (!visible) return;
 
                 var bounds = default(Bounds);
                 var hasBounds = false;
@@ -1027,7 +1151,7 @@ namespace CityForgeV3.World
                     if (!hasBounds) { bounds = renderer.bounds; hasBounds = true; }
                     else bounds.Encapsulate(renderer.bounds);
                 }
-                if (!hasBounds) continue;
+                if (!hasBounds) return;
                 var referenceHeight = Mathf.Max(0.01f, bounds.max.y - 0.018f);
                 var displacement = new Vector3(ray.x, 0f, ray.z) *
                     (referenceHeight / -ray.y) * lengthScale;
@@ -1035,7 +1159,7 @@ namespace CityForgeV3.World
                 {
                     UpdateDistrictBuildingShadowHull(shadow, bounds,
                         displacement, opacity);
-                    continue;
+                    return;
                 }
                 foreach (var renderer in shadow.GetComponentsInChildren<Renderer>(true))
                 {
@@ -1147,15 +1271,17 @@ namespace CityForgeV3.World
 
             // Native building imports use the shared, source-color-preserving
             // matte contract automatically on placement and saved-lot reload.
-            // Authored packages and explicitly authored materials own their look.
+            // Explicitly authored materials own their look. Ordinary packaged
+            // buildings still participate in the shared native-lighting contract.
             if (string.Equals(content.materialMode, "embedded",
                     System.StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(content.runtimeProfile, "authored-materials",
                     System.StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(content.runtimeProfile, "opaque-prop",
-                    System.StringComparison.OrdinalIgnoreCase) &&
-                root.GetComponent<Building3DPackageInstance>() == null)
-                ImportedBuildingMaterials.Prepare(root, _experimentalBuilding3DMaterials);
+                    System.StringComparison.OrdinalIgnoreCase))
+                ImportedBuildingMaterials.Prepare(root,
+                    _experimentalBuilding3DMaterials,
+                    _preparedImportedBuildingMaterials);
 
             if (string.Equals(content.materialMode, "pbr",
                     System.StringComparison.OrdinalIgnoreCase))
@@ -1291,6 +1417,7 @@ namespace CityForgeV3.World
                 renderer.allowOcclusionWhenDynamic = false;
             }
             _experimentalBuilding3DRoots.Add(groundCaster);
+            RegisterBuilding3DShadowCopy(visibleRoot, groundCaster);
 
             // Flora and transparent billboard receivers are deliberately kept
             // on an isolated layer so the main sun cannot light them twice.
@@ -1321,6 +1448,7 @@ namespace CityForgeV3.World
                 renderer.allowOcclusionWhenDynamic = false;
             }
             _experimentalBuilding3DRoots.Add(caster);
+            RegisterBuilding3DShadowCopy(visibleRoot, caster);
         }
 
         private static void DisableClonedPackageLodControl(GameObject clone, GameObject visibleRoot)
@@ -1362,6 +1490,7 @@ namespace CityForgeV3.World
                 renderer.allowOcclusionWhenDynamic = false;
             }
             _experimentalBuilding3DRoots.Add(caster);
+            RegisterBuilding3DShadowCopy(visibleRoot, caster);
         }
 
         private static bool IsPackageShadowRenderer(Renderer renderer)
@@ -1445,10 +1574,14 @@ namespace CityForgeV3.World
             }
             if (bestIndex < 0 || bestIndex >= _session.Data.Buildings3D.Count)
                 return false;
-            var ground = new Plane(Vector3.up, Vector3.zero);
-            if (!ground.Raycast(ray, out var groundDistance)) return false;
-            var point = ray.GetPoint(groundDistance);
             var placed = _session.Data.Buildings3D[bestIndex];
+            var point = Vector3.zero;
+            if (!ProfileViewEnabled)
+            {
+                var ground = new Plane(Vector3.up, Vector3.zero);
+                if (!ground.Raycast(ray, out var groundDistance)) return false;
+                point = ray.GetPoint(groundDistance);
+            }
             ActiveObjectSelection = LotObjectSelectionKind.None;
             SelectedFloraIndex = -1;
             SelectedPropIndex = -1;
@@ -1461,13 +1594,34 @@ namespace CityForgeV3.World
             _building3DDragOffset = new Vector2(placed.X - point.x,
                 placed.Z - point.z);
             _building3DDragActive = true;
+            if (ProfileViewEnabled)
+            {
+                _building3DProfileDragStartY = panelPosition.y;
+                _building3DProfileDragStartElevation =
+                    placed.ElevationOffsetMeters;
+            }
             RefreshBuilding3DSelectionOutline();
+            if (ProfileViewEnabled) ApplyProfileCamera();
+            RefreshProfileGuides();
             return true;
         }
 
         public bool DragBuilding3DFromPanel(Vector2 panelPosition,
             Vector2 panelSize)
         {
+            if (ProfileViewEnabled)
+            {
+                if (!_building3DDragActive || _camera == null ||
+                    panelSize.y <= 1f) return false;
+                var metersPerPixel = 2f * _camera.orthographicSize /
+                    panelSize.y;
+                var target = Mathf.Round((
+                    _building3DProfileDragStartElevation +
+                    (_building3DProfileDragStartY - panelPosition.y) *
+                    metersPerPixel) * 4f) * .25f;
+                return AdjustSelectedBuilding3DElevation(target -
+                    SelectedBuilding3DElevation);
+            }
             if (!_building3DDragActive || _camera == null ||
                 _selectedBuilding3DIndex < 0 ||
                 _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
@@ -1510,6 +1664,19 @@ namespace CityForgeV3.World
             _selectedBuilding3DIndex = index;
             _building3DDragActive = false;
             RefreshBuilding3DSelectionOutline();
+            if (ProfileViewEnabled) ApplyProfileCamera();
+            RefreshProfileGuides();
+            return true;
+        }
+
+        public bool CycleSelectedBuilding3D(int direction)
+        {
+            var count = PlacedBuilding3DCount;
+            if (count == 0) return false;
+            var next = _selectedBuilding3DIndex < 0
+                ? 0 : (_selectedBuilding3DIndex + direction % count + count) % count;
+            if (!SelectBuilding3DForQa(next)) return false;
+            StateChanged?.Invoke();
             return true;
         }
 
@@ -1517,6 +1684,8 @@ namespace CityForgeV3.World
         {
             if (_selectedBuilding3DIndex < 0 &&
                 _building3DSelectionOutline == null) return;
+            var wasProfile = ProfileViewEnabled;
+            ProfileViewEnabled = false;
             _selectedBuilding3DIndex = -1;
             _building3DDragActive = false;
             var restorePlacementMaterials = _building3DPlacementPreviewActive;
@@ -1524,6 +1693,8 @@ namespace CityForgeV3.World
             if (restorePlacementMaterials)
                 RebuildExperimentalBuilding3DPresentations();
             RefreshBuilding3DSelectionOutline();
+            RefreshProfileGuides();
+            if (wasProfile) ApplyCameraFacing(false);
             NotifyStateChanged();
         }
 
@@ -1540,6 +1711,7 @@ namespace CityForgeV3.World
             placed.RotationQuarterTurns = placed.RotationEighthTurns / 2;
             RebuildExperimentalBuilding3DPresentations();
             ApplyTimeOfDay();
+            if (ProfileViewEnabled) ApplyProfileCamera();
             NotifyStateChanged();
             return true;
         }
@@ -1698,16 +1870,20 @@ namespace CityForgeV3.World
                 _selectedBuilding3DIndex >= (_session?.Data?.Buildings3D?.Count ?? 0))
                 return false;
             var preservedCamera = CaptureCameraFraming();
+            var wasProfile = ProfileViewEnabled;
             _session.Data.Buildings3D.RemoveAt(_selectedBuilding3DIndex);
             _selectedBuilding3DIndex = -1;
+            ProfileViewEnabled = false;
             _building3DDragActive = false;
             _building3DPlacementPreviewActive = false;
             ActiveObjectSelection = LotObjectSelectionKind.None;
             ClearObjectHover();
             RebuildExperimentalBuilding3DPresentations();
             ApplyTimeOfDay();
-            RestoreCameraFraming(preservedCamera);
+            if (wasProfile) ApplyCameraFacing(false);
+            else RestoreCameraFraming(preservedCamera);
             RefreshBuilding3DSelectionOutline();
+            RefreshProfileGuides();
             NotifyStateChanged();
             return true;
         }

@@ -5,7 +5,7 @@ namespace CityForgeV3.World
     public sealed class PlaneUkFloraPresentation : MonoBehaviour
     {
         public const string ResourceRoot="CityForgeV3/Flora/PlaneUK3DV01/";
-        public static bool IsTree(string id)=>id=="plane-uk-3d-a"||id=="plane-uk-3d-b"||id=="angel-oak-spanish-moss";
+        public static bool IsTree(string id)=>id=="plane-uk-3d-a"||id=="plane-uk-3d-b";
         public static bool UsesMesh(LotZoomLevel zoom)=>zoom==LotZoomLevel.Detail||zoom==LotZoomLevel.Inspection;
         public static string Variant(string id)=>id.EndsWith("-b")?"b":"a";
         public static string SeasonName(SeasonPreset season)=>season==SeasonPreset.Autumn?"autumn":season==SeasonPreset.Winter?"winter":"summer";

@@ -78,19 +78,34 @@ namespace CityForgeV3.World
         public static bool UsesBuildingBillboards(DistrictZoomLevel level) =>
             level == DistrictZoomLevel.LOD5Billboard;
 
-        // Normalized screen coordinates, with Y increasing downwards.
-        // Intersections of the outer quarter strips are reserved for corner menus.
-        public static Vector2Int EdgePanWorldMotion(Vector2 position)
+        // Local viewport pixels, with Y increasing downwards. Keep the hot
+        // strip fixed in screen space so it stays narrow at every resolution.
+        // Intersections are reserved for corner controls.
+        public const float EdgePanInsetPixels = 12f;
+        public static Vector2Int EdgePanWorldMotion(Vector2 position, Vector2 viewportSize)
         {
             if (!float.IsFinite(position.x) || !float.IsFinite(position.y) ||
-                position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1)
+                viewportSize.x <= 0 || viewportSize.y <= 0 ||
+                position.x < 0 || position.x > viewportSize.x ||
+                position.y < 0 || position.y > viewportSize.y)
                 return Vector2Int.zero;
-            bool horizontal = position.x <= .25f || position.x >= .75f;
-            bool vertical = position.y <= .25f || position.y >= .75f;
+            bool horizontal = position.x <= EdgePanInsetPixels ||
+                position.x >= viewportSize.x - EdgePanInsetPixels;
+            bool vertical = position.y <= EdgePanInsetPixels ||
+                position.y >= viewportSize.y - EdgePanInsetPixels;
             if (horizontal == vertical) return Vector2Int.zero;
-            if (horizontal) return new Vector2Int(position.x <= .25f ? 1 : -1, 0);
-            return new Vector2Int(0, position.y <= .25f ? -1 : 1);
+            if (horizontal) return new Vector2Int(position.x <= EdgePanInsetPixels ? 1 : -1, 0);
+            return new Vector2Int(0, position.y <= EdgePanInsetPixels ? -1 : 1);
         }
+
+        // Keep edge-pan travel proportional to the camera's current visible
+        // height. This avoids carrying a close-view speed into a distant view
+        // (or vice versa) after zooming and gives every stop the same perceived
+        // screen-space motion.
+        public static float EdgePanSpeedMetersPerSecond(float orthographicSize,
+            DistrictZoomLevel level) =>
+            Mathf.Max(0f, orthographicSize) * .24f *
+            (level <= DistrictZoomLevel.LOD2 ? 1.4f : 1f);
 
         public static int GridInterval(DistrictZoomLevel level) => level switch
         {
@@ -121,11 +136,10 @@ namespace CityForgeV3.World
 
         public static float PanSpeedScale(DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD0 => 0.35f,
-            // Player-facing Zoom 2: 50% faster than its previous fine-control rate.
-            DistrictZoomLevel.LOD1 => 0.525f,
-            // Player-facing Zoom 3 retains its previously approved rate.
-            DistrictZoomLevel.LOD2 => 1.3f,
+            DistrictZoomLevel.LOD0 => 0.49f,
+            // Player-facing Zooms 1–3: 40% faster than their previous rates.
+            DistrictZoomLevel.LOD1 => 0.735f,
+            DistrictZoomLevel.LOD2 => 1.82f,
             // Distant views cover far more world space per screen pixel. Keep
             // their apparent motion deliberately slower than close inspection.
             DistrictZoomLevel.LOD3 => 0.18f,

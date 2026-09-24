@@ -19,10 +19,18 @@ is no longer darkened to 80%; it renders at 94%, while the shoreline-to-bed
 crossfade expands from 1.84 metres to 8.48 metres. The animated water gains
 opacity across a correspondingly broader depth interval (0.42 edge opacity,
 0.34 deep-water start and 0.58 softness), with an 0.82 near-submerged opacity.
-Together these overlapping fades replace the purple-gray inner ribbon and its
-hard cutoff with pale submerged stone that gradually yields to deep blue.
+Those values remain intact after a rejected broad-transparency experiment
+restored the unwanted purple-brown shallow band. Instead, the visual water mesh
+now reaches the calculated waterline and applies a smooth, world-scaled opacity
+gradient across its final 6 metres on major rivers. Close inspection showed the
+remaining line was the literal end of the water mesh: no shader gradient can
+draw beyond geometry. Major-river presentation now extends up to 12 metres
+beyond the calculated gameplay waterline, bounded by the existing bank edge, so
+the shallow opacity ramp has a real surface on which to progress through roughly
+80%, 60%, 40%, and 30% before its final feather. Navigation and surface sampling
+retain their existing 0.10-metre inset and do not use this visual shoulder.
 Medium rivers and streams retain their existing sharper mountain-water
-calibration.
+calibration and use a proportionate 1.5-metre final-edge gradient.
 
 Exact prompts, generated-source identifiers, processing and hashes are in
 `Documentation/ArtStudies/RiverBanksV06Varied/README.md`.

@@ -4,6 +4,7 @@ Shader "CityForgeV3/RiverWaterSurface"
     {
         _MainTex ("Water Texture", 2D) = "white" {}
         _WhitecapTex ("Whitecap Texture", 2D) = "black" {}
+        _WaterVisible ("Water Visible (Riverbed Review)", Float) = 1
         _Color ("Water Tint", Color) = (0.94,1.02,1.06,1)
         _Brightness ("Brightness", Range(0.1,2)) = 1.08
         _Smoothness ("Smoothness", Range(0,1)) = 0.62
@@ -13,6 +14,8 @@ Shader "CityForgeV3/RiverWaterSurface"
         _DeepWaterStrength ("Deep Water Strength", Range(0,1)) = 0.58
         _DepthBlendSoftness ("Depth Blend Softness", Range(0.02,1)) = 0.56
         _SubmergedOpacity ("Near Submerged Opacity", Range(0,1)) = 0.60
+        _WaterHalfWidth ("Water Half Width", Float) = 1
+        _EdgeFeatherMeters ("Edge Feather Metres", Float) = 1.5
         _SubmergedFadeStart ("Submerged Fade Start", Range(0,4)) = 0.12
         _SubmergedFadeEnd ("Submerged Fade End", Range(0.2,12)) = 2.2
         _FlowSpeed ("Flow Speed", Range(-0.1,0.1)) = 0.06
@@ -80,6 +83,8 @@ Shader "CityForgeV3/RiverWaterSurface"
             float _DeepWaterStrength;
             float _DepthBlendSoftness;
             float _SubmergedOpacity;
+            float _WaterHalfWidth;
+            float _EdgeFeatherMeters;
             float _SubmergedFadeStart;
             float _SubmergedFadeEnd;
             float _FlowSpeed;
@@ -94,6 +99,13 @@ Shader "CityForgeV3/RiverWaterSurface"
             float _WhitecapTiling;
             float _WhitecapSpeed;
             float _WhitecapPulseSpeed;
+            float _WaterVisible;
+            sampler2D _CF_RiverBuildingReflectionTex;
+            float4x4 _CF_RiverBuildingReflectionVP;
+            float4 _CF_RiverBuildingReflectionCenter;
+            float4 _CF_RiverBuildingReflectionWaterDirection;
+            float4 _CF_RiverBuildingReflectionUvBasis;
+            float _CF_RiverBuildingReflectionEnabled;
 
             Varyings vert(AppData input)
             {
@@ -111,6 +123,9 @@ Shader "CityForgeV3/RiverWaterSurface"
 
             fixed4 frag(Varyings input) : SV_Target
             {
+                // Hide presentation only for the requested riverbed review.
+                // River geometry, surface sampling and gameplay remain active.
+                clip(_WaterVisible - 0.5);
                 // Keep metre-scaled district UVs; advect along the local river
                 // tangent. Two fading phases prevent unlimited bend distortion.
                 float2 flow = input.flow / max(length(input.flow), 0.0001);
@@ -215,10 +230,67 @@ Shader "CityForgeV3/RiverWaterSurface"
                     max(_SubmergedFadeStart + 0.01, _SubmergedFadeEnd),
                     submergedDepth);
                 water.a *= lerp(_SubmergedOpacity, 1.0, submergedFade);
+                // Fade only the final physical metres at the bank. Measuring
+                // in world scale avoids a huge translucent band on wide rivers
+                // while retaining established blue shallow water farther in.
+                float edgeDistanceMeters = depthCoordinate *
+                    max(0.01, _WaterHalfWidth);
+                water.a *= smoothstep(0.0,
+                    max(0.01, _EdgeFeatherMeters), edgeDistanceMeters);
                 // Junction processing writes a longitudinal fade into vertex
                 // alpha so tributaries dissolve cleanly into wider rivers.
                 // Red remains reserved for the cross-channel depth profile.
                 water.a *= input.color.a;
+                // One opt-in close-zoom building capture. The world-space
+                // radius and river depth coordinate confine it to nearby
+                // actual water, while the existing flow adds a light ripple.
+                if (_CF_RiverBuildingReflectionEnabled > 0.5)
+                {
+                    float distanceToBuilding = distance(input.worldPosition.xz,
+                        _CF_RiverBuildingReflectionCenter.xy);
+                    float radius = _CF_RiverBuildingReflectionCenter.z;
+                    if (distanceToBuilding < radius)
+                    {
+                        float2 waterDirection = normalize(
+                            _CF_RiverBuildingReflectionWaterDirection.xy);
+                        float2 across = float2(-waterDirection.y,
+                            waterDirection.x);
+                        float2 delta = input.worldPosition.xz -
+                            _CF_RiverBuildingReflectionCenter.xy;
+                        float depth = dot(delta, waterDirection);
+                        float lateral = dot(delta, across);
+                        // The capture computes this fixed world-space UV
+                        // basis once, rather than three matrix projections
+                        // for every water pixel.
+                        float2 reflectionUv =
+                            _CF_RiverBuildingReflectionUvBasis.xy +
+                            float2(lateral *
+                                _CF_RiverBuildingReflectionUvBasis.z,
+                                -depth *
+                                _CF_RiverBuildingReflectionUvBasis.w);
+                        reflectionUv += flow * alongWarp * 0.007;
+                        if (depth > 0.0 &&
+                            all(reflectionUv >= 0.0) &&
+                            all(reflectionUv <= 1.0))
+                        {
+                            fixed4 reflected = tex2D(
+                                _CF_RiverBuildingReflectionTex, reflectionUv);
+                            float edgeMask = 1.0 - smoothstep(
+                                radius * 0.4, radius, distanceToBuilding);
+                            float sideFade = 1.0 - smoothstep(10.0,
+                                23.0, abs(lateral));
+                            float depthFade = 1.0 - smoothstep(14.0,
+                                38.0, depth);
+                            float amount = reflected.a * edgeMask * sideFade *
+                                depthFade * smoothstep(0.0, 3.0, depth) *
+                                smoothstep(0.01, 0.18, depthCoordinate) * 0.55;
+                            water.rgb = lerp(water.rgb,
+                                reflected.rgb * float3(0.90, 1.0, 1.08),
+                                amount);
+                            water.a = saturate(water.a + amount * 0.23);
+                        }
+                    }
+                }
                 return water;
             }
             ENDCG

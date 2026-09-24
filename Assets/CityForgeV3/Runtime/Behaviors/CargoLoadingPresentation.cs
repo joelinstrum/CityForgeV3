@@ -34,7 +34,7 @@ namespace CityForgeV3.Behaviors
                 LotRuntimeObject.Attach(actor.transform, instance.InstanceId + "/worker/" + (i + 1), actor.name);
                 var bundle = Bundle(actor.transform, new Vector3(0, 1.05f, .39f), 1.45f);
                 _workers[i] = actor.AddComponent<DockWorkerVisual>();
-                _workers[i].Initialize(bundle);
+                _workers[i].Initialize(bundle, i);
             }
             BuildPile();
         }

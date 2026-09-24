@@ -15,6 +15,12 @@ namespace CityForgeV3.UI
         // Rebound only when composing a new district HUD; local palette/selection changes retain these widgets.
         readonly System.Collections.Generic.Dictionary<string, (Label value, Button button)> _mapMetrics = new();
         Label _mapSeasonLabel;
+        Label _mapYearLabel;
+        Label _mapTimeLabel;
+        Button _mapStartButton;
+        Button _mapYearButton;
+        Button _mapSeasonButton;
+        Button _mapTimeButton;
         bool _districtPaletteOpen;
         bool _districtPaletteCategoryOpen;
         RegionRepeatAction _lastRegionRepeatAction;
@@ -61,7 +67,10 @@ namespace CityForgeV3.UI
 
         VisualElement ComposeRegionChrome(VisualElement screen)
         {
-            _mapMetrics.Clear(); _mapSeasonLabel = null;
+            _mapMetrics.Clear();
+            _mapSeasonLabel = _mapYearLabel = _mapTimeLabel = null;
+            _mapStartButton = _mapYearButton = _mapSeasonButton =
+                _mapTimeButton = null;
             screen.AddToClassList("cf-quiet-map");
             var header = MapHeader(_openRegion.Name);
             header.Add(CfMapChrome.Action("Statistics", "Statistics", () =>
@@ -149,18 +158,38 @@ namespace CityForgeV3.UI
             screen.AddToClassList("cf-quiet-map");
             var header = MapHeader(district.Name);
             header.AddToClassList("cf-map-district-header");
-            var season = StyledLabel("", "cf-map-season");
-            season.name = "district-labor-season";
-            _mapSeasonLabel = season;
-            var start = new Button(ComposeDistrictStartModal)
+            var calendar = new VisualElement { name = "district-calendar" };
+            calendar.AddToClassList("cf-map-calendar");
+            _mapStartButton = new Button(ComposeDistrictStartModal)
             {
                 name = "district-start-status",
                 tooltip = "Start this district or establish a town"
             };
-            start.AddToClassList("cf-map-start-status");
-            season.pickingMode = PickingMode.Ignore;
-            start.Add(season);
-            header.Add(start);
+            _mapStartButton.AddToClassList("cf-map-start-status");
+            _mapStartButton.Add(StyledLabel("Not started", "cf-map-season"));
+            calendar.Add(_mapStartButton);
+            Button CalendarButton(string name, string tooltip,
+                System.Action action, out Label label)
+            {
+                var button = new Button(action) { name = name,
+                    tooltip = tooltip };
+                button.AddToClassList("cf-map-calendar-button");
+                label = StyledLabel("", "cf-map-calendar-label");
+                label.pickingMode = PickingMode.Ignore;
+                button.Add(label); calendar.Add(button);
+                return button;
+            }
+            _mapYearButton = CalendarButton("district-calendar-year",
+                "Advance the district calendar by one year",
+                () => AdvanceDistrictCalendar(4), out _mapYearLabel);
+            _mapSeasonButton = CalendarButton("district-calendar-season",
+                "Advance the district calendar by one season",
+                () => AdvanceDistrictCalendar(1), out _mapSeasonLabel);
+            _mapSeasonLabel.name = "district-labor-season";
+            _mapTimeButton = CalendarButton("district-calendar-clock",
+                "Advance to the next time of day",
+                AdvanceDistrictTime, out _mapTimeLabel);
+            header.Add(calendar);
             var regionLink = new Button(LeaveDistrictEditor)
             {
                 name = "district-region-link",
@@ -228,10 +257,52 @@ namespace CityForgeV3.UI
             if (season != null)
             {
                 int index = DistrictLabor.State(district).SeasonIndex;
-                season.text = district.Founded
-                    ? $"Year {district.FoundingYear + index / 4} · {DistrictLabor.SeasonName(index)} · {TimeOfDayLighting.For(district.TimeOfDay).Label}"
-                    : "Not started";
+                _mapStartButton.style.display = district.Founded
+                    ? DisplayStyle.None : DisplayStyle.Flex;
+                _mapYearButton.style.display = district.Founded
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+                _mapSeasonButton.style.display = district.Founded
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+                _mapTimeButton.style.display = district.Founded
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+                if (district.Founded)
+                {
+                    _mapYearLabel.text = $"Year {DistrictLabor.CalendarYear(district)}";
+                    season.text = DistrictLabor.SeasonName(index);
+                    _mapTimeLabel.text = ClockGlyph(district.TimeOfDay);
+                    _mapTimeButton.tooltip = "Advance to the next time of day — " +
+                        TimeOfDayLighting.For(district.TimeOfDay).Label.ToLowerInvariant();
+                }
             }
+        }
+        static string ClockGlyph(TimeOfDayPreset preset) => preset switch
+        {
+            TimeOfDayPreset.Morning => "🕗",
+            TimeOfDayPreset.Noon => "🕛",
+            TimeOfDayPreset.Afternoon => "🕔",
+            TimeOfDayPreset.Evening => "🕗",
+            _ => "🕚"
+        };
+        void AdvanceDistrictCalendar(int seasonCount)
+        {
+            var district = FindSelectedRegionTile();
+            if (district == null || !district.Founded) return;
+            var labor = DistrictLabor.State(district);
+            labor.SeasonSeconds = 0f;
+            for (var index = 0; index < seasonCount; index++)
+                DistrictLabor.AdvanceSeason(district);
+            SaveDistrictEdit();
+            RefreshMapMetrics(_root, district);
+        }
+        void AdvanceDistrictTime()
+        {
+            var district = FindSelectedRegionTile();
+            if (district == null || !district.Founded) return;
+            DistrictDayCycle.Set(district,
+                DistrictDayCycle.Next(district.TimeOfDay));
+            _districtWorld?.SetTimeOfDay(district.TimeOfDay);
+            SaveDistrictEdit();
+            RefreshMapMetrics(_root, district);
         }
         static readonly string[] MapStockNames = { "FOOD", "LUMBER", "STONE", "BRICK" };
         static readonly int[] MapStockIndices = { 6, 0, 2, 9 };
@@ -295,7 +366,7 @@ namespace CityForgeV3.UI
                 panel.Add(CfMapChrome.Action("Resources", "Resources", ComposeDistrictResourcesModal, "quiet-resources"));
                 var d = FindSelectedRegionTile();
                 int season = DistrictLabor.State(d).SeasonIndex;
-                panel.Add(StyledLabel(d.Founded ? $"{DistrictLabor.SeasonName(season)} · Year {d.FoundingYear + season / 4}" : "Not started", "cf-map-copy"));
+                panel.Add(StyledLabel(d.Founded ? $"{DistrictLabor.SeasonName(season)} · Year {DistrictLabor.CalendarYear(d)}" : "Not started", "cf-map-copy"));
                 var pause = CfButton.Create(_districtSimulationPaused ? "RESUME" : "PAUSE", () =>
                 { SetDistrictSimulationPaused(!_districtSimulationPaused); RemoveDocumentModal(); }, d.Founded, "quiet");
                 panel.Add(pause);

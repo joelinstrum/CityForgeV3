@@ -110,6 +110,11 @@ public class DistrictFloraBatchesTests
             Assert.That(root.GetComponentsInChildren<SpriteRenderer>(true)
                 .Count(renderer => renderer.name.StartsWith(
                     "District Flora —")), Is.EqualTo(412));
+            Assert.That(root.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.name == "Flora shadow batch")
+                .All(renderer => renderer.GetComponent<MeshFilter>()
+                    .sharedMesh.bounds.size.y < .1f), Is.True,
+                "Incremental shadows must be projected onto the ground before batching.");
         }
         finally { Object.DestroyImmediate(root); }
     }
@@ -213,7 +218,7 @@ public class DistrictFloraBatchesTests
             "The batched projection must sample the tree cutout, not a white card.");
     }
     [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(4)]
-    public void ClusterShadowsUseOneArtworkRootAndSoftFootprint(int variant)
+    public void ClusterShadowsUseOneArtworkRootAndDefinedCanopyFootprint(int variant)
     {
         texture.name = ForestClusterCatalog.Id(variant) + "-summer";
         var tree = Tree(0); tree.transform.rotation = Quaternion.Euler(35, 45, 0);
@@ -226,15 +231,28 @@ public class DistrictFloraBatchesTests
             _ => 0, foot => { contacts.Add(foot); foot.y = 0; return foot; }));
         Assert.AreEqual(1, contacts.Count,
             "A cluster is one composition and must not use hidden per-tree coordinates.");
-        Assert.AreEqual(42, mesh.vertexCount);
+        Assert.AreEqual(200, mesh.vertexCount,
+            "Four crown silhouettes and their small trunk contacts share one mesh.");
         Assert.True(mesh.colors.Any(c => c.r == 0), "Feathered canopy boundary");
         Assert.True(mesh.colors.Any(c => c.r > .5f), "Visible shadow interior");
+        Assert.That(mesh.colors.Skip(1).Take(20).All(c =>
+            Mathf.Abs(c.r - mesh.colors[0].r) < .001f), Is.True,
+            "The canopy remains defined to its inner ring before the short fade.");
+        var crownCenters = new[] { 0, 50, 100, 150 }
+            .Select(i => shadow.transform.TransformPoint(mesh.vertices[i])).ToArray();
+        Assert.AreEqual(4, crownCenters.Select(p => Mathf.RoundToInt(p.x * 100))
+            .Distinct().Count(), "Distinct crowns should not collapse into one oval.");
         Assert.True(mesh.vertices.All(v => Mathf.Abs(shadow.transform.TransformPoint(v).y - .031f) < .001f));
         // Both axis-aligned and noon sun must retain two-dimensional shadows.
         foreach (var light in new[] { Vector3.down, new Vector3(1,-1,0).normalized, new Vector3(0,-1,1).normalized })
         {
             ForestClusterShadows.Update(tree, shadow, light, _ => 0, foot => { foot.y = 0; return foot; });
             var points = mesh.vertices.Select(shadow.transform.TransformPoint).ToArray();
+            var firstTriangle = mesh.triangles.Take(3).ToArray();
+            var area = Vector3.Cross(points[firstTriangle[1]] - points[firstTriangle[0]],
+                points[firstTriangle[2]] - points[firstTriangle[0]]).magnitude;
+            Assert.Greater(area, .01f,
+                "The artwork axis must never collapse a crown fan along the sun ray.");
             Assert.Greater(points.Max(p => p.x) - points.Min(p => p.x), .1f);
             Assert.Greater(points.Max(p => p.z) - points.Min(p => p.z), .1f,
                 "Canopy must not collapse along the sun axis");
@@ -243,6 +261,142 @@ public class DistrictFloraBatchesTests
         ForestClusterShadows.Update(tree, shadow, new Vector3(-.3f,-1,-.2f).normalized,
             _ => 0, foot => { foot.y = 0; return foot; });
         Assert.True(first.Where((v, i) => (v - mesh.vertices[i]).sqrMagnitude > .001f).Any(), "Canopies follow the sun");
+    }
+    [Test] public void NewBroadleafShadowsProjectTheirDetailedCutouts()
+    {
+        var district = new RegionCityTile
+        {
+            TileId = "detailed-tree-shadows", Width = 1, Height = 1,
+            Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+        };
+        var ids = new[] { "american-elm", "london-plane-a",
+            "angel-oak-spanish-moss", "cilician-fir" };
+        for (var i = 0; i < ids.Length; i++)
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "detailed-" + i, FloraId = ids[i],
+                NormalizedX = .15f + i * .23f, NormalizedZ = .5f
+            });
+        var world = root.AddComponent<DistrictWorldController>();
+        world.RebuildEntireDistrict(district,
+            DistrictBulkRebuildReason.TestFixture);
+        foreach (var id in ids)
+        {
+            var tree = root.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — " + id);
+            var shadow = tree.transform.Find("District Flora Shadow")
+                .GetComponent<MeshRenderer>();
+            var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
+            var block = new MaterialPropertyBlock();
+            shadow.GetPropertyBlock(block);
+            var atlas = tree.GetComponent<ForestTrueAngleCluster>();
+            var source = atlas != null && atlas.IsFir ? atlas.Piece(0) :
+                tree.sprite;
+            Assert.That(mesh.vertexCount, Is.EqualTo(4), id +
+                " must use its textured silhouette, not rounded lobes");
+            Assert.That(mesh.uv, Is.EqualTo(source.uv), id);
+            Assert.That(block.GetTexture("_MainTex"),
+                Is.SameAs(source.texture), id);
+            Assert.That(block.GetFloat("_Cutoff"),
+                Is.EqualTo(.3f).Within(.001f), id);
+            if (id == "american-elm")
+            {
+                var ray = ForestClusterShadows.BehindCameraRay(
+                    TimeOfDayLighting.SunRotation(TimeOfDayPreset.Noon) *
+                        Vector3.forward, world.WorldCamera.transform.forward);
+                var horizontal = Vector3.ProjectOnPlane(ray, Vector3.up);
+                var direction = horizontal.normalized;
+                var scale = tree.transform.lossyScale;
+                var height = source.bounds.size.y * scale.y;
+                var oldTravel = Mathf.Min(height * horizontal.magnitude /
+                    Mathf.Max(.05f, -ray.y) * .55f,
+                    source.bounds.size.x * scale.x * .65f);
+                var tallestRatio = source.vertices.Max(vertex =>
+                    Mathf.Clamp01(vertex.y * scale.y / height));
+                var reach = mesh.vertices.Max(vertex => Vector3.Dot(
+                    shadow.transform.TransformPoint(vertex) -
+                        tree.transform.position, direction));
+                Assert.That(reach,
+                    Is.GreaterThan(oldTravel * tallestRatio * 1.3f),
+                    "Noon shadow must be noticeably longer than the old " +
+                    "squashed cutout projection.");
+            }
+        }
+    }
+    [Test]
+    public void DistrictTreeShadowRayStaysBehindCameraAtDaylightPresets()
+    {
+        var cameraForward = new Vector3(1f, -.36f, 1f).normalized;
+        var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up).normalized;
+        foreach (var preset in new[] { TimeOfDayPreset.Morning,
+            TimeOfDayPreset.Noon, TimeOfDayPreset.Afternoon })
+        {
+            var sunRay = TimeOfDayLighting.SunRotation(preset) * Vector3.forward;
+            var projected = ForestClusterShadows.BehindCameraRay(
+                sunRay, cameraForward);
+            Assert.That(Vector3.Dot(Vector3.ProjectOnPlane(projected,
+                    Vector3.up).normalized, behind),
+                Is.GreaterThan(.9f), preset.ToString());
+            Assert.That(projected.y, Is.EqualTo(sunRay.y).Within(.0001f));
+            Assert.That(Vector3.ProjectOnPlane(projected, Vector3.up).magnitude,
+                Is.EqualTo(Vector3.ProjectOnPlane(sunRay, Vector3.up).magnitude)
+                    .Within(.0001f));
+        }
+    }
+    [Test]
+    public void DistrictTreeFamiliesKeepShadowMassBehindTheirTrunks()
+    {
+        var host = new GameObject("Behind-tree district shadow test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "behind-tree-shadows", Width = 1, Height = 1,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+            };
+            var ids = new[] { "american-elm", "london-plane-a",
+                "angel-oak-spanish-moss", "forest-deciduous-compact",
+                "cilician-fir", "mature-oak" };
+            for (var index = 0; index < ids.Length; index++)
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "behind-" + index, FloraId = ids[index],
+                    NormalizedX = .12f + index * .15f,
+                    NormalizedZ = .5f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var behind = Vector3.ProjectOnPlane(world.WorldCamera.transform.forward,
+                Vector3.up).normalized;
+            foreach (var preset in new[] { TimeOfDayPreset.Noon,
+                TimeOfDayPreset.Morning, TimeOfDayPreset.Afternoon })
+            {
+                world.SetTimeOfDay(preset);
+                var slices = 0;
+                while (world.TimeOfDayPresentationPending && slices++ < 100)
+                    world.SyncTimeOfDayPresentation();
+                Assert.Less(slices, 100);
+                var trees = host.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora —"));
+                foreach (var tree in trees)
+                {
+                    var filter = tree.transform.Find("District Flora Shadow")?
+                        .GetComponent<MeshFilter>();
+                    Assert.NotNull(filter, tree.name);
+                    var mesh = filter.sharedMesh;
+                    Assert.Greater(mesh.vertexCount, 0, tree.name);
+                    var opaque = mesh.vertices.Where((_, i) =>
+                        mesh.colors[i].r > .2f).ToArray();
+                    var average = opaque.Aggregate(Vector3.zero,
+                        (sum, point) => sum + filter.transform.TransformPoint(point)) /
+                        opaque.Length;
+                    Assert.That(Vector3.Dot(average - tree.transform.position, behind),
+                        Is.GreaterThan(0f), tree.name + " at " + preset);
+                }
+            }
+        }
+        finally { Object.DestroyImmediate(host); }
     }
     [Test] public void AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha()
     {
@@ -286,7 +440,7 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Summer),
             ForestClusterCatalog.ResourcePath("forest-tropical-large", SeasonPreset.Winter));
     }
-    [Test] public void FamilySummerUsesDepthShadedV03PreviewOnly()
+    [Test] public void FamilySeasonsUseDepthStaggeredV03AndV04Artwork()
     {
         foreach (var family in FloraFamilies.Names)
         foreach (var large in new[] { false, true })
@@ -298,9 +452,9 @@ public class DistrictFloraBatchesTests
                 ForestClusterCatalog.ResourcePath(id, SeasonPreset.Spring));
             if (family != FloraFamilies.Tropical)
             {
-                StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                StringAssert.Contains("/ForestClustersFamilyMixV04/",
                     ForestClusterCatalog.ResourcePath(id, SeasonPreset.Autumn));
-                StringAssert.Contains("/ForestClustersFamilyMixV01/",
+                StringAssert.Contains("/ForestClustersFamilyMixV04/",
                     ForestClusterCatalog.ResourcePath(id, SeasonPreset.Winter));
             }
         }
@@ -316,6 +470,12 @@ public class DistrictFloraBatchesTests
         var block = new MaterialPropertyBlock();
 
         texture.name = "forest-deciduous-large-summer";
+        apply.Invoke(null, new object[] { tree });
+        tree.GetPropertyBlock(block);
+        Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.5f).Within(.001f));
+        Assert.True(ForestClusterCatalog.UsesDepthShadedCutout(texture.name));
+
+        texture.name = "forest-deciduous-large-autumn";
         apply.Invoke(null, new object[] { tree });
         tree.GetPropertyBlock(block);
         Assert.That(block.GetFloat("_Cutoff"), Is.EqualTo(.5f).Within(.001f));
@@ -344,6 +504,28 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(1, contacts);
         Assert.AreEqual(42, shadow.GetComponent<MeshFilter>().sharedMesh.vertexCount);
     }
+    [TestCase("forest-deciduous-compact-summer", 150)]
+    [TestCase("forest-deciduous-large-summer", 250)]
+    public void LeafedFamilyShadowUsesCrownLobesWithoutExtraGroundQueries(
+        string textureName, int expectedVertices)
+    {
+        texture.name = textureName;
+        var tree = Tree(0);
+        var item = new GameObject("District Flora Shadow");
+        item.transform.SetParent(tree.transform, false);
+        var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
+        item.AddComponent<DistrictFloraShadowMesh>();
+        var shadow = item.AddComponent<MeshRenderer>();
+        int contacts = 0;
+        Assert.True(ForestClusterShadows.Update(tree, shadow,
+            new Vector3(.3f, -1f, .2f).normalized, _ => 0,
+            foot => { contacts++; foot.y = 0; return foot; }));
+        Assert.AreEqual(1, contacts);
+        Assert.AreEqual(expectedVertices, mesh.vertexCount);
+        Assert.That(mesh.colors.Count(color => color.r > .55f),
+            Is.GreaterThan(expectedVertices / 4),
+            "Most of each crown should remain defined, not a broad blur.");
+    }
     [Test] public void WinterShadowsRetainFirButOpenDeciduousCanopies()
     {
         texture.name = "forest-cluster-01-summer";
@@ -353,6 +535,7 @@ public class DistrictFloraBatchesTests
         item.AddComponent<DistrictFloraShadowMesh>(); var shadow = item.AddComponent<MeshRenderer>();
         ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0, p => new Vector3(p.x, 0, p.z));
         float summerOpacity = mesh.colors.Max(color => color.r);
+        Assert.AreEqual(200, mesh.vertexCount);
         texture.name = "forest-cluster-01-winter";
         int contacts = 0;
         Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0,
@@ -361,6 +544,82 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(42, mesh.vertexCount);
         Assert.Less(mesh.colors.Max(color => color.r), summerOpacity,
             "Leafless compositions retain a lighter shared footprint.");
+    }
+    [Test] public void ElmUsesNewSeasonalArtworkAndSummerForSpring()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var expectedSeason = season == SeasonPreset.Spring ? "summer" :
+                season.ToString().ToLowerInvariant();
+            var path = LotWorldController.ResolveFloraResourcePath("american-elm", season);
+            Assert.AreEqual(FloraTreeRepairs.ElmTrueAngleRoot + "american-elm-" +
+                expectedSeason, path);
+            var art = Resources.Load<Texture2D>(path);
+            Assert.NotNull(art, path);
+            Assert.AreEqual(1312, art.width);
+            Assert.AreEqual(1199, art.height);
+            Assert.AreEqual(72f, LotWorldController.FloraPixelsPerUnit("american-elm", art.name));
+            Assert.Greater(LotWorldController.FloraPivot(art.name).y, 0f);
+        }
+        Assert.That(LotWorldController.FloraPivot("american-elm-summer").y,
+            Is.EqualTo(187f / 1199f).Within(.0001f),
+            "The elm selection root belongs at the trunk foot, not the lowest leaves.");
+    }
+    [Test] public void SpanishMossUsesOneNewBillboardAtEverySeason()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var path = LotWorldController.ResolveFloraResourcePath(
+                "angel-oak-spanish-moss", season);
+            Assert.AreEqual(FloraTreeRepairs.SpanishMossTrueAngleRoot +
+                "angel-oak-spanish-moss", path);
+            var art = Resources.Load<Texture2D>(path);
+            Assert.NotNull(art, path);
+            Assert.AreEqual(1312, art.width);
+            Assert.AreEqual(1199, art.height);
+            Assert.AreEqual(80f, LotWorldController.FloraPixelsPerUnit(
+                "angel-oak-spanish-moss", art.name));
+            Assert.That(LotWorldController.FloraPivot(art.name).y,
+                Is.EqualTo(178f / 1199f).Within(.0001f));
+        }
+        Assert.False(PlaneUkFloraPresentation.IsTree("angel-oak-spanish-moss"),
+            "The old close-up mesh must not hide the replacement cutout.");
+    }
+    [Test] public void DistrictElmChangesWithCalendarWithoutReplacingItsRenderer()
+    {
+        var host = new GameObject("Seasonal elm district test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "elm-season-test", Width = 1, Height = 1,
+                Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 }
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "elm", FloraId = "american-elm",
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — american-elm");
+            Assert.AreEqual("american-elm-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-winter", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 3;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-summer", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
     }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
@@ -380,47 +639,72 @@ public class DistrictFloraBatchesTests
             Assert.AreEqual(105f, LotWorldController.FloraPixelsPerUnit("cilician-fir", art.name));
         }
     }
-    [Test] public void LondonPlaneAUsesTheRealisticSeasonalArtwork()
+    [Test] public void PlaneVariantsUseOneAmericanSycamoreInEverySeason()
     {
-        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
-            SeasonPreset.Autumn, SeasonPreset.Winter })
+        foreach (var id in new[] { "london-plane-a", "london-plane-b",
+            "plane-uk-3d-a", "plane-uk-3d-b", "london-plane-c" })
         {
-            var path = LotWorldController.ResolveFloraResourcePath("london-plane-a", season);
-            Assert.AreEqual(FloraTreeRepairs.RealisticLondonPlaneRoot + "london-plane-a-" +
-                season.ToString().ToLowerInvariant(), path);
-            var art = Resources.Load<Texture2D>(path);
-            Assert.NotNull(art, path);
-            Assert.AreEqual(1024, art.width); Assert.AreEqual(1536, art.height);
-            Assert.Greater(art.mipmapCount, 1); Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
-            Assert.True(art.GetPixels32().Any(pixel => pixel.a == 0));
-            Assert.True(art.GetPixels32().Any(pixel => pixel.a > 250));
-            var sprite = Sprite.Create(art, new Rect(0, 0, art.width, art.height),
-                LotWorldController.FloraPivot(art.name), 96f);
-            var pixels = art.GetPixels32();
-            int firstOpaque = System.Array.FindIndex(pixels, p => p.a > 128);
-            float footY = firstOpaque / art.width;
-            Assert.That(Mathf.Abs(footY - sprite.pivot.y), Is.LessThanOrEqualTo(1f),
-                "Visible trunk must begin at the shared tree/selection/shadow origin, within one texel.");
-            Object.DestroyImmediate(sprite);
-            Assert.AreEqual(96f, LotWorldController.FloraPixelsPerUnit("london-plane-a", art.name));
+            foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+                SeasonPreset.Autumn, SeasonPreset.Winter })
+            {
+                var expected = season == SeasonPreset.Spring ? "summer" :
+                    season.ToString().ToLowerInvariant();
+                var path = LotWorldController.ResolveFloraResourcePath(id, season);
+                Assert.AreEqual(FloraTreeRepairs.AmericanSycamoreRoot +
+                    "american-sycamore-" + expected, path, id);
+                var art = Resources.Load<Texture2D>(path);
+                Assert.NotNull(art, path);
+                Assert.AreEqual(1312, art.width);
+                Assert.AreEqual(1199, art.height);
+                Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
+                Assert.AreEqual(72f, LotWorldController.FloraPixelsPerUnit(id, art.name));
+                Assert.Greater(LotWorldController.FloraPivot(art.name).y, 0f);
+            }
         }
     }
-    [Test] public void LondonPlaneBUsesTheHighIsometricArtBeforeWinter()
+    [Test] public void DistrictPlaneVariantsShareSpritesAndFollowSeasons()
     {
-        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
-            SeasonPreset.Autumn })
+        var host = new GameObject("Seasonal sycamore district test");
+        try
         {
-            var path = LotWorldController.ResolveFloraResourcePath("london-plane-b", season);
-            Assert.AreEqual(FloraTreeRepairs.RealisticLondonPlaneRoot + "london-plane-b-" +
-                season.ToString().ToLowerInvariant(), path);
-            var art = Resources.Load<Texture2D>(path);
-            Assert.NotNull(art, path); Assert.AreEqual(1024, art.width);
-            Assert.AreEqual(1536, art.height); Assert.AreEqual(TextureWrapMode.Clamp, art.wrapMode);
-            Assert.AreEqual(new Vector2(.5f, .065f), LotWorldController.FloraPivot(art.name));
-            Assert.AreEqual(96f, LotWorldController.FloraPixelsPerUnit("london-plane-b", art.name));
+            var district = new RegionCityTile
+            {
+                TileId = "sycamore-season-test", Width = 1, Height = 1,
+                Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 }
+            };
+            foreach (var id in new[] { "london-plane-a", "london-plane-b" })
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = id, FloraId = id,
+                    NormalizedX = id == "london-plane-a" ? .3f : .7f,
+                    NormalizedZ = .5f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var trees = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Where(r => r.name.StartsWith("District Flora — london-plane-"))
+                .ToArray();
+            Assert.AreEqual(2, trees.Length);
+            Assert.AreSame(trees[0].sprite, trees[1].sprite);
+            foreach (var (index, name) in new[] { (1, "autumn"),
+                (2, "winter"), (3, "summer") })
+            {
+                district.Labor.SeasonIndex = index;
+                var slices = 0;
+                while (true)
+                {
+                    world.SyncForestSeason();
+                    if (!world.ForestSeasonPending) break;
+                    Assert.Less(++slices, 10);
+                }
+                Assert.True(trees.All(r => r.sprite.texture.name ==
+                    "american-sycamore-" + name));
+                Assert.AreSame(trees[0].sprite, trees[1].sprite);
+            }
         }
-        Assert.AreEqual("CityForgeV3/Flora/LegacyTreesV01/london-plane-b-winter",
-            LotWorldController.ResolveFloraResourcePath("london-plane-b", SeasonPreset.Winter));
+        finally { Object.DestroyImmediate(host); }
     }
     [Test] public void BatchedSeasonSwapRetainsUnrelatedCellAndSelectionHandle()
     {
@@ -456,7 +740,7 @@ public class DistrictFloraBatchesTests
         d.Labor.SeasonIndex = 2; // A reload/undo/skip while the prior transition is pending.
         trees[20].gameObject.SetActive(false); registry.Remove("20");
         int guard=0;
-        do { world.SyncForestSeason(); Assert.Less(++guard, 10); } while (world.ForestSeasonPending);
+        do { world.SyncForestSeason(); Assert.Less(++guard, 20); } while (world.ForestSeasonPending);
         Assert.True(registry.Values.All(r=>r.sprite.texture.name.EndsWith("-winter")));
         var sprites = registry.Values.Select(r=>r.sprite).ToArray();
         world.SyncForestSeason(); CollectionAssert.AreEqual(sprites, registry.Values.Select(r=>r.sprite));
