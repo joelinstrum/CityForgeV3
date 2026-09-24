@@ -45,8 +45,9 @@ namespace CityForgeV3.World
             if (id != "forest-deciduous-compact" &&
                 id != "forest-deciduous-large") return null;
             if (season == SeasonPreset.Winter) return null;
-            var suffix = season == SeasonPreset.Autumn ? "autumn" : "summer";
-            return "CityForgeV3/Flora/ForestCanopyFarV01/" + id + "-" + suffix;
+            if (season != SeasonPreset.Autumn)
+                return "CityForgeV3/Flora/ForestCanopyGroundedSummerV02/" + id + "-summer";
+            return "CityForgeV3/Flora/ForestCanopyFarV01/" + id + "-autumn";
         }
         public static SeasonPreset SeasonForIndex(int index) => (Mathf.Max(0, index) % 4) switch
         {

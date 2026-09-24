@@ -28,6 +28,15 @@ namespace CityForgeV3.Tests.EditMode
                 "forest-deciduous-large", SeasonPreset.Winter), Is.Null);
             Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
                 "forest-mountain-large", SeasonPreset.Autumn), Is.Null);
+            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
+                "forest-deciduous-large", SeasonPreset.Spring),
+                Does.Contain("ForestCanopyGroundedSummerV02"));
+            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
+                "forest-deciduous-compact", SeasonPreset.Summer),
+                Does.Contain("ForestCanopyGroundedSummerV02"));
+            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
+                "forest-deciduous-large", SeasonPreset.Autumn),
+                Does.Contain("ForestCanopyFarV01"));
         }
 
         [Test]
@@ -93,8 +102,9 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
-        [Test]
-        public void DistrictUsesSameCanopyAtFarAndCloseZoom()
+        [TestCase(0)]
+        [TestCase(1)]
+        public void DistrictUsesSameCanopyAtFarAndCloseZoom(int seasonIndex)
         {
             var owner = new GameObject("Forest appearance district test");
             try
@@ -103,7 +113,7 @@ namespace CityForgeV3.Tests.EditMode
                 {
                     TileId = "far-canopy-fixture", Width = 1, Height = 1,
                     Founded = true,
-                    Labor = new DistrictLaborState { SeasonIndex = 1 }
+                    Labor = new DistrictLaborState { SeasonIndex = seasonIndex }
                 };
                 district.Flora.Add(new PlacedDistrictFlora
                 {
@@ -117,16 +127,17 @@ namespace CityForgeV3.Tests.EditMode
                 var tree = owner.GetComponentsInChildren<SpriteRenderer>(true)
                     .Single(renderer => renderer.name ==
                         "District Flora — forest-deciduous-large");
-                var farTexture = Resources.Load<Texture2D>(
+                var selectedTexture = Resources.Load<Texture2D>(
                     ForestClusterCatalog.FarCanopyResourcePath(
-                        "forest-deciduous-large", SeasonPreset.Autumn));
-                Assert.That(tree.sprite.texture, Is.SameAs(farTexture));
+                        "forest-deciduous-large",
+                        ForestClusterCatalog.SeasonForIndex(seasonIndex)));
+                Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
                 world.SetZoom(DistrictZoomLevel.LOD3);
                 world.SyncForestSeason();
-                Assert.That(tree.sprite.texture, Is.SameAs(farTexture));
+                Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
                 world.SetZoom(DistrictZoomLevel.LOD1);
                 world.SyncForestSeason();
-                Assert.That(tree.sprite.texture, Is.SameAs(farTexture));
+                Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
                 Assert.That(world.ForestSeasonPending, Is.False);
                 Assert.That(tree.GetComponent<DistrictSelectable>(),
                     Is.Not.Null);
