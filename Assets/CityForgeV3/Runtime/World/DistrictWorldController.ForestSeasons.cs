@@ -80,7 +80,8 @@ namespace CityForgeV3.World
             // texture, not a per-tree material or update.
             properties.SetFloat("_Cutoff",
                 (ForestClusterCatalog.UsesDepthShadedCutout(textureName) ||
-                 textureName.StartsWith("true-angle-trees-")) ? .5f :
+                 textureName.StartsWith("true-angle-trees-") ||
+                 textureName.StartsWith("fir-trees")) ? .5f :
                 textureName.EndsWith("-winter") ? .12f : .02f);
             renderer.SetPropertyBlock(properties);
         }
@@ -88,7 +89,7 @@ namespace CityForgeV3.World
         Sprite ForestSprite(string id, SeasonPreset season)
         {
             if (ForestTrueAngleCluster.Supports(id))
-                return ForestTrueAngleCluster.RootSprite(season);
+                return ForestTrueAngleCluster.RootSprite(id, season);
             string path = ForestClusterCatalog.FarCanopyResourcePath(id,
                 season) ?? ForestClusterCatalog.ResourcePath(id, season);
             if (_districtFloraSprites.TryGetValue(path, out var sprite) && sprite != null) return sprite;

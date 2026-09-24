@@ -85,6 +85,104 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void FirAtlasSuppliesVariedIndividualAndMountainClumpTrees()
+        {
+            var owner = new GameObject("Fir atlas district test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "fir-atlas-test", Width = 1, Height = 1,
+                    Founded = true,
+                    Labor = new DistrictLaborState { SeasonIndex = 0 }
+                };
+                foreach (var id in new[] { "forest-mountain-compact",
+                             "forest-mountain-large", "cilician-fir",
+                             "medium-balsam-fir", "medium-fraser-fir",
+                             "medium-blue-spruce" })
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = id, FloraId = id,
+                        NormalizedX = .15f + district.Flora.Count * .13f,
+                        NormalizedZ = .5f
+                    });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees.Length, Is.EqualTo(6));
+                Assert.That(trees.Select(renderer => renderer.sprite.texture)
+                    .Distinct().Count(), Is.EqualTo(1));
+                Assert.That(trees.All(renderer => renderer.sprite.texture.name ==
+                    "fir-trees"), Is.True);
+                Assert.That(trees.Select(renderer =>
+                    renderer.GetComponent<ForestTrueAngleCluster>().PieceCount),
+                    Is.EquivalentTo(new[] { 4, 7, 1, 1, 1, 1 }));
+                Assert.That(trees.Where(renderer => renderer.GetComponent<
+                        ForestTrueAngleCluster>().PieceCount == 1)
+                    .Select(renderer => renderer.GetComponent<
+                        ForestTrueAngleCluster>().Piece(0).rect)
+                    .Distinct().Count(), Is.GreaterThan(1));
+                district.Labor.SeasonIndex = 2;
+                var guard = 0;
+                do
+                {
+                    world.SyncForestSeason(4);
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(trees.All(renderer => renderer.sprite.texture.name ==
+                    "fir-trees-winter"), Is.True);
+                Assert.That(trees.All(renderer => renderer.GetComponent<
+                    ForestTrueAngleCluster>().Season == SeasonPreset.Winter),
+                    Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void FirIndividualSlotsUseMatchingSnowArt()
+        {
+            var summer = ForestTrueAngleCluster.IndividualSprite(
+                "medium-fraser-fir", 2, SeasonPreset.Summer);
+            var autumn = ForestTrueAngleCluster.IndividualSprite(
+                "medium-fraser-fir", 2, SeasonPreset.Autumn);
+            var winter = ForestTrueAngleCluster.IndividualSprite(
+                "medium-fraser-fir", 2, SeasonPreset.Winter);
+            Assert.That(autumn, Is.SameAs(summer));
+            Assert.That(winter.texture.name, Is.EqualTo("fir-trees-winter"));
+            Assert.That(winter.rect.x + winter.pivot.x,
+                Is.EqualTo(summer.rect.x + summer.pivot.x).Within(.01f),
+                "Seasonal crops may differ, but trunk anchors must coincide.");
+            Assert.That(ForestTrueAngleCluster.IndividualSprite(
+                "medium-fraser-fir", 1, SeasonPreset.Summer).rect,
+                Is.Not.EqualTo(summer.rect));
+        }
+
+        [Test]
+        public void LotIndividualFirUsesTheSameAtlasWithoutChangingSavedIdentity()
+        {
+            var owner = new GameObject("Lot fir atlas test");
+            try
+            {
+                var world = owner.AddComponent<LotWorldController>();
+                var load = typeof(LotWorldController).GetMethod(
+                    "LoadFloraSprite", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(load, Is.Not.Null);
+                var sprite = (Sprite)load.Invoke(world,
+                    new object[] { "medium-fraser-fir", 2 });
+                Assert.That(sprite, Is.SameAs(ForestTrueAngleCluster.IndividualSprite(
+                    "medium-fraser-fir", 2, SeasonPreset.Summer)));
+                var alias = (Sprite)load.Invoke(world,
+                    new object[] { "evergreen", 1 });
+                Assert.That(alias, Is.SameAs(ForestTrueAngleCluster.IndividualSprite(
+                    "medium-blue-spruce", 1, SeasonPreset.Summer)));
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
         public void SeasonSwapOnlyChangesOneBudgetOfExistingClusterHandles()
         {
             var owner = new GameObject("Far canopy zoom test");
@@ -205,8 +303,10 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
-        [Test]
-        public void DenseCanopySeasonChangeKeepsBatchWorkInBoundedSlices()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void DenseCanopySeasonChangeKeepsBatchWorkInBoundedSlices(
+            bool fir)
         {
             var owner = new GameObject("Dense far canopy test");
             try
@@ -221,9 +321,11 @@ namespace CityForgeV3.Tests.EditMode
                     district.Flora.Add(new PlacedDistrictFlora
                     {
                         InstanceId = "dense-canopy-" + index,
-                        FloraId = index % 2 == 0
-                            ? "forest-deciduous-compact"
-                            : "forest-deciduous-large",
+                        FloraId = fir
+                            ? index % 2 == 0 ? "forest-mountain-compact" :
+                                "forest-mountain-large"
+                            : index % 2 == 0 ? "forest-deciduous-compact" :
+                                "forest-deciduous-large",
                         NormalizedX = .04f + index % 24 * .04f,
                         NormalizedZ = .04f + index / 24 * .058f
                     });
@@ -233,7 +335,7 @@ namespace CityForgeV3.Tests.EditMode
                 int BatchCount() => owner.GetComponentsInChildren<MeshRenderer>()
                     .Count(renderer => renderer.name == "Flora batch");
                 var summerBatches = BatchCount();
-                district.Labor.SeasonIndex = 1;
+                district.Labor.SeasonIndex = fir ? 2 : 1;
                 var maxMilliseconds = 0d;
                 var maxAllocatedBytes = 0L;
                 var sliceTimes = new List<double>();
@@ -251,14 +353,16 @@ namespace CityForgeV3.Tests.EditMode
                         System.GC.GetAllocatedBytesForCurrentThread() - before);
                     Assert.That(++slices, Is.LessThan(100));
                 } while (world.ForestSeasonPending);
-                var autumnBatches = BatchCount();
+                var seasonalBatches = BatchCount();
                 Assert.That(slices, Is.GreaterThanOrEqualTo(96));
                 Assert.That(summerBatches, Is.GreaterThan(0));
-                Assert.That(autumnBatches, Is.GreaterThan(0));
+                Assert.That(seasonalBatches, Is.GreaterThan(0));
                 sliceTimes.Sort();
                 var p95 = sliceTimes[(int)(sliceTimes.Count * .95f)];
-                TestContext.WriteLine("384 deciduous clusters: summer batches=" +
-                    summerBatches + ", autumn batches=" + autumnBatches +
+                TestContext.WriteLine("384 " + (fir ? "fir" : "deciduous") +
+                    " clusters: summer batches=" +
+                    summerBatches + ", changed-season batches=" +
+                    seasonalBatches +
                     ", season slices=" + slices +
                     ", max slice ms=" + maxMilliseconds.ToString("F2") +
                     ", p95 slice ms=" + p95.ToString("F2") +

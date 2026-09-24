@@ -806,20 +806,24 @@ namespace CityForgeV3.World
                 placed.InstanceId);
             var presentationId = LotWorldController.ResolveFloraPresentationId(
                 RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
-            bool trueAngle = ForestTrueAngleCluster.Supports(presentationId);
+            bool trueAngle = ForestTrueAngleCluster.Supports(presentationId) &&
+                (placed.FloraId != "cilician-fir" ||
+                 placed.HarvestState == DistrictTreeHarvestState.Standing);
             var resource = !trueAngle && ForestClusterCatalog.IsCluster(presentationId)
                     ? ForestClusterCatalog.FarCanopyResourcePath(
                         presentationId, _forestSeason) ??
                       LotWorldController.ResolveFloraResourcePath(
                         presentationId, _forestSeason)
-                    : trueAngle ? ForestTrueAngleCluster.ResourcePath(_forestSeason)
+                    : trueAngle ? ForestTrueAngleCluster.ResourcePath(
+                        presentationId, _forestSeason)
                     : LotWorldController.ResolveFloraResourcePath(
                         presentationId, SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
             var spriteKey = resource + "|" + presentationId;
             Sprite sprite;
             if (trueAngle)
-                sprite = ForestTrueAngleCluster.RootSprite(_forestSeason);
+                sprite = ForestTrueAngleCluster.RootSprite(presentationId,
+                    _forestSeason);
             else if (!_districtFloraSprites.TryGetValue(spriteKey, out sprite) ||
                 sprite == null)
             {
@@ -872,7 +876,7 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
-            if (ForestClusterCatalog.IsCluster(placed.FloraId))
+            if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle)
             {
                 RegisterForestCluster(placed.InstanceId, renderer);
                 ApplyForestSeasonCutoff(renderer);

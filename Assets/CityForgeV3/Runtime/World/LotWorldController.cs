@@ -1289,7 +1289,7 @@ namespace CityForgeV3.World
                 var variation = FloraVariationProfile(placed);
                 var presentationId = ResolveFloraPresentationId(
                     placed.FloraId, variation, Season);
-                var sprite = LoadFloraSprite(presentationId);
+                var sprite = LoadFloraSprite(presentationId, variation);
                 if (sprite == null) continue;
                 var root = new GameObject(
                     $"Flora — {placed.FloraId} — Variant {variation + 1}");
@@ -1347,7 +1347,7 @@ namespace CityForgeV3.World
                 var variation = FloraVariationProfile(placed);
                 var presentationId = ResolveFloraPresentationId(
                     placed.FloraId, variation, Season);
-                var sprite = LoadFloraSprite(presentationId);
+                var sprite = LoadFloraSprite(presentationId, variation);
                 if (sprite == null) continue;
                 renderer.sprite = sprite;
                 ConfigurePlaneTree(renderer, placed.FloraId);
@@ -1798,9 +1798,13 @@ namespace CityForgeV3.World
             };
         }
 
-        private Sprite LoadFloraSprite(string floraId)
+        private Sprite LoadFloraSprite(string floraId, int variation = 0)
         {
             if (string.IsNullOrWhiteSpace(floraId)) return null;
+            var artworkId = CurrentTreeArtwork(floraId);
+            if (ForestTrueAngleCluster.IsFirIndividual(artworkId))
+                return ForestTrueAngleCluster.IndividualSprite(artworkId,
+                    variation, Season);
             if (StoneFloraCatalog.IsStone(floraId)) { if (!_floraSpriteCache.TryGetValue(floraId, out var stone)) _floraSpriteCache[floraId] = stone = StoneFloraCatalog.CreateSprite(floraId); return stone; }
             var resourcePath = ResolveFloraResourcePath(floraId, Season);
             if (string.IsNullOrWhiteSpace(resourcePath)) return null;
