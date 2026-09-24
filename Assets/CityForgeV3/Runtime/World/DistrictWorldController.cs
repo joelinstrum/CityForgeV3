@@ -817,7 +817,8 @@ namespace CityForgeV3.World
                     : trueAngle ? ForestTrueAngleCluster.ResourcePath(
                         presentationId, _forestSeason)
                     : LotWorldController.ResolveFloraResourcePath(
-                        presentationId, SeasonPreset.Summer);
+                        presentationId, presentationId == "american-elm"
+                            ? _forestSeason : SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
             var spriteKey = resource + "|" + presentationId;
             Sprite sprite;
@@ -834,7 +835,8 @@ namespace CityForgeV3.World
                     LotWorldController.FloraPivot(texture.name),
                     LotWorldController.FloraPixelsPerUnit(
                         presentationId, texture.name), 0,
-                    ForestClusterCatalog.UsesQuadCanopyMesh(resource)
+                    (presentationId == "american-elm" ||
+                     ForestClusterCatalog.UsesQuadCanopyMesh(resource))
                         ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
                 _districtFloraSprites[spriteKey] = sprite;
             }
@@ -876,7 +878,8 @@ namespace CityForgeV3.World
             renderer.receiveShadows = false;
             if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
-            if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle)
+            if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
+                presentationId == "american-elm")
             {
                 RegisterForestCluster(placed.InstanceId, renderer);
                 ApplyForestSeasonCutoff(renderer);

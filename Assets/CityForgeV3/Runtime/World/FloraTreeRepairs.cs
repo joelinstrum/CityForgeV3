@@ -10,6 +10,7 @@ namespace CityForgeV3.World
   public const string RealisticSilverMapleRoot="CityForgeV3/Flora/SilverMapleRealisticV01/";
   public const string RealisticWillowRoot="CityForgeV3/Flora/WillowRealisticV01/";
   public const string PhotographicDeciduousRoot="CityForgeV3/Flora/PhotographicDeciduousV01/";
+  public const string ElmTrueAngleRoot="CityForgeV3/Flora/ElmTrueAngleV01/";
   public const string BaldCypressMossRoot="CityForgeV3/Flora/BaldCypressMossV01/";
   public const string BaldCypressMossBRoot="CityForgeV3/Flora/BaldCypressMossV02/";
   public const string MediumConifersRoot="CityForgeV3/Flora/MediumConifersV01/";
@@ -24,7 +25,9 @@ namespace CityForgeV3.World
     ? MediumConifersRoot+id+(season==SeasonPreset.Winter?"-snowy":"-snowfree")
     :id=="bald-cypress-moss-b" ? BaldCypressMossBRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="bald-cypress-moss" ? BaldCypressMossRoot+id+"-"+season.ToString().ToLowerInvariant()
-    :id is "mature-oak" or "american-elm" or "shagbark-hickory"
+    :id=="american-elm" ? ElmTrueAngleRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id is "mature-oak" or "shagbark-hickory"
     ? PhotographicDeciduousRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="cilician-fir"?RealisticCilicianRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="london-plane-a"||(id=="london-plane-b"&&season!=SeasonPreset.Winter)
@@ -38,7 +41,8 @@ namespace CityForgeV3.World
    "vendor-hickory"=>64.0000000f,
    "vendor-willow"=>104f,
    "mature-oak"=>100f,
-   "american-elm"=>94f,
+   // The 1312x1199 replacement keeps the old elm's roughly 16m height.
+   "american-elm"=>72f,
    "shagbark-hickory"=>98f,
    "bald-cypress-moss"=>82f,
    "bald-cypress-moss-b"=>82f,
@@ -95,8 +99,7 @@ namespace CityForgeV3.World
     case "mature-oak":pivot=new Vector2(.5f,
      (texture.EndsWith("spring")?146f:texture.EndsWith("winter")?135f:149f)/1536f);return true;
     case "american-elm":pivot=new Vector2(.5f,
-     (texture.EndsWith("spring")?59f:texture.EndsWith("summer")?61f:
-      texture.EndsWith("autumn")?50f:55f)/1536f);return true;
+     (texture.EndsWith("summer")?162f:texture.EndsWith("autumn")?102f:63f)/1199f);return true;
     case "shagbark-hickory":pivot=new Vector2(.5f,
      (texture.EndsWith("spring")?29f:texture.EndsWith("winter")?31f:33f)/1536f);return true;
     case "bald-cypress-moss":pivot=new Vector2(.5f,

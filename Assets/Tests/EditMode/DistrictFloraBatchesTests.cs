@@ -409,6 +409,58 @@ public class DistrictFloraBatchesTests
         Assert.Less(mesh.colors.Max(color => color.r), summerOpacity,
             "Leafless compositions retain a lighter shared footprint.");
     }
+    [Test] public void ElmUsesNewSeasonalArtworkAndSummerForSpring()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var expectedSeason = season == SeasonPreset.Spring ? "summer" :
+                season.ToString().ToLowerInvariant();
+            var path = LotWorldController.ResolveFloraResourcePath("american-elm", season);
+            Assert.AreEqual(FloraTreeRepairs.ElmTrueAngleRoot + "american-elm-" +
+                expectedSeason, path);
+            var art = Resources.Load<Texture2D>(path);
+            Assert.NotNull(art, path);
+            Assert.AreEqual(1312, art.width);
+            Assert.AreEqual(1199, art.height);
+            Assert.AreEqual(72f, LotWorldController.FloraPixelsPerUnit("american-elm", art.name));
+            Assert.Greater(LotWorldController.FloraPivot(art.name).y, 0f);
+        }
+    }
+    [Test] public void DistrictElmChangesWithCalendarWithoutReplacingItsRenderer()
+    {
+        var host = new GameObject("Seasonal elm district test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "elm-season-test", Width = 1, Height = 1,
+                Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 }
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "elm", FloraId = "american-elm",
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — american-elm");
+            Assert.AreEqual("american-elm-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-winter", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 3;
+            world.SyncForestSeason();
+            Assert.AreEqual("american-elm-summer", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,

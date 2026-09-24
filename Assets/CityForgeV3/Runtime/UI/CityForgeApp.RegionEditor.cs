@@ -1552,8 +1552,8 @@ namespace CityForgeV3.UI
       var bounds = screen.worldBound;
       if (bounds.width <= 0 || bounds.height <= 0) return;
       _districtEdgePanDirection = DistrictZoom.EdgePanWorldMotion(new Vector2(
-          (evt.position.x - bounds.xMin) / bounds.width,
-          (evt.position.y - bounds.yMin) / bounds.height));
+          evt.position.x - bounds.xMin, evt.position.y - bounds.yMin),
+          bounds.size);
     }
 
     private static void AttachLargeRegionHoverHelp(VisualElement screen)
@@ -2901,7 +2901,8 @@ namespace CityForgeV3.UI
       {
         var continuousSpeed = _districtWorld?.WorldCamera != null
             ? DistrictZoom.EdgePanSpeedMetersPerSecond(
-                _districtWorld.WorldCamera.orthographicSize)
+                _districtWorld.WorldCamera.orthographicSize,
+                _terraformZoomLevel)
             : panStep * 2.4f;
         var continuousStep = continuousSpeed * Time.unscaledDeltaTime;
         _terraformPanOffset += DistrictZoom.PanOffsetForWorldMotion(

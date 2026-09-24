@@ -90,6 +90,19 @@ namespace CityForgeV3.World
         {
             if (ForestTrueAngleCluster.Supports(id))
                 return ForestTrueAngleCluster.RootSprite(id, season);
+            if (id == "american-elm")
+            {
+                string elmPath = FloraTreeRepairs.BillboardPath(id, season);
+                string elmKey = elmPath + "|" + id;
+                if (_districtFloraSprites.TryGetValue(elmKey, out var elmSprite) && elmSprite != null)
+                    return elmSprite;
+                var elmTexture = Resources.Load<Texture2D>(elmPath);
+                if (elmTexture == null) throw new MissingReferenceException(elmPath);
+                return _districtFloraSprites[elmKey] = Sprite.Create(elmTexture,
+                    new Rect(0, 0, elmTexture.width, elmTexture.height),
+                    LotWorldController.FloraPivot(elmTexture.name),
+                    FloraTreeRepairs.PixelsPerUnit(id), 0, SpriteMeshType.FullRect);
+            }
             string path = ForestClusterCatalog.FarCanopyResourcePath(id,
                 season) ?? ForestClusterCatalog.ResourcePath(id, season);
             if (_districtFloraSprites.TryGetValue(path, out var sprite) && sprite != null) return sprite;
