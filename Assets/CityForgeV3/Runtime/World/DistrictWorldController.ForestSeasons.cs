@@ -79,13 +79,16 @@ namespace CityForgeV3.World
             // its established threshold. This is one batch property per
             // texture, not a per-tree material or update.
             properties.SetFloat("_Cutoff",
-                ForestClusterCatalog.UsesDepthShadedCutout(textureName) ? .5f :
+                (ForestClusterCatalog.UsesDepthShadedCutout(textureName) ||
+                 textureName.StartsWith("true-angle-trees-")) ? .5f :
                 textureName.EndsWith("-winter") ? .12f : .02f);
             renderer.SetPropertyBlock(properties);
         }
 
         Sprite ForestSprite(string id, SeasonPreset season)
         {
+            if (ForestTrueAngleCluster.Supports(id))
+                return ForestTrueAngleCluster.RootSprite(season);
             string path = ForestClusterCatalog.FarCanopyResourcePath(id,
                 season) ?? ForestClusterCatalog.ResourcePath(id, season);
             if (_districtFloraSprites.TryGetValue(path, out var sprite) && sprite != null) return sprite;
@@ -105,6 +108,7 @@ namespace CityForgeV3.World
             // Warm the family sprites at the existing loading/bulk-edit boundary.
             // First seasonal use must not decode textures or build tight sprite meshes.
             if (_forestClusters.Count == 0) return;
+            ForestTrueAngleCluster.WarmAllSeasons();
             foreach (var season in new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter })
                 foreach (var family in FloraFamilies.Names)
                 {
@@ -162,10 +166,14 @@ namespace CityForgeV3.World
                     }
                     var renderer = _pendingForestEnumerator.Current;
                     if (renderer == null || !renderer.gameObject.activeInHierarchy) continue;
-                    var id = FloraTreeRepairs.Identity(renderer.sprite.texture.name);
+                    var atlas = renderer.GetComponent<ForestTrueAngleCluster>();
+                    var id = atlas != null ? atlas.FloraId :
+                        FloraTreeRepairs.Identity(renderer.sprite.texture.name);
                     var sprite = ForestSprite(id, season);
-                    if (renderer.sprite == sprite) continue;
+                    if (renderer.sprite == sprite &&
+                        (atlas == null || atlas.Season == season)) continue;
                     _floraBatches?.Remove(renderer);
+                    atlas?.SetSeason(season);
                     renderer.sprite = sprite;
                     ApplyForestSeasonCutoff(renderer);
                     changed.Add(renderer);

@@ -10,35 +10,78 @@ namespace CityForgeV3.Tests.EditMode
     public sealed class FarForestCanopyTests
     {
         [Test]
-        public void CanopyHasSeparateSummerAndAutumnArtWithWinterFallback()
+        public void TrueAngleAtlasHasTwelveMatchingSeasonalTreeSlots()
         {
-            foreach (var id in new[] { "forest-deciduous-compact",
-                         "forest-deciduous-large" })
-            foreach (var season in new[] { SeasonPreset.Summer,
-                         SeasonPreset.Autumn })
+            foreach (var season in new[] { SeasonPreset.Spring,
+                         SeasonPreset.Summer, SeasonPreset.Autumn,
+                         SeasonPreset.Winter })
             {
-                var path = ForestClusterCatalog.FarCanopyResourcePath(
-                    id, season);
+                var path = ForestTrueAngleCluster.ResourcePath(season);
                 var texture = Resources.Load<Texture2D>(path);
                 Assert.That(texture, Is.Not.Null, path);
                 Assert.That(texture.width, Is.EqualTo(1536));
                 Assert.That(texture.height, Is.EqualTo(1024));
-                Assert.That(ForestClusterCatalog.UsesQuadCanopyMesh(path),
-                    Is.EqualTo(season == SeasonPreset.Summer));
+                Assert.That(ForestTrueAngleCluster.RootSprite(season).texture,
+                    Is.SameAs(texture));
             }
-            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
-                "forest-deciduous-large", SeasonPreset.Winter), Is.Null);
-            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
-                "forest-mountain-large", SeasonPreset.Autumn), Is.Null);
-            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
-                "forest-deciduous-large", SeasonPreset.Spring),
-                Does.Contain("ForestCanopyObliqueSummerV03"));
-            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
-                "forest-deciduous-compact", SeasonPreset.Summer),
-                Does.Contain("ForestCanopyObliqueSummerV03"));
-            Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
-                "forest-deciduous-large", SeasonPreset.Autumn),
-                Does.Contain("ForestCanopyFarV01"));
+            Assert.That(ForestTrueAngleCluster.ResourcePath(SeasonPreset.Spring),
+                Is.EqualTo(ForestTrueAngleCluster.ResourcePath(SeasonPreset.Summer)));
+            var owner = new GameObject("True angle atlas layout test");
+            try
+            {
+                var cluster = owner.AddComponent<ForestTrueAngleCluster>();
+                cluster.Configure("forest-deciduous-large", 0,
+                    SeasonPreset.Summer, _ => 0f);
+                Assert.That(cluster.PieceCount, Is.EqualTo(7));
+                var summerRects = Enumerable.Range(0, cluster.PieceCount)
+                    .Select(index => cluster.Piece(index).rect).ToArray();
+                cluster.SetSeason(SeasonPreset.Autumn);
+                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                    .Select(index => cluster.Piece(index).rect),
+                    Is.EqualTo(summerRects));
+                cluster.SetSeason(SeasonPreset.Winter);
+                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                    .Select(index => cluster.Piece(index).rect),
+                    Is.EqualTo(summerRects));
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void VariationsKeepOneHandleAndBatchSevenTreeQuads()
+        {
+            var owner = new GameObject("True angle batch test");
+            try
+            {
+                var sprite = ForestTrueAngleCluster.RootSprite(SeasonPreset.Summer);
+                var variants = new List<ForestTrueAngleCluster>();
+                var renderers = new List<SpriteRenderer>();
+                for (var index = 0; index < 3; index++)
+                {
+                    var tree = new GameObject("Large clump " + index);
+                    tree.transform.SetParent(owner.transform, false);
+                    tree.transform.localPosition = new Vector3(index * 40, 0, 0);
+                    var cluster = tree.AddComponent<ForestTrueAngleCluster>();
+                    cluster.Configure("forest-deciduous-large", index,
+                        SeasonPreset.Summer, _ => 0f);
+                    var renderer = tree.AddComponent<SpriteRenderer>();
+                    renderer.sprite = sprite;
+                    variants.Add(cluster);
+                    renderers.Add(renderer);
+                }
+                Assert.That(variants.Select(cluster => cluster.Piece(0).rect)
+                    .Distinct().Count(), Is.EqualTo(3));
+                var batches = owner.AddComponent<DistrictFloraBatches>();
+                batches.Build(renderers);
+                var output = owner.GetComponentsInChildren<MeshRenderer>()
+                    .Where(renderer => renderer.name == "Flora batch").ToArray();
+                Assert.That(output.Length, Is.EqualTo(1));
+                Assert.That(output[0].GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                    Is.EqualTo(3 * 7 * 4));
+                Assert.That(renderers.All(renderer => renderer.forceRenderingOff),
+                    Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
         }
 
         [Test]
@@ -56,13 +99,7 @@ namespace CityForgeV3.Tests.EditMode
             };
             Set("_content", owner.transform);
             Set("_terrainDistrict", district);
-            var nearTexture = Resources.Load<Texture2D>(
-                ForestClusterCatalog.ResourcePath("forest-deciduous-large",
-                    SeasonPreset.Summer));
-            var nearSprite = Sprite.Create(nearTexture,
-                new Rect(0, 0, nearTexture.width, nearTexture.height),
-                ForestClusterCatalog.Pivot,
-                ForestClusterCatalog.LargePixelsPerUnit);
+            var nearSprite = ForestTrueAngleCluster.RootSprite(SeasonPreset.Summer);
             var registry = (Dictionary<string, SpriteRenderer>)
                 typeof(DistrictWorldController).GetField("_forestClusters",
                     flags).GetValue(world);
@@ -75,6 +112,9 @@ namespace CityForgeV3.Tests.EditMode
                         .AddComponent<SpriteRenderer>();
                     tree.transform.SetParent(owner.transform, false);
                     tree.sprite = nearSprite;
+                    tree.gameObject.AddComponent<ForestTrueAngleCluster>()
+                        .Configure("forest-deciduous-large", index,
+                            SeasonPreset.Summer, _ => 0f);
                     registry.Add(index.ToString(), tree);
                     trees.Add(tree);
                 }
@@ -82,8 +122,7 @@ namespace CityForgeV3.Tests.EditMode
                 world.SyncForestSeason(8);
                 Assert.That(world.ForestSeasonPending, Is.True);
                 var farTexture = Resources.Load<Texture2D>(
-                    ForestClusterCatalog.FarCanopyResourcePath(
-                        "forest-deciduous-large", SeasonPreset.Autumn));
+                    ForestTrueAngleCluster.ResourcePath(SeasonPreset.Autumn));
                 Assert.That(trees.Count(tree => tree.sprite.texture ==
                     farTexture), Is.EqualTo(8));
                 Assert.That(world.ForestSeasonPending, Is.True);
@@ -104,13 +143,13 @@ namespace CityForgeV3.Tests.EditMode
                     Assert.That(++guard, Is.LessThan(10));
                 } while (world.ForestSeasonPending);
                 Assert.That(trees.All(tree =>
-                    tree.sprite.texture.name.EndsWith("-summer") &&
-                    tree.sprite.vertices.Length == 4), Is.True,
-                    "Returning to summer must reuse the simple oblique mesh.");
+                    tree.sprite == nearSprite &&
+                    tree.GetComponent<ForestTrueAngleCluster>().Season ==
+                        SeasonPreset.Summer), Is.True,
+                    "Returning to summer must reuse the cached atlas sprites.");
             }
             finally
             {
-                Object.DestroyImmediate(nearSprite);
                 Object.DestroyImmediate(owner);
             }
         }
@@ -141,13 +180,15 @@ namespace CityForgeV3.Tests.EditMode
                     .Single(renderer => renderer.name ==
                         "District Flora — forest-deciduous-large");
                 var selectedTexture = Resources.Load<Texture2D>(
-                    ForestClusterCatalog.FarCanopyResourcePath(
-                        "forest-deciduous-large",
+                    ForestTrueAngleCluster.ResourcePath(
                         ForestClusterCatalog.SeasonForIndex(seasonIndex)));
                 Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
+                Assert.That(tree.GetComponent<ForestTrueAngleCluster>(), Is.Not.Null);
+                Assert.That(tree.GetComponent<ForestTrueAngleCluster>().PieceCount,
+                    Is.EqualTo(7));
                 if (seasonIndex == 0)
                     Assert.That(tree.sprite.vertices.Length, Is.EqualTo(4),
-                        "Oblique summer canopies must not create thousand-vertex tight meshes per cluster.");
+                        "Atlas cutouts must remain four-vertex quads.");
                 world.SetZoom(DistrictZoomLevel.LOD3);
                 world.SyncForestSeason();
                 Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));

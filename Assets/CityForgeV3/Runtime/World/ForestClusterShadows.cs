@@ -29,16 +29,18 @@ namespace CityForgeV3.World
         public static bool Update(SpriteRenderer source, MeshRenderer shadow, Vector3 ray,
             Func<Vector3, float> groundHeight, Func<Vector3, Vector3> groundAnchor)
         {
+            var atlas = source.GetComponent<ForestTrueAngleCluster>();
             string name = source.sprite.texture.name;
-            if (!ForestClusterCatalog.IsTexture(name)) return false;
+            if (atlas == null && !ForestClusterCatalog.IsTexture(name)) return false;
 
             var sprite = source.sprite;
             var size = sprite.rect.size / sprite.pixelsPerUnit;
             var scale = source.transform.lossyScale;
-            float width = size.x * scale.x;
-            float height = size.y * scale.y /
+            float width = (atlas != null ? atlas.EnvelopeWidth : size.x) * scale.x;
+            float height = (atlas != null ? atlas.TreeHeight : size.y) * scale.y /
                 Mathf.Max(.2f, source.transform.up.y);
-            bool winter = name.EndsWith("-winter");
+            bool winter = atlas != null ? atlas.Season == SeasonPreset.Winter :
+                name.EndsWith("-winter");
             var groundRay = new Vector3(ray.x, 0, ray.z);
             var direction = groundRay.sqrMagnitude > .0001f
                 ? groundRay.normalized : Vector3.forward;
@@ -53,7 +55,8 @@ namespace CityForgeV3.World
             var crowns = name.Contains("-large-") ? LargeCrowns :
                 name.Contains("-compact-") ? CompactCrowns : StandardCrowns;
 
-            int capacity = winter ? 42 : crowns.Length *
+            int crownCount = atlas != null ? atlas.PieceCount : crowns.Length;
+            int capacity = winter ? 42 : crownCount *
                 (CanopySides * 2 + ContactSides + 2);
             var vertices = new List<Vector3>(capacity);
             var colors = new List<Color>(capacity);
@@ -120,11 +123,14 @@ namespace CityForgeV3.World
                 // Separate but overlapping silhouettes suggest the visible
                 // crowns. Only the outermost 16% feathers, so their edges
                 // remain readable at a district zoom without hard pixels.
-                for (int i = 0; i < crowns.Length; i++)
+                for (int i = 0; i < crownCount; i++)
                 {
-                    var basePoint = root + artSide * (crowns[i].x * width) +
+                    var basePoint = atlas != null ? root + atlas.WorldOffset(i) :
+                        root + artSide * (crowns[i].x * width) +
                         artDepth * (crowns[i].y * width);
-                    float lobeWidth = width * (crowns.Length == 5 ? .165f :
+                    float lobeWidth = atlas != null ?
+                        atlas.TreeWidth * atlas.PieceScale(i) * .36f :
+                        width * (crowns.Length == 5 ? .165f :
                         crowns.Length == 4 ? .19f : .225f);
                     Fan(basePoint + direction * (travel * .55f), lobeWidth,
                         width * .16f + travel * .40f, CanopySides,

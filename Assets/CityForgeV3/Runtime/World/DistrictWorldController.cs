@@ -521,6 +521,19 @@ namespace CityForgeV3.World
                 if (renderer == null || !renderer.gameObject.activeInHierarchy)
                     continue;
                 var bounds = renderer.bounds;
+                var atlas = renderer.GetComponent<ForestTrueAngleCluster>();
+                if (atlas != null)
+                {
+                    // The selection handle is the clump root, while its
+                    // other trees live in the existing flora mesh batch.
+                    // Extend hit testing only on an explicit pointer query.
+                    for (int piece = 0; piece < atlas.PieceCount; piece++)
+                    {
+                        var pieceBounds = renderer.bounds;
+                        pieceBounds.center += atlas.WorldOffset(piece);
+                        bounds.Encapsulate(pieceBounds);
+                    }
+                }
                 var min = new Vector2(float.PositiveInfinity,
                     float.PositiveInfinity);
                 var max = new Vector2(float.NegativeInfinity,
@@ -609,6 +622,14 @@ namespace CityForgeV3.World
                         continue;
                     _floraBatches?.Remove(renderer);
                     renderer.transform.localPosition = DistrictFloraPosition(placed);
+                    var atlas = renderer.GetComponent<ForestTrueAngleCluster>();
+                    if (atlas != null)
+                    {
+                        var root = renderer.transform.localPosition;
+                        float rootHeight = TerrainElevation(root.x, root.z);
+                        atlas.RefreshGround(offset => TerrainElevation(
+                            root.x + offset.x, root.z + offset.y) - rootHeight);
+                    }
                     renderer.sortingOrder = DistrictFloraSortingOrder(
                         renderer.transform.localPosition);
                     changed.Add(renderer);
@@ -785,16 +806,21 @@ namespace CityForgeV3.World
                 placed.InstanceId);
             var presentationId = LotWorldController.ResolveFloraPresentationId(
                 RegionClimateRules.PresentationTree(_floraClimate, placed.FloraId), variation, SeasonPreset.Summer);
-            var resource = ForestClusterCatalog.IsCluster(presentationId)
+            bool trueAngle = ForestTrueAngleCluster.Supports(presentationId);
+            var resource = !trueAngle && ForestClusterCatalog.IsCluster(presentationId)
                     ? ForestClusterCatalog.FarCanopyResourcePath(
                         presentationId, _forestSeason) ??
                       LotWorldController.ResolveFloraResourcePath(
                         presentationId, _forestSeason)
+                    : trueAngle ? ForestTrueAngleCluster.ResourcePath(_forestSeason)
                     : LotWorldController.ResolveFloraResourcePath(
                         presentationId, SeasonPreset.Summer);
             if (string.IsNullOrWhiteSpace(resource)) return;
             var spriteKey = resource + "|" + presentationId;
-            if (!_districtFloraSprites.TryGetValue(spriteKey, out var sprite) ||
+            Sprite sprite;
+            if (trueAngle)
+                sprite = ForestTrueAngleCluster.RootSprite(_forestSeason);
+            else if (!_districtFloraSprites.TryGetValue(spriteKey, out sprite) ||
                 sprite == null)
             {
                 var texture = Resources.Load<Texture2D>(resource);
@@ -820,6 +846,15 @@ namespace CityForgeV3.World
                         ? placed.RotationEighthTurns * 45f : 0f);
             item.transform.localScale = Vector3.one * Mathf.Clamp(
                 placed.Scale, .65f, 1.45f);
+            if (trueAngle)
+            {
+                var atlas = item.AddComponent<ForestTrueAngleCluster>();
+                var root = item.transform.localPosition;
+                float rootHeight = TerrainElevation(root.x, root.z);
+                atlas.Configure(presentationId, variation, _forestSeason,
+                    offset => TerrainElevation(root.x + offset.x,
+                        root.z + offset.y) - rootHeight);
+            }
             var renderer = item.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sharedMaterial = DistrictFloraMaterial();

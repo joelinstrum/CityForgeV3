@@ -121,8 +121,6 @@ namespace CityForgeV3.World
             foreach (var pair in groups)
             {
                 var sprite = pair.Key;
-                if (!geometry.TryGetValue(sprite, out var source))
-                    geometry[sprite] = source = new Geometry { Vertices = sprite.vertices, UV = sprite.uv, Triangles = sprite.triangles };
                 // Preserve back-to-front order within a texture group. Depth still
                 // resolves overlaps with other species, lots, and water.
                 pair.Value.Sort((a, b) => a.sortingOrder.CompareTo(b.sortingOrder));
@@ -135,22 +133,39 @@ namespace CityForgeV3.World
                 MeshRenderer firstShadow = null;
                 foreach (var tree in pair.Value)
                 {
-                    int offset = vertices.Count;
-                    var center = transform.InverseTransformPoint(tree.transform.position);
                     var relativeRotation = cameraRelativeRotations[tree];
                     var scale = tree.transform.lossyScale;
-                    foreach (var v in source.Vertices)
+                    var atlas = tree.GetComponent<ForestTrueAngleCluster>();
+                    int pieces = atlas != null ? atlas.PieceCount : 1;
+                    for (int pieceIndex = 0; pieceIndex < pieces; pieceIndex++)
                     {
-                        var billboardOffset = relativeRotation *
-                            new Vector3(v.x * scale.x, v.y * scale.y, 0f);
-                        vertices.Add(center);
-                        billboardOffsets.Add(billboardOffset);
-                        billboardRadius = Mathf.Max(billboardRadius,
-                            billboardOffset.magnitude);
-                        colors.Add(tree.color);
+                        var piece = atlas != null ? atlas.Piece(pieceIndex) : sprite;
+                        if (!geometry.TryGetValue(piece, out var pieceGeometry))
+                            geometry[piece] = pieceGeometry = new Geometry
+                            {
+                                Vertices = piece.vertices, UV = piece.uv,
+                                Triangles = piece.triangles
+                            };
+                        int offset = vertices.Count;
+                        var worldCenter = tree.transform.position +
+                            (atlas != null ? atlas.WorldOffset(pieceIndex) : Vector3.zero);
+                        var center = transform.InverseTransformPoint(worldCenter);
+                        float pieceScale = atlas != null ? atlas.PieceScale(pieceIndex) : 1f;
+                        foreach (var v in pieceGeometry.Vertices)
+                        {
+                            var billboardOffset = relativeRotation *
+                                new Vector3(v.x * scale.x * pieceScale,
+                                    v.y * scale.y * pieceScale, 0f);
+                            vertices.Add(center);
+                            billboardOffsets.Add(billboardOffset);
+                            billboardRadius = Mathf.Max(billboardRadius,
+                                billboardOffset.magnitude);
+                            colors.Add(tree.color);
+                        }
+                        uv.AddRange(pieceGeometry.UV);
+                        foreach (var i in pieceGeometry.Triangles)
+                            triangles.Add(offset + i);
                     }
-                    uv.AddRange(source.UV);
-                    foreach (var i in source.Triangles) triangles.Add(offset + i);
                     tree.forceRenderingOff = true;
                     var shadow = Shadow(tree);
                     if (shadow == null) continue;
@@ -158,7 +173,7 @@ namespace CityForgeV3.World
                     if (!shadow.enabled) continue;
                     firstShadow ??= shadow;
                     var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
-                    offset = shadowVertices.Count;
+                    int shadowOffset = shadowVertices.Count;
                     var matrix = transform.worldToLocalMatrix * shadow.transform.localToWorldMatrix;
                     foreach (var v in mesh.vertices) shadowVertices.Add(matrix.MultiplyPoint3x4(v));
                     shadowUV.AddRange(mesh.uv);
@@ -169,7 +184,7 @@ namespace CityForgeV3.World
                     else
                         for (var i = 0; i < mesh.vertexCount; i++)
                             shadowColors.Add(Color.white);
-                    foreach (var i in mesh.triangles) shadowTriangles.Add(offset + i);
+                    foreach (var i in mesh.triangles) shadowTriangles.Add(shadowOffset + i);
                 }
                 var properties = new MaterialPropertyBlock();
                 pair.Value[0].GetPropertyBlock(properties); properties.SetTexture("_MainTex", sprite.texture);
