@@ -1747,7 +1747,7 @@ namespace CityForgeV3.World
         {
             "maple" => "vendor-red-maple",
             "ashe" or "vendor-oregon-ash" => "american-elm",
-            "oak" or "oak-b" or "angel-oak-spanish-moss" or
+            "oak" or "oak-b" or
                 "vendor-cypress-oak" or "vendor-cypress-oak-wide" => "mature-oak",
             "evergreen" or "evergreen-b" or "evergreen-snow" or
                 "evergreen-b-snow" or "narrow-street-tree" => "medium-blue-spruce",

@@ -836,6 +836,7 @@ namespace CityForgeV3.World
                     LotWorldController.FloraPixelsPerUnit(
                         presentationId, texture.name), 0,
                     (presentationId == "american-elm" ||
+                     presentationId == "angel-oak-spanish-moss" ||
                      ForestClusterCatalog.UsesQuadCanopyMesh(resource))
                         ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
                 _districtFloraSprites[spriteKey] = sprite;

@@ -10452,7 +10452,7 @@ namespace CityForgeV3.Tests
         [TestCase("maple", "vendor-red-maple")]
         [TestCase("ashe", "american-elm")]
         [TestCase("date-palm", "date-palm-tall")]
-        [TestCase("angel-oak-spanish-moss", "mature-oak")]
+        [TestCase("angel-oak-spanish-moss", "angel-oak-spanish-moss")]
         [TestCase("plane-uk-3d-a", "london-plane-a")]
         [TestCase("fraser-fir-snowy", "medium-fraser-fir")]
         [TestCase("cilician-fir", "cilician-fir")]

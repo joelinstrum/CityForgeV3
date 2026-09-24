@@ -11,6 +11,7 @@ namespace CityForgeV3.World
   public const string RealisticWillowRoot="CityForgeV3/Flora/WillowRealisticV01/";
   public const string PhotographicDeciduousRoot="CityForgeV3/Flora/PhotographicDeciduousV01/";
   public const string ElmTrueAngleRoot="CityForgeV3/Flora/ElmTrueAngleV01/";
+  public const string SpanishMossTrueAngleRoot="CityForgeV3/Flora/SpanishMossTrueAngleV01/";
   public const string BaldCypressMossRoot="CityForgeV3/Flora/BaldCypressMossV01/";
   public const string BaldCypressMossBRoot="CityForgeV3/Flora/BaldCypressMossV02/";
   public const string MediumConifersRoot="CityForgeV3/Flora/MediumConifersV01/";
@@ -25,6 +26,7 @@ namespace CityForgeV3.World
     ? MediumConifersRoot+id+(season==SeasonPreset.Winter?"-snowy":"-snowfree")
     :id=="bald-cypress-moss-b" ? BaldCypressMossBRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="bald-cypress-moss" ? BaldCypressMossRoot+id+"-"+season.ToString().ToLowerInvariant()
+    :id=="angel-oak-spanish-moss" ? SpanishMossTrueAngleRoot+id
     :id=="american-elm" ? ElmTrueAngleRoot+id+"-"+
       (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
     :id is "mature-oak" or "shagbark-hickory"
@@ -43,6 +45,7 @@ namespace CityForgeV3.World
    "mature-oak"=>100f,
    // The 1312x1199 replacement keeps the old elm's roughly 16m height.
    "american-elm"=>72f,
+   "angel-oak-spanish-moss"=>80f,
    "shagbark-hickory"=>98f,
    "bald-cypress-moss"=>82f,
    "bald-cypress-moss-b"=>82f,
@@ -82,7 +85,7 @@ namespace CityForgeV3.World
     case "london-plane-b":pivot=new Vector2(.5f,.065f);return true;
     case "fraser-fir-snowy":pivot=new Vector2(0.51104259f,0.18089716f);return true;
     case "street-tree-3d":pivot=new Vector2(0.49467447f,0.12759677f);return true;
-    case "angel-oak-spanish-moss":pivot=new Vector2(480f/1024f,310f/1024f);return true;
+    case "angel-oak-spanish-moss":pivot=new Vector2(.5f,178f/1199f);return true;
     case "date-palm":pivot=new Vector2(0.50000000f,0.03723404f);return true;
     case "date-palm-tall":pivot=new Vector2(.5f,12f/1536f);return true;
     case "date-palm-short":pivot=new Vector2(.5f,41f/1536f);return true;
@@ -99,7 +102,7 @@ namespace CityForgeV3.World
     case "mature-oak":pivot=new Vector2(.5f,
      (texture.EndsWith("spring")?146f:texture.EndsWith("winter")?135f:149f)/1536f);return true;
     case "american-elm":pivot=new Vector2(.5f,
-     (texture.EndsWith("summer")?162f:texture.EndsWith("autumn")?102f:63f)/1199f);return true;
+     (texture.EndsWith("summer")?187f:texture.EndsWith("autumn")?151f:64f)/1199f);return true;
     case "shagbark-hickory":pivot=new Vector2(.5f,
      (texture.EndsWith("spring")?29f:texture.EndsWith("winter")?31f:33f)/1536f);return true;
     case "bald-cypress-moss":pivot=new Vector2(.5f,

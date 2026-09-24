@@ -262,6 +262,33 @@ public class DistrictFloraBatchesTests
             _ => 0, foot => { foot.y = 0; return foot; });
         Assert.True(first.Where((v, i) => (v - mesh.vertices[i]).sqrMagnitude > .001f).Any(), "Canopies follow the sun");
     }
+    [Test] public void ElmShadowHasGroundContactAndLongerRoundedCenter()
+    {
+        texture.name = "american-elm-summer";
+        var tree = Tree(0);
+        var item = new GameObject("District Flora Shadow");
+        item.transform.SetParent(tree.transform, false);
+        var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
+        item.AddComponent<DistrictFloraShadowMesh>();
+        var shadow = item.AddComponent<MeshRenderer>();
+        var ray = new Vector3(.82f, -.67f, 0f).normalized;
+        Assert.True(ForestClusterShadows.Update(tree, shadow, ray,
+            _ => 0f, _ => throw new System.Exception(
+                "The elm shadow must use its trunk, not a distant raycast anchor.")));
+        var direction = Vector3.ProjectOnPlane(ray, Vector3.up).normalized;
+        float LobeReach(int start)
+        {
+            var center = shadow.transform.TransformPoint(mesh.vertices[start]);
+            return mesh.vertices.Skip(start + 1).Take(40)
+                .Max(vertex => Vector3.Dot(
+                    shadow.transform.TransformPoint(vertex) - center,
+                    direction));
+        }
+        Assert.That(LobeReach(50), Is.GreaterThan(LobeReach(0) * 1.35f));
+        Assert.That(LobeReach(50), Is.LessThan(LobeReach(0) * 1.65f));
+        Assert.That(mesh.vertices.All(vertex => Mathf.Abs(
+            shadow.transform.TransformPoint(vertex).y - .031f) < .001f), Is.True);
+    }
     [Test] public void AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha()
     {
         foreach (var season in new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter })
@@ -426,6 +453,30 @@ public class DistrictFloraBatchesTests
             Assert.AreEqual(72f, LotWorldController.FloraPixelsPerUnit("american-elm", art.name));
             Assert.Greater(LotWorldController.FloraPivot(art.name).y, 0f);
         }
+        Assert.That(LotWorldController.FloraPivot("american-elm-summer").y,
+            Is.EqualTo(187f / 1199f).Within(.0001f),
+            "The elm selection root belongs at the trunk foot, not the lowest leaves.");
+    }
+    [Test] public void SpanishMossUsesOneNewBillboardAtEverySeason()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var path = LotWorldController.ResolveFloraResourcePath(
+                "angel-oak-spanish-moss", season);
+            Assert.AreEqual(FloraTreeRepairs.SpanishMossTrueAngleRoot +
+                "angel-oak-spanish-moss", path);
+            var art = Resources.Load<Texture2D>(path);
+            Assert.NotNull(art, path);
+            Assert.AreEqual(1312, art.width);
+            Assert.AreEqual(1199, art.height);
+            Assert.AreEqual(80f, LotWorldController.FloraPixelsPerUnit(
+                "angel-oak-spanish-moss", art.name));
+            Assert.That(LotWorldController.FloraPivot(art.name).y,
+                Is.EqualTo(178f / 1199f).Within(.0001f));
+        }
+        Assert.False(PlaneUkFloraPresentation.IsTree("angel-oak-spanish-moss"),
+            "The old close-up mesh must not hide the replacement cutout.");
     }
     [Test] public void DistrictElmChangesWithCalendarWithoutReplacingItsRenderer()
     {
