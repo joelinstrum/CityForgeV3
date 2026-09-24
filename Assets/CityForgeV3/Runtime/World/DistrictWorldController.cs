@@ -803,7 +803,9 @@ namespace CityForgeV3.World
                     new Rect(0f, 0f, texture.width, texture.height),
                     LotWorldController.FloraPivot(texture.name),
                     LotWorldController.FloraPixelsPerUnit(
-                        presentationId, texture.name));
+                        presentationId, texture.name), 0,
+                    ForestClusterCatalog.UsesQuadCanopyMesh(resource)
+                        ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
                 _districtFloraSprites[spriteKey] = sprite;
             }
             if (placed.FloraId == "cilician-fir" && placed.HarvestState != DistrictTreeHarvestState.Standing)

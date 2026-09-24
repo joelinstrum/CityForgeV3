@@ -46,9 +46,14 @@ namespace CityForgeV3.World
                 id != "forest-deciduous-large") return null;
             if (season == SeasonPreset.Winter) return null;
             if (season != SeasonPreset.Autumn)
-                return "CityForgeV3/Flora/ForestCanopyGroundedSummerV02/" + id + "-summer";
+                return "CityForgeV3/Flora/ForestCanopyObliqueSummerV03/" + id + "-summer";
             return "CityForgeV3/Flora/ForestCanopyFarV01/" + id + "-autumn";
         }
+        // The oblique cutouts have intricate alpha edges. A four-vertex quad
+        // keeps local batch rebuilds bounded; their shader still clips alpha.
+        public static bool UsesQuadCanopyMesh(string resourcePath) =>
+            resourcePath != null && resourcePath.StartsWith(
+                "CityForgeV3/Flora/ForestCanopyObliqueSummerV03/");
         public static SeasonPreset SeasonForIndex(int index) => (Mathf.Max(0, index) % 4) switch
         {
             1 => SeasonPreset.Autumn, 2 => SeasonPreset.Winter,

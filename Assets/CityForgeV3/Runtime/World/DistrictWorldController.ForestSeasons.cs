@@ -92,7 +92,9 @@ namespace CityForgeV3.World
             var texture = Resources.Load<Texture2D>(path);
             if (texture == null) throw new MissingReferenceException(path);
             sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                ForestClusterCatalog.Pivot, ForestClusterCatalog.PixelsPerUnit(id));
+                ForestClusterCatalog.Pivot, ForestClusterCatalog.PixelsPerUnit(id),
+                0, ForestClusterCatalog.UsesQuadCanopyMesh(path)
+                    ? SpriteMeshType.FullRect : SpriteMeshType.Tight);
             return _districtFloraSprites[path] = sprite;
         }
 

@@ -23,6 +23,8 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(texture, Is.Not.Null, path);
                 Assert.That(texture.width, Is.EqualTo(1536));
                 Assert.That(texture.height, Is.EqualTo(1024));
+                Assert.That(ForestClusterCatalog.UsesQuadCanopyMesh(path),
+                    Is.EqualTo(season == SeasonPreset.Summer));
             }
             Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
                 "forest-deciduous-large", SeasonPreset.Winter), Is.Null);
@@ -30,10 +32,10 @@ namespace CityForgeV3.Tests.EditMode
                 "forest-mountain-large", SeasonPreset.Autumn), Is.Null);
             Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
                 "forest-deciduous-large", SeasonPreset.Spring),
-                Does.Contain("ForestCanopyGroundedSummerV02"));
+                Does.Contain("ForestCanopyObliqueSummerV03"));
             Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
                 "forest-deciduous-compact", SeasonPreset.Summer),
-                Does.Contain("ForestCanopyGroundedSummerV02"));
+                Does.Contain("ForestCanopyObliqueSummerV03"));
             Assert.That(ForestClusterCatalog.FarCanopyResourcePath(
                 "forest-deciduous-large", SeasonPreset.Autumn),
                 Does.Contain("ForestCanopyFarV01"));
@@ -94,6 +96,17 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(trees.All(tree => tree.sprite.texture ==
                     farTexture), Is.True);
                 Assert.That(registry.Count, Is.EqualTo(41));
+                district.Labor.SeasonIndex = 0;
+                guard = 0;
+                do
+                {
+                    world.SyncForestSeason(8);
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(trees.All(tree =>
+                    tree.sprite.texture.name.EndsWith("-summer") &&
+                    tree.sprite.vertices.Length == 4), Is.True,
+                    "Returning to summer must reuse the simple oblique mesh.");
             }
             finally
             {
@@ -132,6 +145,9 @@ namespace CityForgeV3.Tests.EditMode
                         "forest-deciduous-large",
                         ForestClusterCatalog.SeasonForIndex(seasonIndex)));
                 Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
+                if (seasonIndex == 0)
+                    Assert.That(tree.sprite.vertices.Length, Is.EqualTo(4),
+                        "Oblique summer canopies must not create thousand-vertex tight meshes per cluster.");
                 world.SetZoom(DistrictZoomLevel.LOD3);
                 world.SyncForestSeason();
                 Assert.That(tree.sprite.texture, Is.SameAs(selectedTexture));
