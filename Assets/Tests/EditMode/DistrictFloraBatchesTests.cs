@@ -289,6 +289,81 @@ public class DistrictFloraBatchesTests
         Assert.That(mesh.vertices.All(vertex => Mathf.Abs(
             shadow.transform.TransformPoint(vertex).y - .031f) < .001f), Is.True);
     }
+    [Test]
+    public void DistrictTreeShadowRayStaysBehindCameraAtDaylightPresets()
+    {
+        var cameraForward = new Vector3(1f, -.36f, 1f).normalized;
+        var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up).normalized;
+        foreach (var preset in new[] { TimeOfDayPreset.Morning,
+            TimeOfDayPreset.Noon, TimeOfDayPreset.Afternoon })
+        {
+            var sunRay = TimeOfDayLighting.SunRotation(preset) * Vector3.forward;
+            var projected = ForestClusterShadows.BehindCameraRay(
+                sunRay, cameraForward);
+            Assert.That(Vector3.Dot(Vector3.ProjectOnPlane(projected,
+                    Vector3.up).normalized, behind),
+                Is.GreaterThan(.9f), preset.ToString());
+            Assert.That(projected.y, Is.EqualTo(sunRay.y).Within(.0001f));
+            Assert.That(Vector3.ProjectOnPlane(projected, Vector3.up).magnitude,
+                Is.EqualTo(Vector3.ProjectOnPlane(sunRay, Vector3.up).magnitude)
+                    .Within(.0001f));
+        }
+    }
+    [Test]
+    public void DistrictTreeFamiliesKeepShadowMassBehindTheirTrunks()
+    {
+        var host = new GameObject("Behind-tree district shadow test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "behind-tree-shadows", Width = 1, Height = 1,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+            };
+            var ids = new[] { "american-elm", "london-plane-a",
+                "angel-oak-spanish-moss", "forest-deciduous-compact",
+                "cilician-fir", "mature-oak" };
+            for (var index = 0; index < ids.Length; index++)
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "behind-" + index, FloraId = ids[index],
+                    NormalizedX = .12f + index * .15f,
+                    NormalizedZ = .5f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var behind = Vector3.ProjectOnPlane(world.WorldCamera.transform.forward,
+                Vector3.up).normalized;
+            foreach (var preset in new[] { TimeOfDayPreset.Noon,
+                TimeOfDayPreset.Morning, TimeOfDayPreset.Afternoon })
+            {
+                world.SetTimeOfDay(preset);
+                var slices = 0;
+                while (world.TimeOfDayPresentationPending && slices++ < 100)
+                    world.SyncTimeOfDayPresentation();
+                Assert.Less(slices, 100);
+                var trees = host.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora —"));
+                foreach (var tree in trees)
+                {
+                    var filter = tree.transform.Find("District Flora Shadow")?
+                        .GetComponent<MeshFilter>();
+                    Assert.NotNull(filter, tree.name);
+                    var mesh = filter.sharedMesh;
+                    Assert.Greater(mesh.vertexCount, 0, tree.name);
+                    var opaque = mesh.vertices.Where((_, i) =>
+                        mesh.colors[i].r > .2f).ToArray();
+                    var average = opaque.Aggregate(Vector3.zero,
+                        (sum, point) => sum + filter.transform.TransformPoint(point)) /
+                        opaque.Length;
+                    Assert.That(Vector3.Dot(average - tree.transform.position, behind),
+                        Is.GreaterThan(0f), tree.name + " at " + preset);
+                }
+            }
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void AllSavedClusterIdsResolveTwoSeasonalPalettesWithRealAlpha()
     {
         foreach (var season in new[] { SeasonPreset.Summer, SeasonPreset.Autumn, SeasonPreset.Winter })

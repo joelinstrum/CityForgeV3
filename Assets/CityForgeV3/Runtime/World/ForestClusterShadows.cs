@@ -9,6 +9,22 @@ namespace CityForgeV3.World
     // simulation trees or additional renderers.
     public static class ForestClusterShadows
     {
+        // Art-directed district shadows retain the sun's elevation/length, but
+        // their horizontal footprint stays behind upright camera-facing trees.
+        // A small sun-side component keeps morning and afternoon distinct.
+        public static Vector3 BehindCameraRay(Vector3 sunRay,
+            Vector3 cameraForward)
+        {
+            var horizontal = Vector3.ProjectOnPlane(sunRay, Vector3.up);
+            var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+            if (horizontal.sqrMagnitude < .0001f || behind.sqrMagnitude < .0001f)
+                return sunRay;
+            behind.Normalize();
+            var lateral = horizontal - Vector3.Dot(horizontal, behind) * behind;
+            var direction = (behind + lateral.normalized * .3f).normalized;
+            return direction * horizontal.magnitude + Vector3.up * sunRay.y;
+        }
+
         const int CanopySides = 20;
         const int ContactSides = 8;
         static readonly Vector2[] CompactCrowns =
@@ -69,8 +85,8 @@ namespace CityForgeV3.World
                 Mathf.Max(.05f, -ray.y);
             if (atlas != null) travel *= atlasProjectionScale;
             if (broadTree) travel = Mathf.Min(travel * .7f, width * .4f);
-            float cameraBehindBias = atlas != null &&
-                atlasDirectionOverride.sqrMagnitude > .0001f
+            float cameraBehindBias = broadTree ? width * .12f :
+                atlas != null && atlasDirectionOverride.sqrMagnitude > .0001f
                     ? atlas.TreeWidth * .16f : 0f;
             var crowns = broadTree ? BroadTreeCrowns :
                 name.Contains("-large-") ? LargeCrowns :

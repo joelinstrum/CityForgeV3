@@ -958,6 +958,10 @@ namespace CityForgeV3.World
             var ray = _sun != null
                 ? _sun.transform.rotation * Vector3.forward
                 : TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
+            var shadowRay = ForestClusterShadows.BehindCameraRay(
+                ray, _camera.transform.forward);
+            var screenBehind = Vector3.ProjectOnPlane(
+                _camera.transform.forward, Vector3.up);
             var opacity = TimeOfDay switch
             {
                 TimeOfDayPreset.Morning => .38f,
@@ -998,7 +1002,7 @@ namespace CityForgeV3.World
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
                 var source = visibleRenderer.sprite;
-                if (ForestClusterShadows.Update(visibleRenderer, shadow, ray, world =>
+                if (ForestClusterShadows.Update(visibleRenderer, shadow, shadowRay, world =>
                 {
                     var local = _content.InverseTransformPoint(world);
                     var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
@@ -1013,18 +1017,15 @@ namespace CityForgeV3.World
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
                 }, TimeOfDay == TimeOfDayPreset.Noon ? .55f : .65f,
-                    TimeOfDay == TimeOfDayPreset.Noon &&
-                    visibleRenderer.GetComponent<ForestTrueAngleCluster>() is
-                        { IsFir: false }
-                        ? Vector3.ProjectOnPlane(_camera.transform.forward,
-                            Vector3.up) : Vector3.zero))
+                    screenBehind))
                 {
                     properties.SetTexture("_MainTex", Texture2D.whiteTexture);
                     shadow.SetPropertyBlock(properties);
                     continue;
                 }
                 var root = visibleRenderer.transform.position;
-                var right = Vector3.Cross(Vector3.up, new Vector3(ray.x, 0, ray.z));
+                var right = Vector3.Cross(Vector3.up,
+                    new Vector3(shadowRay.x, 0, shadowRay.z));
                 if (right.sqrMagnitude < .0001f) right = visibleRenderer.transform.right;
                 right.y = 0f;
                 right.Normalize();
@@ -1037,8 +1038,8 @@ namespace CityForgeV3.World
                 {
                     var height = Mathf.Max(0f, vertices[i].y * scale.y);
                     var world = root + right * (vertices[i].x * scale.x);
-                    var travel = height / Mathf.Max(.05f, -ray.y);
-                    world += new Vector3(ray.x,0f,ray.z) * travel;
+                    var travel = height / Mathf.Max(.05f, -shadowRay.y);
+                    world += new Vector3(shadowRay.x,0f,shadowRay.z) * travel;
                     var terrainPoint = _content.InverseTransformPoint(world);
                     world.y = groundY + .025f + TerrainElevation(terrainPoint.x, terrainPoint.z) - TerrainElevation(root.x, root.z);
                     projected[i] = shadow.transform.InverseTransformPoint(world);
