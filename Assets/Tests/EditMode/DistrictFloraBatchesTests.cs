@@ -231,18 +231,28 @@ public class DistrictFloraBatchesTests
             _ => 0, foot => { contacts.Add(foot); foot.y = 0; return foot; }));
         Assert.AreEqual(1, contacts.Count,
             "A cluster is one composition and must not use hidden per-tree coordinates.");
-        Assert.AreEqual(66, mesh.vertexCount);
+        Assert.AreEqual(200, mesh.vertexCount,
+            "Four crown silhouettes and their small trunk contacts share one mesh.");
         Assert.True(mesh.colors.Any(c => c.r == 0), "Feathered canopy boundary");
         Assert.True(mesh.colors.Any(c => c.r > .5f), "Visible shadow interior");
-        Assert.That(mesh.colors.Skip(1).Take(24).All(c =>
+        Assert.That(mesh.colors.Skip(1).Take(20).All(c =>
             Mathf.Abs(c.r - mesh.colors[0].r) < .001f), Is.True,
             "The canopy remains defined to its inner ring before the short fade.");
+        var crownCenters = new[] { 0, 50, 100, 150 }
+            .Select(i => shadow.transform.TransformPoint(mesh.vertices[i])).ToArray();
+        Assert.AreEqual(4, crownCenters.Select(p => Mathf.RoundToInt(p.x * 100))
+            .Distinct().Count(), "Distinct crowns should not collapse into one oval.");
         Assert.True(mesh.vertices.All(v => Mathf.Abs(shadow.transform.TransformPoint(v).y - .031f) < .001f));
         // Both axis-aligned and noon sun must retain two-dimensional shadows.
         foreach (var light in new[] { Vector3.down, new Vector3(1,-1,0).normalized, new Vector3(0,-1,1).normalized })
         {
             ForestClusterShadows.Update(tree, shadow, light, _ => 0, foot => { foot.y = 0; return foot; });
             var points = mesh.vertices.Select(shadow.transform.TransformPoint).ToArray();
+            var firstTriangle = mesh.triangles.Take(3).ToArray();
+            var area = Vector3.Cross(points[firstTriangle[1]] - points[firstTriangle[0]],
+                points[firstTriangle[2]] - points[firstTriangle[0]]).magnitude;
+            Assert.Greater(area, .01f,
+                "The artwork axis must never collapse a crown fan along the sun ray.");
             Assert.Greater(points.Max(p => p.x) - points.Min(p => p.x), .1f);
             Assert.Greater(points.Max(p => p.z) - points.Min(p => p.z), .1f,
                 "Canopy must not collapse along the sun axis");
@@ -358,6 +368,28 @@ public class DistrictFloraBatchesTests
         Assert.AreEqual(1, contacts);
         Assert.AreEqual(42, shadow.GetComponent<MeshFilter>().sharedMesh.vertexCount);
     }
+    [TestCase("forest-deciduous-compact-summer", 150)]
+    [TestCase("forest-deciduous-large-summer", 250)]
+    public void LeafedFamilyShadowUsesCrownLobesWithoutExtraGroundQueries(
+        string textureName, int expectedVertices)
+    {
+        texture.name = textureName;
+        var tree = Tree(0);
+        var item = new GameObject("District Flora Shadow");
+        item.transform.SetParent(tree.transform, false);
+        var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
+        item.AddComponent<DistrictFloraShadowMesh>();
+        var shadow = item.AddComponent<MeshRenderer>();
+        int contacts = 0;
+        Assert.True(ForestClusterShadows.Update(tree, shadow,
+            new Vector3(.3f, -1f, .2f).normalized, _ => 0,
+            foot => { contacts++; foot.y = 0; return foot; }));
+        Assert.AreEqual(1, contacts);
+        Assert.AreEqual(expectedVertices, mesh.vertexCount);
+        Assert.That(mesh.colors.Count(color => color.r > .55f),
+            Is.GreaterThan(expectedVertices / 4),
+            "Most of each crown should remain defined, not a broad blur.");
+    }
     [Test] public void WinterShadowsRetainFirButOpenDeciduousCanopies()
     {
         texture.name = "forest-cluster-01-summer";
@@ -367,7 +399,7 @@ public class DistrictFloraBatchesTests
         item.AddComponent<DistrictFloraShadowMesh>(); var shadow = item.AddComponent<MeshRenderer>();
         ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0, p => new Vector3(p.x, 0, p.z));
         float summerOpacity = mesh.colors.Max(color => color.r);
-        Assert.AreEqual(66, mesh.vertexCount);
+        Assert.AreEqual(200, mesh.vertexCount);
         texture.name = "forest-cluster-01-winter";
         int contacts = 0;
         Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0,

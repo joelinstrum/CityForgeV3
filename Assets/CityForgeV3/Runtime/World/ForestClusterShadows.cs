@@ -4,14 +4,27 @@ using UnityEngine;
 
 namespace CityForgeV3.World
 {
-    // Forest clusters are one authored composition, not a collection of
-    // independently positioned simulation trees. Their ground shadow follows
-    // the composition's shared root and bounds so a new cluster illustration
-    // cannot invalidate hidden, hand-authored trunk coordinates.
+    // A cluster has one ground anchor. Its few crown/contact lobes are a
+    // deterministic approximation within the artwork bounds, not separate
+    // simulation trees or additional renderers.
     public static class ForestClusterShadows
     {
-        const int CanopySides = 24;
-        const int ContactSides = 16;
+        const int CanopySides = 20;
+        const int ContactSides = 8;
+        static readonly Vector2[] CompactCrowns =
+        {
+            new(-.28f, .08f), new(.02f, -.08f), new(.28f, .10f)
+        };
+        static readonly Vector2[] StandardCrowns =
+        {
+            new(-.32f, .10f), new(-.11f, -.08f),
+            new(.12f, .12f), new(.33f, -.06f)
+        };
+        static readonly Vector2[] LargeCrowns =
+        {
+            new(-.36f, .08f), new(-.18f, -.10f), new(0f, .12f),
+            new(.20f, -.07f), new(.37f, .10f)
+        };
 
         public static bool Update(SpriteRenderer source, MeshRenderer shadow, Vector3 ray,
             Func<Vector3, float> groundHeight, Func<Vector3, Vector3> groundAnchor)
@@ -30,15 +43,21 @@ namespace CityForgeV3.World
             var direction = groundRay.sqrMagnitude > .0001f
                 ? groundRay.normalized : Vector3.forward;
             var side = Vector3.Cross(Vector3.up, direction).normalized;
+            var artSide = Vector3.ProjectOnPlane(source.transform.right,
+                Vector3.up).normalized;
+            if (artSide.sqrMagnitude < .0001f) artSide = side;
+            var artDepth = Vector3.Cross(artSide, Vector3.up).normalized;
             var root = groundAnchor(source.transform.position);
             float travel = groundRay.magnitude * height * .46f /
                 Mathf.Max(.05f, -ray.y);
+            var crowns = name.Contains("-large-") ? LargeCrowns :
+                name.Contains("-compact-") ? CompactCrowns : StandardCrowns;
 
-            // Only the leafed canopy gains an inner ring. It keeps most of the
-            // footprint defined, then fades over a short outer band.
-            var vertices = new List<Vector3>(CanopySides * 2 + ContactSides + 2);
-            var colors = new List<Color>(CanopySides * 2 + ContactSides + 2);
-            var indices = new List<int>((CanopySides * 2 + ContactSides) * 6);
+            int capacity = winter ? 42 : crowns.Length *
+                (CanopySides * 2 + ContactSides + 2);
+            var vertices = new List<Vector3>(capacity);
+            var colors = new List<Color>(capacity);
+            var indices = new List<int>(capacity * 6);
 
             Vector3 Ground(Vector3 point)
             {
@@ -47,7 +66,8 @@ namespace CityForgeV3.World
             }
 
             void Fan(Vector3 center, float sideRadius, float lengthRadius,
-                int sides, float opacity, float phase, bool definedInterior)
+                int sides, float opacity, float phase, bool definedInterior,
+                float edgeRadius = .76f)
             {
                 int start = vertices.Count;
                 vertices.Add(Ground(center));
@@ -60,8 +80,9 @@ namespace CityForgeV3.World
                         // Small deterministic radius changes keep the shared
                         // footprint organic without per-tree coordinates.
                         float irregular = 1f +
-                            (definedInterior ? .09f : .07f) *
-                            Mathf.Sin(i * 2.37f + phase);
+                            .07f * Mathf.Sin(i * 2.37f + phase) +
+                            (definedInterior ? .035f : 0f) *
+                            Mathf.Sin(i * .9f + phase * 1.3f);
                         var point = center +
                             side * (Mathf.Cos(angle) * sideRadius * radius * irregular) +
                             direction * (Mathf.Sin(angle) * lengthRadius * radius * irregular);
@@ -69,7 +90,7 @@ namespace CityForgeV3.World
                         colors.Add(new Color(ringOpacity, 1, 1, .4f));
                     }
                 }
-                if (definedInterior) Ring(.76f, opacity);
+                if (definedInterior) Ring(edgeRadius, opacity);
                 int outerStart = vertices.Count;
                 Ring(1f, 0f);
                 int innerStart = definedInterior ? start + 1 : outerStart;
@@ -86,17 +107,33 @@ namespace CityForgeV3.World
                 }
             }
 
-            // A directional canopy footprint replaces the former opaque trunk
-            // strips. Leafed clusters have a defined interior and short soft
-            // edge; all versions stay attached to the one real cluster root.
-            float canopyOpacity = winter ? .28f : .78f;
-            var canopyCenter = root + direction * (travel * .5f);
-            Fan(canopyCenter, width * (winter ? .31f : .45f),
-                travel * .5f + width * (winter ? .18f : .29f),
-                CanopySides, canopyOpacity, 0f, !winter);
-            Fan(root + direction * width * .035f, width * .18f,
-                width * .14f, ContactSides, winter ? .12f : .38f,
-                1.7f, false);
+            if (winter)
+            {
+                // Bare deciduous branches retain the lighter shared footprint.
+                Fan(root + direction * (travel * .5f), width * .31f,
+                    travel * .5f + width * .18f, 24, .28f, 0f, false);
+                Fan(root + direction * width * .035f, width * .18f,
+                    width * .14f, 16, .12f, 1.7f, false);
+            }
+            else
+            {
+                // Separate but overlapping silhouettes suggest the visible
+                // crowns. Only the outermost 16% feathers, so their edges
+                // remain readable at a district zoom without hard pixels.
+                for (int i = 0; i < crowns.Length; i++)
+                {
+                    var basePoint = root + artSide * (crowns[i].x * width) +
+                        artDepth * (crowns[i].y * width);
+                    float lobeWidth = width * (crowns.Length == 5 ? .165f :
+                        crowns.Length == 4 ? .19f : .225f);
+                    Fan(basePoint + direction * (travel * .55f), lobeWidth,
+                        width * .16f + travel * .40f, CanopySides,
+                        .62f, i * 1.9f, true, .84f);
+                    Fan(basePoint + direction * width * .025f,
+                        width * .065f, width * .055f, ContactSides,
+                        .24f, i * 1.4f, false);
+                }
+            }
 
             var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
             mesh.Clear();
