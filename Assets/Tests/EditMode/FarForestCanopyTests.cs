@@ -225,6 +225,89 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
+        [TestCase("forest-deciduous-compact")]
+        [TestCase("forest-deciduous-large")]
+        public void NoonDeciduousCrownShadowProjectsBehindTheCameraFacingTrunk(
+            string id)
+        {
+            var owner = new GameObject("Camera-facing noon shadow test");
+            var mesh = new Mesh();
+            try
+            {
+                var tree = new GameObject("Cluster");
+                tree.transform.SetParent(owner.transform, false);
+                var cluster = tree.AddComponent<ForestTrueAngleCluster>();
+                cluster.Configure(id, 0, SeasonPreset.Summer, _ => 0f);
+                var source = tree.AddComponent<SpriteRenderer>();
+                source.sprite = ForestTrueAngleCluster.RootSprite(id,
+                    SeasonPreset.Summer);
+                var shadowObject = new GameObject("Shadow");
+                shadowObject.transform.SetParent(tree.transform, false);
+                shadowObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var shadow = shadowObject.AddComponent<MeshRenderer>();
+                var ray = TimeOfDayLighting.SunRotation(
+                    TimeOfDayPreset.Noon) * Vector3.forward;
+                var awayFromCamera = new Vector3(-1f, 0f, 1f).normalized;
+                Assert.That(ForestClusterShadows.Update(source, shadow, ray,
+                    _ => 0f, point => point, .55f, awayFromCamera), Is.True);
+                for (var piece = 0; piece < cluster.PieceCount; piece++)
+                {
+                    var treeFoot = cluster.WorldOffset(piece);
+                    var center = mesh.vertices[piece * 50];
+                    Assert.That(Vector3.Dot(center - treeFoot, awayFromCamera),
+                        Is.GreaterThan(cluster.TreeWidth * .16f),
+                        "The crown mass must land behind the trunk on screen.");
+                }
+                var centerVertex = mesh.vertices[0];
+                var inner = (mesh.vertices[1] - centerVertex).magnitude;
+                var outer = (mesh.vertices[21] - centerVertex).magnitude;
+                Assert.That(inner / outer, Is.GreaterThan(.93f),
+                    "The crown edge should have a narrow, crisp feather.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(owner);
+                Object.DestroyImmediate(mesh);
+            }
+        }
+
+        [Test]
+        public void DistrictNoonDeciduousShadowUsesItsActualCameraDirection()
+        {
+            var owner = new GameObject("District noon shadow direction test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "noon-shadow-direction", Width = 1, Height = 1,
+                    Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+                };
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "forest", FloraId = "forest-deciduous-compact",
+                    NormalizedX = .5f, NormalizedZ = .5f
+                });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var camera = owner.GetComponentInChildren<Camera>();
+                var tree = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Single(renderer => renderer.name ==
+                        "District Flora — forest-deciduous-compact");
+                var shadow = tree.transform.Find("District Flora Shadow");
+                var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
+                var away = Vector3.ProjectOnPlane(camera.transform.forward,
+                    Vector3.up).normalized;
+                var firstTreeFoot = tree.transform.position +
+                    tree.GetComponent<ForestTrueAngleCluster>().WorldOffset(0);
+                var firstCrownCenter = shadow.TransformPoint(mesh.vertices[0]);
+                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
+                    Is.GreaterThan(0f),
+                    "Noon crown shadow must project away from the viewing camera.");
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
         [Test]
         public void SeasonSwapOnlyChangesOneBudgetOfExistingClusterHandles()
         {

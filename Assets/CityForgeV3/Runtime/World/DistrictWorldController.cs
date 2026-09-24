@@ -1003,7 +1003,12 @@ namespace CityForgeV3.World
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
-                }, TimeOfDay == TimeOfDayPreset.Noon ? .55f : .65f))
+                }, TimeOfDay == TimeOfDayPreset.Noon ? .55f : .65f,
+                    TimeOfDay == TimeOfDayPreset.Noon &&
+                    visibleRenderer.GetComponent<ForestTrueAngleCluster>() is
+                        { IsFir: false }
+                        ? Vector3.ProjectOnPlane(_camera.transform.forward,
+                            Vector3.up) : Vector3.zero))
                 {
                     properties.SetTexture("_MainTex", Texture2D.whiteTexture);
                     shadow.SetPropertyBlock(properties);

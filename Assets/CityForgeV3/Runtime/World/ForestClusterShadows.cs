@@ -28,7 +28,8 @@ namespace CityForgeV3.World
 
         public static bool Update(SpriteRenderer source, MeshRenderer shadow, Vector3 ray,
             Func<Vector3, float> groundHeight, Func<Vector3, Vector3> groundAnchor,
-            float atlasProjectionScale = 1f)
+            float atlasProjectionScale = 1f,
+            Vector3 atlasDirectionOverride = default)
         {
             var atlas = source.GetComponent<ForestTrueAngleCluster>();
             string name = source.sprite.texture.name;
@@ -44,7 +45,9 @@ namespace CityForgeV3.World
                 atlas.Season == SeasonPreset.Winter && !atlas.IsFir :
                 name.EndsWith("-winter");
             var groundRay = new Vector3(ray.x, 0, ray.z);
-            var direction = groundRay.sqrMagnitude > .0001f
+            var direction = atlas != null &&
+                    atlasDirectionOverride.sqrMagnitude > .0001f
+                ? atlasDirectionOverride.normalized : groundRay.sqrMagnitude > .0001f
                 ? groundRay.normalized : Vector3.forward;
             var side = Vector3.Cross(Vector3.up, direction).normalized;
             var artSide = Vector3.ProjectOnPlane(source.transform.right,
@@ -55,6 +58,9 @@ namespace CityForgeV3.World
             float travel = groundRay.magnitude * height * .46f /
                 Mathf.Max(.05f, -ray.y);
             if (atlas != null) travel *= atlasProjectionScale;
+            float cameraBehindBias = atlas != null &&
+                atlasDirectionOverride.sqrMagnitude > .0001f
+                    ? atlas.TreeWidth * .16f : 0f;
             var crowns = name.Contains("-large-") ? LargeCrowns :
                 name.Contains("-compact-") ? CompactCrowns : StandardCrowns;
 
@@ -116,7 +122,8 @@ namespace CityForgeV3.World
             if (winter)
             {
                 // Bare deciduous branches retain the lighter shared footprint.
-                Fan(root + direction * (travel * (atlas != null ? .2f : .5f)),
+                Fan(root + direction * (travel * (atlas != null ? .2f : .5f) +
+                        cameraBehindBias),
                     width * (atlas != null ? .20f : .31f),
                     travel * (atlas != null ? .22f : .5f) +
                     width * (atlas != null ? .12f : .18f),
@@ -141,12 +148,14 @@ namespace CityForgeV3.World
                         width * (crowns.Length == 5 ? .165f :
                         crowns.Length == 4 ? .19f : .225f);
                     Fan(basePoint + direction * (travel *
-                            (atlas != null ? .25f : .55f)), lobeWidth,
+                            (atlas != null ? .25f : .55f) +
+                            cameraBehindBias), lobeWidth,
                         atlas != null ? atlas.TreeWidth *
                             atlas.PieceScale(i) * .24f + travel * .28f :
                             width * .16f + travel * .40f,
                         CanopySides,
-                        .62f, i * 1.9f, true, .84f);
+                        .62f, i * 1.9f, true,
+                        atlas != null ? .94f : .84f);
                     Fan(basePoint + direction * (atlas != null ? 0f :
                             width * .025f),
                         width * .065f, width * .055f, ContactSides,
