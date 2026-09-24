@@ -218,7 +218,7 @@ public class DistrictFloraBatchesTests
             "The batched projection must sample the tree cutout, not a white card.");
     }
     [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)] [TestCase(4)]
-    public void ClusterShadowsUseOneArtworkRootAndSoftFootprint(int variant)
+    public void ClusterShadowsUseOneArtworkRootAndDefinedCanopyFootprint(int variant)
     {
         texture.name = ForestClusterCatalog.Id(variant) + "-summer";
         var tree = Tree(0); tree.transform.rotation = Quaternion.Euler(35, 45, 0);
@@ -231,9 +231,12 @@ public class DistrictFloraBatchesTests
             _ => 0, foot => { contacts.Add(foot); foot.y = 0; return foot; }));
         Assert.AreEqual(1, contacts.Count,
             "A cluster is one composition and must not use hidden per-tree coordinates.");
-        Assert.AreEqual(42, mesh.vertexCount);
+        Assert.AreEqual(66, mesh.vertexCount);
         Assert.True(mesh.colors.Any(c => c.r == 0), "Feathered canopy boundary");
         Assert.True(mesh.colors.Any(c => c.r > .5f), "Visible shadow interior");
+        Assert.That(mesh.colors.Skip(1).Take(24).All(c =>
+            Mathf.Abs(c.r - mesh.colors[0].r) < .001f), Is.True,
+            "The canopy remains defined to its inner ring before the short fade.");
         Assert.True(mesh.vertices.All(v => Mathf.Abs(shadow.transform.TransformPoint(v).y - .031f) < .001f));
         // Both axis-aligned and noon sun must retain two-dimensional shadows.
         foreach (var light in new[] { Vector3.down, new Vector3(1,-1,0).normalized, new Vector3(0,-1,1).normalized })
@@ -364,6 +367,7 @@ public class DistrictFloraBatchesTests
         item.AddComponent<DistrictFloraShadowMesh>(); var shadow = item.AddComponent<MeshRenderer>();
         ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0, p => new Vector3(p.x, 0, p.z));
         float summerOpacity = mesh.colors.Max(color => color.r);
+        Assert.AreEqual(66, mesh.vertexCount);
         texture.name = "forest-cluster-01-winter";
         int contacts = 0;
         Assert.True(ForestClusterShadows.Update(tree, shadow, Vector3.down, p => 0,
