@@ -322,6 +322,25 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
                     Is.GreaterThan(0f),
                     "Noon crown shadow must project away from the viewing camera.");
+                var referenceObject = new GameObject("Former noon projection");
+                referenceObject.transform.SetParent(tree.transform, false);
+                var referenceMesh = new Mesh();
+                referenceObject.AddComponent<MeshFilter>().sharedMesh =
+                    referenceMesh;
+                var referenceShadow = referenceObject.AddComponent<MeshRenderer>();
+                var ray = ForestClusterShadows.BehindCameraRay(
+                    TimeOfDayLighting.SunRotation(TimeOfDayPreset.Noon) *
+                        Vector3.forward, camera.transform.forward);
+                Assert.That(ForestClusterShadows.Update(tree, referenceShadow,
+                    ray, _ => firstCrownCenter.y, point => point, .55f,
+                    away), Is.True);
+                var formerCenter = referenceObject.transform.TransformPoint(
+                    referenceMesh.vertices[0]);
+                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
+                    Is.GreaterThan(Vector3.Dot(formerCenter - firstTreeFoot,
+                        away) + .03f),
+                    "Noon clump shadows should extend beyond the former " +
+                    "compressed projection.");
             }
             finally { Object.DestroyImmediate(owner); }
         }

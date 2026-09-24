@@ -299,6 +299,28 @@ public class DistrictFloraBatchesTests
                 Is.SameAs(source.texture), id);
             Assert.That(block.GetFloat("_Cutoff"),
                 Is.EqualTo(.3f).Within(.001f), id);
+            if (id == "american-elm")
+            {
+                var ray = ForestClusterShadows.BehindCameraRay(
+                    TimeOfDayLighting.SunRotation(TimeOfDayPreset.Noon) *
+                        Vector3.forward, world.WorldCamera.transform.forward);
+                var horizontal = Vector3.ProjectOnPlane(ray, Vector3.up);
+                var direction = horizontal.normalized;
+                var scale = tree.transform.lossyScale;
+                var height = source.bounds.size.y * scale.y;
+                var oldTravel = Mathf.Min(height * horizontal.magnitude /
+                    Mathf.Max(.05f, -ray.y) * .55f,
+                    source.bounds.size.x * scale.x * .65f);
+                var tallestRatio = source.vertices.Max(vertex =>
+                    Mathf.Clamp01(vertex.y * scale.y / height));
+                var reach = mesh.vertices.Max(vertex => Vector3.Dot(
+                    shadow.transform.TransformPoint(vertex) -
+                        tree.transform.position, direction));
+                Assert.That(reach,
+                    Is.GreaterThan(oldTravel * tallestRatio * 1.3f),
+                    "Noon shadow must be noticeably longer than the old " +
+                    "squashed cutout projection.");
+            }
         }
     }
     [Test]

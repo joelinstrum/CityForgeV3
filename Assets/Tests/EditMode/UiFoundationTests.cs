@@ -2149,6 +2149,46 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void FarDistrictZoomsKeepGrassGrainWithoutChangingWorldScale()
+        {
+            var host = new GameObject("Far meadow filtering test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "far-meadow-filter", Width = 1, Height = 1,
+                    Founded = true
+                };
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var ground = host.GetComponentsInChildren<MeshRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("District Ground"));
+                var material = ground.sharedMaterial;
+                Assert.That(UnityEditor.ShaderUtil.ShaderHasError(
+                    material.shader), Is.False);
+                foreach (var (level, filtering, noise) in new[]
+                {
+                    (DistrictZoomLevel.LOD2, 1f, 0f),
+                    (DistrictZoomLevel.LOD3, .3f, .6f),
+                    (DistrictZoomLevel.LOD4, .2f, .8f),
+                    (DistrictZoomLevel.LOD5Billboard, .15f, 1f),
+                    (DistrictZoomLevel.LOD1, 0f, 0f)
+                })
+                {
+                    world.SetZoom(level);
+                    Assert.That(material.GetFloat("_DistantMeadow"),
+                        Is.EqualTo(filtering).Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_FarGrassNoise"),
+                        Is.EqualTo(noise).Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_TextureWorldSize"),
+                        Is.EqualTo(75f).Within(.001f), level.ToString());
+                }
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
         public void DistrictDecalVisibilityAlsoControlsHillSurfaceDetail()
         {
             var root = new GameObject("Isolated district presentation toggle");

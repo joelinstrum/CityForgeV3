@@ -11,6 +11,27 @@ namespace CityForgeV3.World
         public static bool DistrictGrassUsesSmoothFiltering(DistrictZoomLevel level) =>
             level >= DistrictZoomLevel.LOD2;
 
+        // Keep the 75m artwork anchored to the world. Fully isotropic distant
+        // filtering erased its natural grain at the three widest views.
+        public static float DistrictGrassFilteringStrengthForZoom(
+            DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD2 => 1f,
+            DistrictZoomLevel.LOD3 => .3f,
+            DistrictZoomLevel.LOD4 => .2f,
+            DistrictZoomLevel.LOD5Billboard => .15f,
+            _ => 0f
+        };
+
+        public static float DistrictGrassNoiseStrengthForZoom(
+            DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD3 => .6f,
+            DistrictZoomLevel.LOD4 => .8f,
+            DistrictZoomLevel.LOD5Billboard => 1f,
+            _ => 0f
+        };
+
         private void ApplyDistrictGrassZoomScale()
         {
             if (_terrainDistrict?.Hills?.Mountains == true) return;
@@ -19,9 +40,13 @@ namespace CityForgeV3.World
             float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
             var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
             if (material.mainTextureScale != scale) material.mainTextureScale = scale;
-            float distant = DistrictGrassUsesSmoothFiltering(_zoomLevel) ? 1f : 0f;
+            float distant = DistrictGrassFilteringStrengthForZoom(_zoomLevel);
             if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
                 material.SetFloat("_DistantMeadow", distant);
+            float noise = DistrictGrassNoiseStrengthForZoom(_zoomLevel);
+            if (material.HasProperty("_FarGrassNoise") &&
+                material.GetFloat("_FarGrassNoise") != noise)
+                material.SetFloat("_FarGrassNoise", noise);
         }
 
         private void ConfigureMountainGroundMaterial()

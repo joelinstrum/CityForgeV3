@@ -1025,7 +1025,7 @@ namespace CityForgeV3.World
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
-                }, TimeOfDay == TimeOfDayPreset.Noon ? .55f : .65f,
+                }, TimeOfDay == TimeOfDayPreset.Noon ? .8f : .65f,
                     screenBehind))
                 {
                     properties.SetTexture("_MainTex", Texture2D.whiteTexture);
@@ -1049,7 +1049,8 @@ namespace CityForgeV3.World
                     ? horizontal / horizontalMagnitude : Vector3.forward;
                 var detailedTravel = detailedCutout ? Mathf.Min(
                     referenceHeight * horizontalMagnitude /
-                        Mathf.Max(.05f, -shadowRay.y) * .55f,
+                        Mathf.Max(.05f, -shadowRay.y) *
+                        (TimeOfDay == TimeOfDayPreset.Noon ? .8f : .55f),
                     source.bounds.size.x * scale.x * .65f) : 0f;
                 for (var i=0;i<vertices.Length;i++)
                 {
