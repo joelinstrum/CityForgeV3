@@ -161,6 +161,24 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void FirIndividualTrunksAlignWithTheirAtlasFootMargins()
+        {
+            var expectedSummer = new[] { 1f, 47f, 18f, 15f };
+            var expectedWinter = new[] { 13f, 29f, 17f, 17f };
+            for (var variation = 0; variation < 4; variation++)
+            {
+                var summer = ForestTrueAngleCluster.IndividualSprite(
+                    "cilician-fir", variation, SeasonPreset.Summer);
+                var winter = ForestTrueAngleCluster.IndividualSprite(
+                    "cilician-fir", variation, SeasonPreset.Winter);
+                Assert.That(summer.pivot.y,
+                    Is.EqualTo(expectedSummer[variation]).Within(.1f));
+                Assert.That(winter.pivot.y,
+                    Is.EqualTo(expectedWinter[variation]).Within(.1f));
+            }
+        }
+
+        [Test]
         public void LotIndividualFirUsesTheSameAtlasWithoutChangingSavedIdentity()
         {
             var owner = new GameObject("Lot fir atlas test");

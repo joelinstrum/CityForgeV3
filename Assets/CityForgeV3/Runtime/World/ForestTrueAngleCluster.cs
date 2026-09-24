@@ -135,6 +135,15 @@ namespace CityForgeV3.World
             int[] middle = slot == 1 ?
                 new[] { 684, 702, 686, 692, 706 } :
                 new[] { 685, 699, 688, 688, 697 };
+            // Transparent space below each trunk varies across the hand-cut
+            // atlas. Anchor the actual foot, not an arbitrary cell percentage.
+            int[] footMargins = slot == 1 ? new[]
+            {
+                5, 1, 1, 1, 1, 13, 1, 1, 1, 1, 24, 29, 17, 19, 17
+            } : new[]
+            {
+                1, 1, 2, 1, 1, 1, 5, 1, 1, 1, 33, 47, 18, 21, 15
+            };
             var result = new Sprite[15];
             for (int row = 0; row < 3; row++)
             for (int col = 0; col < 5; col++)
@@ -143,9 +152,11 @@ namespace CityForgeV3.World
                 int bottomY = row == 0 ? top[col] : row == 1 ? middle[col] : 1024;
                 int left = xs[row][col];
                 int width = xs[row][col + 1] - left;
+                int height = bottomY - topY;
                 result[row * 5 + col] = Sprite.Create(texture,
-                    new Rect(left, 1024 - bottomY, width, bottomY - topY),
-                    new Vector2((float)(centerX[col] - left) / width, .04f),
+                    new Rect(left, 1024 - bottomY, width, height),
+                    new Vector2((float)(centerX[col] - left) / width,
+                        (float)footMargins[row * 5 + col] / height),
                     FirPixelsPerUnit, 0,
                     SpriteMeshType.FullRect);
             }

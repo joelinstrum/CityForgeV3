@@ -983,7 +983,17 @@ namespace CityForgeV3.World
                 shadow.sortingOrder = visibleRenderer.sortingOrder - 1;
                 var properties = new MaterialPropertyBlock();
                 shadow.GetPropertyBlock(properties);
+                var atlas = visibleRenderer.GetComponent<ForestTrueAngleCluster>();
+                var individualFir = atlas != null && atlas.IsFir &&
+                    atlas.PieceCount == 1;
+                var source = individualFir ? atlas.Piece(0) :
+                    visibleRenderer.sprite;
+                var detailedCutout = individualFir ||
+                    source.texture.name.StartsWith("american-elm-") ||
+                    source.texture.name.StartsWith("american-sycamore-") ||
+                    source.texture.name == "angel-oak-spanish-moss";
                 properties.SetVector("_SunRay", ray.normalized);
+                properties.SetFloat("_Cutoff", detailedCutout ? .3f : .02f);
                 // The flora root is registered to its actual receiver height,
                 // including depressed riverbeds. Project just above that root.
                 // The former fixed .145 m value sat beneath the .184 m district
@@ -1001,7 +1011,6 @@ namespace CityForgeV3.World
                 shadow.SetPropertyBlock(properties);
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
-                var source = visibleRenderer.sprite;
                 if (ForestClusterShadows.Update(visibleRenderer, shadow, shadowRay, world =>
                 {
                     var local = _content.InverseTransformPoint(world);
@@ -1034,19 +1043,39 @@ namespace CityForgeV3.World
                 var projected = new Vector3[vertices.Length];
                 var colors = new Color[vertices.Length];
                 var referenceHeight = Mathf.Max(.01f, source.bounds.size.y * scale.y);
+                var horizontal = new Vector3(shadowRay.x, 0f, shadowRay.z);
+                var horizontalMagnitude = horizontal.magnitude;
+                var direction = horizontalMagnitude > .0001f
+                    ? horizontal / horizontalMagnitude : Vector3.forward;
+                var detailedTravel = detailedCutout ? Mathf.Min(
+                    referenceHeight * horizontalMagnitude /
+                        Mathf.Max(.05f, -shadowRay.y) * .55f,
+                    source.bounds.size.x * scale.x * .65f) : 0f;
                 for (var i=0;i<vertices.Length;i++)
                 {
                     var height = Mathf.Max(0f, vertices[i].y * scale.y);
                     var world = root + right * (vertices[i].x * scale.x);
-                    var travel = height / Mathf.Max(.05f, -shadowRay.y);
-                    world += new Vector3(shadowRay.x,0f,shadowRay.z) * travel;
+                    var travel = detailedCutout ? detailedTravel *
+                        Mathf.Clamp01(height / referenceHeight) :
+                        height / Mathf.Max(.05f, -shadowRay.y) *
+                        horizontalMagnitude;
+                    world += direction * travel;
                     var terrainPoint = _content.InverseTransformPoint(world);
                     world.y = groundY + .025f + TerrainElevation(terrainPoint.x, terrainPoint.z) - TerrainElevation(root.x, root.z);
                     projected[i] = shadow.transform.InverseTransformPoint(world);
                     colors[i] = new Color(1f,1f,1f,Mathf.Clamp01(height/referenceHeight));
                 }
                 var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
-                mesh.vertices = projected;
+                if (mesh.vertexCount != projected.Length || individualFir)
+                {
+                    mesh.Clear();
+                    mesh.vertices = projected;
+                    mesh.uv = source.uv;
+                    mesh.triangles = System.Array.ConvertAll(source.triangles,
+                        index => (int)index);
+                }
+                else
+                    mesh.vertices = projected;
                 mesh.colors = colors;
                 mesh.RecalculateBounds();
                 properties.SetTexture("_MainTex", source.texture);

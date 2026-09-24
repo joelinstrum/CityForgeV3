@@ -41,11 +41,6 @@ namespace CityForgeV3.World
             new(-.36f, .08f), new(-.18f, -.10f), new(0f, .12f),
             new(.20f, -.07f), new(.37f, .10f)
         };
-        static readonly Vector2[] BroadTreeCrowns =
-        {
-            new(-.25f, 0f), new(0f, 0f), new(.25f, 0f)
-        };
-
         public static bool Update(SpriteRenderer source, MeshRenderer shadow, Vector3 ray,
             Func<Vector3, float> groundHeight, Func<Vector3, Vector3> groundAnchor,
             float atlasProjectionScale = 1f,
@@ -53,18 +48,18 @@ namespace CityForgeV3.World
         {
             var atlas = source.GetComponent<ForestTrueAngleCluster>();
             string name = source.sprite.texture.name;
-            bool broadTree = name.StartsWith("american-elm-") ||
-                name.StartsWith("american-sycamore-") ||
-                name == "angel-oak-spanish-moss";
-            if (atlas == null && !ForestClusterCatalog.IsTexture(name) &&
-                !broadTree) return false;
+            // Single firs can project their real atlas cutout. The shared
+            // crown footprint is only needed for multi-tree compositions.
+            if (atlas != null && atlas.IsFir && atlas.PieceCount == 1)
+                return false;
+            if (atlas == null && !ForestClusterCatalog.IsTexture(name)) return false;
 
             var sprite = source.sprite;
             var size = sprite.rect.size / sprite.pixelsPerUnit;
             var scale = source.transform.lossyScale;
             float width = (atlas != null ? atlas.EnvelopeWidth : size.x) * scale.x;
             float height = (atlas != null ? atlas.TreeHeight : size.y) * scale.y /
-                (broadTree ? 1f : Mathf.Max(.2f, source.transform.up.y));
+                Mathf.Max(.2f, source.transform.up.y);
             bool winter = atlas != null ?
                 atlas.Season == SeasonPreset.Winter && !atlas.IsFir :
                 name.EndsWith("-winter");
@@ -78,18 +73,14 @@ namespace CityForgeV3.World
                 Vector3.up).normalized;
             if (artSide.sqrMagnitude < .0001f) artSide = side;
             var artDepth = Vector3.Cross(artSide, Vector3.up).normalized;
-            var root = broadTree ? source.transform.position :
-                groundAnchor(source.transform.position);
-            if (broadTree) root.y = groundHeight(root);
+            var root = groundAnchor(source.transform.position);
             float travel = groundRay.magnitude * height * .46f /
                 Mathf.Max(.05f, -ray.y);
             if (atlas != null) travel *= atlasProjectionScale;
-            if (broadTree) travel = Mathf.Min(travel * .7f, width * .4f);
-            float cameraBehindBias = broadTree ? width * .12f :
-                atlas != null && atlasDirectionOverride.sqrMagnitude > .0001f
+            float cameraBehindBias = atlas != null &&
+                atlasDirectionOverride.sqrMagnitude > .0001f
                     ? atlas.TreeWidth * .16f : 0f;
-            var crowns = broadTree ? BroadTreeCrowns :
-                name.Contains("-large-") ? LargeCrowns :
+            var crowns = name.Contains("-large-") ? LargeCrowns :
                 name.Contains("-compact-") ? CompactCrowns : StandardCrowns;
 
             int crownCount = atlas != null ? atlas.PieceCount : crowns.Length;
@@ -171,15 +162,14 @@ namespace CityForgeV3.World
                     var basePoint = atlas != null ? root + atlas.WorldOffset(i) :
                         root + artSide * (crowns[i].x * width) +
                         artDepth * (crowns[i].y * width);
-                    float lobeWidth = broadTree ? width * .22f : atlas != null ?
+                    float lobeWidth = atlas != null ?
                         atlas.TreeWidth * atlas.PieceScale(i) * .28f :
                         width * (crowns.Length == 5 ? .165f :
                         crowns.Length == 4 ? .19f : .225f);
                     Fan(basePoint + direction * (travel *
-                            (broadTree ? .35f : atlas != null ? .25f : .55f) +
+                            (atlas != null ? .25f : .55f) +
                             cameraBehindBias), lobeWidth,
-                        broadTree ? (width * .14f + travel * .25f) *
-                            (i == 1 ? 1.5f : 1f) : atlas != null ? atlas.TreeWidth *
+                        atlas != null ? atlas.TreeWidth *
                             atlas.PieceScale(i) * .24f + travel * .28f :
                             width * .16f + travel * .40f,
                         CanopySides,

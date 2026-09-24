@@ -262,32 +262,44 @@ public class DistrictFloraBatchesTests
             _ => 0, foot => { foot.y = 0; return foot; });
         Assert.True(first.Where((v, i) => (v - mesh.vertices[i]).sqrMagnitude > .001f).Any(), "Canopies follow the sun");
     }
-    [Test] public void ElmShadowHasGroundContactAndLongerRoundedCenter()
+    [Test] public void NewBroadleafShadowsProjectTheirDetailedCutouts()
     {
-        texture.name = "american-elm-summer";
-        var tree = Tree(0);
-        var item = new GameObject("District Flora Shadow");
-        item.transform.SetParent(tree.transform, false);
-        var mesh = new Mesh(); item.AddComponent<MeshFilter>().sharedMesh = mesh;
-        item.AddComponent<DistrictFloraShadowMesh>();
-        var shadow = item.AddComponent<MeshRenderer>();
-        var ray = new Vector3(.82f, -.67f, 0f).normalized;
-        Assert.True(ForestClusterShadows.Update(tree, shadow, ray,
-            _ => 0f, _ => throw new System.Exception(
-                "The elm shadow must use its trunk, not a distant raycast anchor.")));
-        var direction = Vector3.ProjectOnPlane(ray, Vector3.up).normalized;
-        float LobeReach(int start)
+        var district = new RegionCityTile
         {
-            var center = shadow.transform.TransformPoint(mesh.vertices[start]);
-            return mesh.vertices.Skip(start + 1).Take(40)
-                .Max(vertex => Vector3.Dot(
-                    shadow.transform.TransformPoint(vertex) - center,
-                    direction));
+            TileId = "detailed-tree-shadows", Width = 1, Height = 1,
+            Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+        };
+        var ids = new[] { "american-elm", "london-plane-a",
+            "angel-oak-spanish-moss", "cilician-fir" };
+        for (var i = 0; i < ids.Length; i++)
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "detailed-" + i, FloraId = ids[i],
+                NormalizedX = .15f + i * .23f, NormalizedZ = .5f
+            });
+        var world = root.AddComponent<DistrictWorldController>();
+        world.RebuildEntireDistrict(district,
+            DistrictBulkRebuildReason.TestFixture);
+        foreach (var id in ids)
+        {
+            var tree = root.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — " + id);
+            var shadow = tree.transform.Find("District Flora Shadow")
+                .GetComponent<MeshRenderer>();
+            var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
+            var block = new MaterialPropertyBlock();
+            shadow.GetPropertyBlock(block);
+            var atlas = tree.GetComponent<ForestTrueAngleCluster>();
+            var source = atlas != null && atlas.IsFir ? atlas.Piece(0) :
+                tree.sprite;
+            Assert.That(mesh.vertexCount, Is.EqualTo(4), id +
+                " must use its textured silhouette, not rounded lobes");
+            Assert.That(mesh.uv, Is.EqualTo(source.uv), id);
+            Assert.That(block.GetTexture("_MainTex"),
+                Is.SameAs(source.texture), id);
+            Assert.That(block.GetFloat("_Cutoff"),
+                Is.EqualTo(.3f).Within(.001f), id);
         }
-        Assert.That(LobeReach(50), Is.GreaterThan(LobeReach(0) * 1.35f));
-        Assert.That(LobeReach(50), Is.LessThan(LobeReach(0) * 1.65f));
-        Assert.That(mesh.vertices.All(vertex => Mathf.Abs(
-            shadow.transform.TransformPoint(vertex).y - .031f) < .001f), Is.True);
     }
     [Test]
     public void DistrictTreeShadowRayStaysBehindCameraAtDaylightPresets()
