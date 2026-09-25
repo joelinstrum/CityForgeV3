@@ -73,7 +73,7 @@ namespace CityForgeV3.World
                 {PatchCount-=old.Patches;old.Object.SetActive(false);Dispose(old.Object);Dispose(old.Mesh);_chunks.Remove(key);}
                 BuildChunk(key,world,width,depth,seed,columns,rows);
             }
-            if(district.Hills!=null && district.Hills.HeightMeters>0)
+            if(district.Hills?.Mountains==true && district.Hills.HeightMeters>0)
             {
                 if(_hillOverlay==null){var hills=new GameObject("Hill Surface Detail");hills.transform.SetParent(transform,false);_hillOverlay=hills.AddComponent<DistrictHillGroundOverlay>();}
                 _hillOverlay.PresentationEnabled = _presentationEnabled;

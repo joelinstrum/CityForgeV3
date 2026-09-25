@@ -29,5 +29,23 @@ namespace CityForgeV3.Tests.EditMode
             try{foreach(var p in mesh.vertices)Assert.AreEqual(p.y,h.Sample(p.x,p.z),.0001);Assert.AreEqual(expected,Random.value);}
             finally{Object.DestroyImmediate(mesh);}
         }
+        [TestCase(123),TestCase(1209),TestCase(42)]
+        public void RollingHillsKeepLongSlopesAndFlatBreathingRoom(int seed)
+        {
+            var d=new RegionCityTile{Hills=new(){Seed=seed,HeightMeters=35,Coverage=.7f}};
+            var h=new DistrictElevation(d);
+            int flat=0,interior=0;float largestStep=0;
+            for(int z=20;z<h.Rows-20;z++)for(int x=20;x<h.Columns-20;x++)
+            {
+                int i=z*(h.Columns+1)+x;float elevation=h.Heights[i];
+                if(elevation<1)flat++;
+                interior++;
+                largestStep=Mathf.Max(largestStep,Mathf.Abs(elevation-h.Heights[i+1]));
+            }
+            Debug.Log($"ROLLING HILLS seed={seed} samples={interior} flat={flat} maxStep={largestStep:F3} peak={Mathf.Max(h.Heights):F2}");
+            Assert.That(flat,Is.GreaterThan(interior/12),"rolling terrain needs nearly flat space");
+            Assert.That(largestStep,Is.LessThan(2f),"adjacent five metre samples should form gentle slopes");
+            Assert.That(Mathf.Max(h.Heights),Is.GreaterThan(8f));
+        }
     }
 }

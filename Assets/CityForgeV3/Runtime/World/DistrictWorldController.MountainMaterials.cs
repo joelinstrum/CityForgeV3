@@ -61,7 +61,8 @@ namespace CityForgeV3.World
             float distant = DistrictGrassFilteringStrengthForZoom(_zoomLevel);
             if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
                 material.SetFloat("_DistantMeadow", distant);
-            float noise = DistrictGrassNoiseStrengthForZoom(_zoomLevel);
+            float noise = (_terrainDistrict?.Hills?.HeightMeters ?? 0)>0
+                ? 0f : DistrictGrassNoiseStrengthForZoom(_zoomLevel);
             if (material.HasProperty("_FarGrassNoise") &&
                 material.GetFloat("_FarGrassNoise") != noise)
                 material.SetFloat("_FarGrassNoise", noise);
@@ -102,9 +103,7 @@ namespace CityForgeV3.World
                 // The macro texture now owns broad color variation. Preserve
                 // its authored palette and avoid a second dry-patch system.
                 material.SetFloat("_GrassHueShift", 0f);
-                var hillGrass=Resources.Load<Texture2D>("CityForgeV3/Terrain/HillsV01/crest-meadow-4x4");
-                bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0 && hillGrass!=null;
-                material.SetTexture("_HillTex",hillGrass);
+                bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
                 material.SetFloat("_MeadowPatchStrength", 0f);
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));

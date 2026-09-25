@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-25 17:18:18Z" end-time="2026-09-25 17:18:19Z" duration="0.5055025">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1242" result="Passed" start-time="2026-09-25 17:18:18Z" end-time="2026-09-25 17:18:19Z" duration="0.505503" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2430" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-rolling-hills.mdvQUA/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1242" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.498627" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27113" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2431" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1070" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.492763" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2432" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1070" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.489031" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2433" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="339" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.476037" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2167" name="DistrictElevationTests" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.468938" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2168" name="OldDistrictIsFlatAndSavedHillsAreDeterministic" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.OldDistrictIsFlatAndSavedHillsAreDeterministic" methodname="OldDistrictIsFlatAndSavedHillsAreDeterministic" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1786536382" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.169275" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2170" name="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" methodname="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="436388715" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.150189" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="2174" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.087954" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="2171" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(123)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(123)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="153542962" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.029603" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=123 samples=46656 flat=17915 maxStep=1.305 peak=32.08
+]]></output>
+                </test-case>
+                <test-case id="2172" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(1209)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(1209)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="418143984" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.028105" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=1209 samples=46656 flat=19654 maxStep=1.517 peak=31.78
+]]></output>
+                </test-case>
+                <test-case id="2173" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(42)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(42)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1384954249" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.028578" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=42 samples=46656 flat=14570 maxStep=1.213 peak=31.68
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="2169" name="WaterRoadsAndDistrictEdgesStayLevel" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.WaterRoadsAndDistrictEdgesStayLevel" methodname="WaterRoadsAndDistrictEdgesStayLevel" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1323167545" result="Passed" start-time="2026-09-25 17:18:19Z" end-time="2026-09-25 17:18:19Z" duration="0.053555" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /tmp/cityforge-rolling-hills.mdvQUA-results.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
