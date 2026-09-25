@@ -12,12 +12,12 @@ namespace CityForgeV3.World
             level >= DistrictZoomLevel.LOD2;
 
         // Keep the 75m artwork anchored to the world. Fully isotropic distant
-        // filtering erased its natural grain at the three widest views.
+        // filtering erased its natural grain at player-facing Zooms 3-6.
         public static float DistrictGrassFilteringStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD2 => 1f,
-            DistrictZoomLevel.LOD3 => .15f,
+            DistrictZoomLevel.LOD2 => .15f,
+            DistrictZoomLevel.LOD3 => .3f,
             DistrictZoomLevel.LOD4 => .2f,
             DistrictZoomLevel.LOD5Billboard => .15f,
             _ => 0f
@@ -26,7 +26,8 @@ namespace CityForgeV3.World
         public static float DistrictGrassNoiseStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD3 => 1f,
+            DistrictZoomLevel.LOD2 => 1f,
+            DistrictZoomLevel.LOD3 => .6f,
             DistrictZoomLevel.LOD4 => .8f,
             DistrictZoomLevel.LOD5Billboard => 1f,
             _ => 0f
@@ -35,17 +36,18 @@ namespace CityForgeV3.World
         public static float DistrictGrassBrightnessForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD3 => .89f,
+            DistrictZoomLevel.LOD2 => .89f,
+            DistrictZoomLevel.LOD3 => .94f,
             DistrictZoomLevel.LOD4 => .91f,
             DistrictZoomLevel.LOD5Billboard => .89f,
             _ => 1f
         };
 
-        // Zoom 3's closer camera needs smaller world-space grain to keep the
-        // stipple near the apparent size seen at zoom 4.
+        // Player-facing Zoom 3's closer camera needs smaller world-space grain
+        // to keep the stipple near the apparent size seen at Zoom 4.
         public static float DistrictGrassGrainFrequencyForZoom(
             DistrictZoomLevel level) =>
-            level == DistrictZoomLevel.LOD3 ? 1.82f : 1f;
+            level == DistrictZoomLevel.LOD2 ? 1.82f : 1f;
 
         private void ApplyDistrictGrassZoomScale()
         {

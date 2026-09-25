@@ -1,5 +1,12 @@
 # Far grass and noon shadow visual review
 
+**Zoom label correction (September 24, 2026):** The captures and prose below
+used enum labels (`LOD3`–`LOD5`) as if they were player-facing zoom numbers.
+Player-facing Zoom 3 is `LOD2`, so the earlier `grass-zoom-3.png` actually
+shows Zoom 4. The earlier “Zoom 3 follow-up” also changed Zoom 4. See
+[`../player-zoom3-grass-v01/README.md`](../player-zoom3-grass-v01/README.md)
+for the correction and a capture at the actual Zoom 3 camera distance.
+
 September 24, 2026. Reviewed branch `feature/time-and-light-adjustments` at
 `48ad7f9`, then tuned the far meadow against Joe's SimCity 4 screenshots.
 The screenshots are visual references only. No pixels or assets were copied from

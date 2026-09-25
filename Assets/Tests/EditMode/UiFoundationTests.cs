@@ -2169,8 +2169,8 @@ namespace CityForgeV3.Tests
                     material.shader), Is.False);
                 foreach (var (level, filtering, noise, brightness, grainFrequency) in new[]
                 {
-                    (DistrictZoomLevel.LOD2, 1f, 0f, 1f, 1f),
-                    (DistrictZoomLevel.LOD3, .15f, 1f, .89f, 1.82f),
+                    (DistrictZoomLevel.LOD2, .15f, 1f, .89f, 1.82f),
+                    (DistrictZoomLevel.LOD3, .3f, .6f, .94f, 1f),
                     (DistrictZoomLevel.LOD4, .2f, .8f, .91f, 1f),
                     (DistrictZoomLevel.LOD5Billboard, .15f, 1f, .89f, 1f),
                     (DistrictZoomLevel.LOD1, 0f, 0f, 1f, 1f)
