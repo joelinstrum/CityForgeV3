@@ -32,6 +32,15 @@ namespace CityForgeV3.World
             _ => 0f
         };
 
+        public static float DistrictGrassBrightnessForZoom(
+            DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD3 => .94f,
+            DistrictZoomLevel.LOD4 => .91f,
+            DistrictZoomLevel.LOD5Billboard => .89f,
+            _ => 1f
+        };
+
         private void ApplyDistrictGrassZoomScale()
         {
             if (_terrainDistrict?.Hills?.Mountains == true) return;
@@ -47,6 +56,10 @@ namespace CityForgeV3.World
             if (material.HasProperty("_FarGrassNoise") &&
                 material.GetFloat("_FarGrassNoise") != noise)
                 material.SetFloat("_FarGrassNoise", noise);
+            float brightness = DistrictGrassBrightnessForZoom(_zoomLevel);
+            if (material.HasProperty("_FarGrassBrightness") &&
+                material.GetFloat("_FarGrassBrightness") != brightness)
+                material.SetFloat("_FarGrassBrightness", brightness);
         }
 
         private void ConfigureMountainGroundMaterial()

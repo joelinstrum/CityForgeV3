@@ -11,6 +11,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _MeadowPatchStrength ("Meadow patch strength", Range(0,1)) = 0
         _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
         _FarGrassNoise ("Far grass grain", Range(0,1)) = 0
+        _FarGrassBrightness ("Far grass brightness", Range(0,1)) = 1
     }
 
     SubShader
@@ -65,6 +66,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _FarGrassNoise;
+            float _FarGrassBrightness;
             float _GrassHueShift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
@@ -188,13 +190,14 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 if (_GrassHueShift > 0) surface.rgb=ShiftGrassHue(surface.rgb);
                 if (_FarGrassNoise > 0)
                 {
-                    // Two world-anchored frequencies retain visible meadow
-                    // grain after distant mip filtering. Brightness only:
-                    // the approved grass hue and riverbank blend stay intact.
-                    float fine=MeadowNoise(input.meadowMetres/8.0+float2(17.3,41.7));
-                    float broad=MeadowNoise(input.meadowMetres/33.0+float2(63.1,9.4));
-                    surface.rgb*=1+_FarGrassNoise*((fine-.5)*.34+(broad-.5)*.16);
+                    // Fine world-anchored stipple survives distant mip filtering.
+                    // Keep the wider variation subtle so it does not read as
+                    // soft, repeated patches at district scale.
+                    float fine=MeadowNoise(input.meadowMetres/2.0+float2(17.3,41.7));
+                    float broad=MeadowNoise(input.meadowMetres/13.0+float2(63.1,9.4));
+                    surface.rgb*=1+_FarGrassNoise*((fine-.5)*.34+(broad-.5)*.08);
                 }
+                surface.rgb*=_FarGrassBrightness;
                 #if defined(MEADOW_PATCHES)
                 // Soft 28–110m fields span many tiles. No camera/time/lot input,
                 // no extra mesh or material layer over roads and riverbanks.

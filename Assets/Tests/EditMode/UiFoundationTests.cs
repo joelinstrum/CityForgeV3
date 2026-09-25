@@ -2167,13 +2167,13 @@ namespace CityForgeV3.Tests
                 var material = ground.sharedMaterial;
                 Assert.That(UnityEditor.ShaderUtil.ShaderHasError(
                     material.shader), Is.False);
-                foreach (var (level, filtering, noise) in new[]
+                foreach (var (level, filtering, noise, brightness) in new[]
                 {
-                    (DistrictZoomLevel.LOD2, 1f, 0f),
-                    (DistrictZoomLevel.LOD3, .3f, .6f),
-                    (DistrictZoomLevel.LOD4, .2f, .8f),
-                    (DistrictZoomLevel.LOD5Billboard, .15f, 1f),
-                    (DistrictZoomLevel.LOD1, 0f, 0f)
+                    (DistrictZoomLevel.LOD2, 1f, 0f, 1f),
+                    (DistrictZoomLevel.LOD3, .3f, .6f, .94f),
+                    (DistrictZoomLevel.LOD4, .2f, .8f, .91f),
+                    (DistrictZoomLevel.LOD5Billboard, .15f, 1f, .89f),
+                    (DistrictZoomLevel.LOD1, 0f, 0f, 1f)
                 })
                 {
                     world.SetZoom(level);
@@ -2181,6 +2181,8 @@ namespace CityForgeV3.Tests
                         Is.EqualTo(filtering).Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_FarGrassNoise"),
                         Is.EqualTo(noise).Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_FarGrassBrightness"),
+                        Is.EqualTo(brightness).Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_TextureWorldSize"),
                         Is.EqualTo(75f).Within(.001f), level.ToString());
                 }
