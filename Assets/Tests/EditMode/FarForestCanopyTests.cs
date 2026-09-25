@@ -33,14 +33,16 @@ namespace CityForgeV3.Tests.EditMode
                 cluster.Configure("forest-deciduous-large", 0,
                     SeasonPreset.Summer, _ => 0f);
                 Assert.That(cluster.PieceCount, Is.EqualTo(7));
-                var summerRects = Enumerable.Range(0, cluster.PieceCount)
+                var deciduousPieces = Enumerable.Range(0, cluster.PieceCount)
+                    .Where(index => !cluster.IsFirPiece(index)).ToArray();
+                var summerRects = deciduousPieces
                     .Select(index => cluster.Piece(index).rect).ToArray();
                 cluster.SetSeason(SeasonPreset.Autumn);
-                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                Assert.That(deciduousPieces
                     .Select(index => cluster.Piece(index).rect),
                     Is.EqualTo(summerRects));
                 cluster.SetSeason(SeasonPreset.Winter);
-                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                Assert.That(deciduousPieces
                     .Select(index => cluster.Piece(index).rect),
                     Is.EqualTo(summerRects));
             }
@@ -80,6 +82,87 @@ namespace CityForgeV3.Tests.EditMode
                     Is.EqualTo(3 * 7 * 4));
                 Assert.That(renderers.All(renderer => renderer.forceRenderingOff),
                     Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase("forest-deciduous-compact")]
+        [TestCase("forest-deciduous-large")]
+        [TestCase("forest-mountain-compact")]
+        [TestCase("forest-mountain-large")]
+        public void TemperateClustersMixOneOrTwoFirsWithDeciduousTreesInEverySeason(
+            string id)
+        {
+            var owner = new GameObject("Mixed forest atlas test");
+            try
+            {
+                for (var variation = 0; variation < 3; variation++)
+                {
+                    var cluster = owner.AddComponent<ForestTrueAngleCluster>();
+                    cluster.Configure(id, variation, SeasonPreset.Summer, _ => 0f);
+                    var firCount = Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece);
+                    Assert.That(firCount, Is.InRange(1, 2), id);
+                    Assert.That(cluster.PieceCount - firCount, Is.GreaterThan(0), id);
+                    foreach (var season in new[] { SeasonPreset.Summer,
+                                 SeasonPreset.Autumn, SeasonPreset.Winter })
+                    {
+                        cluster.SetSeason(season);
+                        for (var piece = 0; piece < cluster.PieceCount; piece++)
+                        {
+                            var expected = cluster.IsFirPiece(piece)
+                                ? ForestTrueAngleCluster.ResourcePath(
+                                    "cilician-fir", season)
+                                : ForestTrueAngleCluster.ResourcePath(
+                                    "forest-deciduous-large", season);
+                            Assert.That(cluster.Piece(piece).texture,
+                                Is.SameAs(Resources.Load<Texture2D>(expected)),
+                                id + " variation " + variation + " " + season);
+                        }
+                    }
+                    Object.DestroyImmediate(cluster);
+                }
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase("forest-deciduous-large")]
+        [TestCase("forest-mountain-large")]
+        public void MixedClusterKeepsBothAtlasesInOneSpatialBatch(string id)
+        {
+            var owner = new GameObject("Mixed forest batch test");
+            try
+            {
+                var tree = new GameObject(id);
+                tree.transform.SetParent(owner.transform, false);
+                var cluster = tree.AddComponent<ForestTrueAngleCluster>();
+                cluster.Configure(id, 1, SeasonPreset.Autumn, _ => 0f);
+                var renderer = tree.AddComponent<SpriteRenderer>();
+                renderer.sprite = ForestTrueAngleCluster.RootSprite(id,
+                    SeasonPreset.Autumn);
+                var batches = owner.AddComponent<DistrictFloraBatches>();
+                batches.Build(new[] { renderer });
+                var output = owner.GetComponentsInChildren<MeshRenderer>()
+                    .Where(item => item.name == "Flora batch").ToArray();
+                Assert.That(output, Has.Length.EqualTo(1));
+                var selectors = new List<Vector2>();
+                output[0].GetComponent<MeshFilter>().sharedMesh.GetUVs(3,
+                    selectors);
+                Assert.That(selectors.Count, Is.EqualTo(cluster.PieceCount * 4));
+                var alternateCount = cluster.IsFir
+                    ? cluster.PieceCount - Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece)
+                    : Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece);
+                Assert.That(selectors.Count(value => value.x > .5f),
+                    Is.EqualTo(alternateCount * 4));
+                var properties = new MaterialPropertyBlock();
+                output[0].GetPropertyBlock(properties);
+                var alternatePiece = Enumerable.Range(0, cluster.PieceCount)
+                    .Select(cluster.Piece)
+                    .First(piece => piece.texture != renderer.sprite.texture);
+                Assert.That(properties.GetTexture("_AlternateTex"),
+                    Is.SameAs(alternatePiece.texture));
             }
             finally { Object.DestroyImmediate(owner); }
         }

@@ -78,10 +78,11 @@ namespace CityForgeV3.World
         public int PieceCount => layout?.Length ?? 0;
         public bool IsLarge => ForestClusterCatalog.IsLarge(FloraId);
         public bool IsFir => SupportsFir(FloraId);
-        public float TreeWidth => IsFir ? 307f / FirPixelsPerUnit : 384f / PixelsPerUnit;
-        public float TreeHeight => IsFir ? 380f / FirPixelsPerUnit : 342f / PixelsPerUnit;
-        public float EnvelopeWidth => IsFir ?
-            IsLarge ? 38f : IsFirCluster(FloraId) ? 28f : 12f :
+        public float TreeWidth => IsFirIndividual(FloraId)
+            ? 307f / FirPixelsPerUnit : 384f / PixelsPerUnit;
+        public float TreeHeight => IsFirIndividual(FloraId)
+            ? 380f / FirPixelsPerUnit : 342f / PixelsPerUnit;
+        public float EnvelopeWidth => IsFirIndividual(FloraId) ? 12f :
             IsLarge ? 46f : 33f;
 
         static int SeasonSlot(SeasonPreset season) => season switch
@@ -230,14 +231,43 @@ namespace CityForgeV3.World
         public void RefreshGround(Func<Vector2, float> groundDelta)
         {
             for (int i = 0; i < PieceCount; i++)
-                groundOffsets[i] = groundDelta?.Invoke(layout[i].Position) ?? 0f;
+                groundOffsets[i] = groundDelta?.Invoke(LocalPosition(i)) ?? 0f;
         }
-        public Sprite Piece(int index) =>
-            (IsFir ? FirSprites(Season) : Sprites(Season))[layout[index].Slot];
-        public float PieceScale(int index) => layout[index].Scale;
-        public Vector3 WorldOffset(int index)
+        // Both temperate cluster families are mixed. The mountain identity
+        // still determines placement and forestry policy, but no cluster is a
+        // solid block of firs in autumn. Compact groups have one or two firs;
+        // large groups have one or two, with the chosen positions varying.
+        public bool IsFirPiece(int index)
+        {
+            if (IsFirIndividual(FloraId)) return true;
+            if (layout == null || index < 0 || index >= layout.Length) return false;
+            int variant = Mathf.Abs(Variation % 3);
+            // Put the evergreen at an outer front position. A smaller fir
+            // hidden behind broadleaf crowns does not read as a mixed stand.
+            int first = IsLarge ? 3 + variant % 3 : 2 + variant % 2;
+            if (index == first) return true;
+            bool second = IsLarge && (IsFirCluster(FloraId) || variant == 1);
+            int other = first == 3 ? 5 : first == 4 ? 6 : 3;
+            return second && index == other;
+        }
+        public Sprite Piece(int index) => IsFirPiece(index)
+            ? FirSprites(Season)[layout[index].Slot]
+            : Sprites(Season)[layout[index].Slot % 12];
+        public float PieceScale(int index) => layout[index].Scale *
+            (IsFirPiece(index) && !IsFirIndividual(FloraId) ? 1.22f : 1f);
+        private Vector2 LocalPosition(int index)
         {
             var point = layout[index].Position;
+            if (IsFirPiece(index) && !IsFirIndividual(FloraId))
+            {
+                point.x += point.x >= 0f ? 3f : -3f;
+                point.y -= 2f;
+            }
+            return point;
+        }
+        public Vector3 WorldOffset(int index)
+        {
+            var point = LocalPosition(index);
             var local = new Vector3(point.x, groundOffsets[index], point.y);
             return transform.parent != null ? transform.parent.TransformVector(local) : local;
         }

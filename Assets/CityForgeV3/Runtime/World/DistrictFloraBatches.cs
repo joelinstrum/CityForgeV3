@@ -126,8 +126,10 @@ namespace CityForgeV3.World
                 pair.Value.Sort((a, b) => a.sortingOrder.CompareTo(b.sortingOrder));
                 var vertices = new List<Vector3>(); var uv = new List<Vector2>();
                 var billboardOffsets = new List<Vector3>();
+                var atlasSelectors = new List<Vector2>();
                 var colors = new List<Color>(); var triangles = new List<int>();
                 var billboardRadius = 0f;
+                Texture alternateTexture = null;
                 var shadowVertices = new List<Vector3>(); var shadowUV = new List<Vector2>();
                 var shadowColors = new List<Color>(); var shadowTriangles = new List<int>();
                 MeshRenderer firstShadow = null;
@@ -140,6 +142,14 @@ namespace CityForgeV3.World
                     for (int pieceIndex = 0; pieceIndex < pieces; pieceIndex++)
                     {
                         var piece = atlas != null ? atlas.Piece(pieceIndex) : sprite;
+                        bool alternateAtlas = piece.texture != sprite.texture;
+                        if (alternateAtlas)
+                        {
+                            if (alternateTexture != null && alternateTexture != piece.texture)
+                                throw new System.InvalidOperationException(
+                                    "A flora cluster batch supports two atlases.");
+                            alternateTexture = piece.texture;
+                        }
                         if (!geometry.TryGetValue(piece, out var pieceGeometry))
                             geometry[piece] = pieceGeometry = new Geometry
                             {
@@ -158,6 +168,7 @@ namespace CityForgeV3.World
                                     v.y * scale.y * pieceScale, 0f);
                             vertices.Add(center);
                             billboardOffsets.Add(billboardOffset);
+                            atlasSelectors.Add(alternateAtlas ? Vector2.right : Vector2.zero);
                             billboardRadius = Mathf.Max(billboardRadius,
                                 billboardOffset.magnitude);
                             colors.Add(tree.color);
@@ -188,10 +199,12 @@ namespace CityForgeV3.World
                 }
                 var properties = new MaterialPropertyBlock();
                 pair.Value[0].GetPropertyBlock(properties); properties.SetTexture("_MainTex", sprite.texture);
+                if (alternateTexture != null)
+                    properties.SetTexture("_AlternateTex", alternateTexture);
                 properties.SetFloat("_DistrictFloraBatch", 1f);
                 Create(cell, "Flora batch", pair.Value[0].sharedMaterial,
                     properties, vertices, uv, colors, triangles,
-                    billboardOffsets, billboardRadius);
+                    billboardOffsets, billboardRadius, atlasSelectors);
                 if (firstShadow != null)
                 {
                     firstShadow.GetPropertyBlock(properties);
@@ -203,12 +216,14 @@ namespace CityForgeV3.World
         }
         private void Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
             List<Vector3> vertices, List<Vector2> uv, List<Color> colors, List<int> triangles,
-            List<Vector3> billboardOffsets = null, float billboardRadius = 0f)
+            List<Vector3> billboardOffsets = null, float billboardRadius = 0f,
+            List<Vector2> atlasSelectors = null)
         {
             var item = new GameObject(label); item.transform.SetParent(transform, false);
             var mesh = new Mesh { name = label, indexFormat = vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             mesh.SetVertices(vertices); mesh.SetUVs(0, uv);
             if (billboardOffsets != null) mesh.SetUVs(2, billboardOffsets);
+            if (atlasSelectors != null) mesh.SetUVs(3, atlasSelectors);
             mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
             if (billboardRadius > 0f)

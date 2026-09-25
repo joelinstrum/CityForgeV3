@@ -3,6 +3,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData] _AlternateTex ("Cluster second atlas", 2D) = "white" {}
         [PerRendererData] _FloraOpacity ("Tree Opacity", Float) = 1
         [PerRendererData] _FloraSaturation ("Tree Saturation", Float) = 1
         [PerRendererData] _FloraBaseEllipse ("Trunk Base Ellipse", Vector) = (0,0,0,0)
@@ -54,6 +55,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
             #include "CityForgeWorldLighting.cginc"
 
             sampler2D _MainTex;
+            sampler2D _AlternateTex;
             fixed4 _Color;
             half _FloraSaturation;
             half _ForestPalette;
@@ -72,6 +74,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 billboardOffset : TEXCOORD2;
+                float2 atlasSelector : TEXCOORD3;
                 fixed4 color : COLOR;
             };
 
@@ -81,6 +84,7 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 float2 uv : TEXCOORD0;
                 fixed4 color : COLOR;
                 float3 worldPosition : TEXCOORD2;
+                half atlasSelector : TEXCOORD3;
                 SHADOW_COORDS(1)
             };
 
@@ -100,6 +104,8 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
                 v2f output;
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;
+                output.atlasSelector = _DistrictFloraBatch > .5h
+                    ? input.atlasSelector.x : 0.0h;
                 output.color = input.color;
                 output.worldPosition = mul(unity_ObjectToWorld, input.vertex).xyz;
                 TRANSFER_SHADOW(output);
@@ -108,7 +114,10 @@ Shader "CityForgeV3/LitShadowReceivingSprite"
 
             fixed4 frag(v2f input) : SV_Target
             {
-                fixed4 artwork = tex2D(_MainTex, input.uv) * input.color * _Color;
+                fixed4 artwork = input.atlasSelector > .5h
+                    ? tex2D(_AlternateTex, input.uv)
+                    : tex2D(_MainTex, input.uv);
+                artwork *= input.color * _Color;
                 if (_ForestPalette > .5h)
                 {
                     // Continuous world-space patches survive batching, reload,
