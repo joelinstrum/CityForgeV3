@@ -20,6 +20,7 @@ namespace CityForgeV3.World
             _pendingTimeOfDayShadows != null ||
             (_floraBatches != null && _floraBatches.RebuildPending);
         public const int TimeOfDayShadowFrameBudget = 8;
+        const int InstantTreeShadowPrototypeLimit = 64;
         void Update()
         {
             SyncTimeOfDayPresentation(TimeOfDayShadowFrameBudget);
@@ -38,6 +39,17 @@ namespace CityForgeV3.World
             if (_districtFloraPresentations.Count == 0)
             {
                 _pendingTimeOfDayShadows = null;
+                return;
+            }
+            if (ShowTreeShadowPrototype &&
+                _districtFloraPresentations.Count <= InstantTreeShadowPrototypeLimit)
+            {
+                // This study district has a small, explicit tree set. Switch
+                // every source and its existing shadow batches in one frame;
+                // the legacy staged path made a cheap update look slow.
+                _pendingTimeOfDayShadows = null;
+                UpdateDistrictFloraShadowsFor(_districtFloraPresentations.Values);
+                _floraBatches?.RefreshShadowMeshes();
                 return;
             }
             _pendingTimeOfDayShadows = new SpriteRenderer[

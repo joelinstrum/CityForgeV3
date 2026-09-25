@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.3022532">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.302253" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2443" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-shadow-pass-MBltYx/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.290548" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="71730" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2444" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1067" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.280002" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2445" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1067" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.274351" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2446" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="336" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.259629" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2414" name="ShadowDistrictFixtureTests" fullname="CityForgeV3.Tests.EditMode.ShadowDistrictFixtureTests" classname="CityForgeV3.Tests.EditMode.ShadowDistrictFixtureTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.252639" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2415" name="SavedShadowDistrictBuildsTwentyTerrainShadows" fullname="CityForgeV3.Tests.EditMode.ShadowDistrictFixtureTests.SavedShadowDistrictBuildsTwentyTerrainShadows" methodname="SavedShadowDistrictBuildsTwentyTerrainShadows" classname="CityForgeV3.Tests.EditMode.ShadowDistrictFixtureTests" runstate="Runnable" seed="988356813" result="Passed" start-time="2026-09-25 14:40:34Z" end-time="2026-09-25 14:40:36Z" duration="2.244804" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[RIVER REFRESH mesh=68ms terrain=1ms decals=406ms total=475ms
+Max within-shadow hillside height change=5.016 m
+20 saved trees, shadow batches=7
+Morning refresh ms=2.80 steps=1
+Noon refresh ms=1.08 steps=1
+Afternoon refresh ms=1.11 steps=1
+Saving results to: /private/tmp/cityforge-instant-saved-results.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -14,6 +14,9 @@ namespace CityForgeV3.World
         private readonly Dictionary<(Vector2Int, Sprite), List<GameObject>> outputs = new();
         private readonly Dictionary<Sprite, Geometry> geometry = new();
         private readonly Dictionary<SpriteRenderer, Quaternion> cameraRelativeRotations = new();
+        private readonly List<SpriteRenderer> shadowRefreshTrees = new();
+        private readonly List<Vector3> shadowRefreshVertices = new();
+        private readonly List<Vector3> shadowSourceVertices = new();
         private List<(Vector2Int, Sprite)> scheduledRebuilds;
         private int scheduledRebuildIndex;
         private Camera camera;
@@ -62,6 +65,68 @@ namespace CityForgeV3.World
                 RebuildCell(scheduledRebuilds[scheduledRebuildIndex]);
             if (scheduledRebuildIndex >= scheduledRebuilds.Count)
                 CancelScheduledRebuild();
+        }
+
+        // An explicit time-of-day change has already updated each source
+        // shadow mesh. Copy only those vertices into the existing batch meshes;
+        // flora geometry, renderers, materials, and batch membership stay put.
+        // The prototype calls this once per time change, never per frame.
+        public void RefreshShadowMeshes()
+        {
+            var properties = new MaterialPropertyBlock();
+            foreach (var cell in cells)
+            {
+                if (!outputs.TryGetValue(cell.Key, out var items)) continue;
+                MeshRenderer batch = null;
+                foreach (var item in items)
+                    if (item != null && item.name == "Flora shadow batch")
+                    {
+                        batch = item.GetComponent<MeshRenderer>();
+                        break;
+                    }
+                shadowRefreshTrees.Clear();
+                foreach (var tree in cell.Value)
+                    if (tree != null && tree.sprite == cell.Key.Item2)
+                        shadowRefreshTrees.Add(tree);
+                shadowRefreshTrees.Sort((a, b) =>
+                    a.sortingOrder.CompareTo(b.sortingOrder));
+                shadowRefreshVertices.Clear();
+                MeshRenderer firstShadow = null;
+                foreach (var tree in shadowRefreshTrees)
+                {
+                    var shadow = Shadow(tree);
+                    if (shadow == null || !shadow.enabled) continue;
+                    firstShadow ??= shadow;
+                    var source = shadow.GetComponent<MeshFilter>().sharedMesh;
+                    if (source == null) continue;
+                    shadowSourceVertices.Clear();
+                    source.GetVertices(shadowSourceVertices);
+                    var matrix = transform.worldToLocalMatrix *
+                        shadow.transform.localToWorldMatrix;
+                    foreach (var vertex in shadowSourceVertices)
+                        shadowRefreshVertices.Add(matrix.MultiplyPoint3x4(vertex));
+                }
+                if (firstShadow == null)
+                {
+                    if (batch != null) batch.enabled = false;
+                    continue;
+                }
+                if (batch == null || batch.GetComponent<MeshFilter>()
+                    .sharedMesh.vertexCount != shadowRefreshVertices.Count)
+                {
+                    // A local add/remove or loading at night can change the
+                    // shadow topology. Rebuild only this affected spatial cell.
+                    RebuildCell(cell.Key);
+                    continue;
+                }
+                var mesh = batch.GetComponent<MeshFilter>().sharedMesh;
+                mesh.SetVertices(shadowRefreshVertices);
+                mesh.RecalculateBounds();
+                firstShadow.GetPropertyBlock(properties);
+                properties.SetFloat("_DistrictFloraBatch", 0f);
+                batch.SetPropertyBlock(properties);
+                batch.enabled = true;
+            }
         }
         readonly HashSet<(Vector2Int, Sprite)> dirtyCells = new();
         int changeDepth;

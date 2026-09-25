@@ -298,18 +298,31 @@ namespace CityForgeV3.Tests.EditMode
                     Is.GreaterThan(ShadowWidth("forest-deciduous-compact") * 1.3f));
                 Assert.That(ShadowWidth("forest-mountain-large"),
                     Is.GreaterThan(ShadowWidth("forest-mountain-compact") * 1.3f));
-                Assert.That(owner.GetComponentsInChildren<MeshRenderer>()
-                    .Count(renderer => renderer.name == "Flora shadow batch"),
-                    Is.GreaterThan(0));
+                var batches = owner.GetComponentsInChildren<MeshRenderer>()
+                    .Where(renderer => renderer.name == "Flora shadow batch")
+                    .ToArray();
+                Assert.That(batches.Length, Is.GreaterThan(0));
+                var batchMeshes = batches.Select(renderer => renderer.GetComponent<
+                    MeshFilter>().sharedMesh).ToArray();
+                var noonVertices = batchMeshes.Select(mesh => mesh.vertices)
+                    .ToArray();
                 world.SetTimeOfDay(TimeOfDayPreset.Morning);
-                var guard = 0;
-                do
-                {
-                    world.SyncTimeOfDayPresentation(20);
-                    Assert.That(++guard, Is.LessThan(20));
-                } while (world.TimeOfDayPresentationPending);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False,
+                    "The 20-tree study should switch before SetTimeOfDay returns.");
+                Assert.That(batches.Select(renderer => renderer.GetComponent<
+                    MeshFilter>().sharedMesh), Is.EqualTo(batchMeshes),
+                    "Time changes should update existing batches in place.");
+                Assert.That(batchMeshes.Select((mesh, index) => mesh.vertices
+                    .Where((vertex, offset) => (vertex - noonVertices[index][offset])
+                        .sqrMagnitude > .0001f).Any()).Any(), Is.True);
                 Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
                     .sharedMesh.vertexCount == 81), Is.True);
+                world.SetTimeOfDay(TimeOfDayPreset.Night);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False);
+                Assert.That(batches.All(renderer => !renderer.enabled), Is.True);
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False);
+                Assert.That(batches.All(renderer => renderer.enabled), Is.True);
             }
             finally { Object.DestroyImmediate(owner); }
         }
