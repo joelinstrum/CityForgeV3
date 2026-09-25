@@ -13,6 +13,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _FarGrassNoise ("Far grass grain", Range(0,1)) = 0
         _FarGrassBrightness ("Far grass brightness", Range(0,1)) = 1
         _FarGrassGrainFrequency ("Far grass grain frequency", Range(.5,3)) = 1
+        _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
     }
 
     SubShader
@@ -69,6 +70,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _FarGrassNoise;
             float _FarGrassBrightness;
             float _FarGrassGrainFrequency;
+            float _GrassDetailMipScale;
             float _GrassHueShift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
@@ -177,7 +179,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
                 float2 surfaceDx, surfaceDy;
                 MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
-                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,surfaceDx,surfaceDy);
+                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
+                    surfaceDx*_GrassDetailMipScale,
+                    surfaceDy*_GrassDetailMipScale);
                 #if defined(HILL_MEADOW)
                 fixed3 thin=Meadow(_HillTex,input.meadowMetres/40.0).rgb;
                 surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation,thin);

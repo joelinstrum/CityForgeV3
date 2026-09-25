@@ -2169,7 +2169,7 @@ namespace CityForgeV3.Tests
                     material.shader), Is.False);
                 foreach (var (level, filtering, noise, brightness, grainFrequency) in new[]
                 {
-                    (DistrictZoomLevel.LOD2, 0f, 1f, 1f, 1.82f),
+                    (DistrictZoomLevel.LOD2, 0f, .25f, 1f, 1.82f),
                     (DistrictZoomLevel.LOD3, .3f, .6f, .94f, 1f),
                     (DistrictZoomLevel.LOD4, .2f, .8f, .91f, 1f),
                     (DistrictZoomLevel.LOD5Billboard, .15f, 1f, .89f, 1f),
@@ -2185,6 +2185,9 @@ namespace CityForgeV3.Tests
                         Is.EqualTo(brightness).Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_FarGrassGrainFrequency"),
                         Is.EqualTo(grainFrequency).Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_GrassDetailMipScale"),
+                        Is.EqualTo(level == DistrictZoomLevel.LOD2 ? .5f : 1f)
+                            .Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_TextureWorldSize"),
                         Is.EqualTo(75f).Within(.001f), level.ToString());
                 }

@@ -27,7 +27,7 @@ namespace CityForgeV3.World
         public static float DistrictGrassNoiseStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD2 => 1f,
+            DistrictZoomLevel.LOD2 => .25f,
             DistrictZoomLevel.LOD3 => .6f,
             DistrictZoomLevel.LOD4 => .8f,
             DistrictZoomLevel.LOD5Billboard => 1f,
@@ -73,6 +73,12 @@ namespace CityForgeV3.World
             if (material.HasProperty("_FarGrassGrainFrequency") &&
                 material.GetFloat("_FarGrassGrainFrequency") != grainFrequency)
                 material.SetFloat("_FarGrassGrainFrequency", grainFrequency);
+            // Preserve the authored grass texture's fine detail at Zoom 3
+            // instead of reconstructing it with strong procedural noise.
+            float detailMipScale = _zoomLevel == DistrictZoomLevel.LOD2 ? .5f : 1f;
+            if (material.HasProperty("_GrassDetailMipScale") &&
+                material.GetFloat("_GrassDetailMipScale") != detailMipScale)
+                material.SetFloat("_GrassDetailMipScale", detailMipScale);
         }
 
         private void ConfigureMountainGroundMaterial()
