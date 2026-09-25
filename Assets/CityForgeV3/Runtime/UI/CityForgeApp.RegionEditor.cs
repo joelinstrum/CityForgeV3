@@ -1620,6 +1620,7 @@ namespace CityForgeV3.UI
       var compositionKey = DistrictCompositionKey(district);
       if (_districtWorld != null &&
           _districtWorld.WorldCamera != null &&
+          !_districtWorld.ShowDistrictShadows &&
           _districtWorldTileId == district.TileId &&
           _districtWorldLotId == lotId &&
           _districtWorldCompositionKey == compositionKey)
@@ -1638,6 +1639,8 @@ namespace CityForgeV3.UI
         var world = new GameObject("V3 District World");
         _districtWorld = world.AddComponent<DistrictWorldController>();
       }
+      // Temporary shadow-free district pass for load/performance review.
+      _districtWorld.ShowDistrictShadows = false;
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);
       _districtWorld.SetPan(_terraformPanOffset);

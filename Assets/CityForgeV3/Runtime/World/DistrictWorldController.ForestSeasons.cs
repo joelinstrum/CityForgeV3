@@ -30,6 +30,11 @@ namespace CityForgeV3.World
         {
             _floraBatches?.CancelScheduledRebuild();
             _pendingTimeOfDayShadowIndex = 0;
+            if (!ShowDistrictShadows)
+            {
+                _pendingTimeOfDayShadows = null;
+                return;
+            }
             if (_districtFloraPresentations.Count == 0)
             {
                 _pendingTimeOfDayShadows = null;

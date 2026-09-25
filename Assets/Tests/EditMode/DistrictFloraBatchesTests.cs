@@ -6,6 +6,61 @@ using UnityEngine;
 public class DistrictFloraBatchesTests
 {
     [Test]
+    public void ShadowFreeDistrictKeepsSavedLotAndTreesWithoutShadowWork()
+    {
+        var host = new GameObject("Shadow-free district load");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "shadow-free-load", Width = 2, Height = 2,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "tree", FloraId = "forest-deciduous-compact",
+                NormalizedX = .65f, NormalizedZ = .65f
+            });
+            district.Lots.Add(new PlacedDistrictLot
+            {
+                InstanceId = "town-center", LotId = "town-center",
+                GridX = 10, GridZ = 10
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowDistrictShadows = false;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+
+            var savedLot = host.GetComponentInChildren<LotWorldController>(true);
+            Assert.That(savedLot, Is.Not.Null);
+            Assert.That(savedLot.Session.Data.Buildings3D,
+                Has.Count.EqualTo(1), "Saved Town Center building must still load.");
+            Assert.That(host.GetComponentsInChildren<HybridBuildingPresentation>(true),
+                Is.Empty, "Do not construct unused provisional artwork.");
+            Assert.That(host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Count(renderer => renderer.name.StartsWith("District Flora —")),
+                Is.EqualTo(1));
+            Assert.That(host.GetComponentsInChildren<Light>(true)
+                .Single(light => light.name == "District Sun").shadows,
+                Is.EqualTo(LightShadows.None));
+            Assert.That(host.GetComponentsInChildren<Renderer>(true)
+                .Any(renderer => renderer.name.IndexOf("shadow",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    renderer.enabled && renderer.gameObject.activeInHierarchy),
+                Is.False);
+
+            world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+            Assert.That(world.TimeOfDayPresentationPending, Is.False);
+            Assert.That(host.GetComponentsInChildren<Renderer>(true)
+                .Any(renderer => renderer.name.IndexOf("shadow",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    renderer.enabled && renderer.gameObject.activeInHierarchy),
+                Is.False);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
     public void TimeOfDayChangesStageDenseFloraWithoutReplacingTrees()
     {
         var host = new GameObject("Staged flora lighting test");
