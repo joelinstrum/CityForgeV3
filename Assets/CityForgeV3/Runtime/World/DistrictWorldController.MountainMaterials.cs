@@ -105,6 +105,7 @@ namespace CityForgeV3.World
                 material.SetFloat("_GrassHueShift", 0f);
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
                 material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
+                material.SetFloat("_RollingHillDeepShadeLift",RollingHillDeepShadeLift);
                 material.SetFloat("_MeadowPatchStrength", 0f);
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
@@ -128,5 +129,7 @@ namespace CityForgeV3.World
         // grass. The higher value also offsets darker normals from the 1.3x Y
         // exaggeration; it leaves neutral terrain and highlights unchanged.
         public const float RollingHillDarkSlopeLift = .5f;
+        // Additional reduction of the deepest remaining slope darkness.
+        public const float RollingHillDeepShadeLift = .225f;
     }
 }

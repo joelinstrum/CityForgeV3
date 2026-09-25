@@ -178,7 +178,7 @@ namespace CityForgeV3.World
         }
         private float Generate(Vector2 p,out float unconstrainedHeight)
         {
-            float h=0;
+            float h=0,shoulderSum=0,shoulderSquares=0;
             for(int i=0;i<hills.Count;i++)
             {
                 var hill=hills[i];
@@ -192,10 +192,24 @@ namespace CityForgeV3.World
                     float z=(s*delta.x+c*delta.y)/(hill.z*shape.z);
                     distance=Mathf.Sqrt(x*x+z*z);
                 }
-                if(distance>=1)continue;
-                if(mountains)h=Mathf.Max(h,1-distance);
-                else {float cap=1-distance*distance;h+=rollingShapes[i].x*cap*cap*cap;}
+                if(mountains)
+                {
+                    if(distance<1)h=Mathf.Max(h,1-distance);
+                }
+                else if(distance<1.7f)
+                {
+                    // Keep each existing crest and add a broad, low influence.
+                    // Only the overlap between influences becomes a shoulder,
+                    // retaining nearly flat space away from paired forms.
+                    float core=Mathf.Max(0,1-distance*distance);
+                    float shoulder=1-distance*distance/(1.7f*1.7f);
+                    h+=rollingShapes[i].x*core*core*core;
+                    float broad=rollingShapes[i].x*shoulder*shoulder*shoulder;
+                    shoulderSum+=broad;
+                    shoulderSquares+=broad*broad;
+                }
             }
+            if(!mountains)h+=2.5f*Mathf.Max(0,shoulderSum*shoulderSum-shoulderSquares);
             if(connectedMountains)
             {
                 float range=RangeHeight(p);

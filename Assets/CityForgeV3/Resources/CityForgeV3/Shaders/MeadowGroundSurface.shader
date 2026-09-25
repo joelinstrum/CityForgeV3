@@ -15,6 +15,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _FarGrassGrainFrequency ("Far grass grain frequency", Range(.5,3)) = 1
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
+        _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
     }
 
     SubShader
@@ -72,6 +73,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _GrassDetailMipScale;
             float _GrassHueShift;
             float _RollingHillDarkSlopeLift;
+            float _RollingHillDeepShadeLift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
 
@@ -155,6 +157,10 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float darkness=saturate((levelValue-slopeValue)/max(levelValue,.001));
                 illumination=lerp(illumination,levelIllumination,
                     _RollingHillDarkSlopeLift*smoothstep(.03,.12,darkness));
+                // Trim only the deepest remaining shade; the midtone response
+                // above and all light-facing slopes retain their prior lighting.
+                illumination=lerp(illumination,levelIllumination,
+                    _RollingHillDeepShadeLift*smoothstep(.20,.35,darkness));
                 #endif
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
