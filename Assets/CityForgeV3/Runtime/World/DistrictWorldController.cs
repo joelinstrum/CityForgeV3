@@ -2807,7 +2807,9 @@ namespace CityForgeV3.World
         private void BuildGround()
         {
             var ground = new GameObject();
-            ground.AddComponent<MeshFilter>().sharedMesh = _elevation.CreateMesh();
+            var mesh = _elevation.CreateMesh();
+            ground.AddComponent<MeshFilter>().sharedMesh = mesh;
+            LogReliefDiagnostics(mesh);
             ground.AddComponent<MeshRenderer>();
             ground.AddComponent<DistrictTerrainMeshOwner>();
             _terrainCollider = ground.AddComponent<MeshCollider>();

@@ -11,6 +11,8 @@ namespace CityForgeV3.World
         public int Seed = 1209;
         public float HeightMeters;
         public float Coverage = .6f;
+        // Zero in older saves means the pre-scale default of 1x.
+        public float VerticalReliefScale = 1f;
     }
     // Deterministic district relief. Existing roads, lots and water retain level corridors.
     public sealed class DistrictElevation
@@ -25,6 +27,9 @@ namespace CityForgeV3.World
         private readonly List<Vector4> rollingShapes = new();
         private readonly List<Vector2> rollingDirections = new();
         private readonly float amplitude;
+        private readonly float clearanceFadeMeters;
+        private float verticalCalibration = 1f;
+        private readonly float verticalReliefScale;
         private readonly bool mountains;
         private readonly bool connectedMountains;
         private readonly List<Vector4> peakShapes=new();
@@ -41,7 +46,10 @@ namespace CityForgeV3.World
             connectedMountains=mountains && settings.Version>=2;
             if(connectedMountains && settings.PreserveLegacyCoalSites)foreach(var site in district.ResourceDeposits??new List<DistrictResourceDeposit>())
                 if(site.Kind=="coal")preservedSites.Add(new Vector2((site.NormalizedX-.5f)*Width,(site.NormalizedZ-.5f)*Depth));
-            amplitude=settings==null?0:Mathf.Clamp(settings.HeightMeters,0,mountains?240:60);
+            amplitude=settings==null?0:Mathf.Clamp(settings.HeightMeters,0,240);
+            clearanceFadeMeters=mountains?45:Mathf.Max(90,Mathf.Min(60,amplitude)*4);
+            verticalReliefScale=mountains || settings==null || settings.VerticalReliefScale<=0
+                ? 1f : Mathf.Clamp(settings.VerticalReliefScale,.25f,4f);
             if(amplitude<=0)return;
             var random=new System.Random(settings.Seed);
             int count=Mathf.RoundToInt(Mathf.Lerp(mountains?3:2,mountains?14:5,Mathf.Clamp01(settings.Coverage)));
@@ -94,7 +102,20 @@ namespace CityForgeV3.World
                 }
             }
             RefreshConstraints(district);
-            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+            float unconstrainedPeak=0;
+            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)
+            {
+                Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2),out float rawHeight);
+                if(!mountains)unconstrainedPeak=Mathf.Max(unconstrainedPeak,rawHeight);
+            }
+            if(!mountains && unconstrainedPeak>0)
+            {
+                // Calibrate the sampled field once. Clearance edits reuse this
+                // factor, so a local road or river change cannot rescale the
+                // rest of the district or change the horizontal hill shapes.
+                verticalCalibration=amplitude*verticalReliefScale/unconstrainedPeak;
+                for(int i=0;i<Heights.Length;i++)Heights[i]*=verticalCalibration;
+            }
         }
         public int LastUpdatedSampleCount {get;private set;}
         readonly List<int> changedSamples=new();
@@ -120,7 +141,7 @@ namespace CityForgeV3.World
                     channels.Add((new Vector2((a.X-.5f)*Width,(a.Z-.5f)*Depth),new Vector2((b.X-.5f)*Width,(b.Z-.5f)*Depth),river.WidthMeters*.5f+25));
                 }
             }
-            float fade=mountains?45:Mathf.Max(90,amplitude*4);
+            float fade=clearanceFadeMeters;
             for(int i=0;i<pads.Count;i++)padIndex.Add(DistrictDirtyGrid.Expand(pads[i],12+fade),i);
             for(int i=0;i<channels.Count;i++)
             {
@@ -141,7 +162,7 @@ namespace CityForgeV3.World
             for(int i=0;i<marked.Length;i++)if(marked[i])
             {
                 LastUpdatedSampleCount++;int x=i%(Columns+1),z=i/(Columns+1);
-                float value=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+                float value=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2),out _)*verticalCalibration;
                 if(value!=Heights[i]){Heights[i]=value;changedSamples.Add(i);}
             }
             return changedSamples.Count>0;
@@ -152,7 +173,7 @@ namespace CityForgeV3.World
             foreach(int i in changedSamples){var v=vertices[i];v.y=Heights[i];vertices[i]=v;}
             mesh.vertices=vertices;mesh.RecalculateNormals();mesh.RecalculateBounds();
         }
-        private float Generate(Vector2 p)
+        private float Generate(Vector2 p,out float unconstrainedHeight)
         {
             float h=0;
             for(int i=0;i<hills.Count;i++)
@@ -181,6 +202,8 @@ namespace CityForgeV3.World
                 h=Mathf.Lerp(range,h,preserve);
             }
             float clearance=Mathf.Min(Width/2-Mathf.Abs(p.x),Depth/2-Mathf.Abs(p.y));
+            float shapeHeight=amplitude*(mountains?h:1-Mathf.Exp(-h*1.7f));
+            unconstrainedHeight=shapeHeight*Mathf.SmoothStep(0,1,Mathf.Clamp01(clearance/clearanceFadeMeters));
             foreach(var index in padIndex.Query(p))
             {
                 var pad=pads[index];
@@ -193,7 +216,7 @@ namespace CityForgeV3.World
                 var ab=c.b-c.a;float t=ab.sqrMagnitude<.001f?0:Mathf.Clamp01(Vector2.Dot(p-c.a,ab)/ab.sqrMagnitude);
                 clearance=Mathf.Min(clearance,Vector2.Distance(p,c.a+t*ab)-c.radius);
             }
-            return amplitude*(mountains?h:1-Mathf.Exp(-h*1.7f))*Mathf.SmoothStep(0,1,Mathf.Clamp01(clearance/(mountains?45:Mathf.Max(90,amplitude*4))));
+            return shapeHeight*Mathf.SmoothStep(0,1,Mathf.Clamp01(clearance/clearanceFadeMeters));
         }
         private float RangeHeight(Vector2 p)
         {

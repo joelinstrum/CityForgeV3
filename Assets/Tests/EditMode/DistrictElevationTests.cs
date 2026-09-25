@@ -47,5 +47,67 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(largestStep,Is.LessThan(2f),"adjacent five metre samples should form gentle slopes");
             Assert.That(Mathf.Max(h.Heights),Is.GreaterThan(8f));
         }
+        [TestCase(2),TestCase(4)]
+        public void RequestedEightyMetresProducesEightyMetresOfMeshRelief(int districtSize)
+        {
+            var district=new RegionCityTile{Width=districtSize,Height=districtSize,
+                Hills=new(){Seed=1209,HeightMeters=80,Coverage=.4f,VerticalReliefScale=1f}};
+            var elevation=new DistrictElevation(district);var mesh=elevation.CreateMesh();
+            try
+            {
+                Assert.That(mesh.bounds.min.y,Is.EqualTo(0).Within(.001f));
+                Assert.That(mesh.bounds.size.y,Is.EqualTo(80).Within(.01f));
+                district.Hills.VerticalReliefScale=1.5f;
+                var scaled=new DistrictElevation(district);var scaledMesh=scaled.CreateMesh();
+                try
+                {
+                    Assert.That(scaledMesh.bounds.size.y,Is.EqualTo(120).Within(.02f));
+                    var original=mesh.vertices;var exaggerated=scaledMesh.vertices;
+                    for(int i=0;i<original.Length;i+=Mathf.Max(1,original.Length/256))
+                    {
+                        Assert.That(exaggerated[i].x,Is.EqualTo(original[i].x));
+                        Assert.That(exaggerated[i].z,Is.EqualTo(original[i].z));
+                        Assert.That(exaggerated[i].y,Is.EqualTo(original[i].y*1.5f).Within(.001f));
+                    }
+                }
+                finally{Object.DestroyImmediate(scaledMesh);}
+                district.Hills.HeightMeters=60;district.Hills.VerticalReliefScale=1f;
+                var sixtyMesh=new DistrictElevation(district).CreateMesh();
+                try
+                {
+                    Assert.That(sixtyMesh.bounds.size.y,Is.EqualTo(60).Within(.02f));
+                    var eighty=mesh.vertices;var sixty=sixtyMesh.vertices;
+                    for(int i=0;i<eighty.Length;i+=Mathf.Max(1,eighty.Length/256))
+                        Assert.That(eighty[i].y,Is.EqualTo(sixty[i].y*(80f/60f)).Within(.001f));
+                }
+                finally{Object.DestroyImmediate(sixtyMesh);}
+            }
+            finally{Object.DestroyImmediate(mesh);}
+        }
+        [Test] public void OlderSavedHillsDefaultToOneTimesVerticalScale()
+        {
+            var district=JsonUtility.FromJson<RegionCityTile>(
+                "{\"Width\":2,\"Height\":2,\"Hills\":{\"Seed\":1209,\"HeightMeters\":80,\"Coverage\":0.4}}");
+            var mesh=new DistrictElevation(district).CreateMesh();
+            try{Assert.That(mesh.bounds.size.y,Is.EqualTo(80).Within(.01f));}
+            finally{Object.DestroyImmediate(mesh);}
+        }
+        [Test] public void DistrictBuildPublishesMeasuredEightyMetreMesh()
+        {
+            var host=new GameObject("Relief pipeline test");
+            try
+            {
+                var district=new RegionCityTile{TileId="relief-pipeline",Width=2,Height=2,
+                    Founded=true,Hills=new(){Seed=1209,HeightMeters=80,Coverage=.4f}};
+                host.AddComponent<DistrictWorldController>().RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                Mesh ground=null;
+                foreach(var filter in host.GetComponentsInChildren<MeshFilter>())
+                    if(filter.sharedMesh?.name=="District Elevation")ground=filter.sharedMesh;
+                Assert.That(ground,Is.Not.Null);
+                Assert.That(ground.bounds.size.y,Is.EqualTo(80).Within(.01f));
+            }
+            finally{Object.DestroyImmediate(host);}
+        }
     }
 }

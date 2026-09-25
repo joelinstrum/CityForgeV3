@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.661523">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.661523" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2437" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-rolling-hills.mdvQUA/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.638546" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="37135" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2438" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.493032" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2439" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.474800" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2440" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="343" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.066994" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2223" name="DistrictQuarryTests" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.043691" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2236" name="DepositsAreDeterministicAndExistingSitesPreserved" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.DepositsAreDeterministicAndExistingSitesPreserved" methodname="DepositsAreDeterministicAndExistingSitesPreserved" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1946283666" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.016668" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2231" name="ExistingQuarryGetsPayrollOnceAndPauseDoesNotDismissWorkers" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.ExistingQuarryGetsPayrollOnceAndPauseDoesNotDismissWorkers" methodname="ExistingQuarryGetsPayrollOnceAndPauseDoesNotDismissWorkers" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1852794310" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000827" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2226" name="FailedQuarryPlacementLeavesTreesUntouched" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.FailedQuarryPlacementLeavesTreesUntouched" methodname="FailedQuarryPlacementLeavesTreesUntouched" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="661647177" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000779" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2233" name="LoadedStoneRemainsInTransitAcrossReloadAndFullCart" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.LoadedStoneRemainsInTransitAcrossReloadAndFullCart" methodname="LoadedStoneRemainsInTransitAcrossReloadAndFullCart" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1125911293" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.001530" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2224" name="ManuallyPlacedCoalSurvivesRegenerationAndReload" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.ManuallyPlacedCoalSurvivesRegenerationAndReload" methodname="ManuallyPlacedCoalSurvivesRegenerationAndReload" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="40342606" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.001919" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2234" name="PauseRemovalAndFloodingStopProgressAndInventory" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.PauseRemovalAndFloodingStopProgressAndInventory" methodname="PauseRemovalAndFloodingStopProgressAndInventory" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1571105313" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.002464" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2225" name="QuarryAutomaticallyClearsNearbyTreesAndPreservesDistantTrees" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.QuarryAutomaticallyClearsNearbyTreesAndPreservesDistantTrees" methodname="QuarryAutomaticallyClearsNearbyTreesAndPreservesDistantTrees" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1716198265" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.001050" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2232" name="RequiresOwnedStoneDepositAndDryClearGround" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.RequiresOwnedStoneDepositAndDryClearGround" methodname="RequiresOwnedStoneDepositAndDryClearGround" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1938021385" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000381" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2235" name="ScriptValidationAndInventorySaturation" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.ScriptValidationAndInventorySaturation" methodname="ScriptValidationAndInventorySaturation" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1612361190" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.001971" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2228" name="TwoWorkersCostFiveHundredOncePerSeasonIncludingReload" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.TwoWorkersCostFiveHundredOncePerSeasonIncludingReload" methodname="TwoWorkersCostFiveHundredOncePerSeasonIncludingReload" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="249316651" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.003836" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2230" name="UnaffordableBuildPreservesTreesAndTreasury" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.UnaffordableBuildPreservesTreesAndTreasury" methodname="UnaffordableBuildPreservesTreesAndTreasury" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="634910263" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000374" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2227" name="UndoRestoresQuarryAndClearedTreesTogether" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.UndoRestoresQuarryAndClearedTreesTogether" methodname="UndoRestoresQuarryAndClearedTreesTogether" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1539418291" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000665" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2229" name="UnpaidWorkersStopProductionAndResumeWhenFunded" fullname="CityForgeV3.Tests.EditMode.DistrictQuarryTests.UnpaidWorkersStopProductionAndResumeWhenFunded" methodname="UnpaidWorkersStopProductionAndResumeWhenFunded" classname="CityForgeV3.Tests.EditMode.DistrictQuarryTests" runstate="Runnable" seed="1453352017" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.000371" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1386" name="UiFoundationTests" fullname="CityForgeV3.Tests.UiFoundationTests" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" testcasecount="599" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.364744" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1590" name="FarDistrictZoomsKeepGrassGrainWithoutChangingWorldScale" fullname="CityForgeV3.Tests.UiFoundationTests.FarDistrictZoomsKeepGrassGrainWithoutChangingWorldScale" methodname="FarDistrictZoomsKeepGrassGrainWithoutChangingWorldScale" classname="CityForgeV3.Tests.UiFoundationTests" runstate="Runnable" seed="1199993499" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.258103" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[RIVER REFRESH mesh=2ms terrain=1ms decals=21ms total=24ms
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1158" name="RegionMapLayersTests" fullname="RegionMapLayersTests" classname="RegionMapLayersTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.117217" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1159" name="LayerChoicesAreIndependentAndPreserveExistingVisuals" fullname="RegionMapLayersTests.LayerChoicesAreIndependentAndPreserveExistingVisuals" methodname="LayerChoicesAreIndependentAndPreserveExistingVisuals" classname="RegionMapLayersTests" runstate="Runnable" seed="341197248" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.044977" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1160" name="OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" fullname="RegionMapLayersTests.OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" methodname="OldRegionsDefaultToVisibleAndChoicesAndTransportSurviveReload" classname="RegionMapLayersTests" runstate="Runnable" seed="1580436162" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.003209" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1161" name="ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" fullname="RegionMapLayersTests.ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" methodname="ReliefPreviewIsBoundedAndUsesDistinctLandCoverColors" classname="RegionMapLayersTests" runstate="Runnable" seed="1698194920" result="Passed" start-time="2026-09-25 17:46:05Z" end-time="2026-09-25 17:46:05Z" duration="0.067830" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-relief-regression-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

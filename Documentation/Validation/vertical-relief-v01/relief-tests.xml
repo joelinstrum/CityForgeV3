@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="14" result="Passed" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:31Z" duration="2.7260892">
+  <test-suite type="TestSuite" id="1000" name="City Forge V3" fullname="City Forge V3" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:31Z" duration="2.726089" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="2437" name="CityForgeV3.Tests.EditMode.dll" fullname="/private/tmp/cityforge-rolling-hills.mdvQUA/Library/ScriptAssemblies/CityForgeV3.Tests.EditMode.dll" runstate="Runnable" testcasecount="1247" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:31Z" duration="2.717857" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="36878" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="2438" name="CityForgeV3" fullname="CityForgeV3" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:30Z" duration="1.754207" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="2439" name="Tests" fullname="CityForgeV3.Tests" runstate="Runnable" testcasecount="1074" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:30Z" duration="1.749385" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="2440" name="EditMode" fullname="CityForgeV3.Tests.EditMode" runstate="Runnable" testcasecount="343" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:30Z" duration="1.721459" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="2169" name="DistrictElevationTests" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:30Z" duration="1.708461" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="2181" name="DistrictBuildPublishesMeasuredEightyMetreMesh" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.DistrictBuildPublishesMeasuredEightyMetreMesh" methodname="DistrictBuildPublishesMeasuredEightyMetreMesh" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="309421756" result="Passed" start-time="2026-09-25 17:45:28Z" end-time="2026-09-25 17:45:29Z" duration="0.606142" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Requested relief height: 80.000 m
+Vertical Relief Scale: 1.000x
+Generated terrain min Y: 0.000
+Generated terrain max Y: 80.000
+Generated vertical relief: 80.000 m
+RIVER REFRESH mesh=3ms terrain=1ms decals=66ms total=70ms
+]]></output>
+              </test-case>
+              <test-case id="2170" name="OldDistrictIsFlatAndSavedHillsAreDeterministic" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.OldDistrictIsFlatAndSavedHillsAreDeterministic" methodname="OldDistrictIsFlatAndSavedHillsAreDeterministic" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="821537801" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:29Z" duration="0.208220" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2180" name="OlderSavedHillsDefaultToOneTimesVerticalScale" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.OlderSavedHillsDefaultToOneTimesVerticalScale" methodname="OlderSavedHillsDefaultToOneTimesVerticalScale" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1086096051" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:29Z" duration="0.031538" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="2172" name="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" methodname="RenderedVerticesMatchSamplerAndGenerationDoesNotChangeUnityRandom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="728984533" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:29Z" duration="0.218039" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="2179" name="RequestedEightyMetresProducesEightyMetresOfMeshRelief" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RequestedEightyMetresProducesEightyMetresOfMeshRelief" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:30Z" duration="0.483144" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="2177" name="RequestedEightyMetresProducesEightyMetresOfMeshRelief(2)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RequestedEightyMetresProducesEightyMetresOfMeshRelief(2)" methodname="RequestedEightyMetresProducesEightyMetresOfMeshRelief" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1430457155" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:29Z" duration="0.102032" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="2178" name="RequestedEightyMetresProducesEightyMetresOfMeshRelief(4)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RequestedEightyMetresProducesEightyMetresOfMeshRelief(4)" methodname="RequestedEightyMetresProducesEightyMetresOfMeshRelief" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="739387212" result="Passed" start-time="2026-09-25 17:45:29Z" end-time="2026-09-25 17:45:30Z" duration="0.379191" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="2176" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.095491" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="2173" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(123)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(123)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1186717540" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.032182" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=123 samples=46656 flat=17713 maxStep=1.424 peak=35.00
+]]></output>
+                </test-case>
+                <test-case id="2174" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(1209)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(1209)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="688872904" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.031808" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=1209 samples=46656 flat=19492 maxStep=1.670 peak=35.00
+]]></output>
+                </test-case>
+                <test-case id="2175" name="RollingHillsKeepLongSlopesAndFlatBreathingRoom(42)" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.RollingHillsKeepLongSlopesAndFlatBreathingRoom(42)" methodname="RollingHillsKeepLongSlopesAndFlatBreathingRoom" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1777302049" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.030473" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[ROLLING HILLS seed=42 samples=46656 flat=14388 maxStep=1.340 peak=35.00
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="2171" name="WaterRoadsAndDistrictEdgesStayLevel" fullname="CityForgeV3.Tests.EditMode.DistrictElevationTests.WaterRoadsAndDistrictEdgesStayLevel" methodname="WaterRoadsAndDistrictEdgesStayLevel" classname="CityForgeV3.Tests.EditMode.DistrictElevationTests" runstate="Runnable" seed="1592872307" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.056591" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1075" name="DistrictSurfaceCacheTests" fullname="DistrictSurfaceCacheTests" classname="DistrictSurfaceCacheTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:31Z" duration="0.953737" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1076" name="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" fullname="DistrictSurfaceCacheTests.DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" methodname="DirtyMatrixCoalescesOverlappingChangesAndDrainsOnce" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="2095278716" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.002080" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1080" name="IncrementalRiverAndRoadHeightsEqualFullRebuild" fullname="DistrictSurfaceCacheTests.IncrementalRiverAndRoadHeightsEqualFullRebuild" classname="DistrictSurfaceCacheTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:31Z" duration="0.949624" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1078" name="IncrementalRiverAndRoadHeightsEqualFullRebuild(45)" fullname="DistrictSurfaceCacheTests.IncrementalRiverAndRoadHeightsEqualFullRebuild(45)" methodname="IncrementalRiverAndRoadHeightsEqualFullRebuild" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="1196740952" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:30Z" duration="0.446517" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1079" name="IncrementalRiverAndRoadHeightsEqualFullRebuild(80)" fullname="DistrictSurfaceCacheTests.IncrementalRiverAndRoadHeightsEqualFullRebuild(80)" methodname="IncrementalRiverAndRoadHeightsEqualFullRebuild" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="661823765" result="Passed" start-time="2026-09-25 17:45:30Z" end-time="2026-09-25 17:45:31Z" duration="0.502456" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1077" name="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" fullname="DistrictSurfaceCacheTests.ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" methodname="ValueSnapshotsDetectInPlaceEditsAndIgnoreUnrelatedState" classname="DistrictSurfaceCacheTests" runstate="Runnable" seed="1670491071" result="Passed" start-time="2026-09-25 17:45:31Z" end-time="2026-09-25 17:45:31Z" duration="0.000743" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /tmp/cityforge-relief-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

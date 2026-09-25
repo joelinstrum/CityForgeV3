@@ -24,9 +24,10 @@ public class DistrictSurfaceCacheTests
         d.Roads.Clear();Assert.IsTrue(cache.Update(d).Any);
         d.Hills.Seed++;Assert.IsTrue(cache.Update(d).Full);
     }
-    [Test] public void IncrementalRiverAndRoadHeightsEqualFullRebuild()
+    [TestCase(45),TestCase(80)] public void IncrementalRiverAndRoadHeightsEqualFullRebuild(int reliefHeight)
     {
-        var d=District();var cache=new DistrictSurfaceCache();cache.Update(d);var elevation=new DistrictElevation(d);
+        var d=District();d.Hills.HeightMeters=reliefHeight;
+        var cache=new DistrictSurfaceCache();cache.Update(d);var elevation=new DistrictElevation(d);
         d.Rivers[0].Points[1].Z=.55f;var changes=cache.Update(d);
         elevation.RefreshLocal(d,changes.Areas);var rebuilt=new DistrictElevation(d);
         CollectionAssert.AreEqual(rebuilt.Heights,elevation.Heights);
