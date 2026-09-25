@@ -20,6 +20,13 @@ namespace CityForgeV3.World
         // 1x reproduces the rolling-hill relief before this presentation tune.
         // This only scales Y after the horizontal height field is sampled.
         public const float RollingHillVerticalScale = 1.30f;
+        // Fractions of the district's smaller span. The geometric-mean
+        // wavelength stays constant as anisotropy changes.
+        public const float RollingPrimaryWavelength = .805f;
+        public const float RollingPrimaryAnisotropy = 1.55f;
+        // Broad lateral displacement of primary coordinates, using the
+        // existing secondary field. Zero restores straight primary coordinates.
+        public const float RollingDomainWarpFraction = .18f;
         public readonly float Width, Depth;
         public readonly int Columns, Rows;
         public readonly float[] Heights;
@@ -182,11 +189,15 @@ namespace CityForgeV3.World
                 // objects. The long/short axes stretch features into ridges;
                 // the minor field bends them into shoulders and shallow saddles.
                 float scale=Mathf.Min(Width,Depth);
-                float u=(rollingDirection.x*p.x-rollingDirection.y*p.y)/(scale*1.35f)+rollingOffset.x;
-                float v=(rollingDirection.y*p.x+rollingDirection.x*p.y)/(scale*.48f)+rollingOffset.y;
                 float su=(rollingSecondaryDirection.x*p.x-rollingSecondaryDirection.y*p.y)/(scale*1.1f)+rollingSecondaryOffset.x;
                 float sv=(rollingSecondaryDirection.y*p.x+rollingSecondaryDirection.x*p.y)/(scale*.75f)+rollingSecondaryOffset.y;
-                float field=.84f*Mathf.PerlinNoise(u,v)+.16f*Mathf.PerlinNoise(su,sv);
+                float secondary=Mathf.PerlinNoise(su,sv);
+                float longAxis=scale*RollingPrimaryWavelength*RollingPrimaryAnisotropy;
+                float shortAxis=scale*RollingPrimaryWavelength/RollingPrimaryAnisotropy;
+                float u=(rollingDirection.x*p.x-rollingDirection.y*p.y)/longAxis+rollingOffset.x;
+                float v=(rollingDirection.y*p.x+rollingDirection.x*p.y
+                    +(secondary-.5f)*scale*RollingDomainWarpFraction)/shortAxis+rollingOffset.y;
+                float field=.84f*Mathf.PerlinNoise(u,v)+.16f*secondary;
                 // Coverage changes how much broad relief is present, never the
                 // number, position, or wavelength of discrete hill objects.
                 float low=Mathf.Lerp(.31f,.18f,rollingCoverage);
