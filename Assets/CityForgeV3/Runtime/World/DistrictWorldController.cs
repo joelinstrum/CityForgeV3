@@ -281,6 +281,9 @@ namespace CityForgeV3.World
         // Temporary district performance review switch. Set before building;
         // the standalone Lot editor and existing shadow tests keep their path.
         public bool ShowDistrictShadows { get; set; } = true;
+        // Temporary visual study for the saved hillside test district. Keeps
+        // Unity's realtime shadow casters disabled while showing batched trees.
+        public bool ShowTreeShadowPrototype { get; set; }
 
         // This is intentionally named as an expensive operation. Local edits
         // must use the cell/ID presentation APIs and local surface commits.
@@ -482,7 +485,8 @@ namespace CityForgeV3.World
                      new List<PlacedDistrictFlora>())
                 AddDistrictFloraPresentation(placed);
             PrepareForestSeason(district);
-            if (ShowDistrictShadows) UpdateDistrictFloraShadows();
+            if (ShowDistrictShadows || ShowTreeShadowPrototype)
+                UpdateDistrictFloraShadows();
             _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
             _floraBatches.Build(_districtFloraPresentations.Values, _camera);
             BuildDistrictFloraSelection(selectedInstanceId);
@@ -888,7 +892,8 @@ namespace CityForgeV3.World
                 item.transform.localPosition);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            if (ShowDistrictShadows && !StoneFloraCatalog.IsStone(placed.FloraId))
+            if ((ShowDistrictShadows || ShowTreeShadowPrototype) &&
+                !StoneFloraCatalog.IsStone(placed.FloraId))
                 BuildDistrictFloraShadow(item.transform, sprite);
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
@@ -956,7 +961,8 @@ namespace CityForgeV3.World
 
         private void UpdateDistrictFloraShadowsFor(IEnumerable<SpriteRenderer> renderers)
         {
-            if (!ShowDistrictShadows || _districtFloraRoot == null) return;
+            if ((!ShowDistrictShadows && !ShowTreeShadowPrototype) ||
+                _districtFloraRoot == null) return;
             if (_districtFloraShadowMaterial != null)
             {
                 _districtFloraShadowMaterial.SetMatrix("_DistrictWorldToLocal", _content.worldToLocalMatrix);
@@ -985,6 +991,11 @@ namespace CityForgeV3.World
                 if (shadow == null) continue;
                 shadow.enabled = visible;
                 if (!visible) continue;
+                if (ShowTreeShadowPrototype)
+                {
+                    UpdateSoftTreeShadowPrototype(visibleRenderer, shadow, ray);
+                    continue;
+                }
                 shadow.transform.localPosition = Vector3.zero;
                 shadow.transform.localRotation = Quaternion.identity;
                 shadow.transform.localScale = Vector3.one;
@@ -2638,7 +2649,7 @@ namespace CityForgeV3.World
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
             _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
-            if (changed && ShowDistrictShadows)
+            if (changed && (ShowDistrictShadows || ShowTreeShadowPrototype))
                 PrepareTimeOfDayPresentation();
         }
 

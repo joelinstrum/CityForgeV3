@@ -1641,6 +1641,8 @@ namespace CityForgeV3.UI
       }
       // Temporary shadow-free district pass for load/performance review.
       _districtWorld.ShowDistrictShadows = false;
+      _districtWorld.ShowTreeShadowPrototype = string.Equals(district.Name,
+          "Shadow DIstrict", StringComparison.OrdinalIgnoreCase);
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);
       _districtWorld.SetPan(_terraformPanOffset);

@@ -237,6 +237,64 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void SoftTreeShadowPrototypeBatchesTerrainMeshesWithoutRealtimeCasters()
+        {
+            var owner = new GameObject("Soft tree shadow prototype test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "soft-shadow-test", Width = 1, Height = 1,
+                    Founded = true,
+                    Hills = new DistrictHillSettings
+                    {
+                        Version = 2, Seed = 1209, HeightMeters = 35f,
+                        Coverage = .6f
+                    }
+                };
+                for (var index = 0; index < 20; index++)
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = "soft-shadow-" + index,
+                        FloraId = index % 2 == 0 ? "american-elm" :
+                            "forest-deciduous-compact",
+                        NormalizedX = .25f + index % 5 * .04f,
+                        NormalizedZ = .25f + index / 5 * .04f
+                    });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.ShowDistrictShadows = false;
+                world.ShowTreeShadowPrototype = true;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(20));
+                Assert.That(trees.All(renderer => renderer.shadowCastingMode ==
+                    UnityEngine.Rendering.ShadowCastingMode.Off), Is.True);
+                var shadows = trees.Select(renderer => renderer.transform.Find(
+                    "District Flora Shadow")?.GetComponent<MeshRenderer>())
+                    .ToArray();
+                Assert.That(shadows.All(shadow => shadow != null), Is.True);
+                Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
+                    .sharedMesh.vertexCount == 81), Is.True);
+                Assert.That(owner.GetComponentsInChildren<MeshRenderer>()
+                    .Count(renderer => renderer.name == "Flora shadow batch"),
+                    Is.GreaterThan(0));
+                world.SetTimeOfDay(TimeOfDayPreset.Morning);
+                var guard = 0;
+                do
+                {
+                    world.SyncTimeOfDayPresentation(20);
+                    Assert.That(++guard, Is.LessThan(20));
+                } while (world.TimeOfDayPresentationPending);
+                Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
+                    .sharedMesh.vertexCount == 81), Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
         public void FirAtlasSuppliesVariedIndividualAndMountainClumpTrees()
         {
             var owner = new GameObject("Fir atlas district test");
