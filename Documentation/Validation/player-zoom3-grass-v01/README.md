@@ -9,8 +9,8 @@ grain. This explains the smooth view.
 `LOD2` now uses the visible far-grass treatment: 0.15 distant filtering,
 full grain, 0.89 brightness, and 1.82 grain frequency. `LOD3` was restored to
 its earlier Zoom 4 settings (0.3 filtering, 0.6 grain, 0.94 brightness,
-unscaled grain frequency). The 75 m artwork registration and Zooms 5–6 are
-unchanged. No reference pixels or assets were copied from SimCity 4.
+unscaled grain frequency). The 75 m artwork registration and the farther LOD
+settings are unchanged. No reference pixels or assets were copied from SimCity 4.
 
 [`grass-player-zoom3.png`](grass-player-zoom3.png) is a 2048 × 1096 offscreen
 capture of a flat 4 × 4 district at the actual `LOD2` camera distance. It

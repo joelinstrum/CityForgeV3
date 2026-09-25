@@ -12,7 +12,7 @@ namespace CityForgeV3.World
             level >= DistrictZoomLevel.LOD2;
 
         // Keep the 75m artwork anchored to the world. Fully isotropic distant
-        // filtering erased its natural grain at player-facing Zooms 3-6.
+        // filtering erased its natural grain at Zoom 3 and farther.
         public static float DistrictGrassFilteringStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
