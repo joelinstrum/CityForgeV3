@@ -44,11 +44,11 @@ namespace CityForgeV3.Tests.EditMode
             }
             Debug.Log($"ROLLING HILLS seed={seed} samples={interior} flat={flat} maxStep={largestStep:F3} peak={Mathf.Max(h.Heights):F2}");
             Assert.That(flat,Is.GreaterThan(interior/12),"rolling terrain needs nearly flat space");
-            Assert.That(largestStep,Is.LessThan(2f),"adjacent five metre samples should form gentle slopes");
+            Assert.That(largestStep,Is.LessThan(2f*DistrictElevation.RollingHillVerticalScale),"adjacent five metre samples should form gentle slopes");
             Assert.That(Mathf.Max(h.Heights),Is.GreaterThan(8f));
         }
         [TestCase(2),TestCase(4)]
-        public void RequestedEightyMetresProducesEightyMetresOfMeshRelief(int districtSize)
+        public void RollingHillVerticalScaleOnlyExaggeratesMeshY(int districtSize)
         {
             var district=new RegionCityTile{Width=districtSize,Height=districtSize,
                 Hills=new(){Seed=1209,HeightMeters=80,Coverage=.4f,VerticalReliefScale=1f}};
@@ -56,12 +56,12 @@ namespace CityForgeV3.Tests.EditMode
             try
             {
                 Assert.That(mesh.bounds.min.y,Is.EqualTo(0).Within(.001f));
-                Assert.That(mesh.bounds.size.y,Is.EqualTo(80).Within(.01f));
+                Assert.That(mesh.bounds.size.y,Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
                 district.Hills.VerticalReliefScale=1.5f;
                 var scaled=new DistrictElevation(district);var scaledMesh=scaled.CreateMesh();
                 try
                 {
-                    Assert.That(scaledMesh.bounds.size.y,Is.EqualTo(120).Within(.02f));
+                    Assert.That(scaledMesh.bounds.size.y,Is.EqualTo(120*DistrictElevation.RollingHillVerticalScale).Within(.02f));
                     var original=mesh.vertices;var exaggerated=scaledMesh.vertices;
                     for(int i=0;i<original.Length;i+=Mathf.Max(1,original.Length/256))
                     {
@@ -75,7 +75,7 @@ namespace CityForgeV3.Tests.EditMode
                 var sixtyMesh=new DistrictElevation(district).CreateMesh();
                 try
                 {
-                    Assert.That(sixtyMesh.bounds.size.y,Is.EqualTo(60).Within(.02f));
+                    Assert.That(sixtyMesh.bounds.size.y,Is.EqualTo(60*DistrictElevation.RollingHillVerticalScale).Within(.02f));
                     var eighty=mesh.vertices;var sixty=sixtyMesh.vertices;
                     for(int i=0;i<eighty.Length;i+=Mathf.Max(1,eighty.Length/256))
                         Assert.That(eighty[i].y,Is.EqualTo(sixty[i].y*(80f/60f)).Within(.001f));
@@ -89,10 +89,10 @@ namespace CityForgeV3.Tests.EditMode
             var district=JsonUtility.FromJson<RegionCityTile>(
                 "{\"Width\":2,\"Height\":2,\"Hills\":{\"Seed\":1209,\"HeightMeters\":80,\"Coverage\":0.4}}");
             var mesh=new DistrictElevation(district).CreateMesh();
-            try{Assert.That(mesh.bounds.size.y,Is.EqualTo(80).Within(.01f));}
+            try{Assert.That(mesh.bounds.size.y,Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));}
             finally{Object.DestroyImmediate(mesh);}
         }
-        [Test] public void DistrictBuildPublishesMeasuredEightyMetreMesh()
+        [Test] public void DistrictBuildPublishesVerticallyExaggeratedMesh()
         {
             var host=new GameObject("Relief pipeline test");
             try
@@ -105,7 +105,7 @@ namespace CityForgeV3.Tests.EditMode
                 foreach(var filter in host.GetComponentsInChildren<MeshFilter>())
                     if(filter.sharedMesh?.name=="District Elevation")ground=filter.sharedMesh;
                 Assert.That(ground,Is.Not.Null);
-                Assert.That(ground.bounds.size.y,Is.EqualTo(80).Within(.01f));
+                Assert.That(ground.bounds.size.y,Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
             }
             finally{Object.DestroyImmediate(host);}
         }

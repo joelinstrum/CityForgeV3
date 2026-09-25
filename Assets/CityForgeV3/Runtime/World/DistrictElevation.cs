@@ -17,6 +17,9 @@ namespace CityForgeV3.World
     // Deterministic district relief. Existing roads, lots and water retain level corridors.
     public sealed class DistrictElevation
     {
+        // 1x reproduces the rolling-hill relief before this presentation tune.
+        // This only scales Y after the horizontal height field is sampled.
+        public const float RollingHillVerticalScale = 1.30f;
         public readonly float Width, Depth;
         public readonly int Columns, Rows;
         public readonly float[] Heights;
@@ -113,7 +116,7 @@ namespace CityForgeV3.World
                 // Calibrate the sampled field once. Clearance edits reuse this
                 // factor, so a local road or river change cannot rescale the
                 // rest of the district or change the horizontal hill shapes.
-                verticalCalibration=amplitude*verticalReliefScale/unconstrainedPeak;
+                verticalCalibration=amplitude*verticalReliefScale*RollingHillVerticalScale/unconstrainedPeak;
                 for(int i=0;i<Heights.Length;i++)Heights[i]*=verticalCalibration;
             }
         }

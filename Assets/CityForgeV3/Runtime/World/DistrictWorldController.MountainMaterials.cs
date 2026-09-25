@@ -104,6 +104,7 @@ namespace CityForgeV3.World
                 // its authored palette and avoid a second dry-patch system.
                 material.SetFloat("_GrassHueShift", 0f);
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
+                material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
                 material.SetFloat("_MeadowPatchStrength", 0f);
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
@@ -122,5 +123,10 @@ namespace CityForgeV3.World
             material.SetTexture("_ShaleTex", shale);
             material.SetFloat("_RockEnabled", rock != null && shale != null ? 1 : 0);
         }
+
+        // Fraction of the darkest slope lighting deficit restored toward level
+        // grass. The higher value also offsets darker normals from the 1.3x Y
+        // exaggeration; it leaves neutral terrain and highlights unchanged.
+        public const float RollingHillDarkSlopeLift = .5f;
     }
 }

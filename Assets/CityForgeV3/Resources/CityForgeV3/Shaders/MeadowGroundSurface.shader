@@ -14,6 +14,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _FarGrassBrightness ("Far grass brightness", Range(0,1)) = 1
         _FarGrassGrainFrequency ("Far grass grain frequency", Range(.5,3)) = 1
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
+        _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
     }
 
     SubShader
@@ -70,6 +71,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _FarGrassGrainFrequency;
             float _GrassDetailMipScale;
             float _GrassHueShift;
+            float _RollingHillDarkSlopeLift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
 
@@ -143,6 +145,17 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 normal=normalize(fixed3(normal.x*3.0,normal.y,normal.z*3.0));
                 #endif
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
+                #if defined(HILL_MEADOW)
+                // Lift only slopes substantially darker than level grass under
+                // the same light and shadow. Neutral ground and highlights stay
+                // at their existing values; no colour is painted onto the hill.
+                fixed3 levelIllumination=CityForgeWorldLighting(fixed3(0,1,0),shadow);
+                float levelValue=dot(levelIllumination,float3(.2126,.7152,.0722));
+                float slopeValue=dot(illumination,float3(.2126,.7152,.0722));
+                float darkness=saturate((levelValue-slopeValue)/max(levelValue,.001));
+                illumination=lerp(illumination,levelIllumination,
+                    _RollingHillDarkSlopeLift*smoothstep(.03,.12,darkness));
+                #endif
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
