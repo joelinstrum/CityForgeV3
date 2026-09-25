@@ -256,8 +256,14 @@ namespace CityForgeV3.Tests.EditMode
                     district.Flora.Add(new PlacedDistrictFlora
                     {
                         InstanceId = "soft-shadow-" + index,
-                        FloraId = index % 2 == 0 ? "american-elm" :
-                            "forest-deciduous-compact",
+                        FloraId = (index % 5) switch
+                        {
+                            0 => "american-elm",
+                            1 => "forest-deciduous-compact",
+                            2 => "forest-deciduous-large",
+                            3 => "forest-mountain-compact",
+                            _ => "forest-mountain-large"
+                        },
                         NormalizedX = .25f + index % 5 * .04f,
                         NormalizedZ = .25f + index / 5 * .04f
                     });
@@ -278,6 +284,20 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(shadows.All(shadow => shadow != null), Is.True);
                 Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
                     .sharedMesh.vertexCount == 81), Is.True);
+                float ShadowWidth(string id)
+                {
+                    var tree = trees.First(renderer => renderer.name ==
+                        "District Flora — " + id);
+                    var shadow = tree.transform.Find("District Flora Shadow");
+                    var vertices = shadow.GetComponent<MeshFilter>()
+                        .sharedMesh.vertices;
+                    return Vector3.Distance(shadow.TransformPoint(vertices[0]),
+                        shadow.TransformPoint(vertices[8]));
+                }
+                Assert.That(ShadowWidth("forest-deciduous-large"),
+                    Is.GreaterThan(ShadowWidth("forest-deciduous-compact") * 1.3f));
+                Assert.That(ShadowWidth("forest-mountain-large"),
+                    Is.GreaterThan(ShadowWidth("forest-mountain-compact") * 1.3f));
                 Assert.That(owner.GetComponentsInChildren<MeshRenderer>()
                     .Count(renderer => renderer.name == "Flora shadow batch"),
                     Is.GreaterThan(0));

@@ -10,9 +10,9 @@ namespace CityForgeV3.World
         const int ShadowAlong = 8;
         Texture2D _softTreeShadowTexture;
 
-        // The saved hillside study uses one soft mask and a terrain-following
-        // grid per tree. The existing flora batch combines their meshes, so
-        // the trial adds no per-tree draw call or realtime shadow caster.
+        // The hillside study uses one soft mask and a terrain-following grid
+        // per scenery handle. A grouped tree gets one full-footprint shadow,
+        // while the existing flora batch combines handles into shared draws.
         void UpdateSoftTreeShadowPrototype(SpriteRenderer tree,
             MeshRenderer shadow, Vector3 sunRay)
         {
@@ -32,8 +32,20 @@ namespace CityForgeV3.World
                 ? horizontal.normalized : Vector3.forward;
             var size = tree.sprite.bounds.size;
             var scale = tree.transform.lossyScale;
-            var canopyWidth = Mathf.Clamp(size.x * scale.x * .72f, 6f, 24f);
-            var treeHeight = Mathf.Clamp(size.y * scale.y, 5f, 30f);
+            var atlas = tree.GetComponent<ForestTrueAngleCluster>();
+            var grouped = atlas != null && atlas.PieceCount > 1;
+            var otherCluster = atlas == null &&
+                ForestClusterCatalog.IsTexture(tree.sprite.texture.name);
+            // True-angle roots show only one source tree, so their sprite
+            // bounds cannot describe the whole cluster. Other cluster art is
+            // already composed in one sprite but needs its full width kept.
+            var canopyWidth = grouped
+                ? Mathf.Clamp(atlas.EnvelopeWidth * scale.x, 15f, 64f)
+                : otherCluster
+                    ? Mathf.Clamp(size.x * scale.x * .9f, 12f, 64f)
+                    : Mathf.Clamp(size.x * scale.x * .72f, 6f, 24f);
+            var treeHeight = Mathf.Clamp((grouped ? atlas.TreeHeight : size.y) *
+                scale.y, 5f, 30f);
             var travel = treeHeight * horizontal.magnitude /
                 Mathf.Max(.22f, -sunRay.y);
             var length = Mathf.Clamp(canopyWidth * .45f + travel * .62f,
