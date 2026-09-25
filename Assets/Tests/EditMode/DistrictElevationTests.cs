@@ -30,22 +30,42 @@ namespace CityForgeV3.Tests.EditMode
             finally{Object.DestroyImmediate(mesh);}
         }
         [TestCase(123),TestCase(1209),TestCase(42)]
-        public void RollingHillsKeepLongSlopesAndFlatBreathingRoom(int seed)
+        public void ContinuousRollingFieldKeepsLongSlopesAndCalmAreas(int seed)
         {
             var d=new RegionCityTile{Hills=new(){Seed=seed,HeightMeters=35,Coverage=.7f}};
             var h=new DistrictElevation(d);
-            int flat=0,interior=0;float largestStep=0;
+            int gentle=0,raised=0,interior=0;float largestStep=0;
             for(int z=20;z<h.Rows-20;z++)for(int x=20;x<h.Columns-20;x++)
             {
-                int i=z*(h.Columns+1)+x;float elevation=h.Heights[i];
-                if(elevation<1)flat++;
+                int i=z*(h.Columns+1)+x;
+                float step=Mathf.Max(Mathf.Abs(h.Heights[i]-h.Heights[i+1]),
+                    Mathf.Abs(h.Heights[i]-h.Heights[i+h.Columns+1]));
+                if(step<.25f)gentle++;
+                if(h.Heights[i]>1f)raised++;
                 interior++;
-                largestStep=Mathf.Max(largestStep,Mathf.Abs(elevation-h.Heights[i+1]));
+                largestStep=Mathf.Max(largestStep,step);
             }
-            Debug.Log($"ROLLING HILLS seed={seed} samples={interior} flat={flat} maxStep={largestStep:F3} peak={Mathf.Max(h.Heights):F2}");
-            Assert.That(flat,Is.GreaterThan(interior/12),"rolling terrain needs nearly flat space");
+            Debug.Log($"ROLLING FIELD seed={seed} samples={interior} gentle={gentle} raised={raised} maxStep={largestStep:F3} peak={Mathf.Max(h.Heights):F2}");
+            Assert.That(gentle,Is.GreaterThan(interior/5),"rolling terrain needs substantial gently sloped space");
+            Assert.That(raised,Is.GreaterThan(interior*2/3),"broad rises should remain connected through shallow valleys");
             Assert.That(largestStep,Is.LessThan(2f*DistrictElevation.RollingHillVerticalScale),"adjacent five metre samples should form gentle slopes");
             Assert.That(Mathf.Max(h.Heights),Is.GreaterThan(8f));
+        }
+        [TestCase(123),TestCase(1209),TestCase(42)]
+        public void CoverageChangesBroadReliefPrevalenceWithoutChangingPeak(int seed)
+        {
+            var district=new RegionCityTile{Hills=new(){Seed=seed,HeightMeters=80,Coverage=.2f}};
+            var sparse=new DistrictElevation(district);
+            district.Hills.Coverage=.8f;
+            var prevalent=new DistrictElevation(district);
+            float sparseMean=0,prevalentMean=0;
+            for(int i=0;i<sparse.Heights.Length;i++)
+            {
+                sparseMean+=sparse.Heights[i];prevalentMean+=prevalent.Heights[i];
+            }
+            Assert.That(prevalentMean,Is.GreaterThan(sparseMean));
+            Assert.That(Mathf.Max(sparse.Heights),Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
+            Assert.That(Mathf.Max(prevalent.Heights),Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
         }
         [TestCase(2),TestCase(4)]
         public void RollingHillVerticalScaleOnlyExaggeratesMeshY(int districtSize)

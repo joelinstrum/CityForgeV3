@@ -27,8 +27,9 @@ namespace CityForgeV3.World
         readonly DistrictSpatialIndex<int> padIndex=new(),channelIndex=new();
         private readonly List<(Vector2 a, Vector2 b, float radius)> channels = new();
         private readonly List<Vector3> hills = new();
-        private readonly List<Vector4> rollingShapes = new();
-        private readonly List<Vector2> rollingDirections = new();
+        private readonly Vector2 rollingDirection,rollingSecondaryDirection;
+        private readonly Vector2 rollingOffset,rollingSecondaryOffset;
+        private readonly float rollingCoverage;
         private readonly float amplitude;
         private readonly float clearanceFadeMeters;
         private float verticalCalibration = 1f;
@@ -55,35 +56,25 @@ namespace CityForgeV3.World
                 ? 1f : Mathf.Clamp(settings.VerticalReliefScale,.25f,4f);
             if(amplitude<=0)return;
             var random=new System.Random(settings.Seed);
-            int count=Mathf.RoundToInt(Mathf.Lerp(mountains?3:2,mountains?14:5,Mathf.Clamp01(settings.Coverage)));
-            for(int i=0;i<count;i++)
+            if(!mountains)
             {
-                float x=(float)(random.NextDouble()-.5)*Width*.8f;
-                float z=(float)(random.NextDouble()-.5)*Depth*.8f;
-                if(!mountains && i<2)
+                rollingCoverage=Mathf.Clamp01(settings.Coverage);
+                float angle=(float)random.NextDouble()*Mathf.PI*2;
+                rollingDirection=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle));
+                float secondaryAngle=angle+.55f+(float)random.NextDouble()*.45f;
+                rollingSecondaryDirection=new Vector2(Mathf.Cos(secondaryAngle),Mathf.Sin(secondaryAngle));
+                rollingOffset=new Vector2(13f+(float)random.NextDouble()*997f,29f+(float)random.NextDouble()*997f);
+                rollingSecondaryOffset=new Vector2(41f+(float)random.NextDouble()*997f,73f+(float)random.NextDouble()*997f);
+            }
+            else
+            {
+                int count=Mathf.RoundToInt(Mathf.Lerp(3,14,Mathf.Clamp01(settings.Coverage)));
+                for(int i=0;i<count;i++)
                 {
-                    x=(i==0?-1:1)*Width*Mathf.Lerp(.10f,.30f,(float)random.NextDouble());
-                    z=(float)(random.NextDouble()-.5)*Depth*.5f;
-                }
-                float radius=mountains?Mathf.Lerp(90,140,(float)random.NextDouble())
-                    :Mathf.Min(Width,Depth)*Mathf.Lerp(.25f,.38f,(float)random.NextDouble());
-                if(!mountains && i>=2)
-                {
-                    // Pair later crests with an earlier broad form. The
-                    // overlap reads as a rolling landmass, leaving open ground.
-                    var anchor=hills[i%2];
-                    x=Mathf.Clamp(anchor.x+(float)(random.NextDouble()-.5)*radius*1.5f,-Width*.38f,Width*.38f);
-                    z=Mathf.Clamp(anchor.y+(float)(random.NextDouble()-.5)*radius*1.5f,-Depth*.38f,Depth*.38f);
-                }
-                hills.Add(new Vector3(x,z,radius));
-                if(!mountains)
-                {
-                    float strength=Mathf.Lerp(.65f,1.05f,(float)random.NextDouble());
-                    float longAxis=Mathf.Lerp(.8f,1.55f,(float)random.NextDouble());
-                    float shortAxis=Mathf.Lerp(.65f,1.25f,(float)random.NextDouble());
-                    float angle=(float)random.NextDouble()*Mathf.PI*2;
-                    rollingShapes.Add(new Vector4(strength,longAxis,shortAxis,angle));
-                    rollingDirections.Add(new Vector2(Mathf.Cos(angle),Mathf.Sin(angle)));
+                    float x=(float)(random.NextDouble()-.5)*Width*.8f;
+                    float z=(float)(random.NextDouble()-.5)*Depth*.8f;
+                    float radius=Mathf.Lerp(90,140,(float)random.NextDouble());
+                    hills.Add(new Vector3(x,z,radius));
                 }
             }
             if(connectedMountains)
@@ -115,7 +106,7 @@ namespace CityForgeV3.World
             {
                 // Calibrate the sampled field once. Clearance edits reuse this
                 // factor, so a local road or river change cannot rescale the
-                // rest of the district or change the horizontal hill shapes.
+                // rest of the district or change the horizontal field.
                 verticalCalibration=amplitude*verticalReliefScale*RollingHillVerticalScale/unconstrainedPeak;
                 for(int i=0;i<Heights.Length;i++)Heights[i]*=verticalCalibration;
             }
@@ -178,38 +169,29 @@ namespace CityForgeV3.World
         }
         private float Generate(Vector2 p,out float unconstrainedHeight)
         {
-            float h=0,shoulderSum=0,shoulderSquares=0;
-            for(int i=0;i<hills.Count;i++)
+            float h=0;
+            if(mountains)for(int i=0;i<hills.Count;i++)
             {
                 var hill=hills[i];
-                float distance;
-                if(mountains)distance=Vector2.Distance(p,new Vector2(hill.x,hill.y))/hill.z;
-                else
-                {
-                    var shape=rollingShapes[i];var delta=p-new Vector2(hill.x,hill.y);
-                    float c=rollingDirections[i].x,s=rollingDirections[i].y;
-                    float x=(c*delta.x-s*delta.y)/(hill.z*shape.y);
-                    float z=(s*delta.x+c*delta.y)/(hill.z*shape.z);
-                    distance=Mathf.Sqrt(x*x+z*z);
-                }
-                if(mountains)
-                {
-                    if(distance<1)h=Mathf.Max(h,1-distance);
-                }
-                else if(distance<1.7f)
-                {
-                    // Keep each existing crest and add a broad, low influence.
-                    // Only the overlap between influences becomes a shoulder,
-                    // retaining nearly flat space away from paired forms.
-                    float core=Mathf.Max(0,1-distance*distance);
-                    float shoulder=1-distance*distance/(1.7f*1.7f);
-                    h+=rollingShapes[i].x*core*core*core;
-                    float broad=rollingShapes[i].x*shoulder*shoulder*shoulder;
-                    shoulderSum+=broad;
-                    shoulderSquares+=broad*broad;
-                }
+                float distance=Vector2.Distance(p,new Vector2(hill.x,hill.y))/hill.z;
+                if(distance<1)h=Mathf.Max(h,1-distance);
             }
-            if(!mountains)h+=2.5f*Mathf.Max(0,shoulderSum*shoulderSum-shoulderSquares);
+            if(!mountains)
+            {
+                // Two continuous, kilometre-scale fields replace bounded hill
+                // objects. The long/short axes stretch features into ridges;
+                // the minor field bends them into shoulders and shallow saddles.
+                float scale=Mathf.Min(Width,Depth);
+                float u=(rollingDirection.x*p.x-rollingDirection.y*p.y)/(scale*1.35f)+rollingOffset.x;
+                float v=(rollingDirection.y*p.x+rollingDirection.x*p.y)/(scale*.48f)+rollingOffset.y;
+                float su=(rollingSecondaryDirection.x*p.x-rollingSecondaryDirection.y*p.y)/(scale*1.1f)+rollingSecondaryOffset.x;
+                float sv=(rollingSecondaryDirection.y*p.x+rollingSecondaryDirection.x*p.y)/(scale*.75f)+rollingSecondaryOffset.y;
+                float field=.84f*Mathf.PerlinNoise(u,v)+.16f*Mathf.PerlinNoise(su,sv);
+                // Coverage changes how much broad relief is present, never the
+                // number, position, or wavelength of discrete hill objects.
+                float low=Mathf.Lerp(.31f,.18f,rollingCoverage);
+                h=Mathf.SmoothStep(0,1,Mathf.InverseLerp(low,.78f,field));
+            }
             if(connectedMountains)
             {
                 float range=RangeHeight(p);
