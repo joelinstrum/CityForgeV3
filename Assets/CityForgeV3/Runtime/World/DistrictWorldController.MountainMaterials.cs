@@ -9,14 +9,15 @@ namespace CityForgeV3.World
             => DistrictGrassTextureWorldSizeMeters;
 
         public static bool DistrictGrassUsesSmoothFiltering(DistrictZoomLevel level) =>
-            level >= DistrictZoomLevel.LOD2;
+            level >= DistrictZoomLevel.LOD3;
 
-        // Keep the 75m artwork anchored to the world. Fully isotropic distant
-        // filtering erased its natural grain at Zoom 3 and farther.
+        // Zoom 3 keeps Zoom 2's unfiltered texture and base brightness, with
+        // separate world-anchored grain to retain detail at its farther camera.
+        // Farther zooms retain their calibrated filtering.
         public static float DistrictGrassFilteringStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD2 => .15f,
+            DistrictZoomLevel.LOD2 => 0f,
             DistrictZoomLevel.LOD3 => .3f,
             DistrictZoomLevel.LOD4 => .2f,
             DistrictZoomLevel.LOD5Billboard => .15f,
@@ -36,7 +37,7 @@ namespace CityForgeV3.World
         public static float DistrictGrassBrightnessForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD2 => .89f,
+            DistrictZoomLevel.LOD2 => 1f,
             DistrictZoomLevel.LOD3 => .94f,
             DistrictZoomLevel.LOD4 => .91f,
             DistrictZoomLevel.LOD5Billboard => .89f,
