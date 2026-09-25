@@ -54,26 +54,26 @@ namespace CityForgeV3.Tests
         }
 
         [TestCase(5f, 500f, 1, 0)]
-        [TestCase(12f, 500f, 1, 0)]
-        [TestCase(13f, 500f, 0, 0)]
-        [TestCase(987f, 500f, 0, 0)]
-        [TestCase(988f, 500f, -1, 0)]
+        [TestCase(48f, 500f, 1, 0)]
+        [TestCase(49f, 500f, 0, 0)]
+        [TestCase(951f, 500f, 0, 0)]
+        [TestCase(952f, 500f, -1, 0)]
         [TestCase(995f, 500f, -1, 0)]
         [TestCase(500f, 5f, 0, -1)]
-        [TestCase(500f, 12f, 0, -1)]
-        [TestCase(500f, 13f, 0, 0)]
-        [TestCase(500f, 988f, 0, 1)]
+        [TestCase(500f, 48f, 0, -1)]
+        [TestCase(500f, 49f, 0, 0)]
+        [TestCase(500f, 952f, 0, 1)]
         [TestCase(500f, 995f, 0, 1)]
-        [TestCase(5f, 5f, 0, 0)]
-        [TestCase(995f, 5f, 0, 0)]
-        [TestCase(5f, 995f, 0, 0)]
-        [TestCase(995f, 995f, 0, 0)]
+        [TestCase(5f, 5f, 1, -1)]
+        [TestCase(995f, 5f, -1, -1)]
+        [TestCase(5f, 995f, 1, 1)]
+        [TestCase(995f, 995f, -1, 1)]
         [TestCase(500f, 500f, 0, 0)]
         [TestCase(-1f, 500f, 0, 0)]
         [TestCase(1001f, 500f, 0, 0)]
         [TestCase(500f, -1f, 0, 0)]
         [TestCase(500f, 1001f, 0, 0)]
-        public void DistrictEdgePanUsesNarrowPixelStripsAndExcludesCorners(float x, float y, int dx, int dy)
+        public void DistrictEdgePanMatchesBorderIncludingCorners(float x, float y, int dx, int dy)
         {
             Assert.That(DistrictZoom.EdgePanWorldMotion(new Vector2(x, y),
                 new Vector2(1000f, 1000f)), Is.EqualTo(new Vector2Int(dx, dy)));
@@ -85,9 +85,9 @@ namespace CityForgeV3.Tests
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(600f, DistrictZoomLevel.LOD4),
                 Is.EqualTo(144f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(60f, DistrictZoomLevel.LOD0),
-                Is.EqualTo(20.16f).Within(.001f));
+                Is.EqualTo(30.24f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(60f, DistrictZoomLevel.LOD2),
-                Is.EqualTo(20.16f).Within(.001f));
+                Is.EqualTo(30.24f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(60f, DistrictZoomLevel.LOD3),
                 Is.EqualTo(14.4f).Within(.001f));
             Assert.That(DistrictZoom.EdgePanSpeedMetersPerSecond(-1f, DistrictZoomLevel.LOD0), Is.Zero);
@@ -1957,12 +1957,12 @@ namespace CityForgeV3.Tests
             Assert.That(DistrictZoom.PanStepMeters(DistrictZoomLevel.LOD2),
                 Is.LessThan(DistrictZoom.PanStepMeters(DistrictZoomLevel.LOD4)));
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD0),
-                Is.EqualTo(0.49f));
+                Is.EqualTo(0.735f));
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD1),
-                Is.EqualTo(0.735f),
-                "Zoom 2 is 40% faster than its previous fine-control rate.");
+                Is.EqualTo(1.1025f),
+                "Zoom 2 is 50% faster than its previous fine-control rate.");
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD2),
-                Is.EqualTo(1.82f), "Zoom 3 is 40% faster than its previous pan rate.");
+                Is.EqualTo(2.73f), "Zoom 3 is 50% faster than its previous pan rate.");
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD3),
                 Is.EqualTo(0.18f));
             Assert.That(DistrictZoom.PanSpeedScale(DistrictZoomLevel.LOD4),

@@ -2867,7 +2867,7 @@ namespace CityForgeV3.UI
           (_terraformZoomLevel == DistrictZoomLevel.LOD0 ? 3f : 2f) *
           DistrictZoom.PanSpeedScale(_terraformZoomLevel);
       // Every stop has its own perceived-speed calibration. In particular,
-      // player-facing Zooms 4–6 are intentionally slower than close inspection
+      // distant camera stops are intentionally slower than close inspection
       // for both edge hovering and arrow keys.
       var horizontalWorldMotion = 0;
       var verticalWorldMotion = 0;
