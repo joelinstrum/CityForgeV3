@@ -34,7 +34,7 @@ namespace CityForgeV3.Tests.EditMode
         {
             var d=new RegionCityTile{Hills=new(){Seed=seed,HeightMeters=35,Coverage=.7f}};
             var h=new DistrictElevation(d);
-            int gentle=0,raised=0,interior=0;float largestStep=0;
+            int gentle=0,raised=0,interior=0,maxX=0,maxZ=0;float largestStep=0;
             for(int z=20;z<h.Rows-20;z++)for(int x=20;x<h.Columns-20;x++)
             {
                 int i=z*(h.Columns+1)+x;
@@ -43,9 +43,9 @@ namespace CityForgeV3.Tests.EditMode
                 if(step<.25f)gentle++;
                 if(h.Heights[i]>1f)raised++;
                 interior++;
-                largestStep=Mathf.Max(largestStep,step);
+                if(step>largestStep){largestStep=step;maxX=x;maxZ=z;}
             }
-            Debug.Log($"ROLLING FIELD seed={seed} samples={interior} gentle={gentle} raised={raised} maxStep={largestStep:F3} peak={Mathf.Max(h.Heights):F2}");
+            Debug.Log($"ROLLING FIELD seed={seed} samples={interior} gentle={gentle} raised={raised} maxStep={largestStep:F3} at=({maxX},{maxZ}) peak={Mathf.Max(h.Heights):F2}");
             Assert.That(gentle,Is.GreaterThan(interior/5),"rolling terrain needs substantial gently sloped space");
             Assert.That(raised,Is.GreaterThan(interior*2/3),"broad rises should remain connected through shallow valleys");
             Assert.That(largestStep,Is.LessThan(2f*DistrictElevation.RollingHillVerticalScale),"adjacent five metre samples should form gentle slopes");
@@ -66,6 +66,30 @@ namespace CityForgeV3.Tests.EditMode
             Assert.That(prevalentMean,Is.GreaterThan(sparseMean));
             Assert.That(Mathf.Max(sparse.Heights),Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
             Assert.That(Mathf.Max(prevalent.Heights),Is.EqualTo(80*DistrictElevation.RollingHillVerticalScale).Within(.01f));
+        }
+        [Test] public void Seed150CoverageControlsOccupiedTerrainArea()
+        {
+            var district=new RegionCityTile{Hills=new(){Seed=150,HeightMeters=35,
+                Coverage=.1f,VerticalReliefScale=1f}};
+            var low=new DistrictElevation(district);
+            district.Hills.Coverage=.4f;
+            var moderate=new DistrictElevation(district);
+            int lowRaised=0,moderateRaised=0,lowFlat=0,moderateFlat=0;
+            for(int i=0;i<low.Heights.Length;i++)
+            {
+                if(low.Heights[i]>5)lowRaised++;
+                if(moderate.Heights[i]>5)moderateRaised++;
+                if(low.Heights[i]<.1f)lowFlat++;
+                if(moderate.Heights[i]<.1f)moderateFlat++;
+            }
+            float count=low.Heights.Length;
+            Assert.That(lowRaised/count,Is.LessThan(.25f));
+            Assert.That(lowFlat/count,Is.GreaterThan(.6f));
+            Assert.That(moderateRaised/count,Is.GreaterThan(.4f));
+            Assert.That(moderateRaised-lowRaised,Is.GreaterThan(count*.2f));
+            Assert.That(moderateFlat/count,Is.GreaterThan(.2f));
+            Assert.That(Mathf.Max(low.Heights),Is.EqualTo(35*DistrictElevation.RollingHillVerticalScale).Within(.01f));
+            Assert.That(Mathf.Max(moderate.Heights),Is.EqualTo(35*DistrictElevation.RollingHillVerticalScale).Within(.01f));
         }
         [TestCase(2),TestCase(4)]
         public void RollingHillVerticalScaleOnlyExaggeratesMeshY(int districtSize)
