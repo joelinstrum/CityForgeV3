@@ -6,6 +6,7 @@ namespace CityForgeV3.World
     public sealed partial class DistrictWorldController
     {
         readonly Dictionary<string, SpriteRenderer> _forestClusters = new();
+        readonly Dictionary<string, SpriteRenderer> _shadowedDistrictFlora = new();
         SeasonPreset _forestSeason = SeasonPreset.Summer;
         public SeasonPreset ForestSeason => _forestSeason;
 
@@ -41,20 +42,27 @@ namespace CityForgeV3.World
                 _pendingTimeOfDayShadows = null;
                 return;
             }
+            // Track shadow-bearing handles incrementally. Individual trees
+            // should neither receive prototype shadows nor occupy update slots.
+            if (_shadowedDistrictFlora.Count == 0)
+            {
+                _pendingTimeOfDayShadows = null;
+                return;
+            }
             if (ShowTreeShadowPrototype &&
-                _districtFloraPresentations.Count <= InstantTreeShadowPrototypeLimit)
+                _shadowedDistrictFlora.Count <= InstantTreeShadowPrototypeLimit)
             {
                 // This study district has a small, explicit tree set. Switch
                 // every source and its existing shadow batches in one frame;
                 // the legacy staged path made a cheap update look slow.
                 _pendingTimeOfDayShadows = null;
-                UpdateDistrictFloraShadowsFor(_districtFloraPresentations.Values);
+                UpdateDistrictFloraShadowsFor(_shadowedDistrictFlora.Values);
                 _floraBatches?.RefreshShadowMeshes();
                 return;
             }
             _pendingTimeOfDayShadows = new SpriteRenderer[
-                _districtFloraPresentations.Count];
-            _districtFloraPresentations.Values.CopyTo(
+                _shadowedDistrictFlora.Count];
+            _shadowedDistrictFlora.Values.CopyTo(
                 _pendingTimeOfDayShadows, 0);
         }
 

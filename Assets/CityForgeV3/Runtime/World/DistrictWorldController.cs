@@ -475,6 +475,7 @@ namespace CityForgeV3.World
                 else DestroyImmediate(old);
             }
             _districtFloraPresentations.Clear();
+            _shadowedDistrictFlora.Clear();
             _forestClusters.Clear();
             _forestAppearancePending = false;
             _pendingTimeOfDayShadows = null;
@@ -892,9 +893,16 @@ namespace CityForgeV3.World
                 item.transform.localPosition);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            if ((ShowDistrictShadows || ShowTreeShadowPrototype) &&
-                !StoneFloraCatalog.IsStone(placed.FloraId))
+            var hasShadow = (ShowDistrictShadows ||
+                 (ShowTreeShadowPrototype &&
+                  ForestClusterCatalog.IsCluster(placed.FloraId))) &&
+                !StoneFloraCatalog.IsStone(placed.FloraId);
+            if (hasShadow)
+            {
                 BuildDistrictFloraShadow(item.transform, sprite);
+                if (item.transform.Find("District Flora Shadow") != null)
+                    _shadowedDistrictFlora[placed.InstanceId] = renderer;
+            }
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
                 presentationId == "american-elm" ||
@@ -2972,6 +2980,7 @@ namespace CityForgeV3.World
             _riverSurfaces.Clear();
             _riverSurfaceIndex.Clear();
             _districtFloraPresentations.Clear();
+            _shadowedDistrictFlora.Clear();
             _forestClusters.Clear();
             _forestAppearancePending = false;
             _districtSelectionRoot = null;

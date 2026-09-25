@@ -281,9 +281,16 @@ namespace CityForgeV3.Tests.EditMode
                 var shadows = trees.Select(renderer => renderer.transform.Find(
                     "District Flora Shadow")?.GetComponent<MeshRenderer>())
                     .ToArray();
-                Assert.That(shadows.All(shadow => shadow != null), Is.True);
-                Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
-                    .sharedMesh.vertexCount == 81), Is.True);
+                Assert.That(trees.Where(renderer => renderer.name ==
+                    "District Flora — american-elm").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow") == null),
+                    Is.True,
+                    "Individual elms should not have prototype shadows.");
+                Assert.That(trees.Where(renderer => renderer.name !=
+                    "District Flora — american-elm").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow")?
+                        .GetComponent<MeshFilter>().sharedMesh.vertexCount == 81),
+                    Is.True);
                 float ShadowWidth(string id)
                 {
                     var tree = trees.First(renderer => renderer.name ==
@@ -315,14 +322,63 @@ namespace CityForgeV3.Tests.EditMode
                 Assert.That(batchMeshes.Select((mesh, index) => mesh.vertices
                     .Where((vertex, offset) => (vertex - noonVertices[index][offset])
                         .sqrMagnitude > .0001f).Any()).Any(), Is.True);
-                Assert.That(shadows.All(shadow => shadow.GetComponent<MeshFilter>()
-                    .sharedMesh.vertexCount == 81), Is.True);
+                Assert.That(shadows.Where(shadow => shadow != null)
+                    .All(shadow => shadow.GetComponent<MeshFilter>()
+                        .sharedMesh.vertexCount == 81), Is.True);
                 world.SetTimeOfDay(TimeOfDayPreset.Night);
                 Assert.That(world.TimeOfDayPresentationPending, Is.False);
                 Assert.That(batches.All(renderer => !renderer.enabled), Is.True);
                 world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
                 Assert.That(world.TimeOfDayPresentationPending, Is.False);
                 Assert.That(batches.All(renderer => renderer.enabled), Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void PrototypeTimeChangeSkipsIndividualTreesInDenseFlora()
+        {
+            var owner = new GameObject("Grouped shadow isolation test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "grouped-shadow-only", Width = 1, Height = 1,
+                    Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+                };
+                for (var index = 0; index < 70; index++)
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = "fir-" + index,
+                        FloraId = "cilician-fir",
+                        NormalizedX = .1f + index % 10 * .08f,
+                        NormalizedZ = .1f + index / 10 * .1f
+                    });
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "cluster", FloraId = "forest-mountain-compact",
+                    NormalizedX = .5f, NormalizedZ = .5f
+                });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.ShowDistrictShadows = false;
+                world.ShowTreeShadowPrototype = true;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(71));
+                Assert.That(trees.Where(renderer => renderer.name ==
+                    "District Flora — cilician-fir").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow") == null),
+                    Is.True);
+                Assert.That(trees.Single(renderer => renderer.name ==
+                    "District Flora — forest-mountain-compact").transform.Find(
+                        "District Flora Shadow"), Is.Not.Null);
+
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False,
+                    "Only the grouped tree should need a shadow update.");
             }
             finally { Object.DestroyImmediate(owner); }
         }
