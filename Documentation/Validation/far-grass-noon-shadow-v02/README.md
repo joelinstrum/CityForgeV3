@@ -11,7 +11,9 @@ The supplied reference has fine, relatively even stipple over muted dark olive
 variation. The prior zoom 4–5 capture showed larger soft mottling. The far
 meadow's existing two world-anchored noise frequencies are now 2 m and 13 m
 (previously 8 m and 33 m), with the broader noise contribution halved. Zooms
-3, 4, and 5 darken the grass brightness by 6%, 9%, and 11%, respectively.
+3, 4, and 5 darken the grass brightness by 11%, 9%, and 11%, respectively.
+Zoom 3 also uses 1.82 times the grain frequency so the closer camera shows
+a similar apparent stipple size.
 The hue, 75 m artwork registration, and mountain material are unchanged.
 
 The noon shadow's 0.8 projection scale was retained. In isolated zoom 1, 2,
@@ -25,6 +27,7 @@ on the V3 project was not driven or restarted. Grass captures suppress flora
 batches to show terrain; shadow captures include the two-tree fixture.
 
 - `grass-zoom-3.png`, `grass-zoom-4.png`, `grass-zoom-5.png`
+- `grass-zoom-3-before-followup.png` preserves the earlier, weaker zoom 3 view
 - `shadow-zoom-1.png`, `shadow-zoom-2.png`, `shadow-zoom-3.png`
 
 ## Validation and limits
@@ -48,3 +51,19 @@ batches to show terrain; shadow captures include the two-tree fixture.
   submission check does not establish GPU cost or long-duration frame stability.
 
 Interactive review in Joe's open Unity editor remains for Joe to perform.
+
+## Zoom 3 follow-up
+
+Joe liked the zoom 4–5 improvement but found zoom 3 nearly unchanged. Zoom 3
+now uses the same 0.15 filtering, full grain strength, and 0.89 brightness as
+zoom 5. Its grain frequency is 1.82 times higher in world space because the
+closer camera otherwise makes the noise look coarser. The changed view was
+re-rendered in the isolated fixture and compared with the retained before
+capture; zoom 4 and 5 settings were not changed. The zoom contract, visual
+fixture, and short dense render profile passed 3/3.
+
+The zoom 3 profile used 400 trees and 30 synchronous 1280 × 720 renders per
+pass. Before medians were 0.313 and 0.307 ms; after medians were 0.314 and
+0.296 ms. No per-render managed allocations were measured. UnityStats again
+reported zero draw calls in batch mode, so GPU cost, draw calls, frame-time
+spikes, and long-duration stability remain unmeasured.

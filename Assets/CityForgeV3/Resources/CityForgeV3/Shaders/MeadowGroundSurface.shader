@@ -12,6 +12,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
         _FarGrassNoise ("Far grass grain", Range(0,1)) = 0
         _FarGrassBrightness ("Far grass brightness", Range(0,1)) = 1
+        _FarGrassGrainFrequency ("Far grass grain frequency", Range(.5,3)) = 1
     }
 
     SubShader
@@ -67,6 +68,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _DistantMeadow;
             float _FarGrassNoise;
             float _FarGrassBrightness;
+            float _FarGrassGrainFrequency;
             float _GrassHueShift;
             float _TextureWorldSize;
             float4 _MainTex_ST;
@@ -193,8 +195,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                     // Fine world-anchored stipple survives distant mip filtering.
                     // Keep the wider variation subtle so it does not read as
                     // soft, repeated patches at district scale.
-                    float fine=MeadowNoise(input.meadowMetres/2.0+float2(17.3,41.7));
-                    float broad=MeadowNoise(input.meadowMetres/13.0+float2(63.1,9.4));
+                    float2 grainMetres=input.meadowMetres*_FarGrassGrainFrequency;
+                    float fine=MeadowNoise(grainMetres/2.0+float2(17.3,41.7));
+                    float broad=MeadowNoise(grainMetres/13.0+float2(63.1,9.4));
                     surface.rgb*=1+_FarGrassNoise*((fine-.5)*.34+(broad-.5)*.08);
                 }
                 surface.rgb*=_FarGrassBrightness;

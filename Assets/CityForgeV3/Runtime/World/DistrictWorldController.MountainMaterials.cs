@@ -17,7 +17,7 @@ namespace CityForgeV3.World
             DistrictZoomLevel level) => level switch
         {
             DistrictZoomLevel.LOD2 => 1f,
-            DistrictZoomLevel.LOD3 => .3f,
+            DistrictZoomLevel.LOD3 => .15f,
             DistrictZoomLevel.LOD4 => .2f,
             DistrictZoomLevel.LOD5Billboard => .15f,
             _ => 0f
@@ -26,7 +26,7 @@ namespace CityForgeV3.World
         public static float DistrictGrassNoiseStrengthForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD3 => .6f,
+            DistrictZoomLevel.LOD3 => 1f,
             DistrictZoomLevel.LOD4 => .8f,
             DistrictZoomLevel.LOD5Billboard => 1f,
             _ => 0f
@@ -35,11 +35,17 @@ namespace CityForgeV3.World
         public static float DistrictGrassBrightnessForZoom(
             DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD3 => .94f,
+            DistrictZoomLevel.LOD3 => .89f,
             DistrictZoomLevel.LOD4 => .91f,
             DistrictZoomLevel.LOD5Billboard => .89f,
             _ => 1f
         };
+
+        // Zoom 3's closer camera needs smaller world-space grain to keep the
+        // stipple near the apparent size seen at zoom 4.
+        public static float DistrictGrassGrainFrequencyForZoom(
+            DistrictZoomLevel level) =>
+            level == DistrictZoomLevel.LOD3 ? 1.82f : 1f;
 
         private void ApplyDistrictGrassZoomScale()
         {
@@ -60,6 +66,10 @@ namespace CityForgeV3.World
             if (material.HasProperty("_FarGrassBrightness") &&
                 material.GetFloat("_FarGrassBrightness") != brightness)
                 material.SetFloat("_FarGrassBrightness", brightness);
+            float grainFrequency = DistrictGrassGrainFrequencyForZoom(_zoomLevel);
+            if (material.HasProperty("_FarGrassGrainFrequency") &&
+                material.GetFloat("_FarGrassGrainFrequency") != grainFrequency)
+                material.SetFloat("_FarGrassGrainFrequency", grainFrequency);
         }
 
         private void ConfigureMountainGroundMaterial()

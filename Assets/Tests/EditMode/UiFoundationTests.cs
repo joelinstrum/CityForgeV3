@@ -2167,13 +2167,13 @@ namespace CityForgeV3.Tests
                 var material = ground.sharedMaterial;
                 Assert.That(UnityEditor.ShaderUtil.ShaderHasError(
                     material.shader), Is.False);
-                foreach (var (level, filtering, noise, brightness) in new[]
+                foreach (var (level, filtering, noise, brightness, grainFrequency) in new[]
                 {
-                    (DistrictZoomLevel.LOD2, 1f, 0f, 1f),
-                    (DistrictZoomLevel.LOD3, .3f, .6f, .94f),
-                    (DistrictZoomLevel.LOD4, .2f, .8f, .91f),
-                    (DistrictZoomLevel.LOD5Billboard, .15f, 1f, .89f),
-                    (DistrictZoomLevel.LOD1, 0f, 0f, 1f)
+                    (DistrictZoomLevel.LOD2, 1f, 0f, 1f, 1f),
+                    (DistrictZoomLevel.LOD3, .15f, 1f, .89f, 1.82f),
+                    (DistrictZoomLevel.LOD4, .2f, .8f, .91f, 1f),
+                    (DistrictZoomLevel.LOD5Billboard, .15f, 1f, .89f, 1f),
+                    (DistrictZoomLevel.LOD1, 0f, 0f, 1f, 1f)
                 })
                 {
                     world.SetZoom(level);
@@ -2183,6 +2183,8 @@ namespace CityForgeV3.Tests
                         Is.EqualTo(noise).Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_FarGrassBrightness"),
                         Is.EqualTo(brightness).Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_FarGrassGrainFrequency"),
+                        Is.EqualTo(grainFrequency).Within(.001f), level.ToString());
                     Assert.That(material.GetFloat("_TextureWorldSize"),
                         Is.EqualTo(75f).Within(.001f), level.ToString());
                 }
