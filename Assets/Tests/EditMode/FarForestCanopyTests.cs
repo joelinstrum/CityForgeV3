@@ -168,6 +168,75 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
+        public void BudgetedSummerAutumnTransitionKeepsMixedFirBatchesWithinTwoAtlases()
+        {
+            var owner = new GameObject("Staged mixed forest season test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "staged-mixed-season", Width = 1, Height = 1,
+                    Founded = true,
+                    Labor = new DistrictLaborState { SeasonIndex = 0 }
+                };
+                foreach (var id in new[] { "forest-mountain-large",
+                             "forest-mountain-compact", "cilician-fir" })
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = id, FloraId = id,
+                        NormalizedX = .50f + district.Flora.Count * .01f,
+                        NormalizedZ = .50f
+                    });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(3));
+                int BatchCount() => owner.GetComponentsInChildren<MeshRenderer>()
+                    .Count(renderer => renderer.name == "Flora batch");
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                var summerRoot = ForestTrueAngleCluster.RootSprite(
+                    "forest-mountain-large", SeasonPreset.Summer);
+                var autumnRoot = ForestTrueAngleCluster.RootSprite(
+                    "forest-mountain-large", SeasonPreset.Autumn);
+                district.Labor.SeasonIndex = 1;
+                Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                Assert.That(BatchCount(), Is.EqualTo(2),
+                    "Only the staged transition should split this spatial batch.");
+                var guard = 0;
+                do
+                {
+                    Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                Assert.That(autumnRoot, Is.Not.SameAs(summerRoot));
+                Assert.That(autumnRoot.texture, Is.SameAs(summerRoot.texture));
+                Assert.That(ForestTrueAngleCluster.RootSprite("cilician-fir",
+                    SeasonPreset.Autumn), Is.SameAs(autumnRoot));
+                Assert.That(trees.All(renderer => renderer.sprite == autumnRoot),
+                    Is.True);
+                Assert.That(trees.All(renderer => renderer.GetComponent<
+                    ForestTrueAngleCluster>().Season == SeasonPreset.Autumn),
+                    Is.True);
+
+                district.Labor.SeasonIndex = 0;
+                guard = 0;
+                do
+                {
+                    Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                Assert.That(trees.All(renderer => renderer.sprite == summerRoot),
+                    Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
         public void FirAtlasSuppliesVariedIndividualAndMountainClumpTrees()
         {
             var owner = new GameObject("Fir atlas district test");
@@ -549,10 +618,11 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
+        [TestCase(false, 1)]
+        [TestCase(true, 1)]
+        [TestCase(true, 2)]
         public void DenseCanopySeasonChangeKeepsBatchWorkInBoundedSlices(
-            bool fir)
+            bool fir, int targetSeason)
         {
             var owner = new GameObject("Dense far canopy test");
             try
@@ -581,7 +651,7 @@ namespace CityForgeV3.Tests.EditMode
                 int BatchCount() => owner.GetComponentsInChildren<MeshRenderer>()
                     .Count(renderer => renderer.name == "Flora batch");
                 var summerBatches = BatchCount();
-                district.Labor.SeasonIndex = fir ? 2 : 1;
+                district.Labor.SeasonIndex = targetSeason;
                 var maxMilliseconds = 0d;
                 var maxAllocatedBytes = 0L;
                 var sliceTimes = new List<double>();
@@ -606,6 +676,7 @@ namespace CityForgeV3.Tests.EditMode
                 sliceTimes.Sort();
                 var p95 = sliceTimes[(int)(sliceTimes.Count * .95f)];
                 TestContext.WriteLine("384 " + (fir ? "fir" : "deciduous") +
+                    " clusters to season " + targetSeason +
                     " clusters: summer batches=" +
                     summerBatches + ", changed-season batches=" +
                     seasonalBatches +

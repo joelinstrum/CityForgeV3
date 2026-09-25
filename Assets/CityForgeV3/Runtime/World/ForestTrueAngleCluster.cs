@@ -70,6 +70,7 @@ namespace CityForgeV3.World
 
         static readonly Sprite[][] SeasonalSprites = new Sprite[3][];
         static readonly Sprite[][] FirSeasonalSprites = new Sprite[2][];
+        static Sprite autumnFirRoot;
         Tree[] layout;
         float[] groundOffsets;
         public string FloraId { get; private set; }
@@ -194,10 +195,29 @@ namespace CityForgeV3.World
             Sprites(SeasonPreset.Winter);
             FirSprites(SeasonPreset.Summer);
             FirSprites(SeasonPreset.Winter);
+            FirRootSprite(SeasonPreset.Autumn);
         }
         public static Sprite RootSprite(SeasonPreset season) => Sprites(season)[0];
         public static Sprite RootSprite(string id, SeasonPreset season) =>
-            SupportsFir(id) ? FirSprites(season)[0] : Sprites(season)[0];
+            SupportsFir(id) ? FirRootSprite(season) : Sprites(season)[0];
+
+        static Sprite FirRootSprite(SeasonPreset season)
+        {
+            if (season != SeasonPreset.Autumn) return FirSprites(season)[0];
+            if (autumnFirRoot != null) return autumnFirRoot;
+            // Fir artwork remains green in autumn, but its mixed clusters use
+            // the autumn deciduous atlas. Give every fir a distinct root key
+            // so staged summer/autumn updates cannot mix three textures in one
+            // spatial batch. This shares the existing atlas and rejoins one
+            // fir batch per cell when the transition finishes.
+            var source = FirSprites(SeasonPreset.Summer)[0];
+            var pivot = new Vector2(source.pivot.x / source.rect.width,
+                source.pivot.y / source.rect.height);
+            autumnFirRoot = Sprite.Create(source.texture, source.rect, pivot,
+                source.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            autumnFirRoot.name = "fir-autumn-batch-root";
+            return autumnFirRoot;
+        }
 
         static int IndividualSlot(string id, int variation)
         {
