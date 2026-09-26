@@ -34,7 +34,8 @@ namespace CityForgeV3.World
                 if(player!=null){if(player.State!=animation)player.Play(animation);player.SetPlaybackSpeed(running?1:0);}
                 return actor;
             }
-            foreach(var b in state.Bears)Actor(b.Id,LotWorldController.BearAnimalId,b.Position,b.Direction,"walk");
+            foreach(var b in state.Bears)Actor(b.Id,LotWorldController.BearAnimalId,b.Position,
+                b.Direction,b.Paused&&!b.Fleeing&&!b.AvoidingPeople?"idle":"walk");
             foreach(var m in state.Marksmen)
             {
                 var actor=Actor(m.Id,LotWorldController.MusketmanCharacterId,m.Position,m.Facing,"idle");

@@ -64,8 +64,10 @@ namespace CityForgeV3.Tests.EditMode
         }
         [Test] public void OnlyMarksmanWarningScaresBearAndSuppressesNewSightings()
         {
-            var d=Forest();var b=new DistrictBear{Position=new Vector2(10,0),Home=new Vector2(10,0)};d.Wildlife.Bears.Add(b);
+            var d=Forest();var b=new DistrictBear{Position=new Vector2(10,0),Home=new Vector2(10,0),
+                AvoidingPeople=true,NearestPerson=new Vector2(20,0)};d.Wildlife.Bears.Add(b);
             d.Labor.Workers.Add(new(){Position=Vector2.zero});DistrictWildlife.Tick(d,.1f,_=>true);Assert.False(b.Fleeing);
+            b.AvoidingPeople=true;b.NearestPerson=new Vector2(20,0);
             var m=new DistrictMarksman{Position=Vector2.zero};d.Wildlife.Marksmen.Add(m);DistrictWildlife.Tick(d,.1f,_=>true);
             Assert.True(b.Fleeing);Assert.AreEqual(1,m.Shots);Assert.Greater(b.Position.x,10);Assert.AreEqual(300,d.Wildlife.QuietSeconds);
             for(int i=0;i<600;i++)DistrictWildlife.Tick(d,.1f,_=>true);
@@ -79,6 +81,38 @@ namespace CityForgeV3.Tests.EditMode
             var loaded=JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));Assert.AreEqual(d.Wildlife.Marksmen[0].Shots,loaded.Wildlife.Marksmen[0].Shots);Assert.True(loaded.Wildlife.Bears[0].Fleeing);
             DistrictWildlife.Tick(loaded,.1f,_=>true);Assert.AreEqual(1,loaded.Wildlife.Marksmen[0].Shots);
             var worker=new DistrictAxeman();Assert.True(DistrictWildlife.AvoidBear(loaded,worker,.1f,_=>false));Assert.AreEqual(Vector2.zero,worker.Position);
+        }
+        [Test] public void BearWalksPausesAndWalksAgain()
+        {
+            var d=Forest();var b=new DistrictBear{Position=Vector2.zero,Home=Vector2.zero,
+                Direction=Vector2.right,SteerIn=100,PaceIn=1};d.Wildlife.Bears.Add(b);
+            DistrictWildlife.Tick(d,.1f,_=>true);Assert.Greater(b.Position.x,0);Assert.False(b.Paused);
+            var stopped=b.Position;b.PaceIn=.05f;
+            DistrictWildlife.Tick(d,.1f,_=>true);Assert.True(b.Paused);Assert.AreEqual(stopped,b.Position);
+            b.PaceIn=.05f;DistrictWildlife.Tick(d,.1f,_=>true);
+            Assert.False(b.Paused);Assert.Greater(b.Position.x,stopped.x);
+        }
+        [Test] public void BearTurnsAwayFromNearbyThreeDimensionalPeopleWithoutLeavingDistrict()
+        {
+            var d=Forest();d.Labor.Workers.Add(new DistrictAxeman{Position=new Vector2(5,0)});
+            var b=new DistrictBear{Position=Vector2.zero,Home=Vector2.zero,
+                Direction=Vector2.right,SteerIn=100};d.Wildlife.Bears.Add(b);
+            DistrictWildlife.Tick(d,.1f,_=>true);
+            Assert.True(b.AvoidingPeople);Assert.False(b.Fleeing);Assert.Less(b.Position.x,0);
+            b.Position=Vector2.zero;b.PersonCheckIn=0;
+            DistrictWildlife.Tick(d,.1f,p=>p.x>=0);
+            Assert.AreEqual(Vector2.zero,b.Position,"The bear must not leave the walkable district tile.");
+        }
+        [Test] public void BearAvoidsQuarryMinersAndStopsAvoidingAfterTheyAreFarAway()
+        {
+            var d=Forest();var quarry=new DistrictStoneSite{Built=true,NormalizedX=.5f,NormalizedZ=.5f};
+            d.StoneSites.Add(quarry);
+            var b=new DistrictBear{Position=new Vector2(-5,0),Home=new Vector2(-5,0),
+                Direction=Vector2.right,SteerIn=100};d.Wildlife.Bears.Add(b);
+            DistrictWildlife.Tick(d,.1f,_=>true);
+            Assert.True(b.AvoidingPeople);Assert.Less(b.Position.x,-5);
+            quarry.NormalizedX=.9f;b.PersonCheckIn=0;
+            DistrictWildlife.Tick(d,.1f,_=>true);Assert.False(b.AvoidingPeople);
         }
     }
 }
