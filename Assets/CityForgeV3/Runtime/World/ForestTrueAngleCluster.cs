@@ -284,15 +284,15 @@ namespace CityForgeV3.World
             for (int i = 0; i < PieceCount; i++)
                 groundOffsets[i] = groundDelta?.Invoke(LocalPosition(i)) ?? 0f;
         }
-        // Both temperate cluster families are mixed. The mountain identity
-        // still determines placement and forestry policy, but no cluster is a
-        // solid block of firs in autumn. Compact groups have one or two firs;
-        // large groups have one or two, with the chosen positions varying.
+        // Mountain clumps keep one deciduous tree for variety, with narrow
+        // firs making up the visible majority. Deciduous clumps keep their
+        // one or two fir accents at the front edge.
         public bool IsFirPiece(int index)
         {
             if (IsFirIndividual(FloraId)) return true;
             if (layout == null || index < 0 || index >= layout.Length) return false;
             int variant = Mathf.Abs(Variation % 3);
+            if (IsFirCluster(FloraId)) return index != variant;
             // Put the evergreen at an outer front position. A smaller fir
             // hidden behind broadleaf crowns does not read as a mixed stand.
             int first = IsLarge ? 3 + variant % 3 : 2 + variant % 2;

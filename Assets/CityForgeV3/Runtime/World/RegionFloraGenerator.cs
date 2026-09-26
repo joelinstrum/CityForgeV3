@@ -100,14 +100,39 @@ namespace CityForgeV3.World
                     clearance = ForestClusterCatalog.ClearanceMeters(floraId) * scale;
                     if (mask.Blocked(point, clearance)) continue;
                 }
-                result.Add(new PlacedDistrictFlora
+                var rotation = random.Next(8);
+                var placed = new PlacedDistrictFlora
                 {
                     InstanceId = id,
                     GroupId = $"region-flora-{seed:x8}", GeneratedByRegion = true,
                     FloraId = floraId,
                     NormalizedX = point.x / mask.Width, NormalizedZ = point.y / mask.Depth,
                     Scale = scale,
-                    RotationEighthTurns = random.Next(8)
+                    RotationEighthTurns = rotation
+                };
+                result.Add(placed);
+                if (!ForestClusterCatalog.IsCluster(floraId)) continue;
+                var front = Vector2.zero;
+                bool frontClear = false;
+                for (var attempt = 0; attempt < 3; attempt++)
+                {
+                    var offsetScale = attempt == 0 ? 1f : attempt == 1 ? .75f : .55f;
+                    front = ForestClumpForeground.PointMeters(floraId,
+                        rotation, point, scale, offsetScale);
+                    if (mask.Blocked(front, 4f)) continue;
+                    frontClear = true;
+                    break;
+                }
+                if (!frontClear) continue;
+                result.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = id + "-front",
+                    GroupId = placed.GroupId, GeneratedByRegion = true,
+                    FloraId = ForestClumpForeground.TreeId(floraId, rotation),
+                    NormalizedX = front.x / mask.Width,
+                    NormalizedZ = front.y / mask.Depth,
+                    Scale = scale * .85f,
+                    RotationEighthTurns = rotation
                 });
             }
             return result;

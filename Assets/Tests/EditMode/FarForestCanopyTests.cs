@@ -90,7 +90,7 @@ namespace CityForgeV3.Tests.EditMode
         [TestCase("forest-deciduous-large")]
         [TestCase("forest-mountain-compact")]
         [TestCase("forest-mountain-large")]
-        public void TemperateClustersMixOneOrTwoFirsWithDeciduousTreesInEverySeason(
+        public void TemperateClustersKeepTheirDominantFamilyInEverySeason(
             string id)
         {
             var owner = new GameObject("Mixed forest atlas test");
@@ -102,7 +102,9 @@ namespace CityForgeV3.Tests.EditMode
                     cluster.Configure(id, variation, SeasonPreset.Summer, _ => 0f);
                     var firCount = Enumerable.Range(0, cluster.PieceCount)
                         .Count(cluster.IsFirPiece);
-                    Assert.That(firCount, Is.InRange(1, 2), id);
+                    Assert.That(firCount, ForestTrueAngleCluster.IsFirCluster(id)
+                        ? Is.EqualTo(cluster.PieceCount - 1)
+                        : Is.InRange(1, 2), id);
                     Assert.That(cluster.PieceCount - firCount, Is.GreaterThan(0), id);
                     foreach (var season in new[] { SeasonPreset.Summer,
                                  SeasonPreset.Autumn, SeasonPreset.Winter })
