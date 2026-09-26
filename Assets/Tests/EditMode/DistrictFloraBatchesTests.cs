@@ -67,6 +67,50 @@ public class DistrictFloraBatchesTests
         finally { Object.DestroyImmediate(host); }
     }
 
+    [TestCase("forest-mountain-compact")]
+    [TestCase("forest-deciduous-large")]
+    public void ClumpShadowsUseTheExistingGroundMeshAndZoomBatch(string id)
+    {
+        var host = new GameObject("Clump shadow batch test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "clump-shadow-" + id, Width = 2, Height = 2,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "clump", FloraId = id,
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowDistrictShadows = false;
+            world.ShowTreeClumpShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var clump = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — " + id);
+            var shadow = clump.transform.Find("District Flora Shadow");
+            Assert.That(shadow, Is.Not.Null);
+            var pieces = clump.GetComponent<ForestTrueAngleCluster>().PieceCount;
+            Assert.That(shadow.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.EqualTo(pieces * 50),
+                "Each member tree contributes a crown and contact footprint.");
+            var batch = host.GetComponentsInChildren<MeshRenderer>(true)
+                .Single(renderer => renderer.name == "Flora shadow batch");
+            Assert.That(batch.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.EqualTo(pieces * 50));
+            Assert.That(shadow.GetComponent<MeshRenderer>().forceRenderingOff,
+                Is.True, "The source mesh must not make a second draw call.");
+            world.SetZoom(DistrictZoomLevel.LOD2);
+            Assert.That(batch.enabled, Is.True);
+            world.SetZoom(DistrictZoomLevel.LOD3);
+            Assert.That(batch.enabled, Is.False);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
     [Test]
     public void NightPreparesMorningShadowsAndSunriseReusesTheWork()
     {

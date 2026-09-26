@@ -288,6 +288,9 @@ namespace CityForgeV3.World
         // the standalone Lot editor and existing shadow tests keep their path.
         public bool ShowDistrictShadows { get; set; } = true;
         public bool ShowIndividualTreeShadows { get; set; }
+        // Temporary visual study: clumps use the existing projected mesh and
+        // spatial shadow batches used by individual district trees.
+        public bool ShowTreeClumpShadows { get; set; }
         // Temporary visual study for the saved hillside test district. Keeps
         // Unity's realtime shadow casters disabled while showing batched trees.
         public bool ShowTreeShadowPrototype { get; set; }
@@ -495,7 +498,8 @@ namespace CityForgeV3.World
                      new List<PlacedDistrictFlora>())
                 AddDistrictFloraPresentation(placed);
             PrepareForestSeason(district);
-            if (ShowDistrictShadows || ShowIndividualTreeShadows || ShowTreeShadowPrototype)
+            if (ShowDistrictShadows || ShowIndividualTreeShadows ||
+                ShowTreeClumpShadows || ShowTreeShadowPrototype)
                 UpdateDistrictFloraShadows();
             _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
             _floraBatches.Build(_districtFloraPresentations.Values, _camera);
@@ -908,6 +912,8 @@ namespace CityForgeV3.World
             var hasShadow = (ShowDistrictShadows ||
                  (ShowIndividualTreeShadows &&
                   !ForestClusterCatalog.IsCluster(placed.FloraId)) ||
+                 (ShowTreeClumpShadows &&
+                  ForestClusterCatalog.IsCluster(placed.FloraId)) ||
                  (ShowTreeShadowPrototype &&
                   ForestClusterCatalog.IsCluster(placed.FloraId))) &&
                 !StoneFloraCatalog.IsStone(placed.FloraId);
@@ -984,6 +990,7 @@ namespace CityForgeV3.World
         private void UpdateDistrictFloraShadowsFor(IEnumerable<SpriteRenderer> renderers)
         {
             if ((!ShowDistrictShadows && !ShowIndividualTreeShadows &&
+                 !ShowTreeClumpShadows &&
                  !ShowTreeShadowPrototype) ||
                 _districtFloraRoot == null) return;
             if (_districtFloraShadowMaterial != null)
@@ -2696,6 +2703,7 @@ namespace CityForgeV3.World
             }
             ApplyFloraShadowVisibility();
             if (changed && (ShowDistrictShadows || ShowIndividualTreeShadows ||
+                            ShowTreeClumpShadows ||
                             ShowTreeShadowPrototype))
             {
                 // The Night work already targets Morning. Keep its bounded

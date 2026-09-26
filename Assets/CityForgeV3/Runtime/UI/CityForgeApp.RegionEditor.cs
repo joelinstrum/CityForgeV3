@@ -12,6 +12,7 @@ namespace CityForgeV3.UI
   {
     private const float RegionMapUnitPixels = 72f;
     private const float DistrictCellPixels = 8f;
+    private const bool DistrictClumpShadowExperiment = true;
 
     public bool OpenTerraformScaleQa() =>
         OpenDistrictScaleQa(DistrictEditorMode.Terraform);
@@ -1630,6 +1631,8 @@ namespace CityForgeV3.UI
           _districtWorld.WorldCamera != null &&
           !_districtWorld.ShowDistrictShadows &&
           _districtWorld.ShowIndividualTreeShadows &&
+          _districtWorld.ShowTreeClumpShadows ==
+              DistrictClumpShadowExperiment &&
           !_districtWorld.ShowTreeShadowPrototype &&
           _districtWorldTileId == district.TileId &&
           _districtWorldLotId == lotId &&
@@ -1649,10 +1652,12 @@ namespace CityForgeV3.UI
         var world = new GameObject("V3 District World");
         _districtWorld = world.AddComponent<DistrictWorldController>();
       }
-      // Restore projected shadows for individual trees while the district's
-      // realtime sun shadows and forest-clump shadow study remain disabled.
+      // Keep realtime sun shadows off. Project individual trees and clumps
+      // through the same cached district shadow batches for this visual study.
       _districtWorld.ShowDistrictShadows = false;
       _districtWorld.ShowIndividualTreeShadows = true;
+      _districtWorld.ShowTreeClumpShadows =
+          DistrictClumpShadowExperiment;
       _districtWorld.ShowTreeShadowPrototype = false;
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);

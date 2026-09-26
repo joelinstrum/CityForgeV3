@@ -37,6 +37,7 @@ namespace CityForgeV3.World
             _floraBatches?.CancelScheduledRebuild();
             _pendingTimeOfDayShadowIndex = 0;
             if (!ShowDistrictShadows && !ShowIndividualTreeShadows &&
+                !ShowTreeClumpShadows &&
                 !ShowTreeShadowPrototype)
             {
                 _pendingTimeOfDayShadows = null;
@@ -110,7 +111,7 @@ namespace CityForgeV3.World
                 TimeOfDay != TimeOfDayPreset.Night &&
                 (!_nightMorningShadowPreparation ||
                  _nightMorningShadowsReady) &&
-                (!ShowIndividualTreeShadows ||
+                ((!ShowIndividualTreeShadows && !ShowTreeClumpShadows) ||
                  _zoomLevel <= DistrictZoomLevel.LOD2));
         }
 
