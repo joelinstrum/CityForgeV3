@@ -6,6 +6,67 @@ using UnityEngine;
 public class DistrictFloraBatchesTests
 {
     [Test]
+    public void IndividualTreeShadowsHideAtFarZoomWithoutRebuildingFlora()
+    {
+        var host = new GameObject("Individual tree shadow zoom test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "individual-shadow-zoom", Width = 2, Height = 2,
+                TimeOfDay = TimeOfDayPreset.Noon
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "fir", FloraId = "cilician-fir",
+                NormalizedX = .25f, NormalizedZ = .25f
+            });
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "clump", FloraId = "forest-cluster-01",
+                NormalizedX = .75f, NormalizedZ = .75f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowDistrictShadows = false;
+            world.ShowIndividualTreeShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+
+            var tree = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — cilician-fir");
+            var clump = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — forest-cluster-01");
+            Assert.That(tree.transform.Find("District Flora Shadow"), Is.Not.Null);
+            Assert.That(clump.transform.Find("District Flora Shadow"), Is.Null);
+            var batch = host.GetComponentsInChildren<MeshRenderer>(true)
+                .Single(renderer => renderer.name == "Flora shadow batch");
+            world.SetZoom(DistrictZoomLevel.LOD2);
+            Assert.That(batch.enabled, Is.True);
+            world.SetZoom(DistrictZoomLevel.LOD3);
+            Assert.That(batch.enabled, Is.False);
+            world.SetZoom(DistrictZoomLevel.LOD2);
+            Assert.That(batch.enabled, Is.True);
+            Assert.That(host.GetComponentsInChildren<MeshRenderer>(true)
+                .Single(renderer => renderer.name == "Flora shadow batch"),
+                Is.SameAs(batch), "Zoom must reuse the existing shadow batch.");
+            Assert.That(host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — cilician-fir"),
+                Is.SameAs(tree), "Zoom must retain the selectable tree.");
+
+            world.SetTimeOfDay(TimeOfDayPreset.Night);
+            while (world.TimeOfDayPresentationPending)
+                world.SyncTimeOfDayPresentation();
+            world.SetZoom(DistrictZoomLevel.LOD3);
+            world.SetZoom(DistrictZoomLevel.LOD2);
+            Assert.That(host.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.name == "Flora shadow batch")
+                .All(renderer => !renderer.enabled), Is.True,
+                "Zooming back in at night must not resurrect shadows.");
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
     public void ShadowFreeDistrictKeepsSavedLotAndTreesWithoutShadowWork()
     {
         var host = new GameObject("Shadow-free district load");

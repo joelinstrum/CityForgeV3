@@ -12,6 +12,8 @@ namespace CityForgeV3.World
         private readonly Dictionary<(Vector2Int, Sprite), List<SpriteRenderer>> cells = new();
         private readonly Dictionary<SpriteRenderer, (Vector2Int, Sprite)> membership = new();
         private readonly Dictionary<(Vector2Int, Sprite), List<GameObject>> outputs = new();
+        private readonly Dictionary<MeshRenderer, bool> shadowBatchHasSources = new();
+        private bool shadowsVisible = true;
         private readonly Dictionary<Sprite, Geometry> geometry = new();
         private readonly Dictionary<SpriteRenderer, Quaternion> cameraRelativeRotations = new();
         private readonly List<SpriteRenderer> shadowRefreshTrees = new();
@@ -45,6 +47,14 @@ namespace CityForgeV3.World
             foreach (var cell in cells.Keys) RebuildCell(cell);
         }
         public bool RebuildPending => scheduledRebuilds != null;
+        public void SetShadowVisibility(bool visible)
+        {
+            if (shadowsVisible == visible) return;
+            shadowsVisible = visible;
+            foreach (var pair in shadowBatchHasSources)
+                if (pair.Key != null)
+                    pair.Key.enabled = visible && pair.Value;
+        }
         public void ScheduleRebuild()
         {
             scheduledRebuilds = new List<(Vector2Int, Sprite)>(cells.Keys);
@@ -108,7 +118,11 @@ namespace CityForgeV3.World
                 }
                 if (firstShadow == null)
                 {
-                    if (batch != null) batch.enabled = false;
+                    if (batch != null)
+                    {
+                        shadowBatchHasSources[batch] = false;
+                        batch.enabled = false;
+                    }
                     continue;
                 }
                 if (batch == null || batch.GetComponent<MeshFilter>()
@@ -125,7 +139,8 @@ namespace CityForgeV3.World
                 firstShadow.GetPropertyBlock(properties);
                 properties.SetFloat("_DistrictFloraBatch", 0f);
                 batch.SetPropertyBlock(properties);
-                batch.enabled = true;
+                shadowBatchHasSources[batch] = true;
+                batch.enabled = shadowsVisible;
             }
         }
         readonly HashSet<(Vector2Int, Sprite)> dirtyCells = new();
@@ -174,7 +189,12 @@ namespace CityForgeV3.World
         private void RebuildCell((Vector2Int, Sprite) cell)
         {
             if (outputs.TryGetValue(cell, out var old))
-                foreach (var item in old) { item.SetActive(false); Dispose(item); }
+                foreach (var item in old)
+                {
+                    if (item.name == "Flora shadow batch")
+                        shadowBatchHasSources.Remove(item.GetComponent<MeshRenderer>());
+                    item.SetActive(false); Dispose(item);
+                }
             outputs[cell] = new();
             var groups = new Dictionary<Sprite, List<SpriteRenderer>>();
             foreach (var tree in cells[cell])
@@ -274,12 +294,14 @@ namespace CityForgeV3.World
                 {
                     firstShadow.GetPropertyBlock(properties);
                     properties.SetFloat("_DistrictFloraBatch", 0f);
-                    Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
+                    var batch = Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
                         shadowVertices, shadowUV, shadowColors, shadowTriangles);
+                    shadowBatchHasSources[batch] = true;
+                    batch.enabled = shadowsVisible;
                 }
             }
         }
-        private void Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
+        private MeshRenderer Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
             List<Vector3> vertices, List<Vector2> uv, List<Color> colors, List<int> triangles,
             List<Vector3> billboardOffsets = null, float billboardRadius = 0f,
             List<Vector2> atlasSelectors = null)
@@ -303,6 +325,7 @@ namespace CityForgeV3.World
             renderer.SetPropertyBlock(properties); renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             outputs[cell].Add(item);
+            return renderer;
         }
         private static void Dispose(Object item)
         { if (Application.isPlaying) Destroy(item); else DestroyImmediate(item); }

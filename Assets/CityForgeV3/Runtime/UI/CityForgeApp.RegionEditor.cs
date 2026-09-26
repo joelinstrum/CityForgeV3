@@ -1629,6 +1629,8 @@ namespace CityForgeV3.UI
       if (_districtWorld != null &&
           _districtWorld.WorldCamera != null &&
           !_districtWorld.ShowDistrictShadows &&
+          _districtWorld.ShowIndividualTreeShadows &&
+          !_districtWorld.ShowTreeShadowPrototype &&
           _districtWorldTileId == district.TileId &&
           _districtWorldLotId == lotId &&
           _districtWorldCompositionKey == compositionKey)
@@ -1647,10 +1649,11 @@ namespace CityForgeV3.UI
         var world = new GameObject("V3 District World");
         _districtWorld = world.AddComponent<DistrictWorldController>();
       }
-      // Temporary shadow-free district pass for load/performance review.
+      // Restore projected shadows for individual trees while the district's
+      // realtime sun shadows and forest-clump shadow study remain disabled.
       _districtWorld.ShowDistrictShadows = false;
-      _districtWorld.ShowTreeShadowPrototype = string.Equals(district.Name,
-          "Shadow DIstrict", StringComparison.OrdinalIgnoreCase);
+      _districtWorld.ShowIndividualTreeShadows = true;
+      _districtWorld.ShowTreeShadowPrototype = false;
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);
       _districtWorld.SetPan(_terraformPanOffset);
