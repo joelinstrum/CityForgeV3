@@ -174,15 +174,33 @@ namespace CityForgeV3.World
             if (texture == null) throw new MissingReferenceException(path);
             if (texture.width != 1536 || texture.height != 1024)
                 throw new InvalidOperationException("Forest atlas must be 1536x1024: " + path);
+            // Equal-height rows include the tops of trees from the next row.
+            // Follow the transparent gaps instead, as the fir atlas does.
+            int[][] xs =
+            {
+                new[] { 0, 402, 768, 1152, 1536 },
+                new[] { 0, 405, 765, 1155, 1536 },
+                new[] { 0, 384, 768, 1155, 1536 }
+            };
+            int[] top = { 352, 342, 353, 352 };
+            int[] middle = { 653, 656, 661, 658 };
+            // Anchor each trunk at the ground after removing the contaminated
+            // lower strip; the source sheets have unequal bottom margins.
+            int[] footMargins = { 19, 10, 15, 5, 6, 16, 12, 16, 55, 63, 66, 62 };
             var result = new Sprite[12];
             for (int row = 0; row < 3; row++)
             for (int col = 0; col < 4; col++)
             {
-                int y = row == 0 ? 683 : row == 1 ? 342 : 0;
-                int height = row == 2 ? 342 : 341;
+                int topY = row == 0 ? 0 : row == 1 ? top[col] : middle[col];
+                int bottomY = row == 0 ? top[col] : row == 1 ? middle[col] : 1024;
+                int left = xs[row][col];
+                int width = xs[row][col + 1] - left;
+                int height = bottomY - topY;
                 result[row * 4 + col] = Sprite.Create(texture,
-                    new Rect(col * 384, y, 384, height),
-                    new Vector2(.5f, .045f), PixelsPerUnit, 0,
+                    new Rect(left, 1024 - bottomY, width, height),
+                    new Vector2((col * 384f + 192f - left) / width,
+                        (float)footMargins[row * 4 + col] / height),
+                    PixelsPerUnit, 0,
                     SpriteMeshType.FullRect);
             }
             return SeasonalSprites[slot] = result;
@@ -225,20 +243,20 @@ namespace CityForgeV3.World
             {
                 "medium-fraser-fir" => new[] { 1, 3, 8, 13 },
                 "medium-blue-spruce" => new[] { 1, 3, 11, 13 },
-                "medium-balsam-fir" => new[] { 5, 8, 11, 13 },
-                _ => new[] { 5, 11, 13, 8 }
+                "medium-balsam-fir" => new[] { 1, 8, 11, 13 },
+                _ => new[] { 1, 11, 13, 8 }
             };
             return slots[Mathf.Abs(variation % slots.Length)];
         }
 
-        // Both seasonal atlases place the same six narrow trees in these
-        // cells. Keep saved flora identities and cluster layouts unchanged;
-        // only their rendered fir silhouettes use the slimmer artwork.
+        // Both seasonal atlases place matching narrow trees in these cells.
+        // Skip slot 5: its summer slice has a detached foliage island below
+        // the crown. Saved identities and cluster layouts stay unchanged.
         static int NarrowFirSlot(int slot) => slot switch
         {
             0 or 1 => 1,
             2 or 3 or 4 => 3,
-            5 or 6 => 5,
+            5 or 6 => 11,
             7 or 8 or 9 => 8,
             10 or 11 or 12 => 11,
             _ => 13
@@ -285,7 +303,10 @@ namespace CityForgeV3.World
         }
         public Sprite Piece(int index) => IsFirPiece(index)
             ? FirSprites(Season)[NarrowFirSlot(layout[index].Slot)]
-            : Sprites(Season)[layout[index].Slot % 12];
+            : Sprites(Season)[CleanDeciduousSlot(layout[index].Slot % 12)];
+        // The last summer cell has an isolated 52x48 foliage island beneath
+        // its crown. Slot 9 is clean and never shares a layout with slot 11.
+        static int CleanDeciduousSlot(int slot) => slot == 11 ? 9 : slot;
         public float PieceScale(int index) => layout[index].Scale *
             (IsFirPiece(index) && !IsFirIndividual(FloraId) ? 1.22f : 1f);
         private Vector2 LocalPosition(int index)
