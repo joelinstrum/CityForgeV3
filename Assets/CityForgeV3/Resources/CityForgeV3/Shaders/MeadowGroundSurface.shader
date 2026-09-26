@@ -6,6 +6,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
         _DistrictMapTex ("District-wide grass color", 2D) = "white" {}
+        _DistrictMapStrength ("District color influence", Range(0,1)) = 0
+        _DistrictMapMipBias ("District color smoothing", Range(0,5)) = 2.5
         _TextureWorldSize ("Texture World Size (m)", Float) = 75
         _HillTex ("Legacy patch texture", 2D) = "white" {}
         _HillHeight ("Legacy hill height metres", Float) = 45
@@ -77,6 +79,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _RollingHillDarkSlopeLift;
             float _RollingHillDeepShadeLift;
             float _TextureWorldSize;
+            float _DistrictMapStrength;
+            float _DistrictMapMipBias;
             float4 _MainTex_ST;
 
             float MeadowNoise(float2 p);
@@ -166,16 +170,12 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 illumination=lerp(illumination,levelIllumination,
                     _RollingHillDeepShadeLift*smoothstep(.20,.35,darkness));
                 #endif
-                fixed4 surface;
-                #if defined(DISTRICT_GRASS_MAP)
-                surface=tex2D(_DistrictMapTex,saturate(input.uv));
-                #else
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
                 float2 surfaceDx, surfaceDy;
                 MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
-                surface=tex2Dgrad(_MainTex,surfaceUv,
+                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
                     surfaceDx*_GrassDetailMipScale,
                     surfaceDy*_GrassDetailMipScale);
                 #if defined(HILL_MEADOW)
@@ -221,6 +221,12 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // Apply after the hue study so straw retains its warm colour.
                 surface.rgb=lerp(surface.rgb,thin*fixed3(1.045,1.0,.94),dry);
                 #endif
+                #if defined(DISTRICT_GRASS_MAP)
+                // Keep the approved grass as the base. A smooth, low-strength
+                // district color map adds broad variation at distant zooms.
+                fixed3 districtColor=tex2Dbias(_DistrictMapTex,
+                    float4(saturate(input.uv),0,_DistrictMapMipBias)).rgb;
+                surface.rgb=lerp(surface.rgb,districtColor,_DistrictMapStrength);
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);

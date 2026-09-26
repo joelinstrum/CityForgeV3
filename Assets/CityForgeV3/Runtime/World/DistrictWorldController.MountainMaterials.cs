@@ -50,6 +50,17 @@ namespace CityForgeV3.World
             DistrictZoomLevel level) =>
             level == DistrictZoomLevel.LOD2 ? 1.82f : 1f;
 
+        // A small amount of district color keeps distant views varied without
+        // replacing the grass appearance that works at Zoom 1 and 2.
+        public static float DistrictGrassMapStrengthForZoom(DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD2 => .15f,
+            DistrictZoomLevel.LOD3 => .20f,
+            DistrictZoomLevel.LOD4 => .25f,
+            DistrictZoomLevel.LOD5Billboard => .25f,
+            _ => 0f
+        };
+
         private Texture2D DistrictGrassMapForZoom(DistrictZoomLevel level)
         {
             if (!_useDistrictZoomGrassMaps || level < DistrictZoomLevel.LOD2)
@@ -81,6 +92,8 @@ namespace CityForgeV3.World
             if (districtMap != null)
             {
                 material.SetTexture("_DistrictMapTex", districtMap);
+                material.SetFloat("_DistrictMapStrength", DistrictGrassMapStrengthForZoom(_zoomLevel));
+                material.SetFloat("_DistrictMapMipBias", 2.5f);
                 material.EnableKeyword("DISTRICT_GRASS_MAP");
             }
             else
@@ -93,12 +106,12 @@ namespace CityForgeV3.World
             float distant = DistrictGrassFilteringStrengthForZoom(_zoomLevel);
             if (material.HasProperty("_DistantMeadow") && material.GetFloat("_DistantMeadow") != distant)
                 material.SetFloat("_DistantMeadow", distant);
-            float noise = (_terrainDistrict?.Hills?.HeightMeters ?? 0)>0
+            float noise = districtMap != null || (_terrainDistrict?.Hills?.HeightMeters ?? 0)>0
                 ? 0f : DistrictGrassNoiseStrengthForZoom(_zoomLevel);
             if (material.HasProperty("_FarGrassNoise") &&
                 material.GetFloat("_FarGrassNoise") != noise)
                 material.SetFloat("_FarGrassNoise", noise);
-            float brightness = DistrictGrassBrightnessForZoom(_zoomLevel);
+            float brightness = districtMap != null ? 1f : DistrictGrassBrightnessForZoom(_zoomLevel);
             if (material.HasProperty("_FarGrassBrightness") &&
                 material.GetFloat("_FarGrassBrightness") != brightness)
                 material.SetFloat("_FarGrassBrightness", brightness);
