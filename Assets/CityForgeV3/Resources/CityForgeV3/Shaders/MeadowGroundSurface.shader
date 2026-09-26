@@ -16,17 +16,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
         _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
-        [Toggle] _MeadowDetailEnabled ("Rolling meadow detail", Float) = 1
-        _MeadowMacroStrength ("Meadow macro color strength", Range(0,.08)) = .06
-        _MeadowMacroWorldSize ("Meadow macro color scale (m)", Range(100,300)) = 210
-        _MeadowUpperSlopeStrength ("Upper slope warmth", Range(0,.04)) = .025
-        _MeadowReliefHeight ("Relief height for color (m)", Float) = 45
-        _MeadowGrainStrength ("Directional meadow grain", Range(0,.02)) = .012
-        _MeadowGrainLength ("Meadow grain length (m)", Range(50,200)) = 120
-        _MeadowGrainWidth ("Meadow grain width (m)", Range(8,40)) = 18
-        _MeadowNormalStrength ("Directional grass light detail", Range(0,20)) = 8
-        _MeadowDetailMipScale ("Meadow detail sharpness", Range(.5,1)) = .75
-        _MeadowCrestHighlightStrength ("Sun facing crest highlight", Range(0,.3)) = .18
     }
 
     SubShader
@@ -72,7 +61,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 uv : TEXCOORD2;
                 float2 hillVariation : TEXCOORD3;
                 float2 meadowMetres : TEXCOORD4;
-                float worldHeight : TEXCOORD5;
             };
 
             fixed4 _Color;
@@ -86,17 +74,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _GrassHueShift;
             float _RollingHillDarkSlopeLift;
             float _RollingHillDeepShadeLift;
-            float _MeadowDetailEnabled;
-            float _MeadowMacroStrength;
-            float _MeadowMacroWorldSize;
-            float _MeadowUpperSlopeStrength;
-            float _MeadowReliefHeight;
-            float _MeadowGrainStrength;
-            float _MeadowGrainLength;
-            float _MeadowGrainWidth;
-            float _MeadowNormalStrength;
-            float _MeadowDetailMipScale;
-            float _MeadowCrestHighlightStrength;
             float _TextureWorldSize;
             float4 _MainTex_ST;
 
@@ -109,9 +86,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
                 output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 output.hillVariation=0;
-                float3 worldPosition=mul(unity_ObjectToWorld,input.vertex).xyz;
-                output.meadowMetres=worldPosition.xz;
-                output.worldHeight=worldPosition.y;
+                output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
                 #if defined(MEADOW_PATCHES)
                 float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
@@ -163,16 +138,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
 
             fixed4 frag(VertexToFragment input) : SV_Target
             {
-                float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
-                float2 surfaceDx,surfaceDy;
-                MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
-                float mipScale=_GrassDetailMipScale;
-                #if defined(HILL_MEADOW)
-                mipScale*=lerp(1,_MeadowDetailMipScale,
-                    saturate(_MeadowDetailEnabled));
-                #endif
-                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
-                    surfaceDx*mipScale,surfaceDy*mipScale);
                 fixed shadow = SHADOW_ATTENUATION(input);
                 fixed3 normal = normalize(input.worldNormal);
                 #if defined(HILL_MEADOW)
@@ -180,44 +145,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // normal response at its kilometre-wide presentation scale.
                 // This changes directional light only, never the grass color.
                 normal=normalize(fixed3(normal.x*3.0,normal.y,normal.z*3.0));
-                float directionalGrain=.5;
-                float2 meadowNormalXZ=0;
-                if (_MeadowDetailEnabled > 0)
-                {
-                    float2 metres=input.meadowMetres;
-                    float2 alongA=float2(.91,.41), acrossA=float2(-.41,.91);
-                    float2 alongB=float2(.63,-.78), acrossB=float2(.78,.63);
-                    float lengthMetres=max(1,_MeadowGrainLength);
-                    float widthMetres=max(1,_MeadowGrainWidth);
-                    float2 macroUv=metres/max(100,_MeadowMacroWorldSize);
-                    float2 grainA=float2(dot(metres,alongA)/lengthMetres,
-                        dot(metres,acrossA)/widthMetres)+float2(8.4,14.2);
-                    float2 grainB=float2(dot(metres,alongB)/lengthMetres,
-                        dot(metres,acrossB)/widthMetres)+float2(29.1,3.7);
-                    float directionMix=smoothstep(.3,.7,
-                        MeadowNoise(macroUv*.7+float2(3.6,16.8)));
-                    float valueA=MeadowNoise(grainA);
-                    float valueB=MeadowNoise(grainB);
-                    directionalGrain=lerp(valueA,valueB,directionMix);
-                    if (_MeadowNormalStrength > 0)
-                    {
-                        // The already-filtered grass sample supplies screen
-                        // gradients. Convert them to world XZ, then retain
-                        // only the local cross-strand light response.
-                        float luminance=dot(surface.rgb,float3(.2126,.7152,.0722));
-                        float2 worldDx=ddx(metres), worldDy=ddy(metres);
-                        float screenDx=ddx(luminance),screenDy=ddy(luminance);
-                        float determinant=worldDx.x*worldDy.y-worldDx.y*worldDy.x;
-                        float inverseDet=rcp((determinant<0?-1:1)*
-                            max(abs(determinant),.0001));
-                        float2 grassGradient=float2(
-                            screenDx*worldDy.y-screenDy*worldDx.y,
-                            screenDy*worldDx.x-screenDx*worldDy.x)*inverseDet;
-                        float2 across=normalize(lerp(acrossA,acrossB,directionMix));
-                        meadowNormalXZ=across*dot(grassGradient,across)*
-                            (_MeadowNormalStrength*saturate(_MeadowDetailEnabled));
-                    }
-                }
                 #endif
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
                 #if defined(HILL_MEADOW)
@@ -234,30 +161,15 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // above and all light-facing slopes retain their prior lighting.
                 illumination=lerp(illumination,levelIllumination,
                     _RollingHillDeepShadeLift*smoothstep(.20,.35,darkness));
-                if (_MeadowDetailEnabled > 0)
-                {
-                    // Add vegetation-scale light response after the existing
-                    // broad-slope shade calibration, so its baseline is intact.
-                    float3 detailNormal=normalize(normal+float3(
-                        -meadowNormalXZ.x,0,-meadowNormalXZ.y));
-                    fixed3 detailResponse=CityForgeWorldLighting(detailNormal,shadow)
-                        -CityForgeWorldLighting(normal,shadow);
-                    illumination=CityForgeBoundWorldIllumination(
-                        max(0,illumination+detailResponse));
-                    // A raised slope facing the sun gets a modest extra lift.
-                    // Flat crests and away-facing slopes are unchanged.
-                    float3 sunDirection=normalize(_CFWorldLightDirection.xyz);
-                    float facing=max(0,dot(normal,sunDirection)-sunDirection.y);
-                    float raised=smoothstep(.2,.75,
-                        saturate(input.worldHeight/max(1,_MeadowReliefHeight)));
-                    float crest=smoothstep(.02,.18,facing)*raised;
-                    illumination=CityForgeBoundWorldIllumination(illumination*
-                        (1+_MeadowCrestHighlightStrength*
-                        saturate(_MeadowDetailEnabled)*crest));
-                }
                 #endif
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
+                float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
+                float2 surfaceDx, surfaceDy;
+                MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
+                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
+                    surfaceDx*_GrassDetailMipScale,
+                    surfaceDy*_GrassDetailMipScale);
                 #if defined(HILL_MEADOW)
                 // Blend another placement of the same approved grass. The
                 // broad blend field is texture placement only: it never adds
@@ -266,33 +178,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 shiftedDx=float2(-surfaceDx.y,surfaceDx.x);
                 float2 shiftedDy=float2(-surfaceDy.y,surfaceDx.y);
                 fixed3 alternate=tex2Dgrad(_MainTex,shiftedUv,
-                    shiftedDx*mipScale,shiftedDy*mipScale).rgb;
+                    shiftedDx*_GrassDetailMipScale,shiftedDy*_GrassDetailMipScale).rgb;
                 float blend=.24+.28*MeadowNoise(input.meadowMetres/240+float2(4.1,9.7));
                 surface.rgb=lerp(surface.rgb,alternate,blend);
-                if (_MeadowDetailEnabled > 0)
-                {
-                    // Very broad, world-anchored drift in the existing grass.
-                    // The masks change neither normals nor directional light.
-                    float2 macroUv=input.meadowMetres/max(100,_MeadowMacroWorldSize);
-                    float lightDrift=2*MeadowNoise(macroUv+float2(11.7,37.1))-1;
-                    float warmDrift=2*MeadowNoise(macroUv*.83+float2(71.3,4.9))-1;
-                    float strength=saturate(_MeadowDetailEnabled)*_MeadowMacroStrength;
-                    surface.rgb*=1+strength*(.43*lightDrift);
-                    surface.rgb*=1+strength*warmDrift*float3(.30,.05,-.24);
-                    float muted=saturate(-lightDrift)*strength*.25;
-                    float neutral=dot(surface.rgb,float3(.2126,.7152,.0722));
-                    surface.rgb=lerp(surface.rgb,neutral.xxx,muted);
-                    // Only raised ground gets a slight warm lift. Low ground
-                    // keeps its base grass; it is never deliberately darkened.
-                    float upper=smoothstep(.3,.85,
-                        saturate(input.worldHeight/max(1,_MeadowReliefHeight)));
-                    surface.rgb*=1+saturate(_MeadowDetailEnabled)*
-                        _MeadowUpperSlopeStrength*upper*float3(1,.7,.2);
-                    // Long, faint strands in two directions, gently exchanged
-                    // by the macro field. No geometry or small surface bumps.
-                    surface.rgb*=1+saturate(_MeadowDetailEnabled)*
-                        _MeadowGrainStrength*(2*directionalGrain-1);
-                }
                 #elif defined(MEADOW_PATCHES)
                 // One extra sample on flat ground. Broad masking hides repetition;
                 // mipmapped world-space detail never changes scale with camera zoom.

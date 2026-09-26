@@ -106,13 +106,6 @@ namespace CityForgeV3.World
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
                 material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
                 material.SetFloat("_RollingHillDeepShadeLift",RollingHillDeepShadeLift);
-                // The color lift uses actual world Y relative to the relief
-                // control; keep this independent of horizontal field tuning.
-                float reliefHeight=Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,0,240);
-                float reliefScale=_terrainDistrict?.Hills?.VerticalReliefScale ?? 1f;
-                if(reliefScale<=0)reliefScale=1f;
-                material.SetFloat("_MeadowReliefHeight",reliefHeight*
-                    Mathf.Clamp(reliefScale,.25f,4f)*DistrictElevation.RollingHillVerticalScale);
                 material.SetFloat("_MeadowPatchStrength", 0f);
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
