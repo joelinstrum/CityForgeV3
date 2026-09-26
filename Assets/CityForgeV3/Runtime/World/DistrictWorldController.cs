@@ -82,6 +82,12 @@ namespace CityForgeV3.World
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
         public const float DistrictGrassTextureWorldSizeMeters = 75f;
+        [SerializeField, InspectorName("Use district-wide grass at Zoom 3–5")]
+        private bool _useDistrictZoomGrassMaps = true;
+        private bool _districtZoomGrassMapsLoaded;
+        private Texture2D _zoom3GrassMap;
+        private Texture2D _zoom4GrassMap;
+        private Texture2D _zoom5GrassMap;
         public static readonly Color RiverWaterTint =
             new(0.86f, 1.03f, 1.28f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;

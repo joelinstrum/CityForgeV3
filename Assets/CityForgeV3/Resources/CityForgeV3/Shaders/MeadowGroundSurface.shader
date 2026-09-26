@@ -5,6 +5,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _Color ("Color", Color) = (1, 1, 1, 1)
         _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
+        _DistrictMapTex ("District-wide grass color", 2D) = "white" {}
         _TextureWorldSize ("Texture World Size (m)", Float) = 75
         _HillTex ("Legacy patch texture", 2D) = "white" {}
         _HillHeight ("Legacy hill height metres", Float) = 45
@@ -41,6 +42,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             #pragma multi_compile_fwdbase
             #pragma multi_compile_local __ HILL_MEADOW
             #pragma multi_compile_local __ MEADOW_PATCHES
+            #pragma multi_compile_local __ DISTRICT_GRASS_MAP
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
@@ -64,7 +66,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             };
 
             fixed4 _Color;
-            sampler2D _MainTex, _HillTex;
+            sampler2D _MainTex, _HillTex, _DistrictMapTex;
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _FarGrassNoise;
@@ -84,7 +86,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 VertexToFragment output;
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                // Terrain UVs cover the whole district once. The tiled grass
+                // path below keeps its separate world-space coordinates.
+                output.uv = input.uv;
                 output.hillVariation=0;
                 output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
                 #if defined(MEADOW_PATCHES)
@@ -162,12 +166,16 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 illumination=lerp(illumination,levelIllumination,
                     _RollingHillDeepShadeLift*smoothstep(.20,.35,darkness));
                 #endif
+                fixed4 surface;
+                #if defined(DISTRICT_GRASS_MAP)
+                surface=tex2D(_DistrictMapTex,saturate(input.uv));
+                #else
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
                 float2 surfaceDx, surfaceDy;
                 MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
-                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
+                surface=tex2Dgrad(_MainTex,surfaceUv,
                     surfaceDx*_GrassDetailMipScale,
                     surfaceDy*_GrassDetailMipScale);
                 #if defined(HILL_MEADOW)
@@ -212,6 +220,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 surface.rgb*=lerp(fixed3(1,1,1),fixed3(.92,1.025,.91),lush);
                 // Apply after the hue study so straw retains its warm colour.
                 surface.rgb=lerp(surface.rgb,thin*fixed3(1.045,1.0,.94),dry);
+                #endif
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);

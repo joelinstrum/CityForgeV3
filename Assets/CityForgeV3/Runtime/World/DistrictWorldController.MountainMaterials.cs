@@ -50,11 +50,43 @@ namespace CityForgeV3.World
             DistrictZoomLevel level) =>
             level == DistrictZoomLevel.LOD2 ? 1.82f : 1f;
 
+        private Texture2D DistrictGrassMapForZoom(DistrictZoomLevel level)
+        {
+            if (!_useDistrictZoomGrassMaps || level < DistrictZoomLevel.LOD2)
+                return null;
+            if (!_districtZoomGrassMapsLoaded)
+            {
+                const string root = "CityForgeV3/Terrain/DistrictZoomGrassV01/";
+                _zoom3GrassMap = Resources.Load<Texture2D>(root + "district-grass-zoom-3");
+                _zoom4GrassMap = Resources.Load<Texture2D>(root + "district-grass-zoom-4");
+                _zoom5GrassMap = Resources.Load<Texture2D>(root + "district-grass-zoom-5");
+                _districtZoomGrassMapsLoaded = true;
+            }
+            return level switch
+            {
+                DistrictZoomLevel.LOD2 => _zoom3GrassMap,
+                DistrictZoomLevel.LOD3 => _zoom4GrassMap,
+                DistrictZoomLevel.LOD4 => _zoom5GrassMap,
+                DistrictZoomLevel.LOD5Billboard => _zoom5GrassMap,
+                _ => null
+            };
+        }
+
         private void ApplyDistrictGrassZoomScale()
         {
             if (_terrainDistrict?.Hills?.Mountains == true) return;
             var material = _groundRenderer?.sharedMaterial;
             if (material == null) return;
+            var districtMap = DistrictGrassMapForZoom(_zoomLevel);
+            if (districtMap != null)
+            {
+                material.SetTexture("_DistrictMapTex", districtMap);
+                material.EnableKeyword("DISTRICT_GRASS_MAP");
+            }
+            else
+            {
+                material.DisableKeyword("DISTRICT_GRASS_MAP");
+            }
             float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
             var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
             if (material.mainTextureScale != scale) material.mainTextureScale = scale;
