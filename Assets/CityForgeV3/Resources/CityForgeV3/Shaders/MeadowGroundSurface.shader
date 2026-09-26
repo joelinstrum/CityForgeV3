@@ -5,7 +5,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _Color ("Color", Color) = (1, 1, 1, 1)
         _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
-        _DistrictWideGrass ("District-wide grass experiment", Float) = 0
         _TextureWorldSize ("Texture World Size (m)", Float) = 75
         _HillTex ("Legacy patch texture", 2D) = "white" {}
         _HillHeight ("Legacy hill height metres", Float) = 45
@@ -99,7 +98,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _MeadowDetailMipScale;
             float _MeadowCrestHighlightStrength;
             float _TextureWorldSize;
-            float _DistrictWideGrass;
             float4 _MainTex_ST;
 
             float MeadowNoise(float2 p);
@@ -165,14 +163,6 @@ Shader "CityForgeV3/MeadowGroundSurface"
 
             fixed4 frag(VertexToFragment input) : SV_Target
             {
-                if (_DistrictWideGrass > 0.5)
-                {
-                    fixed4 districtColor = tex2D(_MainTex, input.uv);
-                    fixed3 districtLight = CityForgeWorldLighting(
-                        normalize(input.worldNormal), SHADOW_ATTENUATION(input));
-                    return fixed4(districtColor.rgb * _Color.rgb * districtLight,
-                        districtColor.a * _Color.a);
-                }
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
                 float2 surfaceDx,surfaceDy;
                 MeadowGradients(surfaceUv,surfaceDx,surfaceDy);

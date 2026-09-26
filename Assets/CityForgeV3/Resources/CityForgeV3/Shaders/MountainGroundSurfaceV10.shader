@@ -4,7 +4,6 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
     {
         _Color ("Color", Color) = (1, 1, 1, 1)
         _MainTex ("Surface Texture", 2D) = "white" {}
-        _DistrictWideGrass ("District-wide grass experiment", Float) = 0
         _BedrockTex ("Bedrock", 2D) = "white" {}
         _ShaleTex ("Shale", 2D) = "white" {}
         _BrownTex ("Brown Earth and Scree", 2D) = "white" {}
@@ -81,7 +80,6 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
             float _BrownStrength;
             float _RockEnabled;
             float _GrassNeutralStrength;
-            float _DistrictWideGrass;
             float _TransitionStrength;
 
             VertexToFragment vert(AppData input)
@@ -153,8 +151,6 @@ Shader "CityForgeV3/MountainGroundSurfaceV10"
                 fixed3 normal = normalize(input.worldNormal);
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
                 fixed4 surface = tex2D(_MainTex, input.uv);
-                if (_DistrictWideGrass > 0.5)
-                    return fixed4(surface.rgb * _Color.rgb * illumination, 1.0);
                 surface.rgb = NeutralGrass(surface.rgb);
                 float slope = length(normal.xz) / max(normal.y, 0.05);
                 float3 p = input.worldPosition;

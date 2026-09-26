@@ -53,21 +53,6 @@ namespace CityForgeV3.World
         // flat albedo at district scale rather than as a close-up grass tile.
         public const string DistrictGrassResource =
             "CityForgeV3/Terrain/MacroGrassV05/colonial-countryside-grass-v05";
-        public const string DistrictWideGrassResource =
-            "CityForgeV3/Terrain/DistrictWideGrass/terrain-zoom-3-4096";
-        public enum GrassMappingMode { Tiled, DistrictWide }
-        // Temporary visual experiment. Change this default to Tiled to revert.
-        private GrassMappingMode _grassMapping = GrassMappingMode.DistrictWide;
-        public GrassMappingMode GrassMapping
-        {
-            get => _grassMapping;
-            set
-            {
-                if (_grassMapping == value) return;
-                _grassMapping = value;
-                ConfigureMountainGroundMaterial();
-            }
-        }
         public const string RiverBedResource =
             "CityForgeV3/Water/River/river-bed";
         public const string RiverBedBorderResource =
