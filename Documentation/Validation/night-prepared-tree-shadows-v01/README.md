@@ -2,7 +2,7 @@
 
 September 26, 2026. Individual tree shadow meshes now project toward screen
 right and slightly up at Noon, and almost straight screen right at Afternoon.
-Their horizontal travel is 2× and 1.5× the former travel, respectively. The
+Their horizontal travel is 2× and 1.05× the former travel, respectively. The
 existing tree artwork, shadow opacity, terrain receiver, and direct scene
 lighting remain in place. Morning's direction and length are unchanged.
 
@@ -38,3 +38,6 @@ Validation: 39/39 `DistrictFloraBatchesTests` passed, including interrupted
 night preparation and both requested travel multipliers. `FarForestCanopyTests`
 passed 26/27; the existing `FirIndividualTrunksAlignWithTheirAtlasFootMargins`
 test still expects an obsolete fir atlas slot.
+
+Follow-up: Afternoon was reduced by 30% from the initial 1.5× experiment,
+making it 1.05× the original afternoon travel. The direction is unchanged.

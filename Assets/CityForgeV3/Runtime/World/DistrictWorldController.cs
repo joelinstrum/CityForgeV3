@@ -1005,7 +1005,7 @@ namespace CityForgeV3.World
             var shadowLengthScale = shadowPreset switch
             {
                 TimeOfDayPreset.Noon => 2f,
-                TimeOfDayPreset.Afternoon => 1.5f,
+                TimeOfDayPreset.Afternoon => 1.05f,
                 _ => 1f
             };
             var opacity = shadowPreset switch

@@ -533,7 +533,7 @@ public class DistrictFloraBatchesTests
     }
 
     [TestCase(TimeOfDayPreset.Noon, 2f)]
-    [TestCase(TimeOfDayPreset.Afternoon, 1.5f)]
+    [TestCase(TimeOfDayPreset.Afternoon, 1.05f)]
     public void IndividualFirShadowTravelUsesTheRequestedLength(
         TimeOfDayPreset preset, float multiplier)
     {
