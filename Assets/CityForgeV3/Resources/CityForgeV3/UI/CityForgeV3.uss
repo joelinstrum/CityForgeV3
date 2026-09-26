@@ -3242,7 +3242,7 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
 /* Region map layers use a small anchored menu, with independent checkboxes. */
 .region-layers-control { position: relative; flex-shrink: 0; }
 .region-layers-menu {
-    position: absolute; top: 46px; right: 0; width: 268px;
+    position: absolute; top: 46px; left: 0; width: 268px;
     padding: 12px; background-color: var(--cf-ink-900);
     border-width: 1px; border-color: var(--cf-brass-400); border-radius: 6px;
 }
