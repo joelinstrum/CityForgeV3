@@ -16,6 +16,7 @@ namespace CityForgeV3.World
                     old.gameObject.SetActive(false);
                     if (UnityEngine.Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
                     _districtFloraPresentations.Remove(id);
+                    _shadowedDistrictFlora.Remove(id);
                     UnregisterForestCluster(id);
                 }
                 var tree = index.Find(id);

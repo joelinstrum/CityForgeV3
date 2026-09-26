@@ -12,6 +12,8 @@ namespace CityForgeV3.UI
   {
     private const float RegionMapUnitPixels = 72f;
     private const float DistrictCellPixels = 8f;
+    private const bool DistrictClumpShadowExperiment = true;
+    private const bool DistrictClumpArtworkShadowExperiment = true;
 
     public bool OpenTerraformScaleQa() =>
         OpenDistrictScaleQa(DistrictEditorMode.Terraform);
@@ -1576,9 +1578,11 @@ namespace CityForgeV3.UI
       helpLayer.Add(helpPanel);
 
       var helpRevision = 0;
+      var suppressHelpUntilPointerOut = false;
       // Delegate hover/focus so locally replaced tool palettes keep working.
       void ShowHelp(VisualElement target)
       {
+        if (suppressHelpUntilPointerOut) return;
         var button = target as Button ?? target?.GetFirstAncestorOfType<Button>();
         if (button == null || string.IsNullOrWhiteSpace(button.tooltip))
         { helpPanel.style.display = DisplayStyle.None; return; }
@@ -1600,9 +1604,15 @@ namespace CityForgeV3.UI
             helpPanel.style.display = DisplayStyle.None;
         }).ExecuteLater(3000);
       }
+      screen.RegisterCallback<PointerDownEvent>(_ =>
+      {
+        suppressHelpUntilPointerOut = true;
+        helpRevision++;
+        helpPanel.style.display = DisplayStyle.None;
+      }, TrickleDown.TrickleDown);
       screen.RegisterCallback<PointerOverEvent>(evt => ShowHelp(evt.target as VisualElement));
       screen.RegisterCallback<PointerOutEvent>(_ =>
-      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
+      { suppressHelpUntilPointerOut = false; helpRevision++; helpPanel.style.display = DisplayStyle.None; });
       screen.RegisterCallback<FocusInEvent>(evt => ShowHelp(evt.target as VisualElement));
       screen.RegisterCallback<FocusOutEvent>(_ =>
       { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
@@ -1620,6 +1630,13 @@ namespace CityForgeV3.UI
       var compositionKey = DistrictCompositionKey(district);
       if (_districtWorld != null &&
           _districtWorld.WorldCamera != null &&
+          !_districtWorld.ShowDistrictShadows &&
+          _districtWorld.ShowIndividualTreeShadows &&
+          _districtWorld.ShowTreeClumpShadows ==
+              DistrictClumpShadowExperiment &&
+          _districtWorld.UseArtworkClumpShadows ==
+              DistrictClumpArtworkShadowExperiment &&
+          !_districtWorld.ShowTreeShadowPrototype &&
           _districtWorldTileId == district.TileId &&
           _districtWorldLotId == lotId &&
           _districtWorldCompositionKey == compositionKey)
@@ -1638,6 +1655,15 @@ namespace CityForgeV3.UI
         var world = new GameObject("V3 District World");
         _districtWorld = world.AddComponent<DistrictWorldController>();
       }
+      // Keep realtime sun shadows off. Project individual trees and clumps
+      // through the same cached district shadow batches for this visual study.
+      _districtWorld.ShowDistrictShadows = false;
+      _districtWorld.ShowIndividualTreeShadows = true;
+      _districtWorld.ShowTreeClumpShadows =
+          DistrictClumpShadowExperiment;
+      _districtWorld.UseArtworkClumpShadows =
+          DistrictClumpArtworkShadowExperiment;
+      _districtWorld.ShowTreeShadowPrototype = false;
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);
       _districtWorld.SetPan(_terraformPanOffset);
@@ -2867,7 +2893,7 @@ namespace CityForgeV3.UI
           (_terraformZoomLevel == DistrictZoomLevel.LOD0 ? 3f : 2f) *
           DistrictZoom.PanSpeedScale(_terraformZoomLevel);
       // Every stop has its own perceived-speed calibration. In particular,
-      // player-facing Zooms 4–6 are intentionally slower than close inspection
+      // distant camera stops are intentionally slower than close inspection
       // for both edge hovering and arrow keys.
       var horizontalWorldMotion = 0;
       var verticalWorldMotion = 0;
@@ -3241,6 +3267,12 @@ namespace CityForgeV3.UI
     private static readonly (string Id, string Name)[] DistrictTrees =
     {
             ("american-elm", "American Elm"),
+            ("forest-deciduous-compact", "Deciduous Clump (Compact)"),
+            ("forest-deciduous-large", "Deciduous Clump (Large)"),
+            ("forest-mountain-compact", "Fir Clump (Compact)"),
+            ("forest-mountain-large", "Fir Clump (Large)"),
+            ("forest-tropical-compact", "Tropical Clump (Compact)"),
+            ("forest-tropical-large", "Tropical Clump (Large)"),
             ("cilician-fir", "Cilician Fir"),
             ("medium-balsam-fir", "Medium Balsam Fir"),
             ("medium-fraser-fir", "Medium Fraser Fir"),
@@ -3297,7 +3329,7 @@ namespace CityForgeV3.UI
       if (!DistrictTreeFamilyAvailable(_floraTreeFamily))
         _floraTreeFamily = FloraFamilies.Names.First(DistrictTreeFamilyAvailable);
       var panel = CreateDocumentModal("DISTRICT FLORA",
-          "Choose a family, then click or drag to plant. Release to finish a stroke. Tab rerolls the latest stroke within its family. Individual trees and stones can also be placed.");
+          "Choose a family, then click or drag to plant. Clump cards place one clump with a foreground tree. Release to finish a stroke. Tab rerolls the latest random stroke within its family. Individual trees and stones can also be placed.");
       panel.AddToClassList("road-material-modal-panel");
       panel.AddToClassList("flora-modal-panel");
       AddDistrictFloraTabs(panel, _districtStoneLibrary ? "STONES" : "TREES");
@@ -3328,8 +3360,10 @@ namespace CityForgeV3.UI
         card.AddToClassList("road-material-card");
         var preview = new VisualElement();
         preview.AddToClassList("road-material-swatch");
-        preview.style.backgroundImage = new StyleBackground(
-            Resources.Load<Texture2D>(
+        preview.style.backgroundImage = ForestTrueAngleCluster.IsFirCluster(captured.Id)
+            ? new StyleBackground(ForestTrueAngleCluster.IndividualSprite(
+                "medium-fraser-fir", 0, SeasonPreset.Summer))
+            : new StyleBackground(Resources.Load<Texture2D>(
                 LotWorldController.ResolveFloraResourcePath(
                     captured.Id, SeasonPreset.Summer)));
         card.Add(preview);
@@ -3446,6 +3480,43 @@ namespace CityForgeV3.UI
           groupHasHarvestableTree = true;
         DistrictHarvestIndex.Changed(district,last);
         _pendingDistrictFloraPresentations.Add(last);
+        if (ForestClusterCatalog.IsCluster(id))
+        {
+          var width = DistrictScale.SizeMeters(district.Width);
+          var depth = DistrictScale.SizeMeters(district.Height);
+          var center = new Vector2(candidate.x * width,
+              candidate.y * depth);
+          var frontNormalized = Vector2.zero;
+          var frontId = ForestClumpForeground.TreeId(id,
+              last.RotationEighthTurns);
+          for (var attempt = 0; attempt < 3; attempt++)
+          {
+            var offsetScale = attempt == 0 ? 1f : attempt == 1 ? .75f : .55f;
+            var front = ForestClumpForeground.PointMeters(id,
+                last.RotationEighthTurns, center, last.Scale, offsetScale);
+            frontNormalized = new Vector2(front.x / width,
+                front.y / depth);
+            if (front.x <= 5f || front.y <= 5f ||
+                front.x >= width - 5f || front.y >= depth - 5f ||
+                !DistrictRoadPlacementModel.IsFloraPositionClear(district,
+                    frontNormalized, 4f) ||
+                _districtWorld.IsUnderRiverWater(frontNormalized)) continue;
+            var foreground = new PlacedDistrictFlora
+            {
+              InstanceId = Guid.NewGuid().ToString("N"),
+              GroupId = group,
+              FloraId = frontId,
+              NormalizedX = frontNormalized.x,
+              NormalizedZ = frontNormalized.y,
+              Scale = last.Scale * .85f,
+              RotationEighthTurns = last.RotationEighthTurns
+            };
+            district.Flora.Add(foreground);
+            DistrictHarvestIndex.Changed(district, foreground);
+            _pendingDistrictFloraPresentations.Add(foreground);
+            break;
+          }
+        }
       }
       if (last == null)
       {
@@ -3535,7 +3606,9 @@ namespace CityForgeV3.UI
 
     private string RandomDistrictTreeId(string family, string excluding)
     {
-      var choices = DistrictTrees.Where(tree => FloraFamilies.ForTree(tree.Id) == family && tree.Id != excluding && RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).ToArray();
+      var choices = DistrictTrees.Where(tree => !ForestClusterCatalog.IsCluster(tree.Id) &&
+          FloraFamilies.ForTree(tree.Id) == family && tree.Id != excluding &&
+          RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).ToArray();
       if (choices.Length == 0) return DistrictTrees.First(tree => RegionClimateRules.AllowsTree(CurrentRegionClimate, tree.Id)).Id;
       return choices[UnityEngine.Random.Range(0, choices.Length)].Id;
     }

@@ -12,8 +12,13 @@ namespace CityForgeV3.World
         private readonly Dictionary<(Vector2Int, Sprite), List<SpriteRenderer>> cells = new();
         private readonly Dictionary<SpriteRenderer, (Vector2Int, Sprite)> membership = new();
         private readonly Dictionary<(Vector2Int, Sprite), List<GameObject>> outputs = new();
+        private readonly Dictionary<MeshRenderer, bool> shadowBatchHasSources = new();
+        private bool shadowsVisible = true;
         private readonly Dictionary<Sprite, Geometry> geometry = new();
         private readonly Dictionary<SpriteRenderer, Quaternion> cameraRelativeRotations = new();
+        private readonly List<SpriteRenderer> shadowRefreshTrees = new();
+        private readonly List<Vector3> shadowRefreshVertices = new();
+        private readonly List<Vector3> shadowSourceVertices = new();
         private List<(Vector2Int, Sprite)> scheduledRebuilds;
         private int scheduledRebuildIndex;
         private Camera camera;
@@ -42,6 +47,14 @@ namespace CityForgeV3.World
             foreach (var cell in cells.Keys) RebuildCell(cell);
         }
         public bool RebuildPending => scheduledRebuilds != null;
+        public void SetShadowVisibility(bool visible)
+        {
+            if (shadowsVisible == visible) return;
+            shadowsVisible = visible;
+            foreach (var pair in shadowBatchHasSources)
+                if (pair.Key != null)
+                    pair.Key.enabled = visible && pair.Value;
+        }
         public void ScheduleRebuild()
         {
             scheduledRebuilds = new List<(Vector2Int, Sprite)>(cells.Keys);
@@ -62,6 +75,73 @@ namespace CityForgeV3.World
                 RebuildCell(scheduledRebuilds[scheduledRebuildIndex]);
             if (scheduledRebuildIndex >= scheduledRebuilds.Count)
                 CancelScheduledRebuild();
+        }
+
+        // An explicit time-of-day change has already updated each source
+        // shadow mesh. Copy only those vertices into the existing batch meshes;
+        // flora geometry, renderers, materials, and batch membership stay put.
+        // The prototype calls this once per time change, never per frame.
+        public void RefreshShadowMeshes()
+        {
+            var properties = new MaterialPropertyBlock();
+            foreach (var cell in cells)
+            {
+                if (!outputs.TryGetValue(cell.Key, out var items)) continue;
+                MeshRenderer batch = null;
+                foreach (var item in items)
+                    if (item != null && item.name == "Flora shadow batch")
+                    {
+                        batch = item.GetComponent<MeshRenderer>();
+                        break;
+                    }
+                shadowRefreshTrees.Clear();
+                foreach (var tree in cell.Value)
+                    if (tree != null && tree.sprite == cell.Key.Item2)
+                        shadowRefreshTrees.Add(tree);
+                shadowRefreshTrees.Sort((a, b) =>
+                    a.sortingOrder.CompareTo(b.sortingOrder));
+                shadowRefreshVertices.Clear();
+                MeshRenderer firstShadow = null;
+                foreach (var tree in shadowRefreshTrees)
+                {
+                    var shadow = Shadow(tree);
+                    if (shadow == null || !shadow.enabled) continue;
+                    firstShadow ??= shadow;
+                    var source = shadow.GetComponent<MeshFilter>().sharedMesh;
+                    if (source == null) continue;
+                    shadowSourceVertices.Clear();
+                    source.GetVertices(shadowSourceVertices);
+                    var matrix = transform.worldToLocalMatrix *
+                        shadow.transform.localToWorldMatrix;
+                    foreach (var vertex in shadowSourceVertices)
+                        shadowRefreshVertices.Add(matrix.MultiplyPoint3x4(vertex));
+                }
+                if (firstShadow == null)
+                {
+                    if (batch != null)
+                    {
+                        shadowBatchHasSources[batch] = false;
+                        batch.enabled = false;
+                    }
+                    continue;
+                }
+                if (batch == null || batch.GetComponent<MeshFilter>()
+                    .sharedMesh.vertexCount != shadowRefreshVertices.Count)
+                {
+                    // A local add/remove or loading at night can change the
+                    // shadow topology. Rebuild only this affected spatial cell.
+                    RebuildCell(cell.Key);
+                    continue;
+                }
+                var mesh = batch.GetComponent<MeshFilter>().sharedMesh;
+                mesh.SetVertices(shadowRefreshVertices);
+                mesh.RecalculateBounds();
+                firstShadow.GetPropertyBlock(properties);
+                properties.SetFloat("_DistrictFloraBatch", 0f);
+                batch.SetPropertyBlock(properties);
+                shadowBatchHasSources[batch] = true;
+                batch.enabled = shadowsVisible;
+            }
         }
         readonly HashSet<(Vector2Int, Sprite)> dirtyCells = new();
         int changeDepth;
@@ -109,7 +189,12 @@ namespace CityForgeV3.World
         private void RebuildCell((Vector2Int, Sprite) cell)
         {
             if (outputs.TryGetValue(cell, out var old))
-                foreach (var item in old) { item.SetActive(false); Dispose(item); }
+                foreach (var item in old)
+                {
+                    if (item.name == "Flora shadow batch")
+                        shadowBatchHasSources.Remove(item.GetComponent<MeshRenderer>());
+                    item.SetActive(false); Dispose(item);
+                }
             outputs[cell] = new();
             var groups = new Dictionary<Sprite, List<SpriteRenderer>>();
             foreach (var tree in cells[cell])
@@ -126,9 +211,12 @@ namespace CityForgeV3.World
                 pair.Value.Sort((a, b) => a.sortingOrder.CompareTo(b.sortingOrder));
                 var vertices = new List<Vector3>(); var uv = new List<Vector2>();
                 var billboardOffsets = new List<Vector3>();
+                var atlasSelectors = new List<Vector2>();
                 var colors = new List<Color>(); var triangles = new List<int>();
                 var billboardRadius = 0f;
+                Texture alternateTexture = null;
                 var shadowVertices = new List<Vector3>(); var shadowUV = new List<Vector2>();
+                var shadowAtlasSelectors = new List<Vector2>();
                 var shadowColors = new List<Color>(); var shadowTriangles = new List<int>();
                 MeshRenderer firstShadow = null;
                 foreach (var tree in pair.Value)
@@ -140,6 +228,14 @@ namespace CityForgeV3.World
                     for (int pieceIndex = 0; pieceIndex < pieces; pieceIndex++)
                     {
                         var piece = atlas != null ? atlas.Piece(pieceIndex) : sprite;
+                        bool alternateAtlas = piece.texture != sprite.texture;
+                        if (alternateAtlas)
+                        {
+                            if (alternateTexture != null && alternateTexture != piece.texture)
+                                throw new System.InvalidOperationException(
+                                    "A flora cluster batch supports two atlases.");
+                            alternateTexture = piece.texture;
+                        }
                         if (!geometry.TryGetValue(piece, out var pieceGeometry))
                             geometry[piece] = pieceGeometry = new Geometry
                             {
@@ -158,6 +254,7 @@ namespace CityForgeV3.World
                                     v.y * scale.y * pieceScale, 0f);
                             vertices.Add(center);
                             billboardOffsets.Add(billboardOffset);
+                            atlasSelectors.Add(alternateAtlas ? Vector2.right : Vector2.zero);
                             billboardRadius = Mathf.Max(billboardRadius,
                                 billboardOffset.magnitude);
                             colors.Add(tree.color);
@@ -177,6 +274,13 @@ namespace CityForgeV3.World
                     var matrix = transform.worldToLocalMatrix * shadow.transform.localToWorldMatrix;
                     foreach (var v in mesh.vertices) shadowVertices.Add(matrix.MultiplyPoint3x4(v));
                     shadowUV.AddRange(mesh.uv);
+                    var selectors = new List<Vector2>();
+                    mesh.GetUVs(3, selectors);
+                    if (selectors.Count == mesh.vertexCount)
+                        shadowAtlasSelectors.AddRange(selectors);
+                    else
+                        for (var i = 0; i < mesh.vertexCount; i++)
+                            shadowAtlasSelectors.Add(Vector2.zero);
                     var sourceColors = mesh.colors;
                     if (sourceColors != null &&
                         sourceColors.Length == mesh.vertexCount)
@@ -188,27 +292,34 @@ namespace CityForgeV3.World
                 }
                 var properties = new MaterialPropertyBlock();
                 pair.Value[0].GetPropertyBlock(properties); properties.SetTexture("_MainTex", sprite.texture);
+                if (alternateTexture != null)
+                    properties.SetTexture("_AlternateTex", alternateTexture);
                 properties.SetFloat("_DistrictFloraBatch", 1f);
                 Create(cell, "Flora batch", pair.Value[0].sharedMaterial,
                     properties, vertices, uv, colors, triangles,
-                    billboardOffsets, billboardRadius);
+                    billboardOffsets, billboardRadius, atlasSelectors);
                 if (firstShadow != null)
                 {
                     firstShadow.GetPropertyBlock(properties);
                     properties.SetFloat("_DistrictFloraBatch", 0f);
-                    Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
-                        shadowVertices, shadowUV, shadowColors, shadowTriangles);
+                    var batch = Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
+                        shadowVertices, shadowUV, shadowColors, shadowTriangles,
+                        atlasSelectors: shadowAtlasSelectors);
+                    shadowBatchHasSources[batch] = true;
+                    batch.enabled = shadowsVisible;
                 }
             }
         }
-        private void Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
+        private MeshRenderer Create((Vector2Int, Sprite) cell, string label, Material material, MaterialPropertyBlock properties,
             List<Vector3> vertices, List<Vector2> uv, List<Color> colors, List<int> triangles,
-            List<Vector3> billboardOffsets = null, float billboardRadius = 0f)
+            List<Vector3> billboardOffsets = null, float billboardRadius = 0f,
+            List<Vector2> atlasSelectors = null)
         {
             var item = new GameObject(label); item.transform.SetParent(transform, false);
             var mesh = new Mesh { name = label, indexFormat = vertices.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             mesh.SetVertices(vertices); mesh.SetUVs(0, uv);
             if (billboardOffsets != null) mesh.SetUVs(2, billboardOffsets);
+            if (atlasSelectors != null) mesh.SetUVs(3, atlasSelectors);
             mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
             if (billboardRadius > 0f)
@@ -223,6 +334,7 @@ namespace CityForgeV3.World
             renderer.SetPropertyBlock(properties); renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             outputs[cell].Add(item);
+            return renderer;
         }
         private static void Dispose(Object item)
         { if (Application.isPlaying) Destroy(item); else DestroyImmediate(item); }

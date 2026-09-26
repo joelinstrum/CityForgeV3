@@ -25,6 +25,135 @@ namespace CityForgeV3.World
             return direction * horizontal.magnitude + Vector3.up * sunRay.y;
         }
 
+        // The district's upright tree art reads best with shadows on the
+        // visible ground plane. The noon and afternoon marks favor screen right;
+        // keep a small away-from-camera component so the silhouettes remain
+        // attached to the tree feet rather than crossing their billboards.
+        public static Vector3 DistrictTreeRay(Vector3 sunRay,
+            Vector3 cameraForward, Vector3 cameraRight, TimeOfDayPreset preset)
+        {
+            if (preset != TimeOfDayPreset.Noon &&
+                preset != TimeOfDayPreset.Afternoon)
+                return BehindCameraRay(sunRay, cameraForward);
+            var horizontal = Vector3.ProjectOnPlane(sunRay, Vector3.up);
+            var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+            var right = Vector3.ProjectOnPlane(cameraRight, Vector3.up);
+            if (horizontal.sqrMagnitude < .0001f ||
+                behind.sqrMagnitude < .0001f || right.sqrMagnitude < .0001f)
+                return sunRay;
+            var behindWeight = preset == TimeOfDayPreset.Noon ? .4f : .1f;
+            var direction = (right.normalized +
+                behind.normalized * behindWeight).normalized;
+            return direction * horizontal.magnitude + Vector3.up * sunRay.y;
+        }
+
+        // Project each authored member's alpha cutout onto the terrain. One
+        // tessellated quad per member follows hills without introducing child
+        // renderers; UV3 chooses the second atlas in mixed fir/deciduous stands.
+        public static bool UpdateArtwork(SpriteRenderer source,
+            MeshRenderer shadow, Vector3 ray,
+            Func<Vector3, float> groundHeight,
+            Func<Vector3, Vector3> groundAnchor,
+            TimeOfDayPreset preset, float lengthScale,
+            out Texture2D alternateAtlas)
+        {
+            alternateAtlas = null;
+            var atlas = source.GetComponent<ForestTrueAngleCluster>();
+            if ((atlas == null || atlas.PieceCount <= 1) &&
+                !ForestClusterCatalog.IsTexture(source.sprite.texture.name))
+                return false;
+            var horizontal = Vector3.ProjectOnPlane(ray, Vector3.up);
+            var horizontalMagnitude = horizontal.magnitude;
+            var direction = horizontalMagnitude > .0001f
+                ? horizontal / horizontalMagnitude : Vector3.forward;
+            var right = Vector3.Cross(Vector3.up, direction).normalized;
+            var root = groundAnchor(source.transform.position);
+            var sourceTexture = source.sprite.texture;
+            var scale = source.transform.lossyScale;
+            var vertices = new List<Vector3>();
+            var uv = new List<Vector2>();
+            var selectors = new List<Vector2>();
+            var colors = new List<Color>();
+            var triangles = new List<int>();
+            var pieceCount = atlas?.PieceCount ?? 1;
+            for (var pieceIndex = 0; pieceIndex < pieceCount; pieceIndex++)
+            {
+                var piece = atlas != null ? atlas.Piece(pieceIndex) :
+                    source.sprite;
+                bool alternate = piece.texture != sourceTexture;
+                if (alternate)
+                {
+                    if (alternateAtlas != null && alternateAtlas != piece.texture)
+                        throw new InvalidOperationException(
+                            "A clump shadow supports two artwork atlases.");
+                    alternateAtlas = piece.texture;
+                }
+                var pieceScale = atlas != null ? atlas.PieceScale(pieceIndex) : 1f;
+                var widthScale = scale.x * pieceScale;
+                var heightScale = scale.y * pieceScale;
+                var referenceHeight = Mathf.Max(.01f,
+                    piece.bounds.size.y * heightScale);
+                var travel = Mathf.Min(referenceHeight * horizontalMagnitude /
+                        Mathf.Max(.05f, -ray.y) *
+                        (preset == TimeOfDayPreset.Noon ? .8f : .55f),
+                    piece.bounds.size.x * widthScale * .65f) * lengthScale;
+                var foot = root + (atlas != null ? atlas.WorldOffset(pieceIndex) :
+                    Vector3.zero);
+                var pieceUV = piece.uv;
+                float minU = 1f, maxU = 0f, minV = 1f, maxV = 0f;
+                foreach (var point in pieceUV)
+                {
+                    minU = Mathf.Min(minU, point.x);
+                    maxU = Mathf.Max(maxU, point.x);
+                    minV = Mathf.Min(minV, point.y);
+                    maxV = Mathf.Max(maxV, point.y);
+                }
+                // A wider legacy composition needs more terrain samples than
+                // each narrow member sprite in a true-angle cluster.
+                int divisions = atlas != null ? 4 : 8;
+                int start = vertices.Count;
+                for (int row = 0; row <= divisions; row++)
+                for (int col = 0; col <= divisions; col++)
+                {
+                    float u = (float)col / divisions;
+                    float v = (float)row / divisions;
+                    float x = Mathf.Lerp(piece.bounds.min.x,
+                        piece.bounds.max.x, u) * widthScale;
+                    float height = Mathf.Max(0f, Mathf.Lerp(
+                        piece.bounds.min.y, piece.bounds.max.y, v) * heightScale);
+                    var point = foot + right * x + direction *
+                        (travel * Mathf.Clamp01(height / referenceHeight));
+                    point.y = groundHeight(point) + .031f;
+                    vertices.Add(shadow.transform.InverseTransformPoint(point));
+                    uv.Add(new Vector2(Mathf.Lerp(minU, maxU, u),
+                        Mathf.Lerp(minV, maxV, v)));
+                    selectors.Add(alternate ? Vector2.right : Vector2.zero);
+                    colors.Add(new Color(1f, 1f, 1f,
+                        Mathf.Clamp01(height / referenceHeight)));
+                }
+                for (int row = 0; row < divisions; row++)
+                for (int col = 0; col < divisions; col++)
+                {
+                    int corner = start + row * (divisions + 1) + col;
+                    triangles.Add(corner);
+                    triangles.Add(corner + divisions + 1);
+                    triangles.Add(corner + 1);
+                    triangles.Add(corner + 1);
+                    triangles.Add(corner + divisions + 1);
+                    triangles.Add(corner + divisions + 2);
+                }
+            }
+            var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
+            mesh.Clear();
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uv);
+            mesh.SetUVs(3, selectors);
+            mesh.SetColors(colors);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return true;
+        }
+
         const int CanopySides = 20;
         const int ContactSides = 8;
         static readonly Vector2[] CompactCrowns =

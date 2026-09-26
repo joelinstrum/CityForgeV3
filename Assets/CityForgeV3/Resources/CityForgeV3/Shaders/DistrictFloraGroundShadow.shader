@@ -3,6 +3,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
     Properties
     {
         [PerRendererData] _MainTex ("Tree Silhouette", 2D) = "white" {}
+        [PerRendererData] _AlternateTex ("Clump second atlas", 2D) = "white" {}
         [PerRendererData] _Color ("Shadow Color", Color) = (0.018, 0.022, 0.026, 0.2)
         _DistrictHalfSize ("District Shadow Bounds", Vector) = (100000,100000,0,0)
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.02
@@ -18,6 +19,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
+            sampler2D _AlternateTex;
             fixed4 _Color;
             half _Cutoff;
             float4 _DistrictHalfSize;
@@ -27,6 +29,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                float2 atlasSelector : TEXCOORD3;
                 fixed4 color : COLOR;
             };
 
@@ -37,6 +40,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 half heightRatio : TEXCOORD1;
                 half edgeOpacity : TEXCOORD2;
                 float2 receiverPosition : TEXCOORD3;
+                half atlasSelector : TEXCOORD4;
             };
 
             v2f vert(appdata input)
@@ -44,6 +48,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
                 v2f output;
                 output.vertex = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv;
+                output.atlasSelector = input.atlasSelector.x;
                 output.receiverPosition = mul(_DistrictWorldToLocal, mul(unity_ObjectToWorld, input.vertex)).xz;
                 output.heightRatio = input.color.a;
                 output.edgeOpacity = input.color.r;
@@ -53,7 +58,9 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             fixed4 frag(v2f input) : SV_Target
             {
                 clip(_DistrictHalfSize.xy - abs(input.receiverPosition));
-                half alpha = tex2D(_MainTex, input.uv).a;
+                half alpha = input.atlasSelector > .5h
+                    ? tex2D(_AlternateTex, input.uv).a
+                    : tex2D(_MainTex, input.uv).a;
                 clip(alpha - _Cutoff);
                 // Preserve trunk contact while gently losing density toward
                 // the far canopy so the projection does not look stamped on.
@@ -75,6 +82,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             ENDCG
         }
 
@@ -99,6 +107,7 @@ Shader "CityForgeV3/DistrictFloraGroundShadow"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.0
             ENDCG
         }
     }

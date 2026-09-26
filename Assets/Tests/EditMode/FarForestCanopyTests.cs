@@ -33,14 +33,16 @@ namespace CityForgeV3.Tests.EditMode
                 cluster.Configure("forest-deciduous-large", 0,
                     SeasonPreset.Summer, _ => 0f);
                 Assert.That(cluster.PieceCount, Is.EqualTo(7));
-                var summerRects = Enumerable.Range(0, cluster.PieceCount)
+                var deciduousPieces = Enumerable.Range(0, cluster.PieceCount)
+                    .Where(index => !cluster.IsFirPiece(index)).ToArray();
+                var summerRects = deciduousPieces
                     .Select(index => cluster.Piece(index).rect).ToArray();
                 cluster.SetSeason(SeasonPreset.Autumn);
-                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                Assert.That(deciduousPieces
                     .Select(index => cluster.Piece(index).rect),
                     Is.EqualTo(summerRects));
                 cluster.SetSeason(SeasonPreset.Winter);
-                Assert.That(Enumerable.Range(0, cluster.PieceCount)
+                Assert.That(deciduousPieces
                     .Select(index => cluster.Piece(index).rect),
                     Is.EqualTo(summerRects));
             }
@@ -80,6 +82,305 @@ namespace CityForgeV3.Tests.EditMode
                     Is.EqualTo(3 * 7 * 4));
                 Assert.That(renderers.All(renderer => renderer.forceRenderingOff),
                     Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase("forest-deciduous-compact")]
+        [TestCase("forest-deciduous-large")]
+        [TestCase("forest-mountain-compact")]
+        [TestCase("forest-mountain-large")]
+        public void TemperateClustersKeepTheirDominantFamilyInEverySeason(
+            string id)
+        {
+            var owner = new GameObject("Mixed forest atlas test");
+            try
+            {
+                for (var variation = 0; variation < 3; variation++)
+                {
+                    var cluster = owner.AddComponent<ForestTrueAngleCluster>();
+                    cluster.Configure(id, variation, SeasonPreset.Summer, _ => 0f);
+                    var firCount = Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece);
+                    Assert.That(firCount, ForestTrueAngleCluster.IsFirCluster(id)
+                        ? Is.EqualTo(cluster.PieceCount - 1)
+                        : Is.InRange(1, 2), id);
+                    Assert.That(cluster.PieceCount - firCount, Is.GreaterThan(0), id);
+                    foreach (var season in new[] { SeasonPreset.Summer,
+                                 SeasonPreset.Autumn, SeasonPreset.Winter })
+                    {
+                        cluster.SetSeason(season);
+                        for (var piece = 0; piece < cluster.PieceCount; piece++)
+                        {
+                            var expected = cluster.IsFirPiece(piece)
+                                ? ForestTrueAngleCluster.ResourcePath(
+                                    "cilician-fir", season)
+                                : ForestTrueAngleCluster.ResourcePath(
+                                    "forest-deciduous-large", season);
+                            Assert.That(cluster.Piece(piece).texture,
+                                Is.SameAs(Resources.Load<Texture2D>(expected)),
+                                id + " variation " + variation + " " + season);
+                        }
+                    }
+                    Object.DestroyImmediate(cluster);
+                }
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase("forest-deciduous-large")]
+        [TestCase("forest-mountain-large")]
+        public void MixedClusterKeepsBothAtlasesInOneSpatialBatch(string id)
+        {
+            var owner = new GameObject("Mixed forest batch test");
+            try
+            {
+                var tree = new GameObject(id);
+                tree.transform.SetParent(owner.transform, false);
+                var cluster = tree.AddComponent<ForestTrueAngleCluster>();
+                cluster.Configure(id, 1, SeasonPreset.Autumn, _ => 0f);
+                var renderer = tree.AddComponent<SpriteRenderer>();
+                renderer.sprite = ForestTrueAngleCluster.RootSprite(id,
+                    SeasonPreset.Autumn);
+                var batches = owner.AddComponent<DistrictFloraBatches>();
+                batches.Build(new[] { renderer });
+                var output = owner.GetComponentsInChildren<MeshRenderer>()
+                    .Where(item => item.name == "Flora batch").ToArray();
+                Assert.That(output, Has.Length.EqualTo(1));
+                var selectors = new List<Vector2>();
+                output[0].GetComponent<MeshFilter>().sharedMesh.GetUVs(3,
+                    selectors);
+                Assert.That(selectors.Count, Is.EqualTo(cluster.PieceCount * 4));
+                var alternateCount = cluster.IsFir
+                    ? cluster.PieceCount - Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece)
+                    : Enumerable.Range(0, cluster.PieceCount)
+                        .Count(cluster.IsFirPiece);
+                Assert.That(selectors.Count(value => value.x > .5f),
+                    Is.EqualTo(alternateCount * 4));
+                var properties = new MaterialPropertyBlock();
+                output[0].GetPropertyBlock(properties);
+                var alternatePiece = Enumerable.Range(0, cluster.PieceCount)
+                    .Select(cluster.Piece)
+                    .First(piece => piece.texture != renderer.sprite.texture);
+                Assert.That(properties.GetTexture("_AlternateTex"),
+                    Is.SameAs(alternatePiece.texture));
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void BudgetedSummerAutumnTransitionKeepsMixedFirBatchesWithinTwoAtlases()
+        {
+            var owner = new GameObject("Staged mixed forest season test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "staged-mixed-season", Width = 1, Height = 1,
+                    Founded = true,
+                    Labor = new DistrictLaborState { SeasonIndex = 0 }
+                };
+                foreach (var id in new[] { "forest-mountain-large",
+                             "forest-mountain-compact", "cilician-fir" })
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = id, FloraId = id,
+                        NormalizedX = .50f + district.Flora.Count * .01f,
+                        NormalizedZ = .50f
+                    });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(3));
+                int BatchCount() => owner.GetComponentsInChildren<MeshRenderer>()
+                    .Count(renderer => renderer.name == "Flora batch");
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                var summerRoot = ForestTrueAngleCluster.RootSprite(
+                    "forest-mountain-large", SeasonPreset.Summer);
+                var autumnRoot = ForestTrueAngleCluster.RootSprite(
+                    "forest-mountain-large", SeasonPreset.Autumn);
+                district.Labor.SeasonIndex = 1;
+                Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                Assert.That(BatchCount(), Is.EqualTo(2),
+                    "Only the staged transition should split this spatial batch.");
+                var guard = 0;
+                do
+                {
+                    Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                Assert.That(autumnRoot, Is.Not.SameAs(summerRoot));
+                Assert.That(autumnRoot.texture, Is.SameAs(summerRoot.texture));
+                Assert.That(ForestTrueAngleCluster.RootSprite("cilician-fir",
+                    SeasonPreset.Autumn), Is.SameAs(autumnRoot));
+                Assert.That(trees.All(renderer => renderer.sprite == autumnRoot),
+                    Is.True);
+                Assert.That(trees.All(renderer => renderer.GetComponent<
+                    ForestTrueAngleCluster>().Season == SeasonPreset.Autumn),
+                    Is.True);
+
+                district.Labor.SeasonIndex = 0;
+                guard = 0;
+                do
+                {
+                    Assert.DoesNotThrow(() => world.SyncForestSeason(1));
+                    Assert.That(++guard, Is.LessThan(10));
+                } while (world.ForestSeasonPending);
+                Assert.That(BatchCount(), Is.EqualTo(1));
+                Assert.That(trees.All(renderer => renderer.sprite == summerRoot),
+                    Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void SoftTreeShadowPrototypeBatchesTerrainMeshesWithoutRealtimeCasters()
+        {
+            var owner = new GameObject("Soft tree shadow prototype test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "soft-shadow-test", Width = 1, Height = 1,
+                    Founded = true,
+                    Hills = new DistrictHillSettings
+                    {
+                        Version = 2, Seed = 1209, HeightMeters = 35f,
+                        Coverage = .6f
+                    }
+                };
+                for (var index = 0; index < 20; index++)
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = "soft-shadow-" + index,
+                        FloraId = (index % 5) switch
+                        {
+                            0 => "american-elm",
+                            1 => "forest-deciduous-compact",
+                            2 => "forest-deciduous-large",
+                            3 => "forest-mountain-compact",
+                            _ => "forest-mountain-large"
+                        },
+                        NormalizedX = .25f + index % 5 * .04f,
+                        NormalizedZ = .25f + index / 5 * .04f
+                    });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.ShowDistrictShadows = false;
+                world.ShowTreeShadowPrototype = true;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(20));
+                Assert.That(trees.All(renderer => renderer.shadowCastingMode ==
+                    UnityEngine.Rendering.ShadowCastingMode.Off), Is.True);
+                var shadows = trees.Select(renderer => renderer.transform.Find(
+                    "District Flora Shadow")?.GetComponent<MeshRenderer>())
+                    .ToArray();
+                Assert.That(trees.Where(renderer => renderer.name ==
+                    "District Flora — american-elm").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow") == null),
+                    Is.True,
+                    "Individual elms should not have prototype shadows.");
+                Assert.That(trees.Where(renderer => renderer.name !=
+                    "District Flora — american-elm").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow")?
+                        .GetComponent<MeshFilter>().sharedMesh.vertexCount == 81),
+                    Is.True);
+                float ShadowWidth(string id)
+                {
+                    var tree = trees.First(renderer => renderer.name ==
+                        "District Flora — " + id);
+                    var shadow = tree.transform.Find("District Flora Shadow");
+                    var vertices = shadow.GetComponent<MeshFilter>()
+                        .sharedMesh.vertices;
+                    return Vector3.Distance(shadow.TransformPoint(vertices[0]),
+                        shadow.TransformPoint(vertices[8]));
+                }
+                Assert.That(ShadowWidth("forest-deciduous-large"),
+                    Is.GreaterThan(ShadowWidth("forest-deciduous-compact") * 1.3f));
+                Assert.That(ShadowWidth("forest-mountain-large"),
+                    Is.GreaterThan(ShadowWidth("forest-mountain-compact") * 1.3f));
+                var batches = owner.GetComponentsInChildren<MeshRenderer>()
+                    .Where(renderer => renderer.name == "Flora shadow batch")
+                    .ToArray();
+                Assert.That(batches.Length, Is.GreaterThan(0));
+                var batchMeshes = batches.Select(renderer => renderer.GetComponent<
+                    MeshFilter>().sharedMesh).ToArray();
+                var noonVertices = batchMeshes.Select(mesh => mesh.vertices)
+                    .ToArray();
+                world.SetTimeOfDay(TimeOfDayPreset.Morning);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False,
+                    "The 20-tree study should switch before SetTimeOfDay returns.");
+                Assert.That(batches.Select(renderer => renderer.GetComponent<
+                    MeshFilter>().sharedMesh), Is.EqualTo(batchMeshes),
+                    "Time changes should update existing batches in place.");
+                Assert.That(batchMeshes.Select((mesh, index) => mesh.vertices
+                    .Where((vertex, offset) => (vertex - noonVertices[index][offset])
+                        .sqrMagnitude > .0001f).Any()).Any(), Is.True);
+                Assert.That(shadows.Where(shadow => shadow != null)
+                    .All(shadow => shadow.GetComponent<MeshFilter>()
+                        .sharedMesh.vertexCount == 81), Is.True);
+                world.SetTimeOfDay(TimeOfDayPreset.Night);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False);
+                Assert.That(batches.All(renderer => !renderer.enabled), Is.True);
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False);
+                Assert.That(batches.All(renderer => renderer.enabled), Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void PrototypeTimeChangeSkipsIndividualTreesInDenseFlora()
+        {
+            var owner = new GameObject("Grouped shadow isolation test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "grouped-shadow-only", Width = 1, Height = 1,
+                    Founded = true, TimeOfDay = TimeOfDayPreset.Noon
+                };
+                for (var index = 0; index < 70; index++)
+                    district.Flora.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = "fir-" + index,
+                        FloraId = "cilician-fir",
+                        NormalizedX = .1f + index % 10 * .08f,
+                        NormalizedZ = .1f + index / 10 * .1f
+                    });
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "cluster", FloraId = "forest-mountain-compact",
+                    NormalizedX = .5f, NormalizedZ = .5f
+                });
+                var world = owner.AddComponent<DistrictWorldController>();
+                world.ShowDistrictShadows = false;
+                world.ShowTreeShadowPrototype = true;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var trees = owner.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(renderer => renderer.name.StartsWith("District Flora — "))
+                    .ToArray();
+                Assert.That(trees, Has.Length.EqualTo(71));
+                Assert.That(trees.Where(renderer => renderer.name ==
+                    "District Flora — cilician-fir").All(renderer =>
+                    renderer.transform.Find("District Flora Shadow") == null),
+                    Is.True);
+                Assert.That(trees.Single(renderer => renderer.name ==
+                    "District Flora — forest-mountain-compact").transform.Find(
+                        "District Flora Shadow"), Is.Not.Null);
+
+                world.SetTimeOfDay(TimeOfDayPreset.Afternoon);
+                Assert.That(world.TimeOfDayPresentationPending, Is.False,
+                    "Only the grouped tree should need a shadow update.");
             }
             finally { Object.DestroyImmediate(owner); }
         }
@@ -290,7 +591,7 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
-        public void DistrictNoonDeciduousShadowUsesItsActualCameraDirection()
+        public void DistrictNoonDeciduousShadowFollowsTheMarkedUpRightDirection()
         {
             var owner = new GameObject("District noon shadow direction test");
             try
@@ -316,31 +617,37 @@ namespace CityForgeV3.Tests.EditMode
                 var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
                 var away = Vector3.ProjectOnPlane(camera.transform.forward,
                     Vector3.up).normalized;
+                var right = Vector3.ProjectOnPlane(camera.transform.right,
+                    Vector3.up).normalized;
                 var firstTreeFoot = tree.transform.position +
                     tree.GetComponent<ForestTrueAngleCluster>().WorldOffset(0);
                 var firstCrownCenter = shadow.TransformPoint(mesh.vertices[0]);
-                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
-                    Is.GreaterThan(0f),
-                    "Noon crown shadow must project away from the viewing camera.");
+                var projected = firstCrownCenter - firstTreeFoot;
+                Assert.That(Vector3.Dot(projected, right),
+                    Is.GreaterThan(Vector3.Dot(projected, away)),
+                    "Noon crown shadow should travel mostly screen right.");
+                Assert.That(Vector3.Dot(projected, away), Is.GreaterThan(0f),
+                    "Noon crown shadow should also travel slightly up screen.");
                 var referenceObject = new GameObject("Former noon projection");
                 referenceObject.transform.SetParent(tree.transform, false);
                 var referenceMesh = new Mesh();
                 referenceObject.AddComponent<MeshFilter>().sharedMesh =
                     referenceMesh;
                 var referenceShadow = referenceObject.AddComponent<MeshRenderer>();
-                var ray = ForestClusterShadows.BehindCameraRay(
+                var ray = ForestClusterShadows.DistrictTreeRay(
                     TimeOfDayLighting.SunRotation(TimeOfDayPreset.Noon) *
-                        Vector3.forward, camera.transform.forward);
+                        Vector3.forward, camera.transform.forward,
+                    camera.transform.right, TimeOfDayPreset.Noon);
                 Assert.That(ForestClusterShadows.Update(tree, referenceShadow,
                     ray, _ => firstCrownCenter.y, point => point, .55f,
                     away), Is.True);
                 var formerCenter = referenceObject.transform.TransformPoint(
                     referenceMesh.vertices[0]);
-                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
+                Assert.That(Vector3.Dot(projected, right),
                     Is.GreaterThan(Vector3.Dot(formerCenter - firstTreeFoot,
-                        away) + .03f),
-                    "Noon clump shadows should extend beyond the former " +
-                    "compressed projection.");
+                        right) * 2f),
+                    "Noon clump shadows should reach at least twice as far " +
+                    "as the former compressed projection.");
             }
             finally { Object.DestroyImmediate(owner); }
         }
@@ -466,10 +773,11 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
+        [TestCase(false, 1)]
+        [TestCase(true, 1)]
+        [TestCase(true, 2)]
         public void DenseCanopySeasonChangeKeepsBatchWorkInBoundedSlices(
-            bool fir)
+            bool fir, int targetSeason)
         {
             var owner = new GameObject("Dense far canopy test");
             try
@@ -498,7 +806,7 @@ namespace CityForgeV3.Tests.EditMode
                 int BatchCount() => owner.GetComponentsInChildren<MeshRenderer>()
                     .Count(renderer => renderer.name == "Flora batch");
                 var summerBatches = BatchCount();
-                district.Labor.SeasonIndex = fir ? 2 : 1;
+                district.Labor.SeasonIndex = targetSeason;
                 var maxMilliseconds = 0d;
                 var maxAllocatedBytes = 0L;
                 var sliceTimes = new List<double>();
@@ -523,6 +831,7 @@ namespace CityForgeV3.Tests.EditMode
                 sliceTimes.Sort();
                 var p95 = sliceTimes[(int)(sliceTimes.Count * .95f)];
                 TestContext.WriteLine("384 " + (fir ? "fir" : "deciduous") +
+                    " clusters to season " + targetSeason +
                     " clusters: summer batches=" +
                     summerBatches + ", changed-season batches=" +
                     seasonalBatches +

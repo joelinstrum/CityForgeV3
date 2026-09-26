@@ -46,6 +46,7 @@ namespace CityForgeV3.World
             {
                 _elevation=new DistrictElevation(_terrainDistrict);
                 var old=filter.sharedMesh;var mesh=_elevation.CreateMesh();filter.sharedMesh=mesh;_terrainCollider.sharedMesh=mesh;
+                LogReliefDiagnostics(mesh);
                 if(Application.isPlaying)Destroy(old);else DestroyImmediate(old);
             }
             else
@@ -92,6 +93,18 @@ namespace CityForgeV3.World
             }
             if(rebuildDecals)_groundDecals?.Refresh(this,_terrainDistrict,_widthMeters,_depthMeters,_surfaceChanges.Full?null:_surfaceChanges.Areas);
             if(heightChanged && rebuildGrid && _grid!=null){var oldGrid=_grid.gameObject;oldGrid.SetActive(false);if(Application.isPlaying)Destroy(oldGrid);else DestroyImmediate(oldGrid);BuildGrid();}
+        }
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void LogReliefDiagnostics(Mesh mesh)
+        {
+            if(_terrainDistrict?.Hills==null || _terrainDistrict.Hills.Mountains ||
+                _terrainDistrict.Hills.HeightMeters<=0 || mesh==null)return;
+            var hills=_terrainDistrict.Hills;
+            Debug.Log($"Requested relief height: {hills.HeightMeters:F3} m");
+            Debug.Log($"Vertical Relief Scale: {(hills.VerticalReliefScale>0?hills.VerticalReliefScale:1f):F3}x");
+            Debug.Log($"Generated terrain min Y: {mesh.bounds.min.y:F3}");
+            Debug.Log($"Generated terrain max Y: {mesh.bounds.max.y:F3}");
+            Debug.Log($"Generated vertical relief: {mesh.bounds.size.y:F3} m");
         }
     }
 }

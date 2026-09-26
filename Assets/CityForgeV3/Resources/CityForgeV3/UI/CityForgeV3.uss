@@ -3242,7 +3242,7 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
 /* Region map layers use a small anchored menu, with independent checkboxes. */
 .region-layers-control { position: relative; flex-shrink: 0; }
 .region-layers-menu {
-    position: absolute; top: 46px; right: 0; width: 268px;
+    position: absolute; top: 46px; left: 0; width: 268px;
     padding: 12px; background-color: var(--cf-ink-900);
     border-width: 1px; border-color: var(--cf-brass-400); border-radius: 6px;
 }
@@ -3336,7 +3336,8 @@ Button.cf-choice-display { margin: 0; padding-left: 12px; padding-right: 12px; }
 .cf-map-inspector .cf-map-action { margin: 12px 0 0 0; }
 .cf-map-primary { background-color: rgb(83, 67, 32); }
 .cf-map-layers { position: absolute; left: 124px; top: 84px; border-width: 0; }
-.cf-map-layers .cf-button { height: 38px; font-size: 12px; margin: 0; background-color: var(--cf-map-navy); }
+.cf-map-layers .cf-button { height: 38px; font-size: 12px; margin: 0; padding: 0; align-items: center; justify-content: center; background-color: var(--cf-map-navy); }
+.cf-map-layers .cf-map-icon { margin: 0; }
 .cf-map-screen .region-map-scroll { top: 76px; background-color: rgb(12, 29, 39); }
 .cf-map-screen .region-map { background-color: rgb(12, 29, 39); }
 .cf-map-screen .region-city-tile--selected { border-color: rgb(247, 205, 91); border-width: 3px; background-color: rgba(230, 192, 83, 0.25); }

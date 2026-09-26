@@ -11,10 +11,36 @@ namespace CityForgeV3.World
         public int Seed = 1209;
         public float HeightMeters;
         public float Coverage = .6f;
+        // Zero in older saves means the pre-scale default of 1x.
+        public float VerticalReliefScale = 1f;
     }
     // Deterministic district relief. Existing roads, lots and water retain level corridors.
     public sealed class DistrictElevation
     {
+        private readonly struct RollingReliefRegion
+        {
+            public readonly Vector2 Center,Along,Across;
+            public readonly Rect Bounds;
+            public RollingReliefRegion(Vector2 center,Vector2 radii,Vector2 direction)
+            {
+                Center=center;
+                Along=direction/radii.x;
+                Across=new Vector2(-direction.y,direction.x)/radii.y;
+                float halfX=Mathf.Sqrt(Mathf.Pow(radii.x*direction.x,2)+Mathf.Pow(radii.y*direction.y,2));
+                float halfY=Mathf.Sqrt(Mathf.Pow(radii.x*direction.y,2)+Mathf.Pow(radii.y*direction.x,2));
+                Bounds=Rect.MinMaxRect(center.x-halfX,center.y-halfY,center.x+halfX,center.y+halfY);
+            }
+        }
+        // 1x reproduces the rolling-hill relief before this presentation tune.
+        // This only scales Y after the horizontal height field is sampled.
+        public const float RollingHillVerticalScale = 1.30f;
+        // Fractions of the district's smaller span. The geometric-mean
+        // wavelength stays constant as anisotropy changes.
+        public const float RollingPrimaryWavelength = .42f;
+        public const float RollingPrimaryAnisotropy = 1.35f;
+        // Broad lateral displacement of primary coordinates, using the
+        // existing secondary field. Zero restores straight primary coordinates.
+        public const float RollingDomainWarpFraction = .08f;
         public readonly float Width, Depth;
         public readonly int Columns, Rows;
         public readonly float[] Heights;
@@ -22,7 +48,15 @@ namespace CityForgeV3.World
         readonly DistrictSpatialIndex<int> padIndex=new(),channelIndex=new();
         private readonly List<(Vector2 a, Vector2 b, float radius)> channels = new();
         private readonly List<Vector3> hills = new();
+        private readonly List<RollingReliefRegion> rollingRegions = new();
+        private readonly Vector2 rollingDirection,rollingSecondaryDirection;
+        private readonly Vector2 rollingOffset,rollingSecondaryOffset;
+        private readonly float rollingCoverage;
         private readonly float amplitude;
+        private readonly float clearanceFadeMeters;
+        private readonly float edgeFadeMeters;
+        private float verticalCalibration = 1f;
+        private readonly float verticalReliefScale;
         private readonly bool mountains;
         private readonly bool connectedMountains;
         private readonly List<Vector4> peakShapes=new();
@@ -39,11 +73,56 @@ namespace CityForgeV3.World
             connectedMountains=mountains && settings.Version>=2;
             if(connectedMountains && settings.PreserveLegacyCoalSites)foreach(var site in district.ResourceDeposits??new List<DistrictResourceDeposit>())
                 if(site.Kind=="coal")preservedSites.Add(new Vector2((site.NormalizedX-.5f)*Width,(site.NormalizedZ-.5f)*Depth));
-            amplitude=settings==null?0:Mathf.Clamp(settings.HeightMeters,0,mountains?240:60);
+            amplitude=settings==null?0:Mathf.Clamp(settings.HeightMeters,0,240);
+            clearanceFadeMeters=mountains?45:Mathf.Max(90,Mathf.Min(60,amplitude)*4);
+            edgeFadeMeters=mountains?clearanceFadeMeters:
+                Mathf.Max(clearanceFadeMeters,Mathf.Min(Width,Depth)*.22f);
+            verticalReliefScale=mountains || settings==null || settings.VerticalReliefScale<=0
+                ? 1f : Mathf.Clamp(settings.VerticalReliefScale,.25f,4f);
             if(amplitude<=0)return;
             var random=new System.Random(settings.Seed);
-            int count=Mathf.RoundToInt(Mathf.Lerp(3,14,Mathf.Clamp01(settings.Coverage)));
-            for(int i=0;i<count;i++)hills.Add(new Vector3((float)(random.NextDouble()-.5)*Width*.8f,(float)(random.NextDouble()-.5)*Depth*.8f,mountains?Mathf.Lerp(90,140,(float)random.NextDouble()):Mathf.Min(Width,Depth)*(.13f+(float)random.NextDouble()*.10f)));
+            if(!mountains)
+            {
+                rollingCoverage=Mathf.Clamp01(settings.Coverage);
+                float angle=(float)random.NextDouble()*Mathf.PI*2;
+                rollingDirection=new Vector2(Mathf.Cos(angle),Mathf.Sin(angle));
+                float secondaryAngle=angle+.55f+(float)random.NextDouble()*.45f;
+                rollingSecondaryDirection=new Vector2(Mathf.Cos(secondaryAngle),Mathf.Sin(secondaryAngle));
+                rollingOffset=new Vector2(13f+(float)random.NextDouble()*997f,29f+(float)random.NextDouble()*997f);
+                rollingSecondaryOffset=new Vector2(41f+(float)random.NextDouble()*997f,73f+(float)random.NextDouble()*997f);
+                float span=Mathf.Min(Width,Depth);
+                float regionAngle=(float)random.NextDouble()*Mathf.PI*2;
+                int[] ringOrder={0,4,2,6,1,5,3,7};
+                for(int i=0;i<9;i++)
+                {
+                    Vector2 center;
+                    if(i==0)center=new Vector2(((float)random.NextDouble()-.5f)*Width*.2f,
+                        ((float)random.NextDouble()-.5f)*Depth*.2f);
+                    else
+                    {
+                        float a=regionAngle+ringOrder[i-1]*Mathf.PI*.25f+
+                            ((float)random.NextDouble()-.5f)*.3f;
+                        float distance=Mathf.Lerp(.29f,.38f,(float)random.NextDouble());
+                        center=new Vector2(Mathf.Cos(a)*Width*distance,Mathf.Sin(a)*Depth*distance);
+                    }
+                    float angleForRegion=(float)random.NextDouble()*Mathf.PI*2;
+                    rollingRegions.Add(new RollingReliefRegion(center,
+                        new Vector2(span*Mathf.Lerp(.37f,.45f,(float)random.NextDouble()),
+                            span*Mathf.Lerp(.25f,.30f,(float)random.NextDouble())),
+                        new Vector2(Mathf.Cos(angleForRegion),Mathf.Sin(angleForRegion))));
+                }
+            }
+            else
+            {
+                int count=Mathf.RoundToInt(Mathf.Lerp(3,14,Mathf.Clamp01(settings.Coverage)));
+                for(int i=0;i<count;i++)
+                {
+                    float x=(float)(random.NextDouble()-.5)*Width*.8f;
+                    float z=(float)(random.NextDouble()-.5)*Depth*.8f;
+                    float radius=Mathf.Lerp(90,140,(float)random.NextDouble());
+                    hills.Add(new Vector3(x,z,radius));
+                }
+            }
             if(connectedMountains)
             {
                 for(int i=0;i<hills.Count;i++)peakShapes.Add(new Vector4(
@@ -63,7 +142,20 @@ namespace CityForgeV3.World
                 }
             }
             RefreshConstraints(district);
-            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+            float unconstrainedPeak=0;
+            for(int z=0;z<=Rows;z++)for(int x=0;x<=Columns;x++)
+            {
+                Heights[z*(Columns+1)+x]=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2),out float rawHeight);
+                if(!mountains)unconstrainedPeak=Mathf.Max(unconstrainedPeak,rawHeight);
+            }
+            if(!mountains && unconstrainedPeak>0)
+            {
+                // Calibrate the sampled field once. Clearance edits reuse this
+                // factor, so a local road or river change cannot rescale the
+                // rest of the district or change the horizontal field.
+                verticalCalibration=amplitude*verticalReliefScale*RollingHillVerticalScale/unconstrainedPeak;
+                for(int i=0;i<Heights.Length;i++)Heights[i]*=verticalCalibration;
+            }
         }
         public int LastUpdatedSampleCount {get;private set;}
         readonly List<int> changedSamples=new();
@@ -89,7 +181,7 @@ namespace CityForgeV3.World
                     channels.Add((new Vector2((a.X-.5f)*Width,(a.Z-.5f)*Depth),new Vector2((b.X-.5f)*Width,(b.Z-.5f)*Depth),river.WidthMeters*.5f+25));
                 }
             }
-            float fade=mountains?45:Mathf.Max(90,amplitude*4);
+            float fade=clearanceFadeMeters;
             for(int i=0;i<pads.Count;i++)padIndex.Add(DistrictDirtyGrid.Expand(pads[i],12+fade),i);
             for(int i=0;i<channels.Count;i++)
             {
@@ -110,7 +202,7 @@ namespace CityForgeV3.World
             for(int i=0;i<marked.Length;i++)if(marked[i])
             {
                 LastUpdatedSampleCount++;int x=i%(Columns+1),z=i/(Columns+1);
-                float value=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2));
+                float value=Generate(new Vector2((float)x/Columns*Width-Width/2,(float)z/Rows*Depth-Depth/2),out _)*verticalCalibration;
                 if(value!=Heights[i]){Heights[i]=value;changedSamples.Add(i);}
             }
             return changedSamples.Count>0;
@@ -121,15 +213,58 @@ namespace CityForgeV3.World
             foreach(int i in changedSamples){var v=vertices[i];v.y=Heights[i];vertices[i]=v;}
             mesh.vertices=vertices;mesh.RecalculateNormals();mesh.RecalculateBounds();
         }
-        private float Generate(Vector2 p)
+        private float Generate(Vector2 p,out float unconstrainedHeight)
         {
             float h=0;
-            foreach(var hill in hills)
+            if(mountains)for(int i=0;i<hills.Count;i++)
             {
+                var hill=hills[i];
                 float distance=Vector2.Distance(p,new Vector2(hill.x,hill.y))/hill.z;
-                if(distance>=1)continue;
-                if(mountains)h=Mathf.Max(h,1-distance);
-                else {float cap=1-distance*distance;h+=cap*cap;}
+                if(distance<1)h=Mathf.Max(h,1-distance);
+            }
+            if(!mountains)
+            {
+                // Two continuous, broad fields shape each relief region.
+                // The long/short axes stretch features into ridges;
+                // the minor field bends them into shoulders and shallow saddles.
+                float scale=Mathf.Min(Width,Depth);
+                float su=(rollingSecondaryDirection.x*p.x-rollingSecondaryDirection.y*p.y)/(scale*1.1f)+rollingSecondaryOffset.x;
+                float sv=(rollingSecondaryDirection.y*p.x+rollingSecondaryDirection.x*p.y)/(scale*.75f)+rollingSecondaryOffset.y;
+                float secondary=Mathf.PerlinNoise(su,sv);
+                // Coverage activates more of nine deterministic, soft-edged
+                // regions. They gate the continuous field; they are not peaks.
+                // A fractional last region makes coverage vary continuously.
+                float active=Mathf.Min(rollingRegions.Count,rollingCoverage*12f);
+                float outside=1f;
+                Vector2 maskPoint=p+rollingDirection*(secondary-.5f)*scale*.18f;
+                for(int i=0;i<rollingRegions.Count && i<active;i++)
+                {
+                    var region=rollingRegions[i];
+                    if(!region.Bounds.Contains(maskPoint))continue;
+                    float dx=maskPoint.x-region.Center.x,dz=maskPoint.y-region.Center.y;
+                    float along=dx*region.Along.x+dz*region.Along.y;
+                    float across=dx*region.Across.x+dz*region.Across.y;
+                    float squared=along*along+across*across;
+                    if(squared>=1)continue;
+                    // The entire broad region eases toward its boundary so
+                    // the spatial envelope cannot create an embankment edge.
+                    float cap=1-squared;
+                    float influence=cap*cap*(3-2*cap)*Mathf.Clamp01(active-i);
+                    outside*=1-influence;
+                    if(outside<=.0001f)break;
+                }
+                float local=1-outside;
+                float broad=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.4f,1f,rollingCoverage));
+                float envelope=broad+(1-broad)*local;
+                if(envelope<=0){unconstrainedHeight=0;return 0;}
+                float longAxis=scale*RollingPrimaryWavelength*RollingPrimaryAnisotropy;
+                float shortAxis=scale*RollingPrimaryWavelength/RollingPrimaryAnisotropy;
+                float u=(rollingDirection.x*p.x-rollingDirection.y*p.y)/longAxis+rollingOffset.x;
+                float v=(rollingDirection.y*p.x+rollingDirection.x*p.y
+                    +(secondary-.5f)*scale*RollingDomainWarpFraction)/shortAxis+rollingOffset.y;
+                float field=.84f*Mathf.PerlinNoise(u,v)+.16f*secondary;
+                float form=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.255f,.78f,field));
+                h=form*envelope;
             }
             if(connectedMountains)
             {
@@ -139,7 +274,11 @@ namespace CityForgeV3.World
                     preserve=Mathf.Max(preserve,1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(65,145,Vector2.Distance(site,p))));
                 h=Mathf.Lerp(range,h,preserve);
             }
-            float clearance=Mathf.Min(Width/2-Mathf.Abs(p.x),Depth/2-Mathf.Abs(p.y));
+            float edgeClearance=Mathf.Min(Width/2-Mathf.Abs(p.x),Depth/2-Mathf.Abs(p.y));
+            float shapeHeight=amplitude*(mountains?h:1-Mathf.Exp(-h*1.7f));
+            float edgeBlend=Mathf.SmoothStep(0,1,Mathf.Clamp01(edgeClearance/edgeFadeMeters));
+            unconstrainedHeight=shapeHeight*edgeBlend;
+            float clearance=float.PositiveInfinity;
             foreach(var index in padIndex.Query(p))
             {
                 var pad=pads[index];
@@ -152,7 +291,8 @@ namespace CityForgeV3.World
                 var ab=c.b-c.a;float t=ab.sqrMagnitude<.001f?0:Mathf.Clamp01(Vector2.Dot(p-c.a,ab)/ab.sqrMagnitude);
                 clearance=Mathf.Min(clearance,Vector2.Distance(p,c.a+t*ab)-c.radius);
             }
-            return amplitude*(mountains?h:1-Mathf.Exp(-h))*Mathf.SmoothStep(0,1,Mathf.Clamp01(clearance/(mountains?45:Mathf.Max(90,amplitude*4))));
+            return shapeHeight*Mathf.Min(edgeBlend,
+                Mathf.SmoothStep(0,1,Mathf.Clamp01(clearance/clearanceFadeMeters)));
         }
         private float RangeHeight(Vector2 p)
         {

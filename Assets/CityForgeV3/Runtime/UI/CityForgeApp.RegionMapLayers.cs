@@ -14,14 +14,12 @@ namespace CityForgeV3.UI
             var menu=new VisualElement {name="region-map-layers-menu"};menu.AddToClassList("region-layers-menu");
             menu.style.display=DisplayStyle.None;
             Button button=null;
-            void Close(){menu.style.display=DisplayStyle.None;button.text="MAP LAYERS ▾";}
-            button=CfButton.Create("MAP LAYERS ▾",()=>
+            void Close(){menu.style.display=DisplayStyle.None;}
+            button=CfButton.Create("",()=>
             {
                 bool open=menu.style.display.value==DisplayStyle.None;
                 menu.style.display=open?DisplayStyle.Flex:DisplayStyle.None;
-                button.text=open?"MAP LAYERS ▴":"MAP LAYERS ▾";
             },true,"quiet");
-            button.style.whiteSpace=WhiteSpace.NoWrap;button.style.minWidth=160;
             button.name="region-map-layers-button";button.tooltip="Choose which map layers are visible";host.Add(button);host.Add(menu);
             void Choice(string id,string label,bool value,Action<bool> set)
             {

@@ -47,7 +47,8 @@ public class RegionFloraGeneratorTests
         Assert.True(wooded.All(t => ForestClusterCatalog.IsCluster(t.FloraId) ||
             t.FloraId is "cilician-fir" or "mature-oak" or "american-elm" or
             "shagbark-hickory" or "medium-balsam-fir" or "medium-fraser-fir" or
-            "medium-blue-spruce" or "date-palm-tall" or "la-fan-palm-a" or
+            "medium-blue-spruce" or "date-palm-tall" or "date-palm-short" or
+            "la-fan-palm-a-medium" or "la-fan-palm-a" or
             "la-fan-palm-b"));
         Assert.True(wooded.All(t => t.GeneratedByRegion && t.NormalizedX > 0 && t.NormalizedX < 1 && t.NormalizedZ > 0 && t.NormalizedZ < 1));
         CollectionAssert.AreEqual(wooded.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83).Select(JsonUtility.ToJson));
@@ -162,11 +163,22 @@ public class RegionFloraGeneratorTests
         Assert.Greater(clusters.Count(t => ForestClusterCatalog.IsLarge(t.FloraId)),
             clusters.Count(t => !ForestClusterCatalog.IsLarge(t.FloraId)),
             "Level ground favors broad compositions; edge conflicts may fall back to compact");
-        Assert.Greater(clusters.Length, trees.Count * .65f);
+        Assert.Greater(clusters.Length, trees.Count * .4f);
+        var foreground = trees.Where(t => t.InstanceId.EndsWith("-front")).ToArray();
+        Assert.That(foreground.Length, Is.EqualTo(clusters.Length),
+            "An unobstructed clump has one independent foreground tree.");
+        foreach (var clump in clusters)
+        {
+            var front = foreground.Single(t => t.InstanceId == clump.InstanceId + "-front");
+            Assert.That(front.FloraId, Is.EqualTo(ForestClumpForeground.TreeId(
+                clump.FloraId, clump.RotationEighthTurns)));
+            Assert.That(front.NormalizedX, Is.LessThan(clump.NormalizedX));
+            Assert.That(front.NormalizedZ, Is.LessThan(clump.NormalizedZ));
+        }
         var firs = trees.Where(DistrictTreeHarvest.CanFell).ToArray();
-        Assert.Greater(firs.Length, trees.Count * .12f);
+        Assert.Greater(firs.Length, trees.Count * .07f);
         Assert.Less(firs.Length, trees.Count * .35f);
-        Assert.Less(trees.Count, 750, "Old 24m wooded spacing produced about 2200 records here");
+        Assert.Less(trees.Count, 1100, "Old 24m wooded spacing produced about 2200 records here");
         foreach (var tree in clusters) Assert.False(DistrictTreeHarvest.Fell(tree, 0));
         var fir = firs[0]; Assert.True(DistrictTreeHarvest.Fell(fir, 0));
         Assert.AreEqual(DistrictTreeHarvest.PrototypeWoodYield, DistrictTreeHarvest.TakeWood(fir, 10000));

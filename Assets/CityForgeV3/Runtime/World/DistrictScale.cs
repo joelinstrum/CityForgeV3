@@ -78,10 +78,9 @@ namespace CityForgeV3.World
         public static bool UsesBuildingBillboards(DistrictZoomLevel level) =>
             level == DistrictZoomLevel.LOD5Billboard;
 
-        // Local viewport pixels, with Y increasing downwards. Keep the hot
-        // strip fixed in screen space so it stays narrow at every resolution.
-        // Intersections are reserved for corner controls.
-        public const float EdgePanInsetPixels = 12f;
+        // Local viewport pixels, with Y increasing downwards. Match the
+        // shaded border shown around the district Game view.
+        public const float EdgePanInsetPixels = 48f;
         public static Vector2Int EdgePanWorldMotion(Vector2 position, Vector2 viewportSize)
         {
             if (!float.IsFinite(position.x) || !float.IsFinite(position.y) ||
@@ -93,9 +92,9 @@ namespace CityForgeV3.World
                 position.x >= viewportSize.x - EdgePanInsetPixels;
             bool vertical = position.y <= EdgePanInsetPixels ||
                 position.y >= viewportSize.y - EdgePanInsetPixels;
-            if (horizontal == vertical) return Vector2Int.zero;
-            if (horizontal) return new Vector2Int(position.x <= EdgePanInsetPixels ? 1 : -1, 0);
-            return new Vector2Int(0, position.y <= EdgePanInsetPixels ? -1 : 1);
+            return new Vector2Int(
+                horizontal ? (position.x <= EdgePanInsetPixels ? 1 : -1) : 0,
+                vertical ? (position.y <= EdgePanInsetPixels ? -1 : 1) : 0);
         }
 
         // Keep edge-pan travel proportional to the camera's current visible
@@ -105,7 +104,7 @@ namespace CityForgeV3.World
         public static float EdgePanSpeedMetersPerSecond(float orthographicSize,
             DistrictZoomLevel level) =>
             Mathf.Max(0f, orthographicSize) * .24f *
-            (level <= DistrictZoomLevel.LOD2 ? 1.4f : 1f);
+            (level <= DistrictZoomLevel.LOD2 ? 2.1f : 1f);
 
         public static int GridInterval(DistrictZoomLevel level) => level switch
         {
@@ -136,10 +135,10 @@ namespace CityForgeV3.World
 
         public static float PanSpeedScale(DistrictZoomLevel level) => level switch
         {
-            DistrictZoomLevel.LOD0 => 0.49f,
-            // Player-facing Zooms 1–3: 40% faster than their previous rates.
-            DistrictZoomLevel.LOD1 => 0.735f,
-            DistrictZoomLevel.LOD2 => 1.82f,
+            // Player-facing Zooms 1–3: 50% faster for keyboard panning.
+            DistrictZoomLevel.LOD0 => 0.735f,
+            DistrictZoomLevel.LOD1 => 1.1025f,
+            DistrictZoomLevel.LOD2 => 2.73f,
             // Distant views cover far more world space per screen pixel. Keep
             // their apparent motion deliberately slower than close inspection.
             DistrictZoomLevel.LOD3 => 0.18f,

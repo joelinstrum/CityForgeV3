@@ -30,7 +30,8 @@ namespace CityForgeV3.World
             bool visible = VisibleAt(zoom);
             if (_body != null && _body.enabled != visible) _body.enabled = visible;
         }
-        public void Initialize(float width, float depth, float terrainHeight, Quaternion cameraRotation, MeshFilter terrain)
+        public void Initialize(float width, float depth, float terrainHeight,
+            Quaternion cameraRotation, MeshFilter terrain, bool showShadows = true)
         {
             _terrain = terrain;
             _width = width; _depth = depth;
@@ -81,16 +82,20 @@ namespace CityForgeV3.World
                 material.SetVectorArray("_Clouds",cloudData);
                 return material;
             }
-            _cloudMaterial=Make(false);_shadowMaterial=Make(true);
+            _cloudMaterial=Make(false);
+            if (showShadows) _shadowMaterial=Make(true);
             UpdateMotion(0);
             var body=new GameObject("Clouds — two batched billboards");body.transform.SetParent(transform,false);
             body.AddComponent<MeshFilter>().sharedMesh=_cloudMesh;
             var renderer=body.AddComponent<MeshRenderer>();_body=renderer;renderer.sharedMaterial=_cloudMaterial;
             renderer.shadowCastingMode=ShadowCastingMode.Off;renderer.receiveShadows=false;
-            var shadowObject=new GameObject("Cloud shadows — shared terrain mesh");shadowObject.transform.SetParent(transform,false);
-            _shadow=shadowObject.AddComponent<MeshFilter>();_shadow.sharedMesh=terrain.sharedMesh;
-            var shadowRenderer=shadowObject.AddComponent<MeshRenderer>();shadowRenderer.sharedMaterial=_shadowMaterial;
-            shadowRenderer.shadowCastingMode=ShadowCastingMode.Off;shadowRenderer.receiveShadows=false;
+            if (showShadows)
+            {
+                var shadowObject=new GameObject("Cloud shadows — shared terrain mesh");shadowObject.transform.SetParent(transform,false);
+                _shadow=shadowObject.AddComponent<MeshFilter>();_shadow.sharedMesh=terrain.sharedMesh;
+                var shadowRenderer=shadowObject.AddComponent<MeshRenderer>();shadowRenderer.sharedMaterial=_shadowMaterial;
+                shadowRenderer.shadowCastingMode=ShadowCastingMode.Off;shadowRenderer.receiveShadows=false;
+            }
         }
         public void SetLighting(Color tint, bool night)
         {

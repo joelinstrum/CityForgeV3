@@ -5,12 +5,20 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _Color ("Color", Color) = (1, 1, 1, 1)
         _GrassHueShift ("Meadow hue experiment",Range(0,.1)) = 0
         _MainTex ("Surface Texture", 2D) = "white" {}
+        _DistrictMapTex ("District-wide grass color", 2D) = "white" {}
+        _DistrictMapStrength ("District color influence", Range(0,1)) = 0
+        _DistrictMapMipBias ("District color smoothing", Range(0,5)) = 2.5
         _TextureWorldSize ("Texture World Size (m)", Float) = 75
-        _HillTex ("Thin crest meadow", 2D) = "white" {}
-        _HillHeight ("Hill height metres", Float) = 45
+        _HillTex ("Legacy patch texture", 2D) = "white" {}
+        _HillHeight ("Legacy hill height metres", Float) = 45
         _MeadowPatchStrength ("Meadow patch strength", Range(0,1)) = 0
         _DistantMeadow ("Distant meadow filtering", Range(0,1)) = 0
         _FarGrassNoise ("Far grass grain", Range(0,1)) = 0
+        _FarGrassBrightness ("Far grass brightness", Range(0,1)) = 1
+        _FarGrassGrainFrequency ("Far grass grain frequency", Range(.5,3)) = 1
+        _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
+        _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
+        _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
     }
 
     SubShader
@@ -36,6 +44,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             #pragma multi_compile_fwdbase
             #pragma multi_compile_local __ HILL_MEADOW
             #pragma multi_compile_local __ MEADOW_PATCHES
+            #pragma multi_compile_local __ DISTRICT_GRASS_MAP
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
             #include "AutoLight.cginc"
@@ -54,19 +63,24 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float3 worldNormal : TEXCOORD0;
                 SHADOW_COORDS(1)
                 float2 uv : TEXCOORD2;
-                float elevation : TEXCOORD3;
-                float2 hillVariation : TEXCOORD4;
-                float2 meadowMetres : TEXCOORD5;
+                float2 hillVariation : TEXCOORD3;
+                float2 meadowMetres : TEXCOORD4;
             };
 
             fixed4 _Color;
-            sampler2D _MainTex, _HillTex;
-            float _HillHeight;
+            sampler2D _MainTex, _HillTex, _DistrictMapTex;
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _FarGrassNoise;
+            float _FarGrassBrightness;
+            float _FarGrassGrainFrequency;
+            float _GrassDetailMipScale;
             float _GrassHueShift;
+            float _RollingHillDarkSlopeLift;
+            float _RollingHillDeepShadeLift;
             float _TextureWorldSize;
+            float _DistrictMapStrength;
+            float _DistrictMapMipBias;
             float4 _MainTex_ST;
 
             float MeadowNoise(float2 p);
@@ -76,12 +90,12 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 VertexToFragment output;
                 output.pos = UnityObjectToClipPos(input.vertex);
                 output.worldNormal = UnityObjectToWorldNormal(input.normal);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
-                output.elevation = input.vertex.y;
+                // Terrain UVs cover the whole district once. The tiled grass
+                // path below keeps its separate world-space coordinates.
+                output.uv = input.uv;
                 output.hillVariation=0;
                 output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
-                #if defined(HILL_MEADOW) || defined(MEADOW_PATCHES)
-                // Broad hill colour stays anchored when near-zoom grass detail changes.
+                #if defined(MEADOW_PATCHES)
                 float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
                 #endif
@@ -109,45 +123,12 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 dy = lerp(dy, float2(0, footprint), _DistantMeadow);
             }
 
-            fixed4 Meadow(sampler2D meadowSampler, float2 uv)
-            {
-                // Neighbouring compositions receive stable offsets and overlap
-                // smoothly. This remains useful for the separate hill artwork.
-                float2 cell = floor(uv);
-                float2 weight = smoothstep(.15, .85, frac(uv));
-                float2 dx, dy;
-                MeadowGradients(uv, dx, dy);
-                fixed4 a = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell), dx, dy);
-                fixed4 b = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(1,0)), dx, dy);
-                fixed4 c = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + float2(0,1)), dx, dy);
-                fixed4 d = tex2Dgrad(meadowSampler, uv + MeadowOffset(cell + 1), dx, dy);
-                return lerp(lerp(a,b,weight.x),lerp(c,d,weight.x),weight.y);
-            }
-
             float MeadowNoise(float2 p)
             {
                 float2 cell=floor(p), f=frac(p); f=f*f*(3-2*f);
                 return lerp(lerp(MeadowOffset(cell).x,MeadowOffset(cell+float2(1,0)).x,f.x),
                     lerp(MeadowOffset(cell+float2(0,1)).x,MeadowOffset(cell+1).x,f.x),f.y);
             }
-            fixed3 HillMeadow(float2 uv, float elevation, float3 normal, fixed3 meadow, float2 variation, fixed3 thin)
-            {
-                float broad=variation.x, patches=variation.y;
-                float hill=smoothstep(.5,4,elevation);
-                float height=saturate(elevation/max(1,_HillHeight));
-                float slope=length(normal.xz);
-                // Broken transitions: no contour bands or lot-sized material stamps.
-                float crest=smoothstep(.12,.60,height+(broad-.5)*.26);
-                float wear=smoothstep(.06,.35,slope)*smoothstep(.36,.72,patches)*.65;
-                float mixWeight=saturate(crest*.68+wear)*hill;
-                fixed3 color=lerp(meadow,thin,mixWeight);
-                // Preserve the approved meadow palette: vary brightness, never tint hills green.
-                // The lighter crest artwork supplies its own natural colour variation.
-                color*=lerp(1.0,lerp(.96,1.055,crest),hill);
-                color*=1+(broad-.5)*.22*hill+(patches-.5)*.10*hill;
-                return color;
-            }
-
             float3 ShiftGrassHue(float3 rgb)
             {
                 // HSV rotation retains the source value/saturation and all fine artwork.
@@ -167,16 +148,47 @@ Shader "CityForgeV3/MeadowGroundSurface"
             {
                 fixed shadow = SHADOW_ATTENUATION(input);
                 fixed3 normal = normalize(input.worldNormal);
+                #if defined(HILL_MEADOW)
+                // The district's small vertical relief needs a calibrated
+                // normal response at its kilometre-wide presentation scale.
+                // This changes directional light only, never the grass color.
+                normal=normalize(fixed3(normal.x*3.0,normal.y,normal.z*3.0));
+                #endif
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
+                #if defined(HILL_MEADOW)
+                // Lift only slopes substantially darker than level grass under
+                // the same light and shadow. Neutral ground and highlights stay
+                // at their existing values; no colour is painted onto the hill.
+                fixed3 levelIllumination=CityForgeWorldLighting(fixed3(0,1,0),shadow);
+                float levelValue=dot(levelIllumination,float3(.2126,.7152,.0722));
+                float slopeValue=dot(illumination,float3(.2126,.7152,.0722));
+                float darkness=saturate((levelValue-slopeValue)/max(levelValue,.001));
+                illumination=lerp(illumination,levelIllumination,
+                    _RollingHillDarkSlopeLift*smoothstep(.03,.12,darkness));
+                // Trim only the deepest remaining shade; the midtone response
+                // above and all light-facing slopes retain their prior lighting.
+                illumination=lerp(illumination,levelIllumination,
+                    _RollingHillDeepShadeLift*smoothstep(.20,.35,darkness));
+                #endif
                 // The authored macro grass is anchored directly in world space,
                 // matching hosted lot receivers instead of restarting per lot.
                 float2 surfaceUv=input.meadowMetres/max(.01,_TextureWorldSize);
                 float2 surfaceDx, surfaceDy;
                 MeadowGradients(surfaceUv,surfaceDx,surfaceDy);
-                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,surfaceDx,surfaceDy);
+                fixed4 surface=tex2Dgrad(_MainTex,surfaceUv,
+                    surfaceDx*_GrassDetailMipScale,
+                    surfaceDy*_GrassDetailMipScale);
                 #if defined(HILL_MEADOW)
-                fixed3 thin=Meadow(_HillTex,input.meadowMetres/40.0).rgb;
-                surface.rgb=HillMeadow(input.uv,input.elevation,normal,surface.rgb,input.hillVariation,thin);
+                // Blend another placement of the same approved grass. The
+                // broad blend field is texture placement only: it never adds
+                // a light/dark hill mask or changes the source grass palette.
+                float2 shiftedUv=float2(-surfaceUv.y,surfaceUv.x)+float2(3.17,7.43);
+                float2 shiftedDx=float2(-surfaceDx.y,surfaceDx.x);
+                float2 shiftedDy=float2(-surfaceDy.y,surfaceDx.y);
+                fixed3 alternate=tex2Dgrad(_MainTex,shiftedUv,
+                    shiftedDx*_GrassDetailMipScale,shiftedDy*_GrassDetailMipScale).rgb;
+                float blend=.24+.28*MeadowNoise(input.meadowMetres/240+float2(4.1,9.7));
+                surface.rgb=lerp(surface.rgb,alternate,blend);
                 #elif defined(MEADOW_PATCHES)
                 // One extra sample on flat ground. Broad masking hides repetition;
                 // mipmapped world-space detail never changes scale with camera zoom.
@@ -188,13 +200,15 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 if (_GrassHueShift > 0) surface.rgb=ShiftGrassHue(surface.rgb);
                 if (_FarGrassNoise > 0)
                 {
-                    // Two world-anchored frequencies retain visible meadow
-                    // grain after distant mip filtering. Brightness only:
-                    // the approved grass hue and riverbank blend stay intact.
-                    float fine=MeadowNoise(input.meadowMetres/8.0+float2(17.3,41.7));
-                    float broad=MeadowNoise(input.meadowMetres/33.0+float2(63.1,9.4));
-                    surface.rgb*=1+_FarGrassNoise*((fine-.5)*.34+(broad-.5)*.16);
+                    // Fine world-anchored stipple survives distant mip filtering.
+                    // Keep the wider variation subtle so it does not read as
+                    // soft, repeated patches at district scale.
+                    float2 grainMetres=input.meadowMetres*_FarGrassGrainFrequency;
+                    float fine=MeadowNoise(grainMetres/2.0+float2(17.3,41.7));
+                    float broad=MeadowNoise(grainMetres/13.0+float2(63.1,9.4));
+                    surface.rgb*=1+_FarGrassNoise*((fine-.5)*.34+(broad-.5)*.08);
                 }
+                surface.rgb*=_FarGrassBrightness;
                 #if defined(MEADOW_PATCHES)
                 // Soft 28–110m fields span many tiles. No camera/time/lot input,
                 // no extra mesh or material layer over roads and riverbanks.
@@ -206,6 +220,13 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 surface.rgb*=lerp(fixed3(1,1,1),fixed3(.92,1.025,.91),lush);
                 // Apply after the hue study so straw retains its warm colour.
                 surface.rgb=lerp(surface.rgb,thin*fixed3(1.045,1.0,.94),dry);
+                #endif
+                #if defined(DISTRICT_GRASS_MAP)
+                // Keep the approved grass as the base. A smooth, low-strength
+                // district color map adds broad variation at distant zooms.
+                fixed3 districtColor=tex2Dbias(_DistrictMapTex,
+                    float4(saturate(input.uv),0,_DistrictMapMipBias)).rgb;
+                surface.rgb=lerp(surface.rgb,districtColor,_DistrictMapStrength);
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);

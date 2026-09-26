@@ -17,6 +17,8 @@ namespace CityForgeV3.World
             "evergreen" or "cilician-fir" or "vendor-balsam-fir-classic" or
             "fraser-fir-large" or "fraser-fir-small" or "fraser-fir-snowy" or
             "medium-balsam-fir" or "medium-fraser-fir" or "medium-blue-spruce" => Mountain,
+            "forest-mountain-compact" or "forest-mountain-large" => Mountain,
+            "forest-tropical-compact" or "forest-tropical-large" => Tropical,
             _ => Deciduous
         };
     }

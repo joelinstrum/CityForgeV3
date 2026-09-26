@@ -82,6 +82,12 @@ namespace CityForgeV3.World
         private const float RiverBedTransitionWidthMeters = 14f;
         public const float GrassTextureWorldSizeMeters = 5f;
         public const float DistrictGrassTextureWorldSizeMeters = 75f;
+        [SerializeField, InspectorName("Use district-wide grass at Zoom 3–5")]
+        private bool _useDistrictZoomGrassMaps = true;
+        private bool _districtZoomGrassMapsLoaded;
+        private Texture2D _zoom3GrassMap;
+        private Texture2D _zoom4GrassMap;
+        private Texture2D _zoom5GrassMap;
         public static readonly Color RiverWaterTint =
             new(0.86f, 1.03f, 1.28f, 1f);
         private const float HostedLotFacingOffsetDegrees = 180f;
@@ -162,6 +168,8 @@ namespace CityForgeV3.World
         private readonly Dictionary<string, Sprite> _districtFloraSprites = new();
         private Material _districtFloraMaterial;
         private Material _districtFloraShadowMaterial;
+        private readonly Dictionary<LotWorldController, List<Renderer>>
+            _suppressedHostedLotShadows = new();
         private Transform _districtSelectionRoot;
         private Material _districtSelectionMaterial;
         private GameObject _minorGrid;
@@ -276,6 +284,17 @@ namespace CityForgeV3.World
         }
         public TimeOfDayPreset TimeOfDay { get; private set; } =
             TimeOfDayPreset.Noon;
+        // Temporary district performance review switch. Set before building;
+        // the standalone Lot editor and existing shadow tests keep their path.
+        public bool ShowDistrictShadows { get; set; } = true;
+        public bool ShowIndividualTreeShadows { get; set; }
+        // Temporary visual study: clumps use the existing projected mesh and
+        // spatial shadow batches used by individual district trees.
+        public bool ShowTreeClumpShadows { get; set; }
+        public bool UseArtworkClumpShadows { get; set; }
+        // Temporary visual study for the saved hillside test district. Keeps
+        // Unity's realtime shadow casters disabled while showing batched trees.
+        public bool ShowTreeShadowPrototype { get; set; }
 
         // This is intentionally named as an expensive operation. Local edits
         // must use the cell/ID presentation APIs and local surface commits.
@@ -302,6 +321,7 @@ namespace CityForgeV3.World
             // as the saved preset is staged after the first frame.
             TimeOfDay = district.TimeOfDay;
             ApplyRegionEnvironment(TimeOfDay, _sun);
+            if (!ShowDistrictShadows) _sun.shadows = LightShadows.None;
             _terrainDistrict = district;
             _surfaceCache=new DistrictSurfaceCache();_surfaceChanges=_surfaceCache.Update(district);
             _elevation = new DistrictElevation(district);
@@ -352,7 +372,8 @@ namespace CityForgeV3.World
             cloudObject.transform.SetParent(_content, false);
             _clouds = cloudObject.AddComponent<DistrictCloudLayer>();
             _clouds.Initialize(_widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0,
-                _camera.transform.rotation, _groundRenderer.GetComponent<MeshFilter>());
+                _camera.transform.rotation, _groundRenderer.GetComponent<MeshFilter>(),
+                ShowDistrictShadows);
             _rainStorm = cloudObject.AddComponent<DistrictRainStorm>();
             _rainStorm.Initialize(_camera, _widthMeters, _depthMeters, district.Hills?.HeightMeters ?? 0, _clouds, _groundRenderer.GetComponent<MeshFilter>());
             _buildingDistrict = false;
@@ -465,19 +486,27 @@ namespace CityForgeV3.World
                 else DestroyImmediate(old);
             }
             _districtFloraPresentations.Clear();
+            _shadowedDistrictFlora.Clear();
             _forestClusters.Clear();
             _forestAppearancePending = false;
             _pendingTimeOfDayShadows = null;
             _pendingTimeOfDayShadowIndex = 0;
+            _nightMorningShadowPreparation = TimeOfDay == TimeOfDayPreset.Night;
+            _nightMorningShadowsReady = false;
             _districtFloraRoot = new GameObject("District Flora").transform;
             _districtFloraRoot.SetParent(_content, false);
             foreach (var placed in district.Flora ??
                      new List<PlacedDistrictFlora>())
                 AddDistrictFloraPresentation(placed);
             PrepareForestSeason(district);
-            UpdateDistrictFloraShadows();
+            if (ShowDistrictShadows || ShowIndividualTreeShadows ||
+                ShowTreeClumpShadows || ShowTreeShadowPrototype)
+                UpdateDistrictFloraShadows();
             _floraBatches = _districtFloraRoot.gameObject.AddComponent<DistrictFloraBatches>();
             _floraBatches.Build(_districtFloraPresentations.Values, _camera);
+            if (_nightMorningShadowPreparation)
+                _nightMorningShadowsReady = true;
+            ApplyFloraShadowVisibility();
             BuildDistrictFloraSelection(selectedInstanceId);
         }
 
@@ -881,7 +910,20 @@ namespace CityForgeV3.World
                 item.transform.localPosition);
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            if (!StoneFloraCatalog.IsStone(placed.FloraId)) BuildDistrictFloraShadow(item.transform, sprite);
+            var hasShadow = (ShowDistrictShadows ||
+                 (ShowIndividualTreeShadows &&
+                  !ForestClusterCatalog.IsCluster(placed.FloraId)) ||
+                 (ShowTreeClumpShadows &&
+                  ForestClusterCatalog.IsCluster(placed.FloraId)) ||
+                 (ShowTreeShadowPrototype &&
+                  ForestClusterCatalog.IsCluster(placed.FloraId))) &&
+                !StoneFloraCatalog.IsStone(placed.FloraId);
+            if (hasShadow)
+            {
+                BuildDistrictFloraShadow(item.transform, sprite);
+                if (item.transform.Find("District Flora Shadow") != null)
+                    _shadowedDistrictFlora[placed.InstanceId] = renderer;
+            }
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
                 presentationId == "american-elm" ||
@@ -942,27 +984,39 @@ namespace CityForgeV3.World
 
         private void UpdateDistrictFloraShadows()
         {
-            UpdateDistrictFloraShadowsFor(_districtFloraPresentations.Values);
+            UpdateDistrictFloraShadowsFor(_shadowedDistrictFlora.Values);
             _floraBatches?.Rebuild();
         }
 
         private void UpdateDistrictFloraShadowsFor(IEnumerable<SpriteRenderer> renderers)
         {
-            if (_districtFloraRoot == null) return;
+            if ((!ShowDistrictShadows && !ShowIndividualTreeShadows &&
+                 !ShowTreeClumpShadows &&
+                 !ShowTreeShadowPrototype) ||
+                _districtFloraRoot == null) return;
             if (_districtFloraShadowMaterial != null)
             {
                 _districtFloraShadowMaterial.SetMatrix("_DistrictWorldToLocal", _content.worldToLocalMatrix);
                 _districtFloraShadowMaterial.SetVector("_DistrictHalfSize", new Vector4(_widthMeters * .5f, _depthMeters * .5f, 0, 0));
             }
-            var visible = TimeOfDay != TimeOfDayPreset.Night;
-            var ray = _sun != null
-                ? _sun.transform.rotation * Vector3.forward
-                : TimeOfDayLighting.SunRotation(TimeOfDay) * Vector3.forward;
-            var shadowRay = ForestClusterShadows.BehindCameraRay(
-                ray, _camera.transform.forward);
-            var screenBehind = Vector3.ProjectOnPlane(
-                _camera.transform.forward, Vector3.up);
-            var opacity = TimeOfDay switch
+            // Night's dark interval prepares the next morning's mesh and batch.
+            // Visibility is controlled on the batch, independently of whether
+            // its source shadow geometry is ready.
+            var shadowPreset = TimeOfDay == TimeOfDayPreset.Night
+                ? TimeOfDayPreset.Morning : TimeOfDay;
+            var ray = TimeOfDayLighting.SunRotation(shadowPreset) *
+                Vector3.forward;
+            var shadowRay = ForestClusterShadows.DistrictTreeRay(
+                ray, _camera.transform.forward, _camera.transform.right,
+                shadowPreset);
+            var screenBehind = Vector3.ProjectOnPlane(shadowRay, Vector3.up);
+            var shadowLengthScale = shadowPreset switch
+            {
+                TimeOfDayPreset.Noon => 2f,
+                TimeOfDayPreset.Afternoon => 1.05f,
+                _ => 1f
+            };
+            var opacity = shadowPreset switch
             {
                 TimeOfDayPreset.Morning => .38f,
                 TimeOfDayPreset.Noon => .48f,
@@ -975,8 +1029,12 @@ namespace CityForgeV3.World
                 var shadow = visibleRenderer.transform.Find(
                     "District Flora Shadow")?.GetComponent<MeshRenderer>();
                 if (shadow == null) continue;
-                shadow.enabled = visible;
-                if (!visible) continue;
+                shadow.enabled = true;
+                if (ShowTreeShadowPrototype)
+                {
+                    UpdateSoftTreeShadowPrototype(visibleRenderer, shadow, ray);
+                    continue;
+                }
                 shadow.transform.localPosition = Vector3.zero;
                 shadow.transform.localRotation = Quaternion.identity;
                 shadow.transform.localScale = Vector3.one;
@@ -1011,12 +1069,13 @@ namespace CityForgeV3.World
                 shadow.SetPropertyBlock(properties);
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
-                if (ForestClusterShadows.Update(visibleRenderer, shadow, shadowRay, world =>
+                float GroundHeight(Vector3 world)
                 {
                     var local = _content.InverseTransformPoint(world);
                     var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
                     return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
-                }, foot =>
+                }
+                Vector3 GroundAnchor(Vector3 foot)
                 {
                     // One bounded collider query per cluster at build/update,
                     // never per frame. Register the composition's shared root
@@ -1025,7 +1084,25 @@ namespace CityForgeV3.World
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
-                }, TimeOfDay == TimeOfDayPreset.Noon ? .8f : .65f,
+                }
+                var isClump = (atlas != null && atlas.PieceCount > 1) ||
+                    ForestClusterCatalog.IsTexture(source.texture.name);
+                if (UseArtworkClumpShadows && isClump &&
+                    ForestClusterShadows.UpdateArtwork(visibleRenderer, shadow,
+                        shadowRay, GroundHeight, GroundAnchor, shadowPreset,
+                        shadowLengthScale, out var alternateAtlas))
+                {
+                    properties.SetFloat("_Cutoff", .3f);
+                    properties.SetTexture("_MainTex", source.texture);
+                    properties.SetTexture("_AlternateTex", alternateAtlas != null
+                        ? alternateAtlas : Texture2D.whiteTexture);
+                    shadow.SetPropertyBlock(properties);
+                    continue;
+                }
+                if (ForestClusterShadows.Update(visibleRenderer, shadow,
+                    shadowRay, GroundHeight, GroundAnchor,
+                    (shadowPreset == TimeOfDayPreset.Noon ? .8f : .65f) *
+                    shadowLengthScale,
                     screenBehind))
                 {
                     properties.SetTexture("_MainTex", Texture2D.whiteTexture);
@@ -1050,8 +1127,9 @@ namespace CityForgeV3.World
                 var detailedTravel = detailedCutout ? Mathf.Min(
                     referenceHeight * horizontalMagnitude /
                         Mathf.Max(.05f, -shadowRay.y) *
-                        (TimeOfDay == TimeOfDayPreset.Noon ? .8f : .55f),
-                    source.bounds.size.x * scale.x * .65f) : 0f;
+                        (shadowPreset == TimeOfDayPreset.Noon ? .8f : .55f),
+                    source.bounds.size.x * scale.x * .65f) *
+                    shadowLengthScale : 0f;
                 for (var i=0;i<vertices.Length;i++)
                 {
                     var height = Mathf.Max(0f, vertices[i].y * scale.y);
@@ -1059,7 +1137,7 @@ namespace CityForgeV3.World
                     var travel = detailedCutout ? detailedTravel *
                         Mathf.Clamp01(height / referenceHeight) :
                         height / Mathf.Max(.05f, -shadowRay.y) *
-                        horizontalMagnitude;
+                        horizontalMagnitude * shadowLengthScale;
                     world += direction * travel;
                     var terrainPoint = _content.InverseTransformPoint(world);
                     world.y = groundY + .025f + TerrainElevation(terrainPoint.x, terrainPoint.z) - TerrainElevation(root.x, root.z);
@@ -2518,6 +2596,7 @@ namespace CityForgeV3.World
             if (_camera == null) return;
             SetRiverBuildingReflectionZoom(level);
             _zoomLevel = level;
+            ApplyFloraShadowVisibility();
             _clouds?.SetZoom(level);
             _rainStorm?.SetZoom(level);
             ApplyDistrictGrassZoomScale();
@@ -2609,6 +2688,7 @@ namespace CityForgeV3.World
 
         public void SetTimeOfDay(TimeOfDayPreset preset)
         {
+            var previous = TimeOfDay;
             var changed = TimeOfDay != preset;
             TimeOfDay = preset;
             ApplyAfternoonSceneLights(preset);
@@ -2616,16 +2696,46 @@ namespace CityForgeV3.World
             // it before Lots update their opt-in windows and lamps; a hosted Lot
             // must never rewrite the shared sun, ambient light, or shader state.
             ApplyRegionEnvironment(preset, _sun);
+            if (!ShowDistrictShadows && _sun != null)
+                _sun.shadows = LightShadows.None;
             foreach (var lot in _lots)
                 if (lot != null)
+                {
                     lot.SetTimeOfDay(preset);
+                    SuppressHostedLotShadows(lot);
+                }
 
             var spec = TimeOfDayLighting.For(preset);
             if (_camera != null)
                 _camera.backgroundColor = spec.BackgroundColor;
             ApplyDistrictGroundPresentation(preset);
             _clouds?.SetLighting(spec.NeutralArtworkTint, preset == TimeOfDayPreset.Night);
-            if (changed) PrepareTimeOfDayPresentation();
+            if (changed && preset == TimeOfDayPreset.Night)
+            {
+                _nightMorningShadowPreparation = true;
+                _nightMorningShadowsReady = false;
+            }
+            else if (changed && preset != TimeOfDayPreset.Morning)
+            {
+                _nightMorningShadowPreparation = false;
+                _nightMorningShadowsReady = false;
+            }
+            ApplyFloraShadowVisibility();
+            if (changed && (ShowDistrictShadows || ShowIndividualTreeShadows ||
+                            ShowTreeClumpShadows ||
+                            ShowTreeShadowPrototype))
+            {
+                // The Night work already targets Morning. Keep its bounded
+                // update running across sunrise instead of starting it again.
+                if (preset != TimeOfDayPreset.Morning ||
+                    previous != TimeOfDayPreset.Night ||
+                    !_nightMorningShadowPreparation)
+                    PrepareTimeOfDayPresentation();
+                if (_nightMorningShadowPreparation &&
+                    !TimeOfDayPresentationPending)
+                    _nightMorningShadowsReady = true;
+                ApplyFloraShadowVisibility();
+            }
         }
 
         public static Vector2 DistrictLotCenterMeters(RegionCityTile district,
@@ -2687,7 +2797,9 @@ namespace CityForgeV3.World
             var host = new GameObject($"District Lot — {data.Name}");
             host.transform.SetParent(_content, false);
             var lot = host.AddComponent<LotWorldController>();
-            lot.BuildAsDistrictHosted(_camera, _sun);
+            lot.BuildAsDistrictHosted(_camera, _sun,
+                deferSavedLotPresentation: true,
+                showDistrictShadows: ShowDistrictShadows);
             lot.BindAutomataSeasonProvider(() =>
                 LotWorldController.AutomataSeasonForDistrictIndex(
                     _terrainDistrict?.Labor?.SeasonIndex ?? 0));
@@ -2712,12 +2824,32 @@ namespace CityForgeV3.World
             _lots.Add(lot);
             if (!string.IsNullOrWhiteSpace(instanceId))
                 _lotsByInstance[instanceId] = lot;
+            var renderers = host.GetComponentsInChildren<Renderer>(true);
+            if (!ShowDistrictShadows)
+            {
+                var shadows = new List<Renderer>();
+                foreach (var renderer in renderers)
+                    if (renderer.name.IndexOf("shadow", StringComparison.OrdinalIgnoreCase) >= 0)
+                        shadows.Add(renderer);
+                _suppressedHostedLotShadows[lot] = shadows;
+                SuppressHostedLotShadows(lot);
+            }
             RegisterSelectable(host, new DistrictSelectionRef(DistrictSelectionKind.Lot, instanceId),
-                data.Name, inspector: true, geometry: host.GetComponentsInChildren<Renderer>().Where(r =>
+                data.Name, inspector: true, geometry: renderers.Where(r =>
+                    r.gameObject.activeInHierarchy &&
                     !r.name.Contains("Shadow") && !r.name.Contains("Ground") && !r.name.Contains("Grid")));
             if (animateConstruction)
                 lot.BeginAllBuildingConstruction();
             return lot;
+        }
+
+        private void SuppressHostedLotShadows(LotWorldController lot)
+        {
+            if (ShowDistrictShadows || lot == null ||
+                !_suppressedHostedLotShadows.TryGetValue(lot, out var shadows))
+                return;
+            foreach (var renderer in shadows)
+                if (renderer != null) renderer.enabled = false;
         }
 
         private void BuildCamera()
@@ -2746,13 +2878,15 @@ namespace CityForgeV3.World
             _sun = sunObject.AddComponent<Light>();
             _sun.type = LightType.Directional;
             _sun.intensity = 1.15f;
-            _sun.shadows = LightShadows.Soft;
+            _sun.shadows = ShowDistrictShadows ? LightShadows.Soft : LightShadows.None;
         }
 
         private void BuildGround()
         {
             var ground = new GameObject();
-            ground.AddComponent<MeshFilter>().sharedMesh = _elevation.CreateMesh();
+            var mesh = _elevation.CreateMesh();
+            ground.AddComponent<MeshFilter>().sharedMesh = mesh;
+            LogReliefDiagnostics(mesh);
             ground.AddComponent<MeshRenderer>();
             ground.AddComponent<DistrictTerrainMeshOwner>();
             _terrainCollider = ground.AddComponent<MeshCollider>();
@@ -2901,6 +3035,7 @@ namespace CityForgeV3.World
             _groundDecals = null;
             _lots.Clear();
             _lotsByInstance.Clear();
+            _suppressedHostedLotShadows.Clear();
             DisposeRiverBuildingReflection();
             _roadsByCell.Clear();
             _roadPlacementsByCell.Clear();
@@ -2924,6 +3059,7 @@ namespace CityForgeV3.World
             _riverSurfaces.Clear();
             _riverSurfaceIndex.Clear();
             _districtFloraPresentations.Clear();
+            _shadowedDistrictFlora.Clear();
             _forestClusters.Clear();
             _forestAppearancePending = false;
             _districtSelectionRoot = null;

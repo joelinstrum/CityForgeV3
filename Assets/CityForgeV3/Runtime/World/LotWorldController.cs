@@ -53,6 +53,7 @@ namespace CityForgeV3.World
         private Transform _majorStripDeletionPreview;
         private bool _gridVisible = true;
         private bool _districtHosted;
+        private bool _districtShadowsEnabled = true;
         private Func<Vector3, RiverSurfaceSample?> _districtRiverSurfaceSampler;
         private Func<Vector3, float> _districtTerrainElevationSampler;
         private bool _gridEditorActive = true;
@@ -466,12 +467,16 @@ namespace CityForgeV3.World
             ApplySessionState();
         }
 
-        public void BuildAsDistrictHosted(Camera sharedCamera, Light sharedSun)
+        public void BuildAsDistrictHosted(Camera sharedCamera, Light sharedSun,
+            bool deferSavedLotPresentation = false,
+            bool showDistrictShadows = true)
         {
             _districtHosted = true;
+            _districtShadowsEnabled = showDistrictShadows;
             _camera = sharedCamera;
             _sun = sharedSun;
-            _buildingPackage = HybridBuildingPackageRegistry.GovernmentHouse;
+            _buildingPackage = deferSavedLotPresentation ? null :
+                HybridBuildingPackageRegistry.GovernmentHouse;
             BuildGround();
             BuildLotTextureRoot();
             BuildConnectorRoot();
@@ -485,13 +490,22 @@ namespace CityForgeV3.World
             BuildAutomataRoot();
             BuildBuildingPropRoot();
             BuildCirculationEditor();
-            BuildProxyBuilding();
-            BuildProjectedShadow();
-            BuildHybridPresentation();
-            BuildSelectionFootprint();
+            // A hosted district lot loads its saved package immediately after
+            // this shell. Avoid constructing and then discarding the default
+            // Government House presentation for every placed lot.
+            if (!deferSavedLotPresentation)
+            {
+                BuildProxyBuilding();
+                BuildProjectedShadow();
+                BuildHybridPresentation();
+                BuildSelectionFootprint();
+            }
             BuildObjectHoverHighlight();
-            BuildRegistrationDiagnostics();
-            ApplySessionState();
+            if (!deferSavedLotPresentation)
+            {
+                BuildRegistrationDiagnostics();
+                ApplySessionState();
+            }
         }
 
         public void ConfigureDistrictRiverSurfaceSampler(
@@ -1467,6 +1481,7 @@ namespace CityForgeV3.World
         private void BuildFloraShadows(Transform root, Sprite treeSprite,
             bool flipX)
         {
+            if (_districtHosted && !_districtShadowsEnabled) return;
             var cast = new GameObject("Flora Shadow — Canopy");
             cast.transform.SetParent(root, false);
             var castRenderer = cast.AddComponent<SpriteRenderer>();
@@ -5645,6 +5660,7 @@ namespace CityForgeV3.World
         private Transform CreateProjectedShadow(
             string name, HybridBuildingPackage package)
         {
+            if (_districtHosted && !_districtShadowsEnabled) return null;
             if (package.UsesMeshProjectedShadow)
             {
                 var proxyAsset = Resources.Load<GameObject>(
@@ -7756,6 +7772,7 @@ namespace CityForgeV3.World
 
         private void RebuildBuildingGapShadows()
         {
+            if (_districtHosted && !_districtShadowsEnabled) return;
             if (_session?.Data?.Buildings == null) return;
             var footprints = new List<BuildingGroundFootprint>();
             foreach (var placed in _session.Data.Buildings)
@@ -7992,7 +8009,8 @@ namespace CityForgeV3.World
             var entry = BuildingCatalog.Find(buildingId);
             var package =
                 HybridBuildingPackageRegistry.Load(entry.PackageResourcePath);
-            if (_buildingPackage != null && _buildingPackage.Id == package.Id)
+            if (_buildingPackage != null && _buildingPackage.Id == package.Id &&
+                _presentation != null)
             {
                 return;
             }

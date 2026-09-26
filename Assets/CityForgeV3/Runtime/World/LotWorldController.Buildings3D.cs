@@ -1030,6 +1030,7 @@ namespace CityForgeV3.World
         private void BuildExperimentalBuilding3DProjectedGroundShadow(
             GameObject visibleRoot)
         {
+            if (_districtHosted && !_districtShadowsEnabled) return;
             // Project a hidden copy of the real render meshes. This preserves
             // stairs, cornices, chimneys, and every other silhouette feature;
             // the former convex hull could only ever produce a rectangle.

@@ -1,5 +1,16 @@
 # Time and light adjustments handoff
 
+## Current status — September 25, 2026
+
+Joe has **paused tree-shadow work**. Do not resume shadow implementation just
+because this handoff exists. The current visual experiment and its limits are
+recorded in [`Handoffs/TREE_SHADOWS_PAUSED_2026-09-25.md`](Handoffs/TREE_SHADOWS_PAUSED_2026-09-25.md).
+The latest shadow implementation commit is `3e08152` on
+`feature/time-and-light-adjustments`; PR #34 must not be merged. Preserve the
+unrelated uncommitted files and leave Joe's open Unity editor alone unless he
+asks. The older shadow guidance below describes the earlier lighting contract,
+not an instruction to resume or expand the prototype.
+
 Continue City Forge V3 in `/Users/joelinstrum/dev/CityForge - V3` on
 `feature/time-and-light-adjustments`.
 

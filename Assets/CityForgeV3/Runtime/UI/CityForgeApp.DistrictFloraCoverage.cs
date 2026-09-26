@@ -52,7 +52,7 @@ namespace CityForgeV3.UI
             Add("deciduous", "Deciduous %", () => mix.Deciduous, value => mix.Deciduous = value);
             Add("mountain", "Fir & Mountain %", () => mix.Mountain, value => mix.Mountain = value);
             Add("tropical", "Tropical %", () => mix.Tropical, value => mix.Tropical = value);
-            parent.Add(StyledLabel("These are relative weights, so 33 / 33 / 33 is valid. Each deciduous-dominant clump includes a fir, and each fir-dominant clump includes a deciduous tree.", "inspector-note"));
+            parent.Add(StyledLabel("These are relative weights, so 33 / 33 / 33 is valid. Deciduous clumps include a fir; fir clumps are mostly narrow firs with one deciduous tree. New clumps receive one separate foreground tree.", "inspector-note"));
         }
 
         private void ClearDistrictTrees()
@@ -171,7 +171,7 @@ namespace CityForgeV3.UI
                 generate.SetEnabled(enabled && selected != RegionTreeCoverage.None && familyMix.Total > 0);
                 generate.tooltip = !enabled ? "Unavailable in Desert climate" : "Generate coverage in this district only";
                 content.Add(StyledLabel(enabled
-                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Level ground uses broader nine-tree billboards, gentle slopes use compact five-tree billboards, and steep hills use individually grounded trees. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
+                    ? "Generate tree coverage in this district only. Light leaves open land; Medium creates scattered groves; Heavy triples Medium density. Level ground uses broad clumps, gentle slopes use compact clumps, and steep hills use individual trees. Each new clump gets a separate foreground tree where ground is clear. Separate harvestable firs preserve lumber-worker routing. Roads, water and buildings stay clear. Regeneration replaces generated standing flora placements; planted trees and harvested trees stay."
                     : "Tree coverage is unavailable in Desert. Change the regional climate to generate tree coverage.", "document-modal-copy"));
             }
             RefreshChoices();
