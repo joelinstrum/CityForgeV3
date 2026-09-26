@@ -55,6 +55,13 @@ namespace CityForgeV3.World
             if (_terrainDistrict?.Hills?.Mountains == true) return;
             var material = _groundRenderer?.sharedMaterial;
             if (material == null) return;
+            if (GrassMapping == GrassMappingMode.DistrictWide &&
+                material.GetFloat("_DistrictWideGrass") > 0.5f)
+            {
+                if (material.mainTextureScale != Vector2.one)
+                    material.mainTextureScale = Vector2.one;
+                return;
+            }
             float metres = DistrictGrassWorldSizeForZoom(_zoomLevel);
             var scale = new Vector2(_widthMeters / metres, _depthMeters / metres);
             if (material.mainTextureScale != scale) material.mainTextureScale = scale;
@@ -90,12 +97,21 @@ namespace CityForgeV3.World
             var shader = Shader.Find(mountains ? "CityForgeV3/MountainGroundSurfaceV10" : "CityForgeV3/MeadowGroundSurface");
             if (shader == null) return;
             material.shader = shader;
-            // Mountain materials use a separately calibrated 5m grass source,
-            // including triplanar slope sampling; retain that artwork contract.
-            var grass = Resources.Load<Texture2D>(mountains ? DefaultGrassResource : DistrictGrassResource);
+            bool districtWide = GrassMapping == GrassMappingMode.DistrictWide;
+            var grass = Resources.Load<Texture2D>(districtWide
+                ? DistrictWideGrassResource
+                : mountains ? DefaultGrassResource : DistrictGrassResource);
+            if (grass == null && districtWide)
+            {
+                districtWide = false;
+                grass = Resources.Load<Texture2D>(mountains ? DefaultGrassResource : DistrictGrassResource);
+            }
             if (grass != null) material.mainTexture = grass;
             float grassMetres = mountains ? GrassTextureWorldSizeMeters : DistrictGrassWorldSizeForZoom(_zoomLevel);
-            material.mainTextureScale = new Vector2(_widthMeters / grassMetres, _depthMeters / grassMetres);
+            material.mainTextureScale = districtWide ? Vector2.one
+                : new Vector2(_widthMeters / grassMetres, _depthMeters / grassMetres);
+            material.mainTextureOffset = Vector2.zero;
+            material.SetFloat("_DistrictWideGrass", districtWide ? 1f : 0f);
             if (!mountains)
             {
                 material.SetFloat("_TextureWorldSize",
