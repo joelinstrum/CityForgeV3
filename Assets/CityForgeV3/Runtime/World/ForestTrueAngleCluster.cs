@@ -80,7 +80,7 @@ namespace CityForgeV3.World
         public bool IsLarge => ForestClusterCatalog.IsLarge(FloraId);
         public bool IsFir => SupportsFir(FloraId);
         public float TreeWidth => IsFirIndividual(FloraId)
-            ? 307f / FirPixelsPerUnit : 384f / PixelsPerUnit;
+            ? 255f / FirPixelsPerUnit : 384f / PixelsPerUnit;
         public float TreeHeight => IsFirIndividual(FloraId)
             ? 380f / FirPixelsPerUnit : 342f / PixelsPerUnit;
         public float EnvelopeWidth => IsFirIndividual(FloraId) ? 12f :
@@ -203,14 +203,14 @@ namespace CityForgeV3.World
 
         static Sprite FirRootSprite(SeasonPreset season)
         {
-            if (season != SeasonPreset.Autumn) return FirSprites(season)[0];
+            if (season != SeasonPreset.Autumn) return FirSprites(season)[1];
             if (autumnFirRoot != null) return autumnFirRoot;
             // Fir artwork remains green in autumn, but its mixed clusters use
             // the autumn deciduous atlas. Give every fir a distinct root key
             // so staged summer/autumn updates cannot mix three textures in one
             // spatial batch. This shares the existing atlas and rejoins one
             // fir batch per cell when the transition finishes.
-            var source = FirSprites(SeasonPreset.Summer)[0];
+            var source = FirSprites(SeasonPreset.Summer)[1];
             var pivot = new Vector2(source.pivot.x / source.rect.width,
                 source.pivot.y / source.rect.height);
             autumnFirRoot = Sprite.Create(source.texture, source.rect, pivot,
@@ -224,12 +224,25 @@ namespace CityForgeV3.World
             int[] slots = id switch
             {
                 "medium-fraser-fir" => new[] { 1, 3, 8, 13 },
-                "medium-blue-spruce" => new[] { 0, 4, 7, 10 },
-                "medium-balsam-fir" => new[] { 2, 6, 9, 14 },
-                _ => new[] { 5, 11, 12, 14 }
+                "medium-blue-spruce" => new[] { 1, 3, 11, 13 },
+                "medium-balsam-fir" => new[] { 5, 8, 11, 13 },
+                _ => new[] { 5, 11, 13, 8 }
             };
             return slots[Mathf.Abs(variation % slots.Length)];
         }
+
+        // Both seasonal atlases place the same six narrow trees in these
+        // cells. Keep saved flora identities and cluster layouts unchanged;
+        // only their rendered fir silhouettes use the slimmer artwork.
+        static int NarrowFirSlot(int slot) => slot switch
+        {
+            0 or 1 => 1,
+            2 or 3 or 4 => 3,
+            5 or 6 => 5,
+            7 or 8 or 9 => 8,
+            10 or 11 or 12 => 11,
+            _ => 13
+        };
         public static Sprite IndividualSprite(string id, int variation,
             SeasonPreset season) => FirSprites(season)[IndividualSlot(id, variation)];
 
@@ -271,7 +284,7 @@ namespace CityForgeV3.World
             return second && index == other;
         }
         public Sprite Piece(int index) => IsFirPiece(index)
-            ? FirSprites(Season)[layout[index].Slot]
+            ? FirSprites(Season)[NarrowFirSlot(layout[index].Slot)]
             : Sprites(Season)[layout[index].Slot % 12];
         public float PieceScale(int index) => layout[index].Scale *
             (IsFirPiece(index) && !IsFirIndividual(FloraId) ? 1.22f : 1f);
