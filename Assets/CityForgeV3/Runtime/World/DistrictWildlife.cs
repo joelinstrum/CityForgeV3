@@ -51,6 +51,45 @@ namespace CityForgeV3.World
             PayWages(d);
         }
         public static bool MountainTree(PlacedDistrictFlora t)=>t!=null&&t.HarvestState==DistrictTreeHarvestState.Standing&&FloraFamilies.ForTree(t.FloraId)==FloraFamilies.Mountain;
+        // Forest generation is an explicit bulk edit. Use its finished tree list
+        // once, rather than checking forest density during simulation ticks.
+        public static void PopulateGeneratedForest(RegionCityTile d, RegionTreeCoverage coverage,
+            ForestFamilyMix mix, int seed, List<PlacedDistrictFlora> trees)
+        {
+            var state=State(d);
+            state.Bears.Clear();
+            state.Status="Mountain woodland quiet";
+            if(coverage!=RegionTreeCoverage.Heavy||mix==null||mix.Total<=0||
+                (long)Mathf.Max(0,mix.Mountain)*10<3L*mix.Total)return;
+            var candidates=new List<Vector2>();
+            foreach(var tree in trees)
+                if(tree.GeneratedByRegion&&MountainTree(tree))
+                    candidates.Add(DistrictLabor.TreePoint(d,tree));
+            if(candidates.Count==0)return;
+            uint hash=unchecked((uint)seed);
+            foreach(char c in d.TileId??"")hash=unchecked((hash^(uint)c)*16777619);
+            int target=3+(int)(hash%3);
+            var used=new HashSet<int>();
+            for(int i=0;i<target&&used.Count<candidates.Count;i++)
+            {
+                int selected=-1;float best=-1;
+                for(int j=0;j<candidates.Count;j++)
+                {
+                    if(used.Contains(j))continue;
+                    var p=candidates[j];
+                    if(state.Marksmen.Any(m=>m.WagesPaid&&(m.Position-p).sqrMagnitude<ShotRadius*ShotRadius))continue;
+                    float distance=state.Bears.Count==0?float.MaxValue:
+                        state.Bears.Min(b=>(b.Home-p).sqrMagnitude);
+                    if(distance>best){best=distance;selected=j;}
+                }
+                if(selected<0)break;
+                used.Add(selected);
+                var home=candidates[selected];
+                state.Bears.Add(new DistrictBear{Id=$"forest-bear-{seed:x8}-{d.TileId}-{i}",
+                    Position=home,Home=home});
+            }
+            if(state.Bears.Count>0)state.Status="Bear spotted in mountain woodland";
+        }
         public static bool Tick(RegionCityTile d,float dt,Func<Vector2,bool> walkable)
         {
             if(dt<=0)return false;

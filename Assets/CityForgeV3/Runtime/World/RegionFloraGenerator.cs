@@ -30,6 +30,11 @@ namespace CityForgeV3.World
             var removed = new HashSet<string>(ids);
             district.LotNudges?.RemoveAll(n => n.Kind == DistrictSelectionKind.Flora && removed.Contains(n.Id));
             district.TreeCoverage = RegionTreeCoverage.None;
+            if (district.Wildlife != null)
+            {
+                district.Wildlife.Bears.Clear();
+                district.Wildlife.Status = "Mountain woodland quiet";
+            }
             return ids;
         }
 
@@ -310,10 +315,12 @@ namespace CityForgeV3.World
             var previous = new List<List<PlacedDistrictFlora>>();
             var previousCoverage = new List<RegionTreeCoverage>(); var previousSeeds = new List<int>();
             var previousMixes = new List<ForestFamilyMix>();
+            var previousWildlife = new List<DistrictWildlifeState>();
             foreach (var tile in districts)
             {
                 previous.Add(tile.Flora); previousCoverage.Add(tile.TreeCoverage);
                 previousSeeds.Add(tile.FloraSeed); previousMixes.Add(tile.ForestMix);
+                previousWildlife.Add(tile.Wildlife);
             }
             try
             {
@@ -323,6 +330,17 @@ namespace CityForgeV3.World
                     districts[i].Flora = generated[i];
                     districts[i].TreeCoverage = settings.TreeCoverage; districts[i].FloraSeed = settings.FloraSeed;
                     districts[i].ForestMix = settings.ForestMix.Copy();
+                    var oldWildlife = districts[i].Wildlife ?? new DistrictWildlifeState();
+                    districts[i].Wildlife = new DistrictWildlifeState
+                    {
+                        Marksmen = oldWildlife.Marksmen,
+                        NextSighting = oldWildlife.NextSighting,
+                        QuietSeconds = oldWildlife.QuietSeconds,
+                        SightingCount = oldWildlife.SightingCount,
+                        Status = oldWildlife.Status
+                    };
+                    DistrictWildlife.PopulateGeneratedForest(districts[i], settings.TreeCoverage,
+                        settings.ForestMix, settings.FloraSeed, generated[i]);
                 }
                 save(region);
             }
@@ -334,6 +352,7 @@ namespace CityForgeV3.World
                     districts[i].Flora = previous[i];
                     districts[i].TreeCoverage = previousCoverage[i]; districts[i].FloraSeed = previousSeeds[i];
                     districts[i].ForestMix = previousMixes[i];
+                    districts[i].Wildlife = previousWildlife[i];
                 }
                 throw;
             }
