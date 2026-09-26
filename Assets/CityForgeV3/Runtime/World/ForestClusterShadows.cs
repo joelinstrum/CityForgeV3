@@ -25,6 +25,28 @@ namespace CityForgeV3.World
             return direction * horizontal.magnitude + Vector3.up * sunRay.y;
         }
 
+        // The district's upright tree art reads best with shadows on the
+        // visible ground plane. The noon and afternoon marks favor screen right;
+        // keep a small away-from-camera component so the silhouettes remain
+        // attached to the tree feet rather than crossing their billboards.
+        public static Vector3 DistrictTreeRay(Vector3 sunRay,
+            Vector3 cameraForward, Vector3 cameraRight, TimeOfDayPreset preset)
+        {
+            if (preset != TimeOfDayPreset.Noon &&
+                preset != TimeOfDayPreset.Afternoon)
+                return BehindCameraRay(sunRay, cameraForward);
+            var horizontal = Vector3.ProjectOnPlane(sunRay, Vector3.up);
+            var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up);
+            var right = Vector3.ProjectOnPlane(cameraRight, Vector3.up);
+            if (horizontal.sqrMagnitude < .0001f ||
+                behind.sqrMagnitude < .0001f || right.sqrMagnitude < .0001f)
+                return sunRay;
+            var behindWeight = preset == TimeOfDayPreset.Noon ? .4f : .1f;
+            var direction = (right.normalized +
+                behind.normalized * behindWeight).normalized;
+            return direction * horizontal.magnitude + Vector3.up * sunRay.y;
+        }
+
         const int CanopySides = 20;
         const int ContactSides = 8;
         static readonly Vector2[] CompactCrowns =

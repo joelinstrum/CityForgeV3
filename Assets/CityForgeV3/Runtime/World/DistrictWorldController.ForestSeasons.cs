@@ -17,14 +17,18 @@ namespace CityForgeV3.World
         public const int ForestSeasonFrameBudget = 4;
         SpriteRenderer[] _pendingTimeOfDayShadows;
         int _pendingTimeOfDayShadowIndex;
+        bool _nightMorningShadowPreparation;
+        bool _nightMorningShadowsReady;
         public bool TimeOfDayPresentationPending =>
             _pendingTimeOfDayShadows != null ||
             (_floraBatches != null && _floraBatches.RebuildPending);
         public const int TimeOfDayShadowFrameBudget = 8;
+        public const int NightShadowFrameBudget = 32;
         const int InstantTreeShadowPrototypeLimit = 64;
         void Update()
         {
-            SyncTimeOfDayPresentation(TimeOfDayShadowFrameBudget);
+            SyncTimeOfDayPresentation(TimeOfDay == TimeOfDayPreset.Night
+                ? NightShadowFrameBudget : TimeOfDayShadowFrameBudget);
             SyncForestSeason(ForestSeasonFrameBudget);
         }
 
@@ -92,6 +96,22 @@ namespace CityForgeV3.World
                 return;
             }
             _floraBatches?.RebuildScheduled();
+            if (_nightMorningShadowPreparation &&
+                !_nightMorningShadowsReady && !TimeOfDayPresentationPending)
+            {
+                _nightMorningShadowsReady = true;
+                ApplyFloraShadowVisibility();
+            }
+        }
+
+        void ApplyFloraShadowVisibility()
+        {
+            _floraBatches?.SetShadowVisibility(
+                TimeOfDay != TimeOfDayPreset.Night &&
+                (!_nightMorningShadowPreparation ||
+                 _nightMorningShadowsReady) &&
+                (!ShowIndividualTreeShadows ||
+                 _zoomLevel <= DistrictZoomLevel.LOD2));
         }
 
         static void ApplyForestSeasonCutoff(SpriteRenderer renderer)

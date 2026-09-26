@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using CityForgeV3.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -62,6 +63,67 @@ public class DistrictFloraBatchesTests
                 .Where(renderer => renderer.name == "Flora shadow batch")
                 .All(renderer => !renderer.enabled), Is.True,
                 "Zooming back in at night must not resurrect shadows.");
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void NightPreparesMorningShadowsAndSunriseReusesTheWork()
+    {
+        var host = new GameObject("Night shadow preparation test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "night-shadow-preparation", Width = 2, Height = 2,
+                Founded = true, TimeOfDay = TimeOfDayPreset.Afternoon
+            };
+            for (var index = 0; index < 24; index++)
+                district.Flora.Add(new PlacedDistrictFlora
+                {
+                    InstanceId = "night-fir-" + index,
+                    FloraId = "cilician-fir",
+                    NormalizedX = .1f + index % 6 * .15f,
+                    NormalizedZ = .1f + index / 6 * .2f
+                });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowIndividualTreeShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            world.SetZoom(DistrictZoomLevel.LOD2);
+            world.SetTimeOfDay(TimeOfDayPreset.Night);
+            Assert.That(world.TimeOfDayPresentationPending, Is.True);
+            Assert.That(host.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.name == "Flora shadow batch")
+                .All(renderer => !renderer.enabled), Is.True);
+            world.SyncTimeOfDayPresentation();
+            var indexField = typeof(DistrictWorldController).GetField(
+                "_pendingTimeOfDayShadowIndex",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(indexField.GetValue(world), Is.EqualTo(8));
+
+            world.SetTimeOfDay(TimeOfDayPreset.Morning);
+            Assert.That(indexField.GetValue(world), Is.EqualTo(8),
+                "Sunrise must continue the night preparation, not restart it.");
+            Assert.That(host.GetComponentsInChildren<MeshRenderer>(true)
+                .Where(renderer => renderer.name == "Flora shadow batch")
+                .All(renderer => !renderer.enabled), Is.True,
+                "Do not reveal a partly updated shadow batch.");
+            var slices = 0;
+            while (world.TimeOfDayPresentationPending && slices++ < 100)
+                world.SyncTimeOfDayPresentation();
+            Assert.That(slices, Is.LessThan(100));
+            Assert.That(host.GetComponentsInChildren<MeshRenderer>(true)
+                .Any(renderer => renderer.name == "Flora shadow batch" &&
+                                 renderer.enabled), Is.True);
+            var shadow = host.GetComponentsInChildren<MeshRenderer>(true)
+                .First(renderer => renderer.name == "Flora shadow batch");
+            var properties = new MaterialPropertyBlock();
+            shadow.GetPropertyBlock(properties);
+            var morningRay = TimeOfDayLighting.SunRotation(
+                TimeOfDayPreset.Morning) * Vector3.forward;
+            Assert.That(Vector3.Distance(properties.GetVector("_SunRay"),
+                morningRay.normalized), Is.LessThan(.001f));
         }
         finally { Object.DestroyImmediate(host); }
     }
@@ -440,24 +502,84 @@ public class DistrictFloraBatchesTests
         }
     }
     [Test]
-    public void DistrictTreeShadowRayStaysBehindCameraAtDaylightPresets()
+    public void DistrictTreeShadowRayFollowsMarkedNoonAndAfternoonDirections()
     {
         var cameraForward = new Vector3(1f, -.36f, 1f).normalized;
+        var cameraRight = new Vector3(1f, 0f, -1f).normalized;
         var behind = Vector3.ProjectOnPlane(cameraForward, Vector3.up).normalized;
         foreach (var preset in new[] { TimeOfDayPreset.Morning,
             TimeOfDayPreset.Noon, TimeOfDayPreset.Afternoon })
         {
             var sunRay = TimeOfDayLighting.SunRotation(preset) * Vector3.forward;
-            var projected = ForestClusterShadows.BehindCameraRay(
-                sunRay, cameraForward);
-            Assert.That(Vector3.Dot(Vector3.ProjectOnPlane(projected,
-                    Vector3.up).normalized, behind),
-                Is.GreaterThan(.9f), preset.ToString());
+            var projected = ForestClusterShadows.DistrictTreeRay(
+                sunRay, cameraForward, cameraRight, preset);
+            var direction = Vector3.ProjectOnPlane(projected,
+                Vector3.up).normalized;
+            if (preset == TimeOfDayPreset.Morning)
+                Assert.That(Vector3.Dot(direction, behind),
+                    Is.GreaterThan(.9f));
+            else
+            {
+                Assert.That(Vector3.Dot(direction, cameraRight),
+                    Is.GreaterThan(preset == TimeOfDayPreset.Noon ? .9f : .99f));
+                Assert.That(Vector3.Dot(direction, behind),
+                    Is.GreaterThan(0f));
+            }
             Assert.That(projected.y, Is.EqualTo(sunRay.y).Within(.0001f));
             Assert.That(Vector3.ProjectOnPlane(projected, Vector3.up).magnitude,
                 Is.EqualTo(Vector3.ProjectOnPlane(sunRay, Vector3.up).magnitude)
                     .Within(.0001f));
         }
+    }
+
+    [TestCase(TimeOfDayPreset.Noon, 2f)]
+    [TestCase(TimeOfDayPreset.Afternoon, 1.5f)]
+    public void IndividualFirShadowTravelUsesTheRequestedLength(
+        TimeOfDayPreset preset, float multiplier)
+    {
+        var host = new GameObject("Individual fir shadow length test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "fir-shadow-length", Width = 1, Height = 1,
+                Founded = true, TimeOfDay = preset
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "fir", FloraId = "cilician-fir",
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowIndividualTreeShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var tree = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — cilician-fir");
+            var shadow = tree.transform.Find("District Flora Shadow");
+            var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
+            var source = tree.GetComponent<ForestTrueAngleCluster>().Piece(0);
+            var ray = ForestClusterShadows.DistrictTreeRay(
+                TimeOfDayLighting.SunRotation(preset) * Vector3.forward,
+                world.WorldCamera.transform.forward,
+                world.WorldCamera.transform.right, preset);
+            var direction = Vector3.ProjectOnPlane(ray, Vector3.up).normalized;
+            var scale = tree.transform.lossyScale;
+            var height = source.bounds.size.y * scale.y;
+            var formerTravel = Mathf.Min(height *
+                    Vector3.ProjectOnPlane(ray, Vector3.up).magnitude /
+                    Mathf.Max(.05f, -ray.y) *
+                    (preset == TimeOfDayPreset.Noon ? .8f : .55f),
+                source.bounds.size.x * scale.x * .65f);
+            var tallestRatio = source.vertices.Max(vertex =>
+                Mathf.Clamp01(vertex.y * scale.y / height));
+            var reach = mesh.vertices.Max(vertex => Vector3.Dot(
+                shadow.TransformPoint(vertex) - tree.transform.position,
+                direction));
+            Assert.That(reach, Is.EqualTo(formerTravel * tallestRatio *
+                multiplier).Within(.02f));
+        }
+        finally { Object.DestroyImmediate(host); }
     }
     [Test]
     public void DistrictTreeFamiliesKeepShadowMassBehindTheirTrunks()

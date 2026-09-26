@@ -591,7 +591,7 @@ namespace CityForgeV3.Tests.EditMode
         }
 
         [Test]
-        public void DistrictNoonDeciduousShadowUsesItsActualCameraDirection()
+        public void DistrictNoonDeciduousShadowFollowsTheMarkedUpRightDirection()
         {
             var owner = new GameObject("District noon shadow direction test");
             try
@@ -617,31 +617,37 @@ namespace CityForgeV3.Tests.EditMode
                 var mesh = shadow.GetComponent<MeshFilter>().sharedMesh;
                 var away = Vector3.ProjectOnPlane(camera.transform.forward,
                     Vector3.up).normalized;
+                var right = Vector3.ProjectOnPlane(camera.transform.right,
+                    Vector3.up).normalized;
                 var firstTreeFoot = tree.transform.position +
                     tree.GetComponent<ForestTrueAngleCluster>().WorldOffset(0);
                 var firstCrownCenter = shadow.TransformPoint(mesh.vertices[0]);
-                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
-                    Is.GreaterThan(0f),
-                    "Noon crown shadow must project away from the viewing camera.");
+                var projected = firstCrownCenter - firstTreeFoot;
+                Assert.That(Vector3.Dot(projected, right),
+                    Is.GreaterThan(Vector3.Dot(projected, away)),
+                    "Noon crown shadow should travel mostly screen right.");
+                Assert.That(Vector3.Dot(projected, away), Is.GreaterThan(0f),
+                    "Noon crown shadow should also travel slightly up screen.");
                 var referenceObject = new GameObject("Former noon projection");
                 referenceObject.transform.SetParent(tree.transform, false);
                 var referenceMesh = new Mesh();
                 referenceObject.AddComponent<MeshFilter>().sharedMesh =
                     referenceMesh;
                 var referenceShadow = referenceObject.AddComponent<MeshRenderer>();
-                var ray = ForestClusterShadows.BehindCameraRay(
+                var ray = ForestClusterShadows.DistrictTreeRay(
                     TimeOfDayLighting.SunRotation(TimeOfDayPreset.Noon) *
-                        Vector3.forward, camera.transform.forward);
+                        Vector3.forward, camera.transform.forward,
+                    camera.transform.right, TimeOfDayPreset.Noon);
                 Assert.That(ForestClusterShadows.Update(tree, referenceShadow,
                     ray, _ => firstCrownCenter.y, point => point, .55f,
                     away), Is.True);
                 var formerCenter = referenceObject.transform.TransformPoint(
                     referenceMesh.vertices[0]);
-                Assert.That(Vector3.Dot(firstCrownCenter - firstTreeFoot, away),
+                Assert.That(Vector3.Dot(projected, right),
                     Is.GreaterThan(Vector3.Dot(formerCenter - firstTreeFoot,
-                        away) + .03f),
-                    "Noon clump shadows should extend beyond the former " +
-                    "compressed projection.");
+                        right) * 2f),
+                    "Noon clump shadows should reach at least twice as far " +
+                    "as the former compressed projection.");
             }
             finally { Object.DestroyImmediate(owner); }
         }
