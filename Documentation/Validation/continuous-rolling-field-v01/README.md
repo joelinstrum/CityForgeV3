@@ -1,5 +1,7 @@
 # Continuous rolling field
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Change
 
 The previous rolling generator was discrete: two to five bounded elliptical

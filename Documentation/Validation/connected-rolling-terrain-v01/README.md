@@ -1,5 +1,7 @@
 # Connected rolling terrain tune
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 The existing hill count, seed sequence, center positions, primary radii,
 crest profile, coverage mapping, grass, height scale (`1.30`), and light
 direction are unchanged. Each existing hill now has a very broad, low shoulder

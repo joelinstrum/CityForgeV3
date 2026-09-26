@@ -1,5 +1,7 @@
 # Atomic Shadow District time-of-day update
 
+Temporary Unity test-result XML was removed from the repository; the reported test counts remain.
+
 Validated September 25, 2026 in an isolated Unity 6000.1.12f1 project. The
 open editor and original saved `Shadow DIstrict` were untouched.
 

@@ -1,5 +1,7 @@
 # Far grass and noon shadow visual review
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 **Zoom label correction (September 24, 2026):** The captures and prose below
 used enum labels (`LOD3`–`LOD5`) as if they were player-facing zoom numbers.
 Player-facing Zoom 3 is `LOD2`, so the earlier `grass-zoom-3.png` actually

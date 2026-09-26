@@ -1,5 +1,7 @@
 # Seed 123 rolling meadow comparison
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 Captured September 25, 2026 from commit `bf89d32` in an isolated Unity 6000.1.12f1 project fixture. The open City Forge editor and saved district were not used. This is a controlled terrain/material render, not a full game screenshot. It contains the generated mesh, approved grass texture, current hill shader, district camera pose and shared time-of-day lighting. Clouds, trees, buildings and UI are absent.
 
 ## Fixed setup
@@ -10,10 +12,7 @@ Captured September 25, 2026 from commit `bf89d32` in an isolated Unity 6000.1.12
 - Material: LOD4 distant meadow filtering 0.2, far grass brightness 0.91, grass detail mip scale 1.0, far grass noise 0 for hills; existing slope/deep-shade lifts 0.5/0.225.
 - For each time preset, only `_MeadowDetailEnabled` changes between 0 and 1. Geometry, camera, texture, seed, coverage and lighting are identical within each pair.
 
-| Time | Detail off | Detail on |
-| --- | --- | --- |
-| Afternoon | [PNG](afternoon-off.png) | [PNG](afternoon-on.png) |
-| Noon | [PNG](noon-off.png) | [PNG](noon-on.png) |
+The isolated comparison covered detail on and off at both Afternoon and Noon.
 
 ## Measurements
 
@@ -26,9 +25,9 @@ Captured September 25, 2026 from commit `bf89d32` in an isolated Unity 6000.1.12
 
 Three afternoon captures use the same on state, mesh, grass texture, camera and light:
 
-- [Mip scale 0.75, filtering 0.2](afternoon-mip-three-quarter.png): a barely visible increase in existing grass detail.
-- [Mip scale 0.5, filtering 0.2](afternoon-mip-half.png): more of the existing grass detail survives at district zoom.
-- [Mip scale 0.5, filtering 0](afternoon-filter-zero-mip-half.png): stronger fine grain begins to read as speckle. This was a fixture-only probe, not a production change.
+- Mip scale 0.75, filtering 0.2: a barely visible increase in existing grass detail.
+- Mip scale 0.5, filtering 0.2: more of the existing grass detail survives at district zoom.
+- Mip scale 0.5, filtering 0: stronger fine grain begins to read as speckle. This was a fixture-only probe, not a production change.
 
 The bare terrain still reads smoother than the reference, especially at noon. The mesh contains the requested height, so increasing macro color strength is unlikely to recover the missing form. A conservative grass-detail filtering adjustment is a candidate for a separate in-game visual pass; the strongest tested filtering combination should be avoided. No production shader, grass, geometry or lighting settings were changed for this comparison.
 

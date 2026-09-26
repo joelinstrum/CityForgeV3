@@ -1,5 +1,7 @@
 # Shadow District soft tree shadow prototype
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 September 25, 2026. Validated in an isolated Unity 6000.1.12f1 project using a
 read-only copy of the player's saved `Large Region Test` / `Shadow DIstrict`
 tile (`city-022`). The tile has 20 trees on a 35 m hill. The open Unity editor

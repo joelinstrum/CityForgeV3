@@ -1,5 +1,7 @@
 # Rolling hills V01 — September 25, 2026
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Intent and scope
 
 The reference is Joe's `hill-goal-fixed.png`: broad overlapping rolling forms,
@@ -30,18 +32,17 @@ per-hill tint, painted shade, dirt, or rock layer is used to create relief.
 
 ## Validation
 
-The isolated Unity 6000.1.12f1 EditMode run passed 6/6 focused terrain tests
-([results](elevation-tests.xml)). Three 35 m, 70% coverage seeds on a 1.28 km
+The isolated Unity 6000.1.12f1 EditMode run passed 6/6 focused terrain tests.
+Three 35 m, 70% coverage seeds on a 1.28 km
 district had 14,570–19,654 of 46,656 interior samples below 1 m, peak relief
 31.68–32.08 m, and maximum adjacent 5 m steps of 1.21–1.52 m. Road, river,
 edge, deterministic reload, and mesh/sampler checks passed.
 The surface cache, map preview, river appearance, and far grass zoom regression
-filter passed 19/19 ([results](regression-tests.xml)).
+filter passed 19/19.
 
 Synthetic 1400×1000 captures use the actual world-lighting preset values and
-the approved grass asset on one isolated terrain mesh: [Morning](rolling-hills-morning.png),
-[Noon](rolling-hills-noon.png), [Afternoon](rolling-hills-afternoon.png),
-[Evening](rolling-hills-evening.png), and [Night](rolling-hills-night.png).
+the approved grass asset on one isolated terrain mesh: Morning, Noon,
+Afternoon, Evening, and Night.
 They are visual checks of terrain lighting, not a full district Game view.
 The shadowed sides stay connected to the geometry; no crest color bands or
 separate dirt patches are visible. Evening and Night remain very dark under

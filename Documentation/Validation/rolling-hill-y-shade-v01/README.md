@@ -1,5 +1,7 @@
 # Rolling hill Y and shading tune
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Scope
 
 The existing seeded hill field, shape positions, radii, coverage, edge fades,

@@ -1,5 +1,7 @@
 # Rolling terrain vertical relief — September 25, 2026
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Height trace
 
 The Relief modal reads an `IntegerField`. Previously, Apply clamped non-mountain
@@ -51,20 +53,20 @@ simulation tick, or local surface edit logs or scans the mesh for diagnostics.
 
 ## Isolated validation
 
-- [Relief tests](relief-tests.xml): 14/14 passed. At 80 m and 40% coverage,
+- Relief tests: 14/14 passed. At 80 m and 40% coverage,
   both 2×2 and 4×4 meshes measure exactly 80.000 m. At 1.5x, they measure
   120.000 m. Sampled X/Z vertices and the normalized height profile remain
   unchanged between 60 and 80 m. Older save data defaults to 1x. Incremental
   river/road updates at 80 m match full rebuilds. The actual district build
   logs the measured bounds above.
-- [Regression tests](regression-tests.xml): 17/17 passed for region map,
+- Regression tests: 17/17 passed for region map,
   mountain/quarry, and grass zoom behavior.
 - A read-only copy of saved City 062 with 80 m/40% produces **0.000–80.000 m**.
   A read-only copy of river-constrained `Shadow DIstrict` produces
   **0.000–68.991 m** because the river levels part of the high ground. The
   diagnostic reports this actual result; no player save was written.
 - Same-camera, same-lighting synthetic Afternoon previews:
-  [before](before-afternoon.png) and [after](after-afternoon.png). These show
+  before and after. These show
   only the vertical amplitude correction and are not full-district Game views.
 
 The extra calibration pass runs only during full terrain construction. In the

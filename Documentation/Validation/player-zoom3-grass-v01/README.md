@@ -1,5 +1,7 @@
 # Player-facing Zoom 3 grass correction
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 September 24, 2026. Joe's Chambersburg screenshot showed a solid-color
 meadow at player-facing Zoom 3. The earlier grass pass changed `LOD3`, which
 is actually player-facing Zoom 4. `DistrictScale` maps Zooms 1–3 to
@@ -12,7 +14,7 @@ its earlier Zoom 4 settings (0.3 filtering, 0.6 grain, 0.94 brightness,
 unscaled grain frequency). The 75 m artwork registration and the farther LOD
 settings are unchanged. No reference pixels or assets were copied from SimCity 4.
 
-[`grass-player-zoom3.png`](grass-player-zoom3.png) is a 2048 × 1096 offscreen
+`grass-player-zoom3.png` is a 2048 × 1096 offscreen
 capture of a flat 4 × 4 district at the actual `LOD2` camera distance. It
 shows visible fine variation rather than the uniform ground in Joe's
 Chambersburg screenshot. This fixture has no trees or buildings and has a

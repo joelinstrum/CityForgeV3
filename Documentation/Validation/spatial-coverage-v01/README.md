@@ -1,5 +1,7 @@
 # Spatial coverage for rolling terrain
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Coverage before and after
 
 Before this change, every mesh sample used the same district-wide continuous

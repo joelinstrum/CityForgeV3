@@ -1,5 +1,7 @@
 # Grouped tree shadow footprint review
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 September 25, 2026. The soft hillside shadow prototype now sizes a true-angle
 cluster's single shadow from its full compact or large envelope rather than
 the root sprite's single-tree bounds. Composed forest sprites likewise retain

@@ -1,5 +1,7 @@
 # Mixed temperate forest clusters
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 The true-angle deciduous and mountain clusters previously chose every piece
 from one atlas: all deciduous or all fir. Their separate groups remained
 conspicuous in autumn. Existing saved cluster IDs now assemble one or two fir
@@ -17,7 +19,7 @@ or a second batch per cluster. Local cluster and season changes still rebuild
 only their affected spatial batch. The temporary district shadow-free mode
 remains in place.
 
-Isolated previews: [summer](summer.png) and [autumn](autumn.png). They show four
+Isolated previews: summer and autumn. They show four
 representative compact and large clusters in a flat district. Joe's open
 Unity editor was not driven; the final variety and grounding need visual
 review there.

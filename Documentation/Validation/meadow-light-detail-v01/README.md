@@ -1,17 +1,12 @@
 # Meadow light-detail experiment
 
+QA screenshots for this study were removed from the repository at Joe’s request; the measurements and findings remain.
+
 Captured September 25, 2026 in an isolated Unity 6000.1.12f1 project. The open editor was not driven. The test uses the approved MacroGrassV05 texture and the existing terrain mesh with Seed 123, Relief Height 35 m, Coverage 40%, Vertical Relief Scale 1.0, and the production district camera pose. Afternoon and noon use the shared world-lighting presets. There are no clouds, trees, UI, or buildings in these controlled renders.
 
-The **district** view is the normal LOD4 frame. The **crop** view holds the same camera angle and terrain center while reducing orthographic size to 52%, so each area of grass occupies nearly twice as many pixels. Each row varies only the indicated shader controls.
+The **district** view is the normal LOD4 frame. The **crop** view holds the same camera angle and terrain center while reducing orthographic size to 52%, so each area of grass occupies nearly twice as many pixels. The afternoon comparisons covered existing detail, normal response, crest lift, and their combination at both views. The noon comparisons covered existing detail and the combined treatment at both views.
 
-| View and light | Existing detail | Normal response only | Crest lift only | Combined |
-| --- | --- | --- | --- | --- |
-| District, afternoon | [PNG](district-afternoon-color.png) | [PNG](district-afternoon-normal.png) | [PNG](district-afternoon-crest.png) | [PNG](district-afternoon-combined.png) |
-| Crop, afternoon | [PNG](crop-afternoon-color.png) | [PNG](crop-afternoon-normal.png) | [PNG](crop-afternoon-crest.png) | [PNG](crop-afternoon-combined.png) |
-| District, noon | [PNG](district-noon-color.png) | — | — | [PNG](district-noon-combined.png) |
-| Crop, noon | [PNG](crop-noon-color.png) | — | — | [PNG](crop-noon-combined.png) |
-
-[The full meadow off switch](district-afternoon-off.png) preserves the earlier hill material to within one displayed 8-bit RGB level in a matched render. The shader uses `_MeadowDetailEnabled = 0` for that state.
+The full meadow off switch preserves the earlier hill material to within one displayed 8-bit RGB level in a matched render. The shader uses `_MeadowDetailEnabled = 0` for that state.
 
 ## Implementation and controls
 

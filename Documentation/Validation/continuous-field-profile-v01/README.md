@@ -1,5 +1,7 @@
 # Continuous field profile tune
 
+Temporary QA screenshots and Unity test-result XML were removed from the repository; the measurements and findings remain.
+
 ## Parameters
 
 The existing two-field rolling generator remains. Only primary field sampling
