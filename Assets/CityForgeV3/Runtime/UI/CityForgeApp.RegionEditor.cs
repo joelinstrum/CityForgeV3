@@ -13,6 +13,7 @@ namespace CityForgeV3.UI
     private const float RegionMapUnitPixels = 72f;
     private const float DistrictCellPixels = 8f;
     private const bool DistrictClumpShadowExperiment = true;
+    private const bool DistrictClumpArtworkShadowExperiment = true;
 
     public bool OpenTerraformScaleQa() =>
         OpenDistrictScaleQa(DistrictEditorMode.Terraform);
@@ -1633,6 +1634,8 @@ namespace CityForgeV3.UI
           _districtWorld.ShowIndividualTreeShadows &&
           _districtWorld.ShowTreeClumpShadows ==
               DistrictClumpShadowExperiment &&
+          _districtWorld.UseArtworkClumpShadows ==
+              DistrictClumpArtworkShadowExperiment &&
           !_districtWorld.ShowTreeShadowPrototype &&
           _districtWorldTileId == district.TileId &&
           _districtWorldLotId == lotId &&
@@ -1658,6 +1661,8 @@ namespace CityForgeV3.UI
       _districtWorld.ShowIndividualTreeShadows = true;
       _districtWorld.ShowTreeClumpShadows =
           DistrictClumpShadowExperiment;
+      _districtWorld.UseArtworkClumpShadows =
+          DistrictClumpArtworkShadowExperiment;
       _districtWorld.ShowTreeShadowPrototype = false;
       _districtWorld.RebuildEntireDistrict(district,
           DistrictBulkRebuildReason.LoadSwitchOrStateRestore);

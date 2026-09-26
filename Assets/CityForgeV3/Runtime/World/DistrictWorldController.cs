@@ -291,6 +291,7 @@ namespace CityForgeV3.World
         // Temporary visual study: clumps use the existing projected mesh and
         // spatial shadow batches used by individual district trees.
         public bool ShowTreeClumpShadows { get; set; }
+        public bool UseArtworkClumpShadows { get; set; }
         // Temporary visual study for the saved hillside test district. Keeps
         // Unity's realtime shadow casters disabled while showing batched trees.
         public bool ShowTreeShadowPrototype { get; set; }
@@ -1068,12 +1069,13 @@ namespace CityForgeV3.World
                 shadow.SetPropertyBlock(properties);
                 // Explicit ground geometry avoids SpriteRenderer projection/depth
                 // inconsistencies. Keep each silhouette anchored to its tree.
-                if (ForestClusterShadows.Update(visibleRenderer, shadow, shadowRay, world =>
+                float GroundHeight(Vector3 world)
                 {
                     var local = _content.InverseTransformPoint(world);
                     var anchor = _content.InverseTransformPoint(visibleRenderer.transform.position);
                     return visibleRenderer.transform.position.y + TerrainElevation(local.x, local.z) - TerrainElevation(anchor.x, anchor.z);
-                }, foot =>
+                }
+                Vector3 GroundAnchor(Vector3 foot)
                 {
                     // One bounded collider query per cluster at build/update,
                     // never per frame. Register the composition's shared root
@@ -1082,7 +1084,24 @@ namespace CityForgeV3.World
                     if (TerrainRaycast(new Ray(foot - direction * 1000f, direction), out var hit))
                         return _content.TransformPoint(hit);
                     return foot + direction * ((visibleRenderer.transform.position.y - foot.y) / Mathf.Min(-.05f, direction.y));
-                }, (shadowPreset == TimeOfDayPreset.Noon ? .8f : .65f) *
+                }
+                var isClump = (atlas != null && atlas.PieceCount > 1) ||
+                    ForestClusterCatalog.IsTexture(source.texture.name);
+                if (UseArtworkClumpShadows && isClump &&
+                    ForestClusterShadows.UpdateArtwork(visibleRenderer, shadow,
+                        shadowRay, GroundHeight, GroundAnchor, shadowPreset,
+                        shadowLengthScale, out var alternateAtlas))
+                {
+                    properties.SetFloat("_Cutoff", .3f);
+                    properties.SetTexture("_MainTex", source.texture);
+                    properties.SetTexture("_AlternateTex", alternateAtlas != null
+                        ? alternateAtlas : Texture2D.whiteTexture);
+                    shadow.SetPropertyBlock(properties);
+                    continue;
+                }
+                if (ForestClusterShadows.Update(visibleRenderer, shadow,
+                    shadowRay, GroundHeight, GroundAnchor,
+                    (shadowPreset == TimeOfDayPreset.Noon ? .8f : .65f) *
                     shadowLengthScale,
                     screenBehind))
                 {

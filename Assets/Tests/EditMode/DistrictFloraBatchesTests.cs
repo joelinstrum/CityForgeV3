@@ -111,6 +111,150 @@ public class DistrictFloraBatchesTests
         finally { Object.DestroyImmediate(host); }
     }
 
+    [TestCase("forest-mountain-compact")]
+    [TestCase("forest-deciduous-large")]
+    public void ClumpArtworkShadowsKeepEachMembersCutoutAndAtlas(string id)
+    {
+        var host = new GameObject("Clump artwork shadow test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "clump-artwork-shadow-" + id,
+                Width = 2, Height = 2, Founded = true,
+                TimeOfDay = TimeOfDayPreset.Noon
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "clump", FloraId = id,
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowDistrictShadows = false;
+            world.ShowTreeClumpShadows = true;
+            world.UseArtworkClumpShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var clump = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name == "District Flora — " + id);
+            var atlas = clump.GetComponent<ForestTrueAngleCluster>();
+            var source = clump.transform.Find("District Flora Shadow")
+                .GetComponent<MeshRenderer>();
+            var mesh = source.GetComponent<MeshFilter>().sharedMesh;
+            Assert.That(mesh.vertexCount, Is.EqualTo(atlas.PieceCount * 25));
+            Assert.That(mesh.uv.Length, Is.EqualTo(mesh.vertexCount));
+            var selectors = new System.Collections.Generic.List<Vector2>();
+            mesh.GetUVs(3, selectors);
+            Assert.That(selectors.Count, Is.EqualTo(mesh.vertexCount));
+            Assert.That(selectors.Any(value => value.x < .5f), Is.True);
+            Assert.That(selectors.Any(value => value.x > .5f), Is.True,
+                "Mixed stands must keep their second atlas cutouts.");
+            var properties = new MaterialPropertyBlock();
+            source.GetPropertyBlock(properties);
+            Assert.That(properties.GetTexture("_MainTex"),
+                Is.SameAs(clump.sprite.texture));
+            Assert.That(properties.GetTexture("_AlternateTex"), Is.Not.Null);
+            Assert.That(properties.GetFloat("_Cutoff"),
+                Is.EqualTo(.3f).Within(.001f));
+            var batch = host.GetComponentsInChildren<MeshRenderer>(true)
+                .Single(renderer => renderer.name == "Flora shadow batch");
+            var batchMesh = batch.GetComponent<MeshFilter>().sharedMesh;
+            var batchSelectors = new System.Collections.Generic.List<Vector2>();
+            batchMesh.GetUVs(3, batchSelectors);
+            Assert.That(batchSelectors, Is.EqualTo(selectors));
+            Assert.That(batchMesh.vertexCount, Is.EqualTo(mesh.vertexCount));
+            batch.GetPropertyBlock(properties);
+            Assert.That(properties.GetTexture("_AlternateTex"), Is.Not.Null);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void LegacyClumpArtworkShadowProjectsItsComposedCutout()
+    {
+        var host = new GameObject("Legacy clump artwork shadow test");
+        try
+        {
+            var district = new RegionCityTile
+            {
+                TileId = "legacy-clump-artwork-shadow", Width = 2,
+                Height = 2, Founded = true,
+                TimeOfDay = TimeOfDayPreset.Noon
+            };
+            district.Flora.Add(new PlacedDistrictFlora
+            {
+                InstanceId = "clump", FloraId = "forest-cluster-01",
+                NormalizedX = .5f, NormalizedZ = .5f
+            });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.ShowDistrictShadows = false;
+            world.ShowTreeClumpShadows = true;
+            world.UseArtworkClumpShadows = true;
+            world.RebuildEntireDistrict(district,
+                DistrictBulkRebuildReason.TestFixture);
+            var clump = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(renderer => renderer.name ==
+                    "District Flora — forest-cluster-01");
+            var shadow = clump.transform.Find("District Flora Shadow")
+                .GetComponent<MeshRenderer>();
+            Assert.That(shadow.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.EqualTo(81), "The wider composition uses a 9×9 grid.");
+            var properties = new MaterialPropertyBlock();
+            shadow.GetPropertyBlock(properties);
+            Assert.That(properties.GetTexture("_MainTex"),
+                Is.SameAs(clump.sprite.texture));
+            var batch = host.GetComponentsInChildren<MeshRenderer>(true)
+                .Single(renderer => renderer.name == "Flora shadow batch");
+            Assert.That(batch.GetComponent<MeshFilter>().sharedMesh.vertexCount,
+                Is.EqualTo(81));
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
+
+    [Test]
+    public void MemberCutoutsFollowSlopedGround()
+    {
+        var owner = new GameObject("Sloped clump shadow test");
+        var mesh = new Mesh();
+        try
+        {
+            var tree = new GameObject("Clump");
+            tree.transform.SetParent(owner.transform, false);
+            var atlas = tree.AddComponent<ForestTrueAngleCluster>();
+            atlas.Configure("forest-mountain-compact", 0,
+                SeasonPreset.Summer, _ => 0f);
+            var source = tree.AddComponent<SpriteRenderer>();
+            source.sprite = ForestTrueAngleCluster.RootSprite(
+                "forest-mountain-compact", SeasonPreset.Summer);
+            var shadowObject = new GameObject("Shadow");
+            shadowObject.transform.SetParent(tree.transform, false);
+            shadowObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var shadow = shadowObject.AddComponent<MeshRenderer>();
+            float Ground(Vector3 point) => 2f + point.x * .03f +
+                point.z * .04f;
+            Vector3 Anchor(Vector3 point)
+            {
+                point.y = Ground(point);
+                return point;
+            }
+            Assert.That(ForestClusterShadows.UpdateArtwork(source, shadow,
+                new Vector3(.3f, -1f, .4f).normalized, Ground, Anchor,
+                TimeOfDayPreset.Noon, 2f, out var alternate), Is.True);
+            Assert.That(alternate, Is.Not.Null);
+            foreach (var vertex in mesh.vertices)
+            {
+                var world = shadow.transform.TransformPoint(vertex);
+                Assert.That(world.y, Is.EqualTo(Ground(world) + .031f)
+                    .Within(.001f));
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(owner);
+            Object.DestroyImmediate(mesh);
+        }
+    }
+
     [Test]
     public void NightPreparesMorningShadowsAndSunriseReusesTheWork()
     {

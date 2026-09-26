@@ -216,6 +216,7 @@ namespace CityForgeV3.World
                 var billboardRadius = 0f;
                 Texture alternateTexture = null;
                 var shadowVertices = new List<Vector3>(); var shadowUV = new List<Vector2>();
+                var shadowAtlasSelectors = new List<Vector2>();
                 var shadowColors = new List<Color>(); var shadowTriangles = new List<int>();
                 MeshRenderer firstShadow = null;
                 foreach (var tree in pair.Value)
@@ -273,6 +274,13 @@ namespace CityForgeV3.World
                     var matrix = transform.worldToLocalMatrix * shadow.transform.localToWorldMatrix;
                     foreach (var v in mesh.vertices) shadowVertices.Add(matrix.MultiplyPoint3x4(v));
                     shadowUV.AddRange(mesh.uv);
+                    var selectors = new List<Vector2>();
+                    mesh.GetUVs(3, selectors);
+                    if (selectors.Count == mesh.vertexCount)
+                        shadowAtlasSelectors.AddRange(selectors);
+                    else
+                        for (var i = 0; i < mesh.vertexCount; i++)
+                            shadowAtlasSelectors.Add(Vector2.zero);
                     var sourceColors = mesh.colors;
                     if (sourceColors != null &&
                         sourceColors.Length == mesh.vertexCount)
@@ -295,7 +303,8 @@ namespace CityForgeV3.World
                     firstShadow.GetPropertyBlock(properties);
                     properties.SetFloat("_DistrictFloraBatch", 0f);
                     var batch = Create(cell, "Flora shadow batch", firstShadow.sharedMaterial, properties,
-                        shadowVertices, shadowUV, shadowColors, shadowTriangles);
+                        shadowVertices, shadowUV, shadowColors, shadowTriangles,
+                        atlasSelectors: shadowAtlasSelectors);
                     shadowBatchHasSources[batch] = true;
                     batch.enabled = shadowsVisible;
                 }
