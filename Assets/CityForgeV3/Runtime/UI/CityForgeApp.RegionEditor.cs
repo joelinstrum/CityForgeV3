@@ -1576,9 +1576,11 @@ namespace CityForgeV3.UI
       helpLayer.Add(helpPanel);
 
       var helpRevision = 0;
+      var suppressHelpUntilPointerOut = false;
       // Delegate hover/focus so locally replaced tool palettes keep working.
       void ShowHelp(VisualElement target)
       {
+        if (suppressHelpUntilPointerOut) return;
         var button = target as Button ?? target?.GetFirstAncestorOfType<Button>();
         if (button == null || string.IsNullOrWhiteSpace(button.tooltip))
         { helpPanel.style.display = DisplayStyle.None; return; }
@@ -1600,9 +1602,15 @@ namespace CityForgeV3.UI
             helpPanel.style.display = DisplayStyle.None;
         }).ExecuteLater(3000);
       }
+      screen.RegisterCallback<PointerDownEvent>(_ =>
+      {
+        suppressHelpUntilPointerOut = true;
+        helpRevision++;
+        helpPanel.style.display = DisplayStyle.None;
+      }, TrickleDown.TrickleDown);
       screen.RegisterCallback<PointerOverEvent>(evt => ShowHelp(evt.target as VisualElement));
       screen.RegisterCallback<PointerOutEvent>(_ =>
-      { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
+      { suppressHelpUntilPointerOut = false; helpRevision++; helpPanel.style.display = DisplayStyle.None; });
       screen.RegisterCallback<FocusInEvent>(evt => ShowHelp(evt.target as VisualElement));
       screen.RegisterCallback<FocusOutEvent>(_ =>
       { helpRevision++; helpPanel.style.display = DisplayStyle.None; });
