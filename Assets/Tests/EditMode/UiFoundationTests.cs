@@ -2220,6 +2220,9 @@ namespace CityForgeV3.Tests
                 Assert.IsFalse(UnityEditor.ShaderUtil.ShaderHasError(material.shader));
                 Assert.IsTrue(material.IsKeywordEnabled("HILL_MEADOW"));
                 Assert.IsNotNull(material.GetTexture("_SoilTex"));
+                Assert.That(material.GetFloat("_SoilPeakHeight"),
+                    Is.EqualTo(35f * DistrictElevation.RollingHillVerticalScale)
+                        .Within(.001f));
                 foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
                 {
                     world.SetZoom(level);

@@ -19,8 +19,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
         _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
-        _SoilRevealStrength ("Close hill soil reveal", Range(0,1)) = 0
+        _SoilRevealStrength ("Hill soil reveal", Range(0,1)) = 0
         _SoilTex ("Hill soil", 2D) = "white" {}
+        _SoilPeakHeight ("Rolling hill peak height", Float) = 45
     }
 
     SubShader
@@ -67,6 +68,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 uv : TEXCOORD2;
                 float2 hillVariation : TEXCOORD3;
                 float2 meadowMetres : TEXCOORD4;
+                float worldHeight : TEXCOORD5;
             };
 
             fixed4 _Color;
@@ -81,6 +83,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _RollingHillDarkSlopeLift;
             float _RollingHillDeepShadeLift;
             float _SoilRevealStrength;
+            float _SoilPeakHeight;
             float _TextureWorldSize;
             float _DistrictMapStrength;
             float _DistrictMapMipBias;
@@ -97,7 +100,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // path below keeps its separate world-space coordinates.
                 output.uv = input.uv;
                 output.hillVariation=0;
-                output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
+                float3 worldPosition=mul(unity_ObjectToWorld,input.vertex).xyz;
+                output.meadowMetres=worldPosition.xz;
+                output.worldHeight=worldPosition.y;
                 #if defined(MEADOW_PATCHES)
                 float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
@@ -236,19 +241,20 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // the meadow. The soil shares world coordinates across tiles.
                 if (_SoilRevealStrength > 0)
                 {
-                    float3 terrainNormal=normalize(input.worldNormal);
-                    float grade=length(terrainNormal.xz)/max(terrainNormal.y,.05);
-                    float slopeMask=smoothstep(.10,.32,grade);
-                    float opening=smoothstep(.77,.83,
+                    // Expose hill crowns first; let the earth disappear down
+                    // the face instead of gathering on the steep lower slope.
+                    float hillHeight=saturate(input.worldHeight/max(_SoilPeakHeight,1));
+                    float summitMask=smoothstep(.38,.82,hillHeight);
+                    float opening=smoothstep(.78,.835,
                         surface.r/max(surface.g,.001));
                     fixed3 soil=tex2Dbias(_SoilTex,
                         float4(input.meadowMetres/18.0,0,2.0)).rgb;
                     // The shared mountain earth reads violet against this
                     // meadow. Shift it toward warm ochre without recoloring
                     // the grass or editing the mountain source texture.
-                    soil=saturate(soil*fixed3(1.26,1.06,.65));
+                    soil=saturate(soil*fixed3(1.22,1.30,.88));
                     surface.rgb=lerp(surface.rgb,soil,
-                        slopeMask*opening*_SoilRevealStrength);
+                        summitMask*opening*_SoilRevealStrength);
                 }
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,

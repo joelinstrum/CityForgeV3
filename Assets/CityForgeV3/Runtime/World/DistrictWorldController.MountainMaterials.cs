@@ -163,6 +163,14 @@ namespace CityForgeV3.World
                 // its authored palette and avoid a second dry-patch system.
                 material.SetFloat("_GrassHueShift", 0f);
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
+                if (hills)
+                {
+                    var relief = _terrainDistrict.Hills;
+                    var vertical = relief.VerticalReliefScale > 0
+                        ? Mathf.Clamp(relief.VerticalReliefScale, .25f, 4f) : 1f;
+                    material.SetFloat("_SoilPeakHeight", Mathf.Max(1f,
+                        relief.HeightMeters * DistrictElevation.RollingHillVerticalScale * vertical));
+                }
                 material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
                 material.SetFloat("_RollingHillDeepShadeLift",RollingHillDeepShadeLift);
                 material.SetFloat("_MeadowPatchStrength", 0f);
