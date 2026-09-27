@@ -160,7 +160,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // The district's small vertical relief needs a calibrated
                 // normal response at its kilometre-wide presentation scale.
                 // This changes directional light only, never the grass color.
-                normal=normalize(fixed3(normal.x*3.0,normal.y,normal.z*3.0));
+                normal=normalize(fixed3(normal.x*1.6,normal.y,normal.z*1.6));
                 #endif
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
                 #if defined(HILL_MEADOW)
@@ -249,10 +249,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                         surface.r/max(surface.g,.001));
                     fixed3 soil=tex2Dbias(_SoilTex,
                         float4(input.meadowMetres/18.0,0,2.0)).rgb;
-                    // The shared mountain earth reads violet against this
-                    // meadow. Shift it toward warm ochre without recoloring
-                    // the grass or editing the mountain source texture.
-                    soil=saturate(soil*fixed3(1.22,1.30,.88));
+                    // Neutral tan earth sits beneath the warm meadow openings.
+                    // Keep the mountain source texture and all grass artwork.
+                    soil=saturate(soil*fixed3(1.18,1.42,1.18));
                     surface.rgb=lerp(surface.rgb,soil,
                         summitMask*opening*_SoilRevealStrength);
                 }
