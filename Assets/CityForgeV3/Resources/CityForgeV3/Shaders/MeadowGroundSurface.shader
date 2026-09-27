@@ -19,6 +19,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
         _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
+        _SoilRevealStrength ("Close hill soil reveal", Range(0,1)) = 0
     }
 
     SubShader
@@ -78,6 +79,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _GrassHueShift;
             float _RollingHillDarkSlopeLift;
             float _RollingHillDeepShadeLift;
+            float _SoilRevealStrength;
             float _TextureWorldSize;
             float _DistrictMapStrength;
             float _DistrictMapMipBias;
@@ -227,6 +229,22 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 fixed3 districtColor=tex2Dbias(_DistrictMapTex,
                     float4(saturate(input.uv),0,_DistrictMapMipBias)).rgb;
                 surface.rgb=lerp(surface.rgb,districtColor,_DistrictMapStrength);
+                #endif
+                #if defined(HILL_MEADOW)
+                // The warmer openings already present in the authored grass
+                // become exposed earth on slopes. This retains the source's
+                // fine grain instead of painting procedural islands over it.
+                if (_SoilRevealStrength > 0)
+                {
+                    float3 terrainNormal=normalize(input.worldNormal);
+                    float grade=length(terrainNormal.xz)/max(terrainNormal.y,.05);
+                    float slopeMask=smoothstep(.16,.38,grade);
+                    float opening=smoothstep(.79,.83,
+                        surface.r/max(surface.g,.001));
+                    fixed3 soil=saturate(surface.rgb*fixed3(1.42,1.10,1.12));
+                    surface.rgb=lerp(surface.rgb,soil,
+                        slopeMask*opening*_SoilRevealStrength);
+                }
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);

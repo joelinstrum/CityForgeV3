@@ -2196,6 +2196,42 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void RollingHillSoilRevealIsLimitedToTheTwoClosestZooms()
+        {
+            var host = new GameObject("Close hill soil test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "soil-hill", Width = 1, Height = 1,
+                    Hills = new DistrictHillSettings
+                    { Seed = 123, HeightMeters = 35, Coverage = .4f }
+                };
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var ground = host.GetComponentsInChildren<MeshRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("District Ground"));
+                var material = ground.sharedMaterial;
+                Assert.IsFalse(UnityEditor.ShaderUtil.ShaderHasError(material.shader));
+                foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
+                {
+                    world.SetZoom(level);
+                    Assert.That(material.GetFloat("_SoilRevealStrength"),
+                        Is.EqualTo(DistrictWorldController.DistrictSoilRevealForZoom(level))
+                            .Within(.001f), level.ToString());
+                }
+                district.Hills.HeightMeters = 0;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                ground = host.GetComponentsInChildren<MeshRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("District Ground"));
+                Assert.That(ground.sharedMaterial.GetFloat("_SoilRevealStrength"), Is.Zero);
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
         public void DistrictDecalVisibilityAlsoControlsHillSurfaceDetail()
         {
             var root = new GameObject("Isolated district presentation toggle");
