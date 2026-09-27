@@ -64,7 +64,7 @@ namespace CityForgeV3.World
         // Player Zoom 1–2 (LOD0–LOD1) show the soil experiment; the district
         // color maps used from Zoom 3 onward keep their existing appearance.
         public static float DistrictSoilRevealForZoom(DistrictZoomLevel level) =>
-            level <= DistrictZoomLevel.LOD1 ? .65f : 0f;
+            level <= DistrictZoomLevel.LOD1 ? .9f : 0f;
 
         private Texture2D DistrictGrassMapForZoom(DistrictZoomLevel level)
         {
@@ -162,6 +162,9 @@ namespace CityForgeV3.World
                 material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
                 material.SetFloat("_RollingHillDeepShadeLift",RollingHillDeepShadeLift);
                 material.SetFloat("_MeadowPatchStrength", 0f);
+                if (hills)
+                    material.SetTexture("_SoilTex", Resources.Load<Texture2D>(
+                        "CityForgeV3/Terrain/MountainBrownV01/brown-scree-v01"));
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
                 if(hills) material.EnableKeyword("HILL_MEADOW"); else material.DisableKeyword("HILL_MEADOW");

@@ -2204,16 +2204,22 @@ namespace CityForgeV3.Tests
                 var district = new RegionCityTile
                 {
                     TileId = "soil-hill", Width = 1, Height = 1,
-                    Hills = new DistrictHillSettings
-                    { Seed = 123, HeightMeters = 35, Coverage = .4f }
+                    Hills = new DistrictHillSettings()
                 };
                 var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                district.Hills = new DistrictHillSettings
+                    { Version = 2, Seed = 1209, HeightMeters = 35,
+                        Coverage = .6f, VerticalReliefScale = 1f };
                 world.RebuildEntireDistrict(district,
                     DistrictBulkRebuildReason.TestFixture);
                 var ground = host.GetComponentsInChildren<MeshRenderer>(true)
                     .Single(renderer => renderer.name.StartsWith("District Ground"));
                 var material = ground.sharedMaterial;
                 Assert.IsFalse(UnityEditor.ShaderUtil.ShaderHasError(material.shader));
+                Assert.IsTrue(material.IsKeywordEnabled("HILL_MEADOW"));
+                Assert.IsNotNull(material.GetTexture("_SoilTex"));
                 foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
                 {
                     world.SetZoom(level);

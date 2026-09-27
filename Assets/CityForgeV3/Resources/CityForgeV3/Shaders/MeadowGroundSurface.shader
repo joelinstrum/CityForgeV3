@@ -20,6 +20,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
         _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
         _SoilRevealStrength ("Close hill soil reveal", Range(0,1)) = 0
+        _SoilTex ("Hill soil", 2D) = "white" {}
     }
 
     SubShader
@@ -69,7 +70,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
             };
 
             fixed4 _Color;
-            sampler2D _MainTex, _HillTex, _DistrictMapTex;
+            sampler2D _MainTex, _HillTex, _DistrictMapTex, _SoilTex;
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _FarGrassNoise;
@@ -231,17 +232,17 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 surface.rgb=lerp(surface.rgb,districtColor,_DistrictMapStrength);
                 #endif
                 #if defined(HILL_MEADOW)
-                // The warmer openings already present in the authored grass
-                // become exposed earth on slopes. This retains the source's
-                // fine grain instead of painting procedural islands over it.
+                // Grass texture controls the fine edge of actual soil beneath
+                // the meadow. The soil shares world coordinates across tiles.
                 if (_SoilRevealStrength > 0)
                 {
                     float3 terrainNormal=normalize(input.worldNormal);
                     float grade=length(terrainNormal.xz)/max(terrainNormal.y,.05);
-                    float slopeMask=smoothstep(.16,.38,grade);
-                    float opening=smoothstep(.79,.83,
+                    float slopeMask=smoothstep(.10,.32,grade);
+                    float opening=smoothstep(.77,.83,
                         surface.r/max(surface.g,.001));
-                    fixed3 soil=saturate(surface.rgb*fixed3(1.42,1.10,1.12));
+                    fixed3 soil=tex2Dbias(_SoilTex,
+                        float4(input.meadowMetres/18.0,0,2.0)).rgb;
                     surface.rgb=lerp(surface.rgb,soil,
                         slopeMask*opening*_SoilRevealStrength);
                 }
