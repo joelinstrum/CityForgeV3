@@ -2196,7 +2196,7 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
-        public void RollingHillSoilRevealIsLimitedToTheTwoClosestZooms()
+        public void RollingHillSoilRevealPersistsAcrossDistrictZooms()
         {
             var host = new GameObject("Close hill soil test");
             try
@@ -2226,6 +2226,11 @@ namespace CityForgeV3.Tests
                     Assert.That(material.GetFloat("_SoilRevealStrength"),
                         Is.EqualTo(DistrictWorldController.DistrictSoilRevealForZoom(level))
                             .Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_SoilRevealStrength"),
+                        Is.GreaterThan(0f), level.ToString());
+                    if (level >= DistrictZoomLevel.LOD2)
+                        Assert.IsTrue(material.IsKeywordEnabled("DISTRICT_GRASS_MAP"),
+                            level.ToString());
                 }
                 district.Hills.HeightMeters = 0;
                 world.RebuildEntireDistrict(district,

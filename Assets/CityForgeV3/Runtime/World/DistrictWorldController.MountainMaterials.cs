@@ -61,10 +61,14 @@ namespace CityForgeV3.World
             _ => 0f
         };
 
-        // Player Zoom 1–2 (LOD0–LOD1) show the soil experiment; the district
-        // color maps used from Zoom 3 onward keep their existing appearance.
-        public static float DistrictSoilRevealForZoom(DistrictZoomLevel level) =>
-            level <= DistrictZoomLevel.LOD1 ? .9f : 0f;
+        // The same world-anchored soil sits over the distant district grass
+        // maps. Lower strength keeps wide hill faces from turning solid brown.
+        public static float DistrictSoilRevealForZoom(DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD0 or DistrictZoomLevel.LOD1 => .9f,
+            DistrictZoomLevel.LOD2 or DistrictZoomLevel.LOD3 => .75f,
+            _ => .65f
+        };
 
         private Texture2D DistrictGrassMapForZoom(DistrictZoomLevel level)
         {

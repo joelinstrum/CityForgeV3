@@ -243,6 +243,10 @@ Shader "CityForgeV3/MeadowGroundSurface"
                         surface.r/max(surface.g,.001));
                     fixed3 soil=tex2Dbias(_SoilTex,
                         float4(input.meadowMetres/18.0,0,2.0)).rgb;
+                    // The shared mountain earth reads violet against this
+                    // meadow. Shift it toward warm ochre without recoloring
+                    // the grass or editing the mountain source texture.
+                    soil=saturate(soil*fixed3(1.26,1.06,.65));
                     surface.rgb=lerp(surface.rgb,soil,
                         slopeMask*opening*_SoilRevealStrength);
                 }
