@@ -274,7 +274,22 @@ namespace CityForgeV3.World
                     preserve=Mathf.Max(preserve,1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(65,145,Vector2.Distance(site,p))));
                 h=Mathf.Lerp(range,h,preserve);
             }
-            float edgeClearance=Mathf.Min(Width/2-Mathf.Abs(p.x),Depth/2-Mathf.Abs(p.y));
+            float edgeX=Width/2-Mathf.Abs(p.x),edgeZ=Depth/2-Mathf.Abs(p.y);
+            float edgeClearance=Mathf.Min(edgeX,edgeZ);
+            if(!mountains)
+            {
+                // The hard minimum creates a diagonal ridge from each district
+                // corner where the nearest edge switches. Lift its shoulders
+                // into a rounded crown while keeping the actual border level.
+                float joinWidth=edgeFadeMeters*.6f;
+                float separation=Mathf.Abs(edgeX-edgeZ);
+                if(separation<joinWidth)
+                {
+                    float join=1f-separation/joinWidth;
+                    float border=Mathf.Clamp01(edgeClearance/(joinWidth*.5f));
+                    edgeClearance+=separation*.5f*join*join*border;
+                }
+            }
             float shapeHeight=amplitude*(mountains?h:1-Mathf.Exp(-h*1.7f));
             float edgeBlend=Mathf.SmoothStep(0,1,Mathf.Clamp01(edgeClearance/edgeFadeMeters));
             unconstrainedHeight=shapeHeight*edgeBlend;
