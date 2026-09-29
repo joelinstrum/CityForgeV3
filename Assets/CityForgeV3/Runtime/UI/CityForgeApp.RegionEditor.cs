@@ -3289,6 +3289,7 @@ namespace CityForgeV3.UI
             ("mature-oak", "Mature Oak"),
             ("broad-oak", "Broad Oak"),
             ("ash-tree", "Ash Tree"),
+            ("white-birch", "White Birch"),
             ("shagbark-hickory", "Shagbark Hickory"),
             ("bald-cypress-moss", "Bald Cypress with Spanish Moss"),
             ("bald-cypress-moss-b", "Bald Cypress with Spanish Moss B"),

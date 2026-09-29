@@ -1151,6 +1151,46 @@ public class DistrictFloraBatchesTests
         }
         finally { Object.DestroyImmediate(host); }
     }
+    [Test] public void WhiteBirchUsesFallArtworkInAutumn()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var expected = season == SeasonPreset.Spring ? "summer" :
+                season.ToString().ToLowerInvariant();
+            var path = LotWorldController.ResolveFloraResourcePath("white-birch", season);
+            Assert.AreEqual(FloraTreeRepairs.WhiteBirchRoot + "white-birch-" + expected, path);
+            var texture = Resources.Load<Texture2D>(path);
+            Assert.NotNull(texture, path);
+            Assert.AreEqual(1024, texture.width);
+            Assert.AreEqual(1536, texture.height);
+            Assert.AreEqual(TextureWrapMode.Clamp, texture.wrapMode);
+            Assert.AreEqual(110f,
+                LotWorldController.FloraPixelsPerUnit("white-birch", texture.name));
+            Assert.Greater(LotWorldController.FloraPivot(texture.name).y, 0f);
+        }
+        var host = new GameObject("Seasonal white birch district test");
+        try
+        {
+            var district = new RegionCityTile { TileId = "white-birch-season-test",
+                Width = 1, Height = 1, Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 } };
+            district.Flora.Add(new PlacedDistrictFlora { InstanceId = "birch",
+                FloraId = "white-birch", NormalizedX = .5f, NormalizedZ = .5f });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — white-birch");
+            Assert.AreEqual("white-birch-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("white-birch-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("white-birch-winter", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,

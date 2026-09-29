@@ -846,7 +846,8 @@ namespace CityForgeV3.World
                     : trueAngle ? ForestTrueAngleCluster.ResourcePath(
                         presentationId, _forestSeason)
                     : LotWorldController.ResolveFloraResourcePath(
-                        presentationId, presentationId == "ash-tree" ||
+                        presentationId, presentationId == "white-birch" ||
+                            presentationId == "ash-tree" ||
                             presentationId == "broad-oak" ||
                             presentationId == "american-elm" ||
                             FloraTreeRepairs.UsesAmericanSycamore(presentationId)
@@ -869,7 +870,8 @@ namespace CityForgeV3.World
                     LotWorldController.FloraPivot(texture.name),
                     LotWorldController.FloraPixelsPerUnit(
                         presentationId, texture.name), 0,
-                    (presentationId == "ash-tree" ||
+                    (presentationId == "white-birch" ||
+                     presentationId == "ash-tree" ||
                      presentationId == "broad-oak" ||
                      presentationId == "american-elm" ||
                      FloraTreeRepairs.UsesAmericanSycamore(presentationId) ||
@@ -930,6 +932,7 @@ namespace CityForgeV3.World
             }
             _districtFloraPresentations[placed.InstanceId] = renderer;
             if (ForestClusterCatalog.IsCluster(placed.FloraId) || trueAngle ||
+                presentationId == "white-birch" ||
                 presentationId == "ash-tree" ||
                 presentationId == "broad-oak" ||
                 presentationId == "american-elm" ||
