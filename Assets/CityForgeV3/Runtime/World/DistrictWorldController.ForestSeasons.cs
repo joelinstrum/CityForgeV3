@@ -137,7 +137,7 @@ namespace CityForgeV3.World
         {
             if (ForestTrueAngleCluster.Supports(id))
                 return ForestTrueAngleCluster.RootSprite(id, season);
-            if (id is "white-birch" or "ash-tree" or "broad-oak" or "american-elm" or "american-sycamore")
+            if (id is "small-hardwood" or "white-birch" or "ash-tree" or "broad-oak" or "american-elm" or "american-sycamore")
             {
                 string presentationId = id == "american-sycamore" ? "london-plane-a" : id;
                 string seasonalPath = FloraTreeRepairs.BillboardPath(presentationId, season);
@@ -149,7 +149,8 @@ namespace CityForgeV3.World
                 return _districtFloraSprites[key] = Sprite.Create(seasonalTexture,
                     new Rect(0, 0, seasonalTexture.width, seasonalTexture.height),
                     LotWorldController.FloraPivot(seasonalTexture.name),
-                    FloraTreeRepairs.PixelsPerUnit(presentationId), 0,
+                    FloraTreeRepairs.PixelsPerUnit(presentationId,
+                        seasonalTexture.name), 0,
                     SpriteMeshType.FullRect);
             }
             string path = ForestClusterCatalog.FarCanopyResourcePath(id,

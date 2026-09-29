@@ -1191,6 +1191,52 @@ public class DistrictFloraBatchesTests
         }
         finally { Object.DestroyImmediate(host); }
     }
+    [Test] public void SmallHardwoodKeepsHeightAcrossSeasonalCanvasSizes()
+    {
+        var heights = new float[3];
+        var seasons = new[] { SeasonPreset.Summer, SeasonPreset.Autumn,
+            SeasonPreset.Winter };
+        for (int i = 0; i < seasons.Length; i++)
+        {
+            var path = LotWorldController.ResolveFloraResourcePath(
+                "small-hardwood", seasons[i]);
+            Assert.AreEqual(FloraTreeRepairs.SmallHardwoodRoot +
+                "small-hardwood-" + seasons[i].ToString().ToLowerInvariant(), path);
+            var texture = Resources.Load<Texture2D>(path);
+            Assert.NotNull(texture, path);
+            Assert.AreEqual(TextureWrapMode.Clamp, texture.wrapMode);
+            var ppu = LotWorldController.FloraPixelsPerUnit(
+                "small-hardwood", texture.name);
+            var pivot = LotWorldController.FloraPivot(texture.name);
+            heights[i] = texture.height * (1f - pivot.y) / ppu;
+            Assert.Greater(pivot.y, 0f);
+        }
+        Assert.That(Mathf.Max(heights) - Mathf.Min(heights), Is.LessThan(.15f));
+        Assert.AreEqual(
+            LotWorldController.ResolveFloraResourcePath("small-hardwood", SeasonPreset.Summer),
+            LotWorldController.ResolveFloraResourcePath("small-hardwood", SeasonPreset.Spring));
+        var host = new GameObject("Seasonal small hardwood district test");
+        try
+        {
+            var district = new RegionCityTile { TileId = "small-hardwood-season-test",
+                Width = 1, Height = 1, Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 } };
+            district.Flora.Add(new PlacedDistrictFlora { InstanceId = "hardwood",
+                FloraId = "small-hardwood", NormalizedX = .5f, NormalizedZ = .5f });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — small-hardwood");
+            Assert.AreEqual("small-hardwood-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("small-hardwood-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("small-hardwood-winter", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
