@@ -18,7 +18,9 @@ namespace CityForgeV3.World
             "fraser-fir-large" or "fraser-fir-small" or "fraser-fir-snowy" or
             "medium-balsam-fir" or "medium-fraser-fir" or "medium-blue-spruce" or
             "douglas-fir" => Mountain,
-            "forest-mountain-compact" or "forest-mountain-large" => Mountain,
+            "forest-mountain-compact" or "forest-mountain-large" or
+            "forest-mountain-variety-compact" or
+            "forest-mountain-variety-large" => Mountain,
             "forest-tropical-compact" or "forest-tropical-large" => Tropical,
             _ => Deciduous
         };

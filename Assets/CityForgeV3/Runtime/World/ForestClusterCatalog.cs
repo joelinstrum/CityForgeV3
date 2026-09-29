@@ -18,6 +18,10 @@ namespace CityForgeV3.World
             (family == FloraFamilies.Mountain ? "mountain" :
              family == FloraFamilies.Tropical ? "tropical" : "deciduous") +
             (large ? "-large" : "-compact");
+        public static string VarietyId(string family, bool large) =>
+            family == FloraFamilies.Tropical ? Id(family, large) :
+            "forest-" + (family == FloraFamilies.Mountain ? "mountain" :
+                "deciduous") + "-variety-" + (large ? "large" : "compact");
         public static bool IsLarge(string id) => id != null && id.EndsWith("-large");
         public static float ClearanceMeters(string id) => IsLarge(id)
             ? LargeClearanceMeters : CompactClearanceMeters;
@@ -28,7 +32,11 @@ namespace CityForgeV3.World
             id == "forest-cluster-04" || id == "forest-cluster-05" ||
             id == "forest-deciduous-compact" || id == "forest-mountain-compact" ||
             id == "forest-tropical-compact" || id == "forest-deciduous-large" ||
-            id == "forest-mountain-large" || id == "forest-tropical-large";
+            id == "forest-mountain-large" || id == "forest-tropical-large" ||
+            id == "forest-deciduous-variety-compact" ||
+            id == "forest-deciduous-variety-large" ||
+            id == "forest-mountain-variety-compact" ||
+            id == "forest-mountain-variety-large";
         public static bool IsTexture(string name) => name != null &&
             IsCluster(FloraTreeRepairs.Identity(name)) &&
             (name.EndsWith("-summer") || name.EndsWith("-autumn") || name.EndsWith("-winter"));
@@ -43,7 +51,11 @@ namespace CityForgeV3.World
             SeasonPreset season)
         {
             if (id != "forest-deciduous-compact" &&
-                id != "forest-deciduous-large") return null;
+                id != "forest-deciduous-large" &&
+                id != "forest-deciduous-variety-compact" &&
+                id != "forest-deciduous-variety-large") return null;
+            id = IsLarge(id) ? "forest-deciduous-large" :
+                "forest-deciduous-compact";
             if (season == SeasonPreset.Winter) return null;
             if (season != SeasonPreset.Autumn)
                 return "CityForgeV3/Flora/ForestCanopyObliqueSummerV03/" + id + "-summer";
@@ -62,6 +74,8 @@ namespace CityForgeV3.World
         public static string ResourcePath(string id, SeasonPreset season = SeasonPreset.Summer)
         {
             if (!IsCluster(id)) return null;
+            if (id.Contains("-variety-"))
+                id = id.Replace("-variety-", "-");
             if (id.StartsWith("forest-deciduous-") || id.StartsWith("forest-mountain-") ||
                 id.StartsWith("forest-tropical-"))
             {

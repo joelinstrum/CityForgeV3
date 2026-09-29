@@ -94,7 +94,9 @@ namespace CityForgeV3.World
                     int footprint = TerrainFootprint(elevation, point,
                         mask.Width, mask.Depth);
                     floraId = footprint == 0 ? SlopeTree(random, family) :
-                        ForestClusterCatalog.Id(family, footprint == 2);
+                        family != FloraFamilies.Tropical && random.Next(2) == 0
+                            ? ForestClusterCatalog.VarietyId(family, footprint == 2)
+                            : ForestClusterCatalog.Id(family, footprint == 2);
                 }
                 float scale = .86f + (float)random.NextDouble() * .3f;
                 float clearance = ForestClusterCatalog.IsCluster(floraId) ? ForestClusterCatalog.ClearanceMeters(floraId) * scale : 0;
@@ -104,7 +106,7 @@ namespace CityForgeV3.World
                     // Retain it as the smaller one-billboard cluster when that
                     // bounded footprint fits instead of searching elsewhere.
                     if (!ForestClusterCatalog.IsLarge(floraId)) continue;
-                    floraId = ForestClusterCatalog.Id(ChooseFamilyFromId(floraId), false);
+                    floraId = floraId.Replace("-large", "-compact");
                     clearance = ForestClusterCatalog.ClearanceMeters(floraId) * scale;
                     if (mask.Blocked(point, clearance)) continue;
                 }
@@ -155,10 +157,6 @@ namespace CityForgeV3.World
             if (roll < deciduous + mountain) return FloraFamilies.Mountain;
             return FloraFamilies.Tropical;
         }
-
-        static string ChooseFamilyFromId(string id) => id.StartsWith("forest-mountain-")
-            ? FloraFamilies.Mountain : id.StartsWith("forest-tropical-")
-            ? FloraFamilies.Tropical : FloraFamilies.Deciduous;
 
         static string SlopeTree(System.Random random, string family)
         {

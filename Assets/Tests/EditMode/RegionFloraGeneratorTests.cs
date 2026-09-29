@@ -160,6 +160,8 @@ public class RegionFloraGeneratorTests
         Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-deciduous-")));
         Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-mountain-")));
         Assert.True(clusters.Any(t => t.FloraId.StartsWith("forest-tropical-")));
+        Assert.True(clusters.Any(t => t.FloraId.Contains("-variety-")),
+            "New forests should include the mixed species clumps.");
         Assert.Greater(clusters.Count(t => ForestClusterCatalog.IsLarge(t.FloraId)),
             clusters.Count(t => !ForestClusterCatalog.IsLarge(t.FloraId)),
             "Level ground favors broad compositions; edge conflicts may fall back to compact");

@@ -45,6 +45,29 @@ namespace CityForgeV3.World
                     new Tree(3,-11,-4), new Tree(4,0,-2), new Tree(8,11,-5),
                     new Tree(1,1,-11) }
         };
+        // New placements use different silhouettes and crown spacing while
+        // retaining the same two atlases and four/seven-piece batch budget.
+        static readonly Tree[][] VarietyCompact =
+        {
+            new[] { new Tree(8,-6,6,.88f), new Tree(3,5,5,1.04f),
+                    new Tree(5,-4,-5,.91f), new Tree(1,6,-4) },
+            new[] { new Tree(7,-5,6,1.02f), new Tree(10,6,4,.9f),
+                    new Tree(2,-6,-3,.97f), new Tree(4,5,-6,.94f) },
+            new[] { new Tree(9,-4,5,.9f), new Tree(0,6,6,1.02f),
+                    new Tree(6,-7,-4,.94f), new Tree(3,5,-5) }
+        };
+        static readonly Tree[][] VarietyLarge =
+        {
+            new[] { new Tree(5,-10,9,.9f), new Tree(8,0,11), new Tree(1,10,8,.94f),
+                    new Tree(10,-11,-2), new Tree(3,0,-3,1.04f), new Tree(6,11,-4),
+                    new Tree(9,1,-11,.91f) },
+            new[] { new Tree(4,-9,8), new Tree(2,1,10,.96f), new Tree(7,10,7),
+                    new Tree(9,-12,-4,.91f), new Tree(0,0,-2), new Tree(5,11,-5,.94f),
+                    new Tree(8,-2,-10) },
+            new[] { new Tree(6,-10,8), new Tree(3,0,11,.9f), new Tree(10,10,7),
+                    new Tree(1,-11,-3,1.03f), new Tree(9,0,-3), new Tree(4,11,-5),
+                    new Tree(2,1,-10,.94f) }
+        };
 
         static readonly Tree[][] FirCompact =
         {
@@ -97,11 +120,15 @@ namespace CityForgeV3.World
         public static bool SupportsFir(string id) => IsFirCluster(id) ||
             IsFirIndividual(id);
         public static bool IsFirCluster(string id) =>
-            id == "forest-mountain-compact" || id == "forest-mountain-large";
+            id == "forest-mountain-compact" || id == "forest-mountain-large" ||
+            id == "forest-mountain-variety-compact" ||
+            id == "forest-mountain-variety-large";
         public static bool IsFirIndividual(string id) => id is "cilician-fir" or
             "medium-balsam-fir" or "medium-fraser-fir" or "medium-blue-spruce";
         public static bool Supports(string id) => id == "forest-deciduous-compact" ||
-            id == "forest-deciduous-large" || SupportsFir(id);
+            id == "forest-deciduous-large" ||
+            id == "forest-deciduous-variety-compact" ||
+            id == "forest-deciduous-variety-large" || SupportsFir(id);
         public static string ResourcePath(SeasonPreset season) =>
             ResourcePath("forest-deciduous-large", season);
         public static string ResourcePath(string id, SeasonPreset season) =>
@@ -273,6 +300,7 @@ namespace CityForgeV3.World
             layout = IsFirIndividual(id)
                 ? new[] { new Tree(IndividualSlot(id, variation), 0, 0) }
                 : (IsFirCluster(id) ? IsLarge ? FirLarge : FirCompact :
+                    id.Contains("-variety-") ? IsLarge ? VarietyLarge : VarietyCompact :
                     IsLarge ? Large : Compact)[Mathf.Abs(variation % 3)];
             groundOffsets = new float[layout.Length];
             SetSeason(season);
