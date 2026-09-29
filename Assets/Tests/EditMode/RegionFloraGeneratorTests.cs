@@ -47,7 +47,7 @@ public class RegionFloraGeneratorTests
         Assert.True(wooded.All(t => ForestClusterCatalog.IsCluster(t.FloraId) ||
             t.FloraId is "cilician-fir" or "mature-oak" or "broad-oak" or "american-elm" or
             "shagbark-hickory" or "medium-balsam-fir" or "medium-fraser-fir" or
-            "medium-blue-spruce" or "date-palm-tall" or "date-palm-short" or
+            "medium-blue-spruce" or "douglas-fir" or "date-palm-tall" or "date-palm-short" or
             "la-fan-palm-a-medium" or "la-fan-palm-a" or
             "la-fan-palm-b"));
         Assert.True(wooded.All(t => t.GeneratedByRegion && t.NormalizedX > 0 && t.NormalizedX < 1 && t.NormalizedZ > 0 && t.NormalizedZ < 1));

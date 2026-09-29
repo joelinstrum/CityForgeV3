@@ -17,6 +17,7 @@ namespace CityForgeV3.World
   public const string BaldCypressMossRoot="CityForgeV3/Flora/BaldCypressMossV01/";
   public const string BaldCypressMossBRoot="CityForgeV3/Flora/BaldCypressMossV02/";
   public const string MediumConifersRoot="CityForgeV3/Flora/MediumConifersV01/";
+  public const string DouglasFirRoot="CityForgeV3/Flora/DouglasFirV01/";
   public const string PhotographicPalmsRoot="CityForgeV3/Flora/PhotographicPalmsV01/";
   public static string Identity(string name){foreach(var s in new[]{"-spring","-summer","-autumn","-winter"})if(name!=null&&name.EndsWith(s))return name.Substring(0,name.Length-s.Length);return name??"";}
   public static bool UsesAmericanSycamore(string id)=>id is "london-plane-a" or "london-plane-b";
@@ -27,6 +28,7 @@ namespace CityForgeV3.World
     ? PhotographicPalmsRoot+id
     :id is "medium-balsam-fir" or "medium-fraser-fir" or "medium-blue-spruce"
     ? MediumConifersRoot+id+(season==SeasonPreset.Winter?"-snowy":"-snowfree")
+    :id=="douglas-fir" ? DouglasFirRoot+id
     :id=="bald-cypress-moss-b" ? BaldCypressMossBRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="bald-cypress-moss" ? BaldCypressMossRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="angel-oak-spanish-moss" ? SpanishMossTrueAngleRoot+id
@@ -59,6 +61,7 @@ namespace CityForgeV3.World
    "medium-balsam-fir"=>128f,
    "medium-fraser-fir"=>128f,
    "medium-blue-spruce"=>120f,
+   "douglas-fir"=>100f,
    "date-palm-tall"=>120f,
    "date-palm-short"=>180f,
    "la-fan-palm-a"=>70f,
@@ -126,6 +129,7 @@ namespace CityForgeV3.World
     case "medium-fraser-fir-snowy":pivot=new Vector2(.5f,20f/1536f);return true;
     case "medium-blue-spruce-snowfree":pivot=new Vector2(.5f,6f/1536f);return true;
     case "medium-blue-spruce-snowy":pivot=new Vector2(.5f,7f/1536f);return true;
+    case "douglas-fir":pivot=new Vector2(.5f,56f/1536f);return true;
     case "vendor-red-maple":
      // Visible root foot measured from each approved 1024x1536 cutout.
      pivot=new Vector2(.5f,(texture.EndsWith("autumn")?40f:39f)/1536f);return true;

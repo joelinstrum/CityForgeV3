@@ -3277,6 +3277,7 @@ namespace CityForgeV3.UI
             ("medium-balsam-fir", "Medium Balsam Fir"),
             ("medium-fraser-fir", "Medium Fraser Fir"),
             ("medium-blue-spruce", "Medium Blue Spruce"),
+            ("douglas-fir", "Douglas Fir"),
             ("date-palm-tall", "Tall Date Palm"),
             ("date-palm-short", "Short Date Palm"),
             ("la-fan-palm-a", "LA Fan Palm A"),

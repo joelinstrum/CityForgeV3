@@ -11,7 +11,8 @@ namespace CityForgeV3.World
         static readonly string[] DeciduousSlopeTrees =
             { "mature-oak", "broad-oak", "american-elm", "shagbark-hickory" };
         static readonly string[] MountainSlopeTrees =
-            { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce" };
+            { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce",
+              "douglas-fir" };
         static readonly string[] TropicalSlopeTrees =
             { "date-palm-tall", "la-fan-palm-a", "la-fan-palm-b" };
         public static bool Retain(PlacedDistrictFlora tree) => tree != null &&

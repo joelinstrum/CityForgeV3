@@ -1090,6 +1090,27 @@ public class DistrictFloraBatchesTests
         }
         finally { Object.DestroyImmediate(host); }
     }
+    [Test] public void DouglasFirUsesOneBillboardInEverySeason()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var path = LotWorldController.ResolveFloraResourcePath("douglas-fir", season);
+            Assert.AreEqual(FloraTreeRepairs.DouglasFirRoot + "douglas-fir", path);
+            var texture = Resources.Load<Texture2D>(path);
+            Assert.NotNull(texture, path);
+            Assert.AreEqual(1024, texture.width);
+            Assert.AreEqual(1536, texture.height);
+            Assert.Greater(texture.mipmapCount, 1);
+            Assert.AreEqual(TextureWrapMode.Clamp, texture.wrapMode);
+            Assert.AreEqual(new Vector2(.5f, 56f / 1536f),
+                LotWorldController.FloraPivot(texture.name));
+            Assert.AreEqual(100f,
+                LotWorldController.FloraPixelsPerUnit("douglas-fir", texture.name));
+            Assert.AreEqual(FloraFamilies.Mountain,
+                FloraFamilies.ForTree("douglas-fir"));
+        }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
