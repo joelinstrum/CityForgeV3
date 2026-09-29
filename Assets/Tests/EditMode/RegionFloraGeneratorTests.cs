@@ -45,7 +45,7 @@ public class RegionFloraGeneratorTests
         var wooded = RegionFloraGenerator.Generate(d, climate, RegionTreeCoverage.Wooded, 83);
         Assert.Greater(sparse.Count, 2); Assert.Greater(wooded.Count, sparse.Count * 5);
         Assert.True(wooded.All(t => ForestClusterCatalog.IsCluster(t.FloraId) ||
-            t.FloraId is "cilician-fir" or "mature-oak" or "american-elm" or
+            t.FloraId is "cilician-fir" or "mature-oak" or "broad-oak" or "american-elm" or
             "shagbark-hickory" or "medium-balsam-fir" or "medium-fraser-fir" or
             "medium-blue-spruce" or "date-palm-tall" or "date-palm-short" or
             "la-fan-palm-a-medium" or "la-fan-palm-a" or

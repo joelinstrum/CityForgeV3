@@ -1047,6 +1047,49 @@ public class DistrictFloraBatchesTests
         }
         finally { Object.DestroyImmediate(host); }
     }
+    [Test] public void BroadOakUsesSeasonalArtworkInDistrictAndLot()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var expected = season == SeasonPreset.Spring ? "summer" :
+                season.ToString().ToLowerInvariant();
+            var path = LotWorldController.ResolveFloraResourcePath("broad-oak", season);
+            Assert.AreEqual(FloraTreeRepairs.BroadOakRoot + "broad-oak-" + expected, path);
+            var texture = Resources.Load<Texture2D>(path);
+            Assert.NotNull(texture, path);
+            Assert.AreEqual(1312, texture.width);
+            Assert.AreEqual(1199, texture.height);
+            Assert.Greater(texture.mipmapCount, 1);
+            Assert.AreEqual(TextureWrapMode.Clamp, texture.wrapMode);
+            Assert.AreEqual(80f, LotWorldController.FloraPixelsPerUnit("broad-oak", texture.name));
+            Assert.Greater(LotWorldController.FloraPivot(texture.name).y, 0f);
+        }
+        var host = new GameObject("Seasonal broad oak district test");
+        try
+        {
+            var district = new RegionCityTile { TileId = "broad-oak-season-test",
+                Width = 1, Height = 1, Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 } };
+            district.Flora.Add(new PlacedDistrictFlora { InstanceId = "oak",
+                FloraId = "broad-oak", NormalizedX = .5f, NormalizedZ = .5f });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — broad-oak");
+            Assert.AreEqual("broad-oak-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("broad-oak-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("broad-oak-winter", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 3;
+            world.SyncForestSeason();
+            Assert.AreEqual("broad-oak-summer", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,

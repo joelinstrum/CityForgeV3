@@ -9,7 +9,7 @@ namespace CityForgeV3.World
     public static class RegionFloraGenerator
     {
         static readonly string[] DeciduousSlopeTrees =
-            { "mature-oak", "american-elm", "shagbark-hickory" };
+            { "mature-oak", "broad-oak", "american-elm", "shagbark-hickory" };
         static readonly string[] MountainSlopeTrees =
             { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce" };
         static readonly string[] TropicalSlopeTrees =
