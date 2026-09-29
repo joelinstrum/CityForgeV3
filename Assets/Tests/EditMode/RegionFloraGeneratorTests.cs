@@ -62,6 +62,8 @@ public class RegionFloraGeneratorTests
         var d = District(); d.Width = 4; d.Height = 4;
         var medium = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Wooded, 193);
         var heavy = RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193);
+        Assert.False(heavy.Any(t => t.InstanceId.Contains("-slope-")),
+            "Flat districts should keep the established clump density");
         Assert.That((float)heavy.Count / medium.Count, Is.InRange(2.8f, 3.2f));
         Assert.True(heavy.Any(DistrictTreeHarvest.CanFell));
         CollectionAssert.AreEqual(heavy.Select(JsonUtility.ToJson), RegionFloraGenerator.Generate(d, RegionClimate.Temperate, RegionTreeCoverage.Heavy, 193).Select(JsonUtility.ToJson));
@@ -223,8 +225,32 @@ public class RegionFloraGeneratorTests
 
         var hills = District(); hills.Width = hills.Height = 4;
         hills.Hills = new DistrictHillSettings { Seed = 99, HeightMeters = 55, Coverage = 1 };
+        var beforeMemory = GC.GetTotalMemory(false);
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         var sloped = RegionFloraGenerator.Generate(hills, RegionClimate.Temperate,
             RegionTreeCoverage.Heavy, 313);
+        watch.Stop();
+        var woodedHills = RegionFloraGenerator.Generate(hills, RegionClimate.Temperate,
+            RegionTreeCoverage.Wooded, 313);
+        Assert.False(woodedHills.Any(t => t.InstanceId.Contains("-slope-")));
+        var originalSlopeTrees = sloped.Count(t => !ForestClusterCatalog.IsCluster(
+            t.FloraId) && t.FloraId != "cilician-fir" &&
+            !t.InstanceId.Contains("-slope-"));
+        var addedSlopeTrees = sloped.Where(t =>
+            t.InstanceId.Contains("-slope-")).ToArray();
+        TestContext.WriteLine("4x4 dense hills: records=" + sloped.Count +
+            ", base slope trees=" + originalSlopeTrees +
+            ", added slope trees=" + addedSlopeTrees.Length +
+            ", generation ms=" + watch.Elapsed.TotalMilliseconds.ToString("F2") +
+            ", heap delta bytes=" + (GC.GetTotalMemory(false) -
+                beforeMemory));
+        Assert.Greater(addedSlopeTrees.Length, originalSlopeTrees * .6f,
+            "Dense hills should gain many grounded trees between clump footprints");
+        Assert.True(addedSlopeTrees.All(t => !ForestClusterCatalog.IsCluster(t.FloraId)));
+        Assert.AreEqual(sloped.Count, sloped.Select(t => t.InstanceId).Distinct().Count());
+        CollectionAssert.AreEqual(sloped.Select(JsonUtility.ToJson),
+            RegionFloraGenerator.Generate(hills, RegionClimate.Temperate,
+                RegionTreeCoverage.Heavy, 313).Select(JsonUtility.ToJson));
         Assert.True(sloped.Any(t => !ForestClusterCatalog.IsCluster(t.FloraId) &&
             t.FloraId != "cilician-fir"),
             "A steep footprint must not stretch a multi-tree shared baseline");
