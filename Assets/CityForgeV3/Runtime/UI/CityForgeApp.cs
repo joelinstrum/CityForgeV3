@@ -5811,6 +5811,7 @@ namespace CityForgeV3.UI
       {
                 (Category: "Trees", Id: "mature-oak", Name: "Mature Oak"),
                 (Category: "Trees", Id: "broad-oak", Name: "Broad Oak"),
+                (Category: "Trees", Id: "ash-tree", Name: "Ash Tree"),
                 (Category: "Trees", Id: "american-elm", Name: "American Elm"),
                 (Category: "Trees", Id: "shagbark-hickory", Name: "Shagbark Hickory"),
                 (Category: "Trees", Id: "bald-cypress-moss", Name: "Bald Cypress with Spanish Moss"),
@@ -6870,6 +6871,7 @@ namespace CityForgeV3.UI
       "oak" => "Oak Tree",
       "mature-oak" => "Mature Oak",
       "broad-oak" => "Broad Oak",
+      "ash-tree" => "Ash Tree",
       "american-elm" => "American Elm",
       "shagbark-hickory" => "Shagbark Hickory",
       "medium-balsam-fir" => "Medium Balsam Fir",

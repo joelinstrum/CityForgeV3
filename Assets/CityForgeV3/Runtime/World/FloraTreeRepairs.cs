@@ -12,6 +12,7 @@ namespace CityForgeV3.World
   public const string RealisticWillowRoot="CityForgeV3/Flora/WillowRealisticV01/";
   public const string PhotographicDeciduousRoot="CityForgeV3/Flora/PhotographicDeciduousV01/";
   public const string BroadOakRoot="CityForgeV3/Flora/BroadOakV01/";
+  public const string AshTreeRoot="CityForgeV3/Flora/AshTreeV01/";
   public const string ElmTrueAngleRoot="CityForgeV3/Flora/ElmTrueAngleV01/";
   public const string SpanishMossTrueAngleRoot="CityForgeV3/Flora/SpanishMossTrueAngleV01/";
   public const string BaldCypressMossRoot="CityForgeV3/Flora/BaldCypressMossV01/";
@@ -36,6 +37,8 @@ namespace CityForgeV3.World
       (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
     :id=="broad-oak" ? BroadOakRoot+id+"-"+
       (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id=="ash-tree" ? AshTreeRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
     :id is "mature-oak" or "shagbark-hickory"
     ? PhotographicDeciduousRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="cilician-fir"?RealisticCilicianRoot+id+"-"+season.ToString().ToLowerInvariant()
@@ -52,6 +55,7 @@ namespace CityForgeV3.World
    "mature-oak"=>100f,
    // 1312 x 1199 artwork presents a broad, roughly 15m mature crown.
    "broad-oak"=>80f,
+   "ash-tree"=>100f,
    // The 1312x1199 replacement keeps the old elm's roughly 16m height.
    "american-elm"=>72f,
    "angel-oak-spanish-moss"=>80f,
@@ -115,6 +119,8 @@ namespace CityForgeV3.World
      (texture.EndsWith("spring")?146f:texture.EndsWith("winter")?135f:149f)/1536f);return true;
     case "broad-oak":pivot=new Vector2(.5f,
      (texture.EndsWith("summer")?76f:40f)/1199f);return true;
+    case "ash-tree":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?48f:texture.EndsWith("autumn")?43f:55f)/1199f);return true;
     case "american-elm":pivot=new Vector2(.5f,
      (texture.EndsWith("summer")?187f:texture.EndsWith("autumn")?151f:64f)/1199f);return true;
     case "shagbark-hickory":pivot=new Vector2(.5f,

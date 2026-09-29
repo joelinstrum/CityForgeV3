@@ -1111,6 +1111,46 @@ public class DistrictFloraBatchesTests
                 FloraFamilies.ForTree("douglas-fir"));
         }
     }
+    [Test] public void SmallerAshUsesItsSeasonalBillboards()
+    {
+        foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,
+            SeasonPreset.Autumn, SeasonPreset.Winter })
+        {
+            var expected = season == SeasonPreset.Spring ? "summer" :
+                season.ToString().ToLowerInvariant();
+            var path = LotWorldController.ResolveFloraResourcePath("ash-tree", season);
+            Assert.AreEqual(FloraTreeRepairs.AshTreeRoot + "ash-tree-" + expected, path);
+            var texture = Resources.Load<Texture2D>(path);
+            Assert.NotNull(texture, path);
+            Assert.AreEqual(1312, texture.width);
+            Assert.AreEqual(1199, texture.height);
+            Assert.AreEqual(TextureWrapMode.Clamp, texture.wrapMode);
+            Assert.AreEqual(100f,
+                LotWorldController.FloraPixelsPerUnit("ash-tree", texture.name));
+            Assert.Greater(LotWorldController.FloraPivot(texture.name).y, 0f);
+        }
+        var host = new GameObject("Seasonal ash district test");
+        try
+        {
+            var district = new RegionCityTile { TileId = "ash-season-test",
+                Width = 1, Height = 1, Founded = true,
+                Labor = new DistrictLaborState { SeasonIndex = 0 } };
+            district.Flora.Add(new PlacedDistrictFlora { InstanceId = "ash",
+                FloraId = "ash-tree", NormalizedX = .5f, NormalizedZ = .5f });
+            var world = host.AddComponent<DistrictWorldController>();
+            world.RebuildEntireDistrict(district, DistrictBulkRebuildReason.TestFixture);
+            var renderer = host.GetComponentsInChildren<SpriteRenderer>(true)
+                .Single(r => r.name == "District Flora — ash-tree");
+            Assert.AreEqual("ash-tree-summer", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 1;
+            world.SyncForestSeason();
+            Assert.AreEqual("ash-tree-autumn", renderer.sprite.texture.name);
+            district.Labor.SeasonIndex = 2;
+            world.SyncForestSeason();
+            Assert.AreEqual("ash-tree-winter", renderer.sprite.texture.name);
+        }
+        finally { Object.DestroyImmediate(host); }
+    }
     [Test] public void CilicianFirUsesTheRealisticEvergreenArtworkInEverySeason()
     {
         foreach (var season in new[] { SeasonPreset.Spring, SeasonPreset.Summer,

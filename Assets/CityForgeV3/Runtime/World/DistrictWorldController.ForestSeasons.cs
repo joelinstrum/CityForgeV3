@@ -137,7 +137,7 @@ namespace CityForgeV3.World
         {
             if (ForestTrueAngleCluster.Supports(id))
                 return ForestTrueAngleCluster.RootSprite(id, season);
-            if (id is "broad-oak" or "american-elm" or "american-sycamore")
+            if (id is "ash-tree" or "broad-oak" or "american-elm" or "american-sycamore")
             {
                 string presentationId = id == "american-sycamore" ? "london-plane-a" : id;
                 string seasonalPath = FloraTreeRepairs.BillboardPath(presentationId, season);
