@@ -9,9 +9,12 @@ namespace CityForgeV3.World
     public static class RegionFloraGenerator
     {
         static readonly string[] DeciduousSlopeTrees =
-            { "mature-oak", "american-elm", "shagbark-hickory" };
+            { "mature-oak", "broad-oak", "ash-tree", "white-birch",
+              "small-hardwood", "american-elm",
+              "shagbark-hickory" };
         static readonly string[] MountainSlopeTrees =
-            { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce" };
+            { "medium-balsam-fir", "medium-fraser-fir", "medium-blue-spruce",
+              "douglas-fir" };
         static readonly string[] TropicalSlopeTrees =
             { "date-palm-tall", "la-fan-palm-a", "la-fan-palm-b" };
         public static bool Retain(PlacedDistrictFlora tree) => tree != null &&
@@ -30,6 +33,11 @@ namespace CityForgeV3.World
             var removed = new HashSet<string>(ids);
             district.LotNudges?.RemoveAll(n => n.Kind == DistrictSelectionKind.Flora && removed.Contains(n.Id));
             district.TreeCoverage = RegionTreeCoverage.None;
+            if (district.Wildlife != null)
+            {
+                district.Wildlife.Bears.Clear();
+                district.Wildlife.Status = "Mountain woodland quiet";
+            }
             return ids;
         }
 
@@ -48,7 +56,10 @@ namespace CityForgeV3.World
                 throw new InvalidOperationException("At least one forest family percentage must be greater than zero.");
             var retainedIds = new HashSet<string>();
             foreach (var tree in result) retainedIds.Add(tree.InstanceId);
-            var mask = new PlantingMask(district, readLot ?? LotContentCatalog.Read);
+            bool fillDenseSlopes = coverage == RegionTreeCoverage.Heavy &&
+                district.Hills != null && district.Hills.HeightMeters > 0f;
+            var mask = new PlantingMask(district, readLot ?? LotContentCatalog.Read,
+                fillDenseSlopes);
             foreach (var tree in result)
             {
                 float radius = ForestClusterCatalog.IsCluster(tree.FloraId)
@@ -66,6 +77,8 @@ namespace CityForgeV3.World
             if (coverage == RegionTreeCoverage.Heavy) spacing /= Mathf.Sqrt(3f);
             float chance = coverage == RegionTreeCoverage.Sparse ? .35f : .78f;
             var elevation = new DistrictElevation(district, 10f);
+            var slopeSources = fillDenseSlopes
+                ? new List<(Vector2 point, string family)>() : null;
             int index = 0;
             for (float z = spacing / 2; z < mask.Depth - spacing / 4; z += spacing)
             for (float x = spacing / 2; x < mask.Width - spacing / 4; x += spacing)
@@ -79,14 +92,18 @@ namespace CityForgeV3.World
                 // the dominant family of the scenery billboards.
                 bool harvestable = random.Next(5) == 0;
                 string floraId;
+                string slopeFamily = null;
                 if (harvestable) floraId = "cilician-fir";
                 else
                 {
                     string family = ChooseFamily(random, familyMix);
                     int footprint = TerrainFootprint(elevation, point,
                         mask.Width, mask.Depth);
+                    if (footprint == 0) slopeFamily = family;
                     floraId = footprint == 0 ? SlopeTree(random, family) :
-                        ForestClusterCatalog.Id(family, footprint == 2);
+                        family != FloraFamilies.Tropical && random.Next(2) == 0
+                            ? ForestClusterCatalog.VarietyId(family, footprint == 2)
+                            : ForestClusterCatalog.Id(family, footprint == 2);
                 }
                 float scale = .86f + (float)random.NextDouble() * .3f;
                 float clearance = ForestClusterCatalog.IsCluster(floraId) ? ForestClusterCatalog.ClearanceMeters(floraId) * scale : 0;
@@ -96,7 +113,7 @@ namespace CityForgeV3.World
                     // Retain it as the smaller one-billboard cluster when that
                     // bounded footprint fits instead of searching elsewhere.
                     if (!ForestClusterCatalog.IsLarge(floraId)) continue;
-                    floraId = ForestClusterCatalog.Id(ChooseFamilyFromId(floraId), false);
+                    floraId = floraId.Replace("-large", "-compact");
                     clearance = ForestClusterCatalog.ClearanceMeters(floraId) * scale;
                     if (mask.Blocked(point, clearance)) continue;
                 }
@@ -111,6 +128,10 @@ namespace CityForgeV3.World
                     RotationEighthTurns = rotation
                 };
                 result.Add(placed);
+                if (slopeFamily != null) slopeSources?.Add((point, slopeFamily));
+                if (slopeSources != null)
+                    mask.BlockTree(point, ForestClusterCatalog.IsCluster(floraId)
+                        ? clearance : 5f);
                 if (!ForestClusterCatalog.IsCluster(floraId)) continue;
                 var front = Vector2.zero;
                 bool frontClear = false;
@@ -134,8 +155,51 @@ namespace CityForgeV3.World
                     Scale = scale * .85f,
                     RotationEighthTurns = rotation
                 });
+                if (slopeSources != null) mask.BlockTree(front, 5f);
             }
+            if (slopeSources != null)
+                FillDenseSlopes(result, mask, elevation, seed,
+                    district.TileId, slopeSources);
             return result;
+        }
+
+        // Only an explicit Dense Forest generation runs this local pass. Each
+        // grounded slope tree tries four nearby positions; flat clump territory
+        // and already planted trees are excluded through small occupancy grids.
+        static void FillDenseSlopes(List<PlacedDistrictFlora> result,
+            PlantingMask mask, DistrictElevation elevation,
+            int seed, string tileId,
+            List<(Vector2 point, string family)> sources)
+        {
+            var random = new System.Random(unchecked(seed ^ 0x5e4a71b3));
+            for (int source = 0; source < sources.Count; source++)
+            {
+                var (center, family) = sources[source];
+                float phase = (float)random.NextDouble() * Mathf.PI * 2f;
+                for (int spoke = 0; spoke < 4; spoke++)
+                {
+                    float angle = phase + spoke * Mathf.PI / 2f;
+                    float radius = 13f + (float)random.NextDouble() * 3f;
+                    var point = center + new Vector2(Mathf.Cos(angle),
+                        Mathf.Sin(angle)) * radius;
+                    if (mask.Blocked(point, 4f) || mask.TreeBlocked(point, 4f) ||
+                        TerrainFootprint(elevation, point, mask.Width,
+                            mask.Depth) != 0) continue;
+                    var id = $"region-flora-{seed:x8}-{tileId}-slope-{source}-{spoke}";
+                    result.Add(new PlacedDistrictFlora
+                    {
+                        InstanceId = id,
+                        GroupId = $"region-flora-{seed:x8}",
+                        GeneratedByRegion = true,
+                        FloraId = SlopeTree(random, family),
+                        NormalizedX = point.x / mask.Width,
+                        NormalizedZ = point.y / mask.Depth,
+                        Scale = .76f + (float)random.NextDouble() * .3f,
+                        RotationEighthTurns = random.Next(8)
+                    });
+                    mask.BlockTree(point, 4f);
+                }
+            }
         }
 
         static string ChooseFamily(System.Random random, ForestFamilyMix mix)
@@ -147,10 +211,6 @@ namespace CityForgeV3.World
             if (roll < deciduous + mountain) return FloraFamilies.Mountain;
             return FloraFamilies.Tropical;
         }
-
-        static string ChooseFamilyFromId(string id) => id.StartsWith("forest-mountain-")
-            ? FloraFamilies.Mountain : id.StartsWith("forest-tropical-")
-            ? FloraFamilies.Tropical : FloraFamilies.Deciduous;
 
         static string SlopeTree(System.Random random, string family)
         {
@@ -189,12 +249,18 @@ namespace CityForgeV3.World
             const float Cell = 8;
             readonly int columns, rows;
             readonly BitArray occupied;
+            readonly int treeColumns, treeRows;
+            readonly BitArray treeOccupied;
             public readonly float Width, Depth;
-            public PlantingMask(RegionCityTile d, Func<string, LotSaveData> readLot)
+            public PlantingMask(RegionCityTile d, Func<string, LotSaveData> readLot,
+                bool trackTrees)
             {
                 Width = DistrictScale.SizeMeters(d.Width); Depth = DistrictScale.SizeMeters(d.Height);
                 columns = Mathf.CeilToInt(Width / Cell); rows = Mathf.CeilToInt(Depth / Cell);
                 occupied = new BitArray(columns * rows);
+                treeColumns = Mathf.CeilToInt(Width / 4f);
+                treeRows = Mathf.CeilToInt(Depth / 4f);
+                treeOccupied = trackTrees ? new BitArray(treeColumns * treeRows) : null;
                 var origin = new Vector2(Width / 2, Depth / 2);
                 foreach (var road in d.Roads ?? new())
                     Block(new Vector2((road.GridX + .5f) * DistrictScale.CellSizeMeters,
@@ -245,6 +311,27 @@ namespace CityForgeV3.World
             public void Block(Vector2 center, float halfWidth, float halfDepth) =>
                 Each(new Rect(center.x - halfWidth, center.y - halfDepth, halfWidth * 2, halfDepth * 2),
                     (x, z) => occupied[z * columns + x] = true);
+            public void BlockTree(Vector2 center, float radius)
+            {
+                int minX = Mathf.Max(0, Mathf.FloorToInt((center.x - radius) / 4f));
+                int maxX = Mathf.Min(treeColumns - 1, Mathf.FloorToInt((center.x + radius) / 4f));
+                int minZ = Mathf.Max(0, Mathf.FloorToInt((center.y - radius) / 4f));
+                int maxZ = Mathf.Min(treeRows - 1, Mathf.FloorToInt((center.y + radius) / 4f));
+                for (int z = minZ; z <= maxZ; z++)
+                    for (int x = minX; x <= maxX; x++)
+                        treeOccupied[z * treeColumns + x] = true;
+            }
+            public bool TreeBlocked(Vector2 point, float radius)
+            {
+                int minX = Mathf.Max(0, Mathf.FloorToInt((point.x - radius) / 4f));
+                int maxX = Mathf.Min(treeColumns - 1, Mathf.FloorToInt((point.x + radius) / 4f));
+                int minZ = Mathf.Max(0, Mathf.FloorToInt((point.y - radius) / 4f));
+                int maxZ = Mathf.Min(treeRows - 1, Mathf.FloorToInt((point.y + radius) / 4f));
+                for (int z = minZ; z <= maxZ; z++)
+                    for (int x = minX; x <= maxX; x++)
+                        if (treeOccupied[z * treeColumns + x]) return true;
+                return false;
+            }
             void Each(Rect rect, Action<int, int> visit)
             {
                 int minX = Mathf.Max(0, Mathf.FloorToInt(rect.xMin / Cell)), maxX = Mathf.Min(columns - 1, Mathf.FloorToInt(rect.xMax / Cell));
@@ -310,10 +397,12 @@ namespace CityForgeV3.World
             var previous = new List<List<PlacedDistrictFlora>>();
             var previousCoverage = new List<RegionTreeCoverage>(); var previousSeeds = new List<int>();
             var previousMixes = new List<ForestFamilyMix>();
+            var previousWildlife = new List<DistrictWildlifeState>();
             foreach (var tile in districts)
             {
                 previous.Add(tile.Flora); previousCoverage.Add(tile.TreeCoverage);
                 previousSeeds.Add(tile.FloraSeed); previousMixes.Add(tile.ForestMix);
+                previousWildlife.Add(tile.Wildlife);
             }
             try
             {
@@ -323,6 +412,17 @@ namespace CityForgeV3.World
                     districts[i].Flora = generated[i];
                     districts[i].TreeCoverage = settings.TreeCoverage; districts[i].FloraSeed = settings.FloraSeed;
                     districts[i].ForestMix = settings.ForestMix.Copy();
+                    var oldWildlife = districts[i].Wildlife ?? new DistrictWildlifeState();
+                    districts[i].Wildlife = new DistrictWildlifeState
+                    {
+                        Marksmen = oldWildlife.Marksmen,
+                        NextSighting = oldWildlife.NextSighting,
+                        QuietSeconds = oldWildlife.QuietSeconds,
+                        SightingCount = oldWildlife.SightingCount,
+                        Status = oldWildlife.Status
+                    };
+                    DistrictWildlife.PopulateGeneratedForest(districts[i], settings.TreeCoverage,
+                        settings.ForestMix, settings.FloraSeed, generated[i]);
                 }
                 save(region);
             }
@@ -334,6 +434,7 @@ namespace CityForgeV3.World
                     districts[i].Flora = previous[i];
                     districts[i].TreeCoverage = previousCoverage[i]; districts[i].FloraSeed = previousSeeds[i];
                     districts[i].ForestMix = previousMixes[i];
+                    districts[i].Wildlife = previousWildlife[i];
                 }
                 throw;
             }

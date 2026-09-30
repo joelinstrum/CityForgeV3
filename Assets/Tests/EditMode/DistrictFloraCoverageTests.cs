@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using CityForgeV3.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -31,7 +32,8 @@ public class DistrictFloraCoverageTests
     }
     [Test] public void FailedDistrictSaveRestoresTreesMetadataAndNeighbor()
     {
-        var r = Region(); var before = JsonUtility.ToJson(r); var original = r.Tiles[0].Flora;
+        var r = Region(); r.Tiles[0].Wildlife.Bears.Add(new DistrictBear { Id = "existing-bear" });
+        var before = JsonUtility.ToJson(r); var original = r.Tiles[0].Flora;
         var job = new RegionFloraGeneration(r, RegionTreeCoverage.Wooded, 83, r.Tiles[0]); job.Step();
         Assert.Throws<IOException>(() => job.Commit(_ => throw new IOException("fixture")));
         Assert.AreEqual(before, JsonUtility.ToJson(r)); Assert.AreSame(original, r.Tiles[0].Flora);
@@ -62,5 +64,45 @@ public class DistrictFloraCoverageTests
         foreach (var d in r.Tiles) { Assert.AreEqual(RegionTreeCoverage.Wooded, d.TreeCoverage); Assert.AreEqual(92, d.FloraSeed); }
         Assert.AreEqual(RegionTreeCoverage.Wooded, r.Terrain.TreeCoverage);
         Assert.AreEqual(33, r.Terrain.ForestMix.Deciduous);
+    }
+    [Test] public void HeavyForestWithThirtyPercentFirMixStartsWithThreeToFiveSpreadBears()
+    {
+        var r = Region(); var d = r.Tiles[0];
+        var mix = new ForestFamilyMix { Deciduous = 70, Mountain = 30, Tropical = 0 };
+        var job = new RegionFloraGeneration(r, RegionTreeCoverage.Heavy, 193, d, mix);
+        job.Step(); job.Commit(_ => {});
+        Assert.That(d.Wildlife.Bears.Count, Is.InRange(3, 5));
+        Assert.AreEqual(d.Wildlife.Bears.Count, d.Wildlife.Bears.Select(b => b.Id).Distinct().Count());
+        Assert.True(d.Wildlife.Bears.All(b => b.Home == b.Position));
+        Assert.True(d.Wildlife.Bears.All(b => d.Flora.Any(t => DistrictWildlife.MountainTree(t) &&
+            DistrictLabor.TreePoint(d, t) == b.Home)));
+        Assert.Greater(d.Wildlife.Bears.Select(b => b.Home).Distinct().Count(), 2);
+        var loaded = JsonUtility.FromJson<RegionCityTile>(JsonUtility.ToJson(d));
+        Assert.AreEqual(d.Wildlife.Bears.Count, loaded.Wildlife.Bears.Count);
+    }
+    [Test] public void BearPopulationRequiresHeavyCoverageAndThirtyPercentFirMix()
+    {
+        foreach (var coverage in new[] { RegionTreeCoverage.Wooded, RegionTreeCoverage.Heavy })
+        foreach (var fir in new[] { 29, 30 })
+        {
+            var r = Region(); var d = r.Tiles[0];
+            var mix = new ForestFamilyMix { Deciduous = 100 - fir, Mountain = fir, Tropical = 0 };
+            var job = new RegionFloraGeneration(r, coverage, 193, d, mix);
+            job.Step(); job.Commit(_ => {});
+            if (coverage == RegionTreeCoverage.Heavy && fir == 30)
+                Assert.That(d.Wildlife.Bears.Count, Is.InRange(3, 5));
+            else Assert.IsEmpty(d.Wildlife.Bears, $"{coverage}, fir mix {fir}");
+        }
+    }
+    [Test] public void ClearingTreesRemovesBearsButKeepsMarksmen()
+    {
+        var r = Region(); var d = r.Tiles[0];
+        var job = new RegionFloraGeneration(r, RegionTreeCoverage.Heavy, 193, d);
+        job.Step(); job.Commit(_ => {});
+        Assert.That(d.Wildlife.Bears.Count, Is.InRange(3, 5));
+        var guard = new DistrictMarksman { Id = "guard" }; d.Wildlife.Marksmen.Add(guard);
+        RegionFloraGenerator.ClearTrees(d);
+        Assert.IsEmpty(d.Wildlife.Bears);
+        Assert.AreSame(guard, d.Wildlife.Marksmen.Single());
     }
 }

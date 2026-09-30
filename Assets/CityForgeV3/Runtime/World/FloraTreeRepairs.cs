@@ -11,11 +11,16 @@ namespace CityForgeV3.World
   public const string RealisticSilverMapleRoot="CityForgeV3/Flora/SilverMapleRealisticV01/";
   public const string RealisticWillowRoot="CityForgeV3/Flora/WillowRealisticV01/";
   public const string PhotographicDeciduousRoot="CityForgeV3/Flora/PhotographicDeciduousV01/";
+  public const string BroadOakRoot="CityForgeV3/Flora/BroadOakV01/";
+  public const string AshTreeRoot="CityForgeV3/Flora/AshTreeV01/";
+  public const string WhiteBirchRoot="CityForgeV3/Flora/WhiteBirchV01/";
+  public const string SmallHardwoodRoot="CityForgeV3/Flora/SmallHardwoodV01/";
   public const string ElmTrueAngleRoot="CityForgeV3/Flora/ElmTrueAngleV01/";
   public const string SpanishMossTrueAngleRoot="CityForgeV3/Flora/SpanishMossTrueAngleV01/";
   public const string BaldCypressMossRoot="CityForgeV3/Flora/BaldCypressMossV01/";
   public const string BaldCypressMossBRoot="CityForgeV3/Flora/BaldCypressMossV02/";
   public const string MediumConifersRoot="CityForgeV3/Flora/MediumConifersV01/";
+  public const string DouglasFirRoot="CityForgeV3/Flora/DouglasFirV01/";
   public const string PhotographicPalmsRoot="CityForgeV3/Flora/PhotographicPalmsV01/";
   public static string Identity(string name){foreach(var s in new[]{"-spring","-summer","-autumn","-winter"})if(name!=null&&name.EndsWith(s))return name.Substring(0,name.Length-s.Length);return name??"";}
   public static bool UsesAmericanSycamore(string id)=>id is "london-plane-a" or "london-plane-b";
@@ -26,10 +31,19 @@ namespace CityForgeV3.World
     ? PhotographicPalmsRoot+id
     :id is "medium-balsam-fir" or "medium-fraser-fir" or "medium-blue-spruce"
     ? MediumConifersRoot+id+(season==SeasonPreset.Winter?"-snowy":"-snowfree")
+    :id=="douglas-fir" ? DouglasFirRoot+id
     :id=="bald-cypress-moss-b" ? BaldCypressMossBRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="bald-cypress-moss" ? BaldCypressMossRoot+id+"-"+season.ToString().ToLowerInvariant()
     :id=="angel-oak-spanish-moss" ? SpanishMossTrueAngleRoot+id
     :id=="american-elm" ? ElmTrueAngleRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id=="broad-oak" ? BroadOakRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id=="ash-tree" ? AshTreeRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id=="white-birch" ? WhiteBirchRoot+id+"-"+
+      (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
+    :id=="small-hardwood" ? SmallHardwoodRoot+id+"-"+
       (season==SeasonPreset.Spring?"summer":season.ToString().ToLowerInvariant())
     :id is "mature-oak" or "shagbark-hickory"
     ? PhotographicDeciduousRoot+id+"-"+season.ToString().ToLowerInvariant()
@@ -45,6 +59,11 @@ namespace CityForgeV3.World
    "vendor-hickory"=>64.0000000f,
    "vendor-willow"=>104f,
    "mature-oak"=>100f,
+   // 1312 x 1199 artwork presents a broad, roughly 15m mature crown.
+   "broad-oak"=>80f,
+   "ash-tree"=>100f,
+   "white-birch"=>110f,
+   "small-hardwood"=>103f,
    // The 1312x1199 replacement keeps the old elm's roughly 16m height.
    "american-elm"=>72f,
    "angel-oak-spanish-moss"=>80f,
@@ -54,6 +73,7 @@ namespace CityForgeV3.World
    "medium-balsam-fir"=>128f,
    "medium-fraser-fir"=>128f,
    "medium-blue-spruce"=>120f,
+   "douglas-fir"=>100f,
    "date-palm-tall"=>120f,
    "date-palm-short"=>180f,
    "la-fan-palm-a"=>70f,
@@ -75,6 +95,11 @@ namespace CityForgeV3.World
    "street-tree-3d"=>59.8361446f,
    _=>0f
   };
+  public static float PixelsPerUnit(string id,string textureName)=>
+   id=="small-hardwood" && textureName!=null
+    ? textureName.EndsWith("-summer") ? 96f :
+      textureName.EndsWith("-winter") ? 105f : 103f
+    : PixelsPerUnit(id);
   public static bool TryPivot(string texture,out Vector2 pivot)
   {
    var id=Identity(texture);
@@ -105,6 +130,15 @@ namespace CityForgeV3.World
       texture.EndsWith("autumn")?133f:135f)/1536f);return true;
     case "mature-oak":pivot=new Vector2(.5f,
      (texture.EndsWith("spring")?146f:texture.EndsWith("winter")?135f:149f)/1536f);return true;
+    case "broad-oak":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?76f:40f)/1199f);return true;
+    case "ash-tree":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?48f:texture.EndsWith("autumn")?43f:55f)/1199f);return true;
+    case "white-birch":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?161f:texture.EndsWith("autumn")?67f:72f)/1536f);return true;
+    case "small-hardwood":pivot=new Vector2(.5f,
+     (texture.EndsWith("summer")?82f:texture.EndsWith("autumn")?113f:86f)/
+     (texture.EndsWith("summer")?1199f:texture.EndsWith("autumn")?1312f:1309f));return true;
     case "american-elm":pivot=new Vector2(.5f,
      (texture.EndsWith("summer")?187f:texture.EndsWith("autumn")?151f:64f)/1199f);return true;
     case "shagbark-hickory":pivot=new Vector2(.5f,
@@ -119,6 +153,7 @@ namespace CityForgeV3.World
     case "medium-fraser-fir-snowy":pivot=new Vector2(.5f,20f/1536f);return true;
     case "medium-blue-spruce-snowfree":pivot=new Vector2(.5f,6f/1536f);return true;
     case "medium-blue-spruce-snowy":pivot=new Vector2(.5f,7f/1536f);return true;
+    case "douglas-fir":pivot=new Vector2(.5f,56f/1536f);return true;
     case "vendor-red-maple":
      // Visible root foot measured from each approved 1024x1536 cutout.
      pivot=new Vector2(.5f,(texture.EndsWith("autumn")?40f:39f)/1536f);return true;

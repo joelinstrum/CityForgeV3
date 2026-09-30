@@ -19,6 +19,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
         _GrassDetailMipScale ("Grass detail mip scale", Range(.25,1)) = 1
         _RollingHillDarkSlopeLift ("Darkest slope lift", Range(0,.75)) = .5
         _RollingHillDeepShadeLift ("Deepest slope lift", Range(0,.5)) = .225
+        _SoilRevealStrength ("Hill soil reveal", Range(0,1)) = 0
+        _SoilTex ("Hill soil", 2D) = "white" {}
+        _SoilPeakHeight ("Rolling hill peak height", Float) = 45
     }
 
     SubShader
@@ -65,10 +68,11 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 float2 uv : TEXCOORD2;
                 float2 hillVariation : TEXCOORD3;
                 float2 meadowMetres : TEXCOORD4;
+                float worldHeight : TEXCOORD5;
             };
 
             fixed4 _Color;
-            sampler2D _MainTex, _HillTex, _DistrictMapTex;
+            sampler2D _MainTex, _HillTex, _DistrictMapTex, _SoilTex;
             float _MeadowPatchStrength;
             float _DistantMeadow;
             float _FarGrassNoise;
@@ -78,6 +82,8 @@ Shader "CityForgeV3/MeadowGroundSurface"
             float _GrassHueShift;
             float _RollingHillDarkSlopeLift;
             float _RollingHillDeepShadeLift;
+            float _SoilRevealStrength;
+            float _SoilPeakHeight;
             float _TextureWorldSize;
             float _DistrictMapStrength;
             float _DistrictMapMipBias;
@@ -94,7 +100,9 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // path below keeps its separate world-space coordinates.
                 output.uv = input.uv;
                 output.hillVariation=0;
-                output.meadowMetres=mul(unity_ObjectToWorld,input.vertex).xz;
+                float3 worldPosition=mul(unity_ObjectToWorld,input.vertex).xyz;
+                output.meadowMetres=worldPosition.xz;
+                output.worldHeight=worldPosition.y;
                 #if defined(MEADOW_PATCHES)
                 float2 metres=input.vertex.xz;
                 output.hillVariation=float2(MeadowNoise(metres/110),MeadowNoise(metres/28+7.3));
@@ -152,7 +160,7 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 // The district's small vertical relief needs a calibrated
                 // normal response at its kilometre-wide presentation scale.
                 // This changes directional light only, never the grass color.
-                normal=normalize(fixed3(normal.x*3.0,normal.y,normal.z*3.0));
+                normal=normalize(fixed3(normal.x*1.6,normal.y,normal.z*1.6));
                 #endif
                 fixed3 illumination = CityForgeWorldLighting(normal, shadow);
                 #if defined(HILL_MEADOW)
@@ -227,6 +235,26 @@ Shader "CityForgeV3/MeadowGroundSurface"
                 fixed3 districtColor=tex2Dbias(_DistrictMapTex,
                     float4(saturate(input.uv),0,_DistrictMapMipBias)).rgb;
                 surface.rgb=lerp(surface.rgb,districtColor,_DistrictMapStrength);
+                #endif
+                #if defined(HILL_MEADOW)
+                // Grass texture controls the fine edge of actual soil beneath
+                // the meadow. The soil shares world coordinates across tiles.
+                if (_SoilRevealStrength > 0)
+                {
+                    // Expose hill crowns first; let the earth disappear down
+                    // the face instead of gathering on the steep lower slope.
+                    float hillHeight=saturate(input.worldHeight/max(_SoilPeakHeight,1));
+                    float summitMask=smoothstep(.38,.82,hillHeight);
+                    float opening=smoothstep(.78,.835,
+                        surface.r/max(surface.g,.001));
+                    fixed3 soil=tex2Dbias(_SoilTex,
+                        float4(input.meadowMetres/18.0,0,2.0)).rgb;
+                    // Neutral tan earth sits beneath the warm meadow openings.
+                    // Keep the mountain source texture and all grass artwork.
+                    soil=saturate(soil*fixed3(1.18,1.42,1.18));
+                    surface.rgb=lerp(surface.rgb,soil,
+                        summitMask*opening*_SoilRevealStrength);
+                }
                 #endif
                 return fixed4(surface.rgb * _Color.rgb * illumination,
                     surface.a * _Color.a);

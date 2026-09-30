@@ -90,6 +90,10 @@ namespace CityForgeV3.Tests.EditMode
         [TestCase("forest-deciduous-large")]
         [TestCase("forest-mountain-compact")]
         [TestCase("forest-mountain-large")]
+        [TestCase("forest-deciduous-variety-compact")]
+        [TestCase("forest-deciduous-variety-large")]
+        [TestCase("forest-mountain-variety-compact")]
+        [TestCase("forest-mountain-variety-large")]
         public void TemperateClustersKeepTheirDominantFamilyInEverySeason(
             string id)
         {
@@ -128,8 +132,41 @@ namespace CityForgeV3.Tests.EditMode
             finally { Object.DestroyImmediate(owner); }
         }
 
+        [Test]
+        public void VarietyClumpsUseNewSeasonalForegroundTreesAndExistingAtlasBudget()
+        {
+            var owner = new GameObject("Variety clump test");
+            try
+            {
+                var expected = new[] { "broad-oak", "ash-tree",
+                    "white-birch", "small-hardwood" };
+                for (var variation = 0; variation < expected.Length; variation++)
+                {
+                    var id = ForestClusterCatalog.VarietyId(FloraFamilies.Deciduous,
+                        variation % 2 == 0);
+                    Assert.That(ForestClumpForeground.TreeId(id, variation),
+                        Is.EqualTo(expected[variation]));
+                    var cluster = owner.AddComponent<ForestTrueAngleCluster>();
+                    cluster.Configure(id, variation, SeasonPreset.Summer, _ => 0f);
+                    Assert.That(cluster.PieceCount, Is.EqualTo(
+                        ForestClusterCatalog.IsLarge(id) ? 7 : 4));
+                    Assert.That(ForestClusterCatalog.FarCanopyResourcePath(id,
+                        SeasonPreset.Summer), Is.Not.Null);
+                    Object.DestroyImmediate(cluster);
+                }
+                var firId = ForestClusterCatalog.VarietyId(
+                    FloraFamilies.Mountain, true);
+                Assert.That(ForestClumpForeground.TreeId(firId, 0),
+                    Is.EqualTo("douglas-fir"));
+                Assert.That(ForestTrueAngleCluster.Supports(firId), Is.True);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
         [TestCase("forest-deciduous-large")]
         [TestCase("forest-mountain-large")]
+        [TestCase("forest-deciduous-variety-large")]
+        [TestCase("forest-mountain-variety-large")]
         public void MixedClusterKeepsBothAtlasesInOneSpatialBatch(string id)
         {
             var owner = new GameObject("Mixed forest batch test");
@@ -773,11 +810,13 @@ namespace CityForgeV3.Tests.EditMode
             }
         }
 
-        [TestCase(false, 1)]
-        [TestCase(true, 1)]
-        [TestCase(true, 2)]
+        [TestCase(false, false, 1)]
+        [TestCase(false, true, 1)]
+        [TestCase(true, false, 1)]
+        [TestCase(true, true, 1)]
+        [TestCase(true, false, 2)]
         public void DenseCanopySeasonChangeKeepsBatchWorkInBoundedSlices(
-            bool fir, int targetSeason)
+            bool fir, bool variety, int targetSeason)
         {
             var owner = new GameObject("Dense far canopy test");
             try
@@ -792,11 +831,13 @@ namespace CityForgeV3.Tests.EditMode
                     district.Flora.Add(new PlacedDistrictFlora
                     {
                         InstanceId = "dense-canopy-" + index,
-                        FloraId = fir
-                            ? index % 2 == 0 ? "forest-mountain-compact" :
-                                "forest-mountain-large"
-                            : index % 2 == 0 ? "forest-deciduous-compact" :
-                                "forest-deciduous-large",
+                        FloraId = variety
+                            ? ForestClusterCatalog.VarietyId(fir
+                                ? FloraFamilies.Mountain : FloraFamilies.Deciduous,
+                                index % 2 != 0)
+                            : ForestClusterCatalog.Id(fir
+                                ? FloraFamilies.Mountain : FloraFamilies.Deciduous,
+                                index % 2 != 0),
                         NormalizedX = .04f + index % 24 * .04f,
                         NormalizedZ = .04f + index / 24 * .058f
                     });
@@ -831,6 +872,7 @@ namespace CityForgeV3.Tests.EditMode
                 sliceTimes.Sort();
                 var p95 = sliceTimes[(int)(sliceTimes.Count * .95f)];
                 TestContext.WriteLine("384 " + (fir ? "fir" : "deciduous") +
+                    (variety ? " variety" : " original") +
                     " clusters to season " + targetSeason +
                     " clusters: summer batches=" +
                     summerBatches + ", changed-season batches=" +

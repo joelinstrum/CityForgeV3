@@ -5,6 +5,26 @@ namespace CityForgeV3.Tests.EditMode
 {
     public class DistrictElevationTests
     {
+        [Test] public void RollingHillsRoundTheCornerJoinWithoutFlatteningThePeak()
+        {
+            var district=new RegionCityTile{Width=2,Height=2,
+                Hills=new DistrictHillSettings{Version=2,Seed=1209,HeightMeters=45,Coverage=.6f}};
+            var elevation=new DistrictElevation(district);
+            float ridgeExcess=0;int samples=0;
+            for(float distance=100;distance<=240;distance+=20)
+            {
+                float coordinate=elevation.Width*.5f-distance;
+                float center=elevation.Sample(coordinate,coordinate);
+                float left=elevation.Sample(coordinate+25,coordinate-25);
+                float right=elevation.Sample(coordinate-25,coordinate+25);
+                ridgeExcess+=center-(left+right)*.5f;
+                samples++;
+            }
+            Assert.That(ridgeExcess/samples,Is.InRange(-.5f,.05f),
+                "The front corner should roll across the diagonal without a pointed ridge or trough.");
+            Assert.That(Mathf.Max(elevation.Heights),
+                Is.EqualTo(45f*DistrictElevation.RollingHillVerticalScale).Within(.01f));
+        }
         [Test] public void OldDistrictIsFlatAndSavedHillsAreDeterministic()
         {
             var old=JsonUtility.FromJson<RegionCityTile>("{\"Width\":2,\"Height\":2}");

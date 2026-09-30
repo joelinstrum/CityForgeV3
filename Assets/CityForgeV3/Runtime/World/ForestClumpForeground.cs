@@ -10,6 +10,14 @@ namespace CityForgeV3.World
         public static string TreeId(string clumpId, int variation)
         {
             var slot = Mathf.Abs(variation % 3);
+            if (clumpId != null && clumpId.StartsWith("forest-deciduous-variety-"))
+                return ((variation % 4 + 4) % 4) switch
+                {
+                    0 => "broad-oak", 1 => "ash-tree",
+                    2 => "white-birch", _ => "small-hardwood"
+                };
+            if (clumpId != null && clumpId.StartsWith("forest-mountain-variety-"))
+                return slot == 1 ? "medium-blue-spruce" : "douglas-fir";
             if (clumpId != null && clumpId.StartsWith("forest-mountain-"))
                 return slot == 1 ? "medium-balsam-fir" : "medium-fraser-fir";
             if (clumpId != null && clumpId.StartsWith("forest-tropical-"))

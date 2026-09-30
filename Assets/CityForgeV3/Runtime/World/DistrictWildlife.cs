@@ -8,8 +8,10 @@ namespace CityForgeV3.World
     {
         public string Id=Guid.NewGuid().ToString("N");
         public Vector2 Position, Home, Direction=Vector2.up, ShotOrigin;
-        public bool Fleeing;
-        public float SteerIn, FleeSeconds;
+        public bool Fleeing, Paused, AvoidingPeople;
+        public float SteerIn, FleeSeconds, PersonCheckIn;
+        public float PaceIn=12f;
+        public Vector2 NearestPerson;
     }
     [Serializable] public sealed class DistrictMarksman
     {
@@ -31,6 +33,8 @@ namespace CityForgeV3.World
     public static class DistrictWildlife
     {
         public const float SightingRadius=30, ClearRadius=45, ShotRadius=55, DeterrenceSeconds=300;
+        const float PersonRadius=10, PersonClearRadius=14, PersonCheckSeconds=.25f;
+        static readonly Vector2[] QuarryWorkerOffsets={new(-1.1f,0),new(.1f,6)};
         public static DistrictWildlifeState State(RegionCityTile d)=>d.Wildlife??=new();
         public const int Wage = DistrictLabor.Wage;
         public static DistrictMarksman Hire(RegionCityTile d, Vector2 position)
@@ -51,6 +55,45 @@ namespace CityForgeV3.World
             PayWages(d);
         }
         public static bool MountainTree(PlacedDistrictFlora t)=>t!=null&&t.HarvestState==DistrictTreeHarvestState.Standing&&FloraFamilies.ForTree(t.FloraId)==FloraFamilies.Mountain;
+        // Forest generation is an explicit bulk edit. Use its finished tree list
+        // once, rather than checking forest density during simulation ticks.
+        public static void PopulateGeneratedForest(RegionCityTile d, RegionTreeCoverage coverage,
+            ForestFamilyMix mix, int seed, List<PlacedDistrictFlora> trees)
+        {
+            var state=State(d);
+            state.Bears.Clear();
+            state.Status="Mountain woodland quiet";
+            if(coverage!=RegionTreeCoverage.Heavy||mix==null||mix.Total<=0||
+                (long)Mathf.Max(0,mix.Mountain)*10<3L*mix.Total)return;
+            var candidates=new List<Vector2>();
+            foreach(var tree in trees)
+                if(tree.GeneratedByRegion&&MountainTree(tree))
+                    candidates.Add(DistrictLabor.TreePoint(d,tree));
+            if(candidates.Count==0)return;
+            uint hash=unchecked((uint)seed);
+            foreach(char c in d.TileId??"")hash=unchecked((hash^(uint)c)*16777619);
+            int target=3+(int)(hash%3);
+            var used=new HashSet<int>();
+            for(int i=0;i<target&&used.Count<candidates.Count;i++)
+            {
+                int selected=-1;float best=-1;
+                for(int j=0;j<candidates.Count;j++)
+                {
+                    if(used.Contains(j))continue;
+                    var p=candidates[j];
+                    if(state.Marksmen.Any(m=>m.WagesPaid&&(m.Position-p).sqrMagnitude<ShotRadius*ShotRadius))continue;
+                    float distance=state.Bears.Count==0?float.MaxValue:
+                        state.Bears.Min(b=>(b.Home-p).sqrMagnitude);
+                    if(distance>best){best=distance;selected=j;}
+                }
+                if(selected<0)break;
+                used.Add(selected);
+                var home=candidates[selected];
+                state.Bears.Add(new DistrictBear{Id=$"forest-bear-{seed:x8}-{d.TileId}-{i}",
+                    Position=home,Home=home});
+            }
+            if(state.Bears.Count>0)state.Status="Bear spotted in mountain woodland";
+        }
         public static bool Tick(RegionCityTile d,float dt,Func<Vector2,bool> walkable)
         {
             if(dt<=0)return false;
@@ -91,13 +134,49 @@ namespace CityForgeV3.World
             {
                 b.SteerIn-=dt;
                 if(b.Fleeing){b.FleeSeconds+=dt;b.Direction=(b.Position-b.ShotOrigin).normalized;}
-                else if(b.SteerIn<=0){b.SteerIn=8;float a=(s.SightingCount*53+b.Position.x*3+b.Position.y)*Mathf.Deg2Rad;b.Direction=Vector2.Distance(b.Position,b.Home)>18?(b.Home-b.Position).normalized:new Vector2(Mathf.Cos(a),Mathf.Sin(a));}
-                var speed=b.Fleeing?1.8f:.4f;
+                else
+                {
+                    b.PersonCheckIn-=dt;
+                    if(b.PersonCheckIn<=0)
+                    {
+                        b.PersonCheckIn=PersonCheckSeconds;
+                        float radius=b.AvoidingPeople?PersonClearRadius:PersonRadius;
+                        b.AvoidingPeople=NearestPerson(d,s,b.Position,radius,out b.NearestPerson);
+                        if(b.AvoidingPeople)b.Paused=false;
+                    }
+                    if(b.AvoidingPeople)
+                    {
+                        var away=b.Position-b.NearestPerson;
+                        b.Direction=away.sqrMagnitude>.01f?away.normalized:
+                            b.Direction.sqrMagnitude>.01f?-b.Direction:Vector2.down;
+                    }
+                    else
+                    {
+                        b.PaceIn-=dt;
+                        if(b.PaceIn<=0)
+                        {
+                            b.Paused=!b.Paused;
+                            float roll=Mathf.Abs(b.Position.x*3+b.Position.y*7+s.SightingCount*53);
+                            b.PaceIn=b.Paused?2f+roll%3f:12f+roll%12f;
+                        }
+                        if(!b.Paused&&b.SteerIn<=0)
+                        {
+                            b.SteerIn=8;
+                            float a=(s.SightingCount*53+b.Position.x*3+b.Position.y)*Mathf.Deg2Rad;
+                            b.Direction=Vector2.Distance(b.Position,b.Home)>18?
+                                (b.Home-b.Position).normalized:new Vector2(Mathf.Cos(a),Mathf.Sin(a));
+                        }
+                    }
+                }
+                var speed=b.Fleeing?1.8f:b.AvoidingPeople?BearBehavior.RetreatSpeed:b.Paused?0f:BearBehavior.WalkSpeed;
+                if(speed<=0)continue;
                 foreach(float angle in new[]{0f,35f,-35f,70f,-70f,110f,-110f})
                 {
                     var v=Quaternion.Euler(0,0,angle)*new Vector3(b.Direction.x,b.Direction.y,0);var dir=new Vector2(v.x,v.y);var next=b.Position+dir*speed*dt;
                     if(!walkable(next))continue;
                     if(b.Fleeing&&Vector2.Distance(next,b.ShotOrigin)<Vector2.Distance(b.Position,b.ShotOrigin))continue;
+                    if(!b.Fleeing&&b.AvoidingPeople&&(next-b.NearestPerson).sqrMagnitude<
+                        (b.Position-b.NearestPerson).sqrMagnitude)continue;
                     b.Position=next;b.Direction=dir;break;
                 }
                 if(b.Fleeing&&Vector2.Distance(b.Position,b.ShotOrigin)>90 && !DistrictLabor.State(d).Workers.Any(w=>Vector2.Distance(w.Position,b.Position)<ClearRadius))
@@ -105,6 +184,33 @@ namespace CityForgeV3.World
             }
             s.Status=s.Bears.Count==0?"Mountain woodland quiet":s.Bears.Any(b=>!b.Fleeing)?(DistrictLabor.State(d).Workers.Any(w=>w.BearAlarm)?"Bear sighting — workers seek safety":"Bear spotted in mountain woodland"):"Warning shot — bear leaving the area";
             return changed;
+        }
+        static bool NearestPerson(RegionCityTile d,DistrictWildlifeState state,Vector2 point,
+            float radius,out Vector2 nearest)
+        {
+            var closest=Vector2.zero;float best=radius*radius;
+            void Include(Vector2 p)
+            {
+                float distance=(p-point).sqrMagnitude;
+                if(distance>=best)return;
+                best=distance;closest=p;
+            }
+            // At most five bears check this small actor roster four times a second.
+            // These are the people actually presented as 3D district characters.
+            foreach(var worker in DistrictLabor.State(d).Workers)Include(worker.Position);
+            foreach(var marksman in state.Marksmen)Include(marksman.Position);
+            if(d.StoneSites!=null)foreach(var site in d.StoneSites)
+            {
+                if(!site.Built)continue;
+                var center=DistrictQuarry.Point(d,site);
+                foreach(var offset in QuarryWorkerOffsets)
+                {
+                    float a=site.Yaw*Mathf.Deg2Rad;
+                    Include(center+new Vector2(Mathf.Cos(a)*offset.x+Mathf.Sin(a)*offset.y,
+                        -Mathf.Sin(a)*offset.x+Mathf.Cos(a)*offset.y));
+                }
+            }
+            nearest=closest;return best<radius*radius;
         }
         public static bool AvoidBear(RegionCityTile d,DistrictAxeman w,float dt,Func<Vector2,bool> walkable)
         {

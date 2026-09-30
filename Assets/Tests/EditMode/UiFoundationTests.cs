@@ -2196,6 +2196,56 @@ namespace CityForgeV3.Tests
         }
 
         [Test]
+        public void RollingHillSoilRevealPersistsAcrossDistrictZooms()
+        {
+            var host = new GameObject("Close hill soil test");
+            try
+            {
+                var district = new RegionCityTile
+                {
+                    TileId = "soil-hill", Width = 1, Height = 1,
+                    Hills = new DistrictHillSettings()
+                };
+                var world = host.AddComponent<DistrictWorldController>();
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                district.Hills = new DistrictHillSettings
+                    { Version = 2, Seed = 1209, HeightMeters = 35,
+                        Coverage = .6f, VerticalReliefScale = 1f };
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                var ground = host.GetComponentsInChildren<MeshRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("District Ground"));
+                var material = ground.sharedMaterial;
+                Assert.IsFalse(UnityEditor.ShaderUtil.ShaderHasError(material.shader));
+                Assert.IsTrue(material.IsKeywordEnabled("HILL_MEADOW"));
+                Assert.IsNotNull(material.GetTexture("_SoilTex"));
+                Assert.That(material.GetFloat("_SoilPeakHeight"),
+                    Is.EqualTo(35f * DistrictElevation.RollingHillVerticalScale)
+                        .Within(.001f));
+                foreach (DistrictZoomLevel level in System.Enum.GetValues(typeof(DistrictZoomLevel)))
+                {
+                    world.SetZoom(level);
+                    Assert.That(material.GetFloat("_SoilRevealStrength"),
+                        Is.EqualTo(DistrictWorldController.DistrictSoilRevealForZoom(level))
+                            .Within(.001f), level.ToString());
+                    Assert.That(material.GetFloat("_SoilRevealStrength"),
+                        Is.GreaterThan(0f), level.ToString());
+                    if (level >= DistrictZoomLevel.LOD2)
+                        Assert.IsTrue(material.IsKeywordEnabled("DISTRICT_GRASS_MAP"),
+                            level.ToString());
+                }
+                district.Hills.HeightMeters = 0;
+                world.RebuildEntireDistrict(district,
+                    DistrictBulkRebuildReason.TestFixture);
+                ground = host.GetComponentsInChildren<MeshRenderer>(true)
+                    .Single(renderer => renderer.name.StartsWith("District Ground"));
+                Assert.That(ground.sharedMaterial.GetFloat("_SoilRevealStrength"), Is.Zero);
+            }
+            finally { Object.DestroyImmediate(host); }
+        }
+
+        [Test]
         public void DistrictDecalVisibilityAlsoControlsHillSurfaceDetail()
         {
             var root = new GameObject("Isolated district presentation toggle");

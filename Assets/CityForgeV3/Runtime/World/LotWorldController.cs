@@ -1841,7 +1841,7 @@ namespace CityForgeV3.World
         {
             floraId = CurrentTreeArtwork(floraId);
             if (ForestClusterCatalog.IsCluster(floraId)) return ForestClusterCatalog.PixelsPerUnit(floraId);
-            var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId);
+            var repairPpu=FloraTreeRepairs.PixelsPerUnit(floraId, textureName);
             if(repairPpu>0f)return repairPpu;
             if (PlaneUkFloraPresentation.IsTree(floraId) && floraId!="angel-oak-spanish-moss") return 512f / 18f;
             // The square top-down agricultural canvases present as 12 m-wide

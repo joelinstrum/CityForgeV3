@@ -61,6 +61,15 @@ namespace CityForgeV3.World
             _ => 0f
         };
 
+        // The same world-anchored soil sits over the distant district grass
+        // maps. Lower strength keeps wide hill faces from turning solid brown.
+        public static float DistrictSoilRevealForZoom(DistrictZoomLevel level) => level switch
+        {
+            DistrictZoomLevel.LOD0 or DistrictZoomLevel.LOD1 => .9f,
+            DistrictZoomLevel.LOD2 or DistrictZoomLevel.LOD3 => .75f,
+            _ => .65f
+        };
+
         private Texture2D DistrictGrassMapForZoom(DistrictZoomLevel level)
         {
             if (!_useDistrictZoomGrassMaps || level < DistrictZoomLevel.LOD2)
@@ -125,6 +134,11 @@ namespace CityForgeV3.World
             if (material.HasProperty("_GrassDetailMipScale") &&
                 material.GetFloat("_GrassDetailMipScale") != detailMipScale)
                 material.SetFloat("_GrassDetailMipScale", detailMipScale);
+            float soil = (_terrainDistrict?.Hills?.HeightMeters ?? 0) > 0
+                ? DistrictSoilRevealForZoom(_zoomLevel) : 0f;
+            if (material.HasProperty("_SoilRevealStrength") &&
+                material.GetFloat("_SoilRevealStrength") != soil)
+                material.SetFloat("_SoilRevealStrength", soil);
         }
 
         private void ConfigureMountainGroundMaterial()
@@ -149,9 +163,20 @@ namespace CityForgeV3.World
                 // its authored palette and avoid a second dry-patch system.
                 material.SetFloat("_GrassHueShift", 0f);
                 bool hills=(_terrainDistrict?.Hills?.HeightMeters ?? 0)>0;
+                if (hills)
+                {
+                    var relief = _terrainDistrict.Hills;
+                    var vertical = relief.VerticalReliefScale > 0
+                        ? Mathf.Clamp(relief.VerticalReliefScale, .25f, 4f) : 1f;
+                    material.SetFloat("_SoilPeakHeight", Mathf.Max(1f,
+                        relief.HeightMeters * DistrictElevation.RollingHillVerticalScale * vertical));
+                }
                 material.SetFloat("_RollingHillDarkSlopeLift",RollingHillDarkSlopeLift);
                 material.SetFloat("_RollingHillDeepShadeLift",RollingHillDeepShadeLift);
                 material.SetFloat("_MeadowPatchStrength", 0f);
+                if (hills)
+                    material.SetTexture("_SoilTex", Resources.Load<Texture2D>(
+                        "CityForgeV3/Terrain/MountainBrownV01/brown-scree-v01"));
                 material.DisableKeyword("MEADOW_PATCHES");
                 material.SetFloat("_HillHeight",Mathf.Clamp(_terrainDistrict?.Hills?.HeightMeters ?? 0,1,60));
                 if(hills) material.EnableKeyword("HILL_MEADOW"); else material.DisableKeyword("HILL_MEADOW");
